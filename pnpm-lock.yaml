@@ -49,6 +49,15 @@ importers:
         specifier: ^6.3.5
         version: 6.3.5(@types/node@20.17.45)(tsx@4.19.4)
 
+  packages/share:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.17
+        version: 20.17.45
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+
 packages:
 
   '@babel/helper-string-parser@7.27.1':

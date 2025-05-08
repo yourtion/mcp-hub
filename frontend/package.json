@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "@mcp-core/mcp-hub-web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
