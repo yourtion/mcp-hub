@@ -3,11 +3,11 @@
     "target": "ESNext",
     "module": "NodeNext",
     "strict": true,
-    "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "types": [
       "node"
     ],
+    "resolveJsonModule": true,
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "outDir": "./dist"

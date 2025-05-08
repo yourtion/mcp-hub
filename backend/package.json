@@ -1,5 +1,6 @@
 {
   "name": "mcp-hub-api",
+  "version": "0.0.1",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
@@ -7,7 +8,10 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",
-    "hono": "^4.7.8"
+    "@modelcontextprotocol/sdk": "^1.11.0",
+    "fetch-to-node": "^2.1.0",
+    "hono": "^4.7.8",
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
