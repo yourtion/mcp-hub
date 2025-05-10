@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",
+    "@mcp-core/mcp-hub-share": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.11.0",
     "fetch-to-node": "^2.1.0",
     "hono": "^4.7.8",
