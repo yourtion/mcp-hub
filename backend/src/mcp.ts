@@ -1,4 +1,4 @@
-import { mcpServer } from "./app"
+import { mcpServer } from "./services/mcp_service"
 import { toFetchResponse, toReqRes } from "fetch-to-node";
 
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';

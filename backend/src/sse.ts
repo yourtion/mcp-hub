@@ -1,4 +1,4 @@
-import { mcpServer } from './app';
+import { mcpServer } from './services/mcp_service';
 import { streamSSE } from 'hono/streaming';
 import { SSETransport } from './utils/sse.js';
 import { Hono } from 'hono';
