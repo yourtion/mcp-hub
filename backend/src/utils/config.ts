@@ -5,13 +5,13 @@ import { mpcServer, groupConfig, systemConfig } from "@mcp-core/mcp-hub-share/sr
 const configDir = process.env.CONFIG_PATH || path.resolve(process.cwd(), "config");
 
 const mcpServerPath = path.resolve(configDir, "mcp_server.json");
-const mcpServer = new JsonStorage<mpcServer>(mcpServerPath, {});
+const mcpServer = new JsonStorage<mpcServer>(mcpServerPath, { mcpServers: {} });
 
 const groupPath = path.resolve(configDir, "group.json");
 const groupConfig = new JsonStorage<groupConfig>(groupPath, {});
 
 const systemPath = path.resolve(configDir, "system.json");
-const systemConfig = new JsonStorage<systemConfig>(systemPath, {});
+const systemConfig = new JsonStorage<systemConfig>(systemPath, { users: {} });
 
 export async function getAllConfig() {
   return {
