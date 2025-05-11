@@ -1,5 +1,8 @@
 import { serve } from '@hono/node-server'
 import { app } from './app';
+import { initConfig } from './services/config';
+
+initConfig();
 
 serve(
   {

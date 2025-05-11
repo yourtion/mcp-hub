@@ -37,7 +37,7 @@ export class JsonStorage<T> {
    *          如果文件不存在但提供了默认值，则写入默认值到新文件并返回该默认值。
    * @throws 如果读取或解析现有文件时发生错误（非 ENOENT）。
    */
-  async read(): Promise<T | null> {
+  async read(): Promise<T> {
     try {
       const fileContent = await fs.readFile(this.filePath, 'utf-8');
       return JSON.parse(fileContent) as T;
@@ -47,7 +47,6 @@ export class JsonStorage<T> {
           await this.write(this.defaultValue); // 写入默认值到新文件
           return this.defaultValue;
         }
-        return null; // 文件不存在且没有默认值
       }
       // 其他错误，例如现有文件内容无效导致的 JSON 解析错误
       console.error(`读取文件 ${this.filePath} 时出错:`, error);
