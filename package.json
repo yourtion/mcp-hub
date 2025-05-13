@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev:fe": "pnpm --filter forntend dev",
-    "dev:api": "pnpm --filter backend dev",
+    "dev:fe": "pnpm --filter @mcp-core/mcp-hub-web dev",
+    "dev:api": "pnpm --filter @mcp-core/mcp-hub-api dev",
     "inspector": "pnpx @modelcontextprotocol/inspector",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
