@@ -1,4 +1,4 @@
-import { serve } from '@hono/node-server'
+import { serve } from '@hono/node-server';
 import { app } from './app';
 import { initConfig } from './services/config';
 
@@ -10,6 +10,6 @@ serve(
     port: 3000,
   },
   (info) => {
-    console.log("Server started on port " + info.port);
-  }
+    console.log(`Server started on port ${info.port}`);
+  },
 );

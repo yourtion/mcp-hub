@@ -1,7 +1,7 @@
-import { mcpServer } from './services/mcp_service';
-import { streamSSE } from 'hono/streaming';
-import { SSETransport } from './utils/sse.js';
 import { Hono } from 'hono';
+import { streamSSE } from 'hono/streaming';
+import { mcpServer } from './services/mcp_service';
+import { SSETransport } from './utils/sse.js';
 
 export const sse = new Hono();
 // to support multiple simultaneous connections we have a lookup object from
@@ -9,7 +9,7 @@ export const sse = new Hono();
 const transports: Record<string, SSETransport> = {};
 
 sse.get('/sse', (c) => {
-  console.log("SSE connection established");
+  console.log('SSE connection established');
   return streamSSE(c, async (stream) => {
     const transport = new SSETransport('/messages', stream);
 
@@ -20,12 +20,12 @@ sse.get('/sse', (c) => {
         resolve();
         delete transports[transport.sessionId];
       });
-    })
+    });
 
     await mcpServer.connect(transport);
 
     await onAbort;
-    console.log("SSE connection closed");
+    console.log('SSE connection closed');
   });
 });
 

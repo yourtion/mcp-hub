@@ -1,12 +1,11 @@
-import { mcpServer } from "./services/mcp_service"
-import { toFetchResponse, toReqRes } from "fetch-to-node";
-
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { Hono } from "hono";
+import { toFetchResponse, toReqRes } from 'fetch-to-node';
+import { Hono } from 'hono';
+import { mcpServer } from './services/mcp_service';
 
 export const mcp = new Hono();
 
-mcp.post("/mcp", async (c) => {
+mcp.post('/mcp', async (c) => {
   const { req, res } = toReqRes(c.req.raw);
 
   try {
@@ -22,8 +21,8 @@ mcp.post("/mcp", async (c) => {
 
     await transport.handleRequest(req, res, await c.req.json());
 
-    res.on("close", () => {
-      console.log("Request closed");
+    res.on('close', () => {
+      console.log('Request closed');
       transport.close();
       mcpServer.close();
     });
@@ -33,14 +32,14 @@ mcp.post("/mcp", async (c) => {
     console.error(e);
     return c.json(
       {
-        jsonrpc: "2.0",
+        jsonrpc: '2.0',
         error: {
           code: -32603,
-          message: "Internal server error",
+          message: 'Internal server error',
         },
         id: null,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 });

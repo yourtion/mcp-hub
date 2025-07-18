@@ -1,5 +1,5 @@
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 /**
  * JsonStorage 类用于以 JSON 格式读取和写入数据到文件。
@@ -24,7 +24,7 @@ export class JsonStorage<T> {
   private async ensureDataDirExists(dirPath: string): Promise<void> {
     try {
       await fs.access(dirPath);
-    } catch (error) {
+    } catch (_error) {
       // 目录不存在，创建它
       await fs.mkdir(dirPath, { recursive: true });
     }
@@ -41,8 +41,13 @@ export class JsonStorage<T> {
     try {
       const fileContent = await fs.readFile(this.filePath, 'utf-8');
       return JSON.parse(fileContent) as T;
-    } catch (error: any) {
-      if (error.code === 'ENOENT') { // 文件不存在
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        'code' in error &&
+        error.code === 'ENOENT'
+      ) {
+        // 文件不存在
         if (this.defaultValue !== undefined) {
           await this.write(this.defaultValue); // 写入默认值到新文件
           return this.defaultValue;

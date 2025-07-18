@@ -1,7 +1,6 @@
-
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import {
-  JSONRPCMessage,
+  type JSONRPCMessage,
   JSONRPCMessageSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import type { Context } from 'hono';
