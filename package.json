@@ -6,17 +6,13 @@
   "scripts": {
     "dev:fe": "pnpm --filter @mcp-core/mcp-hub-web dev",
     "dev:api": "pnpm --filter @mcp-core/mcp-hub-api dev",
-    "build:fe": "pnpm --filter @mcp-core/mcp-hub-web build",
-    "build:api": "pnpm --filter @mcp-core/mcp-hub-api build",
-    "build": "pnpm build:fe && pnpm build:api",
-    "check:web": "pnpm --filter @mcp-core/mcp-hub-web check",
-    "check:api": "pnpm --filter @mcp-core/mcp-hub-api check",
-    "check": "pnpm check:web && pnpm check:api",
+    "build": "pnpm --filter \"@mcp-core/*\" build",
+    "check": "pnpm --filter \"@mcp-core/*\" check",
     "inspector": "pnpx @modelcontextprotocol/inspector",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.0.0"
+    "@biomejs/biome": "2.0.6"
   },
   "keywords": [],
   "author": "",
