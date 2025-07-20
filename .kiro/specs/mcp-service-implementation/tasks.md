@@ -82,14 +82,14 @@
     - Create service health monitoring and status reporting
     - _Requirements: 5.4, 5.5_
 
-- [ ] 6. Update MCP endpoint integration
-  - [ ] 6.1 Replace simple mcpServer with McpHubService in mcp.ts
+- [x] 6. Update MCP endpoint integration
+  - [x] 6.1 Replace simple mcpServer with McpHubService in mcp.ts
     - Update mcp.ts to use the new McpHubService instead of simple mcpServer
     - Modify endpoint handlers to support group-based tool operations
     - Ensure proper initialization of the hub service on startup
     - _Requirements: 3.5, 4.5_
 
-  - [ ] 6.2 Add group-based API endpoints
+  - [x] 6.2 Add group-based API endpoints
     - Create API endpoints for listing tools by group
     - Implement group-specific tool execution endpoints
     - Add endpoints for querying group information and server health

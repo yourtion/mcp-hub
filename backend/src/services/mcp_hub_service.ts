@@ -553,7 +553,9 @@ export class McpHubService implements IMcpHubService {
     const totalServers = Object.keys(this.serverConfigs).length;
 
     if (connectedServers === 0) {
-      issues.push('No servers are connected');
+      warnings.push(
+        'No servers are connected - service will have limited functionality',
+      );
     } else if (connectedServers < totalServers) {
       warnings.push(
         `Only ${connectedServers} of ${totalServers} servers are connected`,
