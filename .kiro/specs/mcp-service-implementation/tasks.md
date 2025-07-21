@@ -120,14 +120,14 @@
     - Write tests for service initialization and shutdown procedures
     - _Requirements: 3.1, 3.2, 4.1, 4.2, 5.3, 5.4, 5.5_
 
-- [ ] 8. Add configuration validation and service initialization
-  - [ ] 8.1 Implement configuration validation utilities
+- [x] 8. Add configuration validation and service initialization
+  - [x] 8.1 Implement configuration validation utilities
     - Create validation functions for MCP server configurations
     - Add validation for group configurations with proper error messages
     - Implement configuration schema validation using Zod
     - _Requirements: 1.1, 2.1, 2.2, 2.6_
 
-  - [ ] 8.2 Update service initialization in index.ts
+  - [x] 8.2 Update service initialization in index.ts
     - Modify the main application startup to initialize McpHubService
     - Add proper error handling for service initialization failures
     - Implement graceful shutdown handling for the hub service
