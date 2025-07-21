@@ -64,11 +64,33 @@ export interface GroupManager {
   getGroupTools(groupId: string): Promise<Tool[]>;
   validateToolAccess(groupId: string, toolName: string): boolean;
   getGroupServers(groupId: string): string[];
+  findToolInGroup(
+    groupId: string,
+    toolName: string,
+  ): Promise<{ tool: Tool; serverId: string } | null>;
+  getAvailableGroupServers(groupId: string): string[];
+  getGroupStats(groupId: string): {
+    totalServers: number;
+    availableServers: number;
+    configuredTools: number;
+  };
+  validateGroupHealth(
+    groupId: string,
+  ): Promise<{ isHealthy: boolean; issues: string[] }>;
+  getAllGroupsHealth(): Promise<
+    Map<string, { isHealthy: boolean; issues: string[] }>
+  >;
+  getGroupToolsByServer(groupId: string): Promise<Map<string, Tool[]>>;
 }
 
 // Tool Management Types
+export interface ToolContent {
+  type: 'text';
+  text: string;
+}
+
 export interface ToolResult {
-  content: unknown[];
+  content: ToolContent[];
   isError?: boolean;
 }
 

@@ -4,6 +4,7 @@ import type {
   ToolManager as IToolManager,
   ServerManager,
   Tool,
+  ToolContent,
   ToolResult,
 } from '../types/mcp-hub.js';
 import { logger } from '../utils/logger.js';
@@ -681,7 +682,7 @@ export class ToolManager implements IToolManager {
             isError: mcpResult.isError,
           });
           return {
-            content: mcpResult.content,
+            content: mcpResult.content as ToolContent[],
             isError: mcpResult.isError || false,
           };
         }

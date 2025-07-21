@@ -1,7 +1,7 @@
 {
   "enabled": true,
-  "name": "Pre-save Check & Build",
-  "description": "Automatically runs pnpm check and pnpm build before saving files to ensure code correctness",
+  "name": "Pre-save Check & Build & Test",
+  "description": "Automatically runs `pnpm check` and `pnpm build` before saving files to ensure code correctness, then run `pnpm test`",
   "version": "1",
   "when": {
     "type": "fileEdited",
@@ -16,6 +16,6 @@
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Execute the following commands in sequence before allowing the file save: 1) Run 'pnpm check' to validate the code, 2) Run 'pnpm build' to ensure the project builds successfully. If either command fails, report the errors and prevent the save operation."
+    "prompt": "Execute the following commands in sequence before allowing the file save: 1) Run 'pnpm check' to validate the code, 2) Run 'pnpm build' to ensure the project builds successfully. If either command fails, report the errors and prevent the save operation, 3) Run 'pnpm test' to ensure the project test successfully. If either command fails, report the errors and prevent the save operation."
   }
 }
