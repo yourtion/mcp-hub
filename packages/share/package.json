@@ -4,8 +4,7 @@
   "description": "",
   "main": "src/index.ts",
   "scripts": {
-    "check": "biome check --write",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "check": "biome check --write"
   },
   "keywords": [],
   "author": "",

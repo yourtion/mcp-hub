@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. 创建核心包基础结构
+- [x] 1. 创建核心包基础结构
   - 创建 `packages/core` 目录和基本包配置
   - 设置TypeScript配置和构建脚本
   - 定义核心包的导出接口

@@ -1,0 +1,52 @@
+{
+  "name": "@mcp-core/mcp-hub-core",
+  "version": "1.0.0",
+  "description": "MCP Hub核心包 - 提供MCP服务管理、连接管理和工具调用的核心功能",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "check": "biome check --write",
+    "test": "vitest --run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "hub",
+    "core"
+  ],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.6.4",
+  "dependencies": {
+    "@mcp-core/mcp-hub-share": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.17",
+    "typescript": "^5.8.3",
+    "vitest": "^2.1.8"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./services": {
+      "types": "./dist/services/index.d.ts",
+      "import": "./dist/services/index.js"
+    },
+    "./config": {
+      "types": "./dist/config/index.d.ts",
+      "import": "./dist/config/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
+    }
+  }
+}
