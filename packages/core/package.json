@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "check": "biome check --write",
+    "check": "biome check --write src/",
     "test": "vitest --run",
     "test:watch": "vitest"
   },

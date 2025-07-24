@@ -9,7 +9,7 @@
     "build": "pnpm --filter \"@mcp-core/*\" build",
     "check": "pnpm --filter \"@mcp-core/*\" check",
     "inspector": "pnpx @modelcontextprotocol/inspector",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "pnpm --filter \"@mcp-core/*\" test"
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.6"

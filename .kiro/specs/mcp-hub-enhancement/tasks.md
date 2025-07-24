@@ -6,26 +6,26 @@
   - 定义核心包的导出接口
   - _Requirements: 2.1, 3.1_
 
-- [ ] 2. 抽取和重构MCP核心服务逻辑
-- [ ] 2.1 创建核心MCP服务管理器
+- [x] 2. 抽取和重构MCP核心服务逻辑
+- [x] 2.1 创建核心MCP服务管理器
   - 从现有 `mcp_service.ts` 抽取核心逻辑到 `packages/core/src/services/mcp/service-manager.ts`
   - 实现 `McpServiceManager` 接口，包含服务注册和工具调用功能
   - 编写单元测试验证服务管理器功能
   - _Requirements: 2.1, 3.3_
 
-- [ ] 2.2 创建服务器连接管理器
+- [x] 2.2 创建服务器连接管理器
   - 从现有 `server_manager.ts` 抽取逻辑到 `packages/core/src/services/server/connection-manager.ts`
   - 实现连接池管理和服务器状态监控
   - 编写连接管理器的单元测试
   - _Requirements: 2.1, 3.3_
 
-- [ ] 2.3 创建工具注册和管理系统
+- [x] 2.3 创建工具注册和管理系统
   - 从现有 `tool_manager.ts` 抽取逻辑到 `packages/core/src/services/tool/tool-registry.ts`
   - 实现工具发现、注册和调用功能
   - 编写工具管理系统的单元测试
   - _Requirements: 2.1, 3.3_
 
-- [ ] 2.4 创建配置处理器
+- [x] 2.4 创建配置处理器
   - 实现 `SharedConfigProcessor` 用于处理 `mcp_service.json` 配置
   - 从现有配置逻辑中抽取通用配置处理功能
   - 编写配置处理器的单元测试和验证逻辑

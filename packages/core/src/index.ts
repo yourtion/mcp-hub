@@ -19,16 +19,35 @@ export {
 } from './errors/index.js';
 // 导出工厂
 export * from './factory/index.js';
+// 导出服务接口和实现
 export type {
   McpServiceManagerInterface,
   ServerConnectionManagerInterface,
   ToolRegistryInterface,
 } from './services/index.js';
-// 导出服务（避免与types中的McpServiceManager冲突）
 export {
+  ConnectionFailedError,
+  ConnectionManagerError,
+  ConnectionNotFoundError,
+  type ConnectionPoolStats,
+  ConnectionState,
+  DuplicateToolError,
+  McpServerNotFoundError,
+  McpServiceError,
   McpServiceManager,
+  McpToolNotFoundError,
+  type ServerConnection,
+  type ServerConnectionInfo,
   ServerConnectionManager,
+  ServerStatus,
+  ServiceNotInitializedError,
+  type ToolExecutionContext,
+  ToolNotFoundError,
   ToolRegistry,
+  ToolRegistryError,
+  type ToolStats,
+  ToolValidationError,
+  type ToolValidationResult,
 } from './services/index.js';
 // 导出类型
 export * from './types/index.js';
