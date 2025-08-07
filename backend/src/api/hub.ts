@@ -2,8 +2,12 @@ import { Hono } from 'hono';
 import { McpHubService } from '../services/mcp_hub_service.js';
 import { getAllConfig } from '../utils/config.js';
 import { logger } from '../utils/logger.js';
+import { groupsApi, shutdownGroupsApi } from './groups/index.js';
 
 export const hubApi = new Hono();
+
+// 集成组管理API
+hubApi.route('/groups', groupsApi);
 
 // Simple test endpoint that doesn't require service initialization
 hubApi.get('/ping', async (c) => {
@@ -396,9 +400,20 @@ hubApi.get('/diagnostics', async (c) => {
 
 // Graceful shutdown handler for API
 export async function shutdownHubApi(): Promise<void> {
-  if (hubService) {
-    logger.info('Shutting down Hub API service');
-    await hubService.shutdown();
-    hubService = null;
+  try {
+    // 关闭组管理API
+    await shutdownGroupsApi();
+
+    // 关闭Hub服务
+    if (hubService) {
+      logger.info('Shutting down Hub API service');
+      await hubService.shutdown();
+      hubService = null;
+    }
+
+    logger.info('Hub API shutdown completed');
+  } catch (error) {
+    logger.error('Error during Hub API shutdown', error as Error);
+    throw error;
   }
 }

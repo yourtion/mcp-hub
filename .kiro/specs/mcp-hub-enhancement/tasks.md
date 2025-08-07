@@ -31,26 +31,26 @@
   - 编写配置处理器的单元测试和验证逻辑
   - _Requirements: 2.1, 3.3_
 
-- [ ] 3. 重构API包以使用核心包
-- [ ] 3.1 更新API包依赖和导入
+- [x] 3. 重构API包以使用核心包
+- [x] 3.1 更新API包依赖和导入
   - 修改 `backend/package.json` 添加对 `@mcp-core/mcp-hub-core` 的依赖
   - 更新现有服务文件的导入语句使用核心包
   - 移除已迁移到核心包的重复代码
   - _Requirements: 3.1, 4.1_
 
-- [ ] 3.2 实现组特定MCP路由
+- [x] 3.2 实现组特定MCP路由
   - 创建 `backend/src/api/mcp/group-router.ts` 处理 `/:group/mcp` 路由
   - 实现 `GroupMcpService` 包装器使用核心包功能
   - 添加组验证和权限检查中间件
   - _Requirements: 1.1, 1.2, 1.3_
 
-- [ ] 3.3 更新现有MCP端点
+- [x] 3.3 更新现有MCP端点
   - 修改 `backend/src/mcp.ts` 使用核心包的服务管理器
   - 保持现有 `/mcp` 端点的完全向后兼容性
   - 添加管理和调试功能的增强
   - _Requirements: 1.5, 4.1, 4.2_
 
-- [ ] 3.4 创建组管理API端点
+- [x] 3.4 创建组管理API端点
   - 实现 `backend/src/api/groups/` 下的组管理端点
   - 提供组列表、组详情、组健康检查等API
   - 编写组管理API的集成测试

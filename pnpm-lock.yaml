@@ -17,6 +17,9 @@ importers:
       '@hono/node-server':
         specifier: ^1.14.1
         version: 1.14.1(hono@4.7.8)
+      '@mcp-core/mcp-hub-core':
+        specifier: workspace:*
+        version: link:../packages/core
       '@mcp-core/mcp-hub-share':
         specifier: workspace:*
         version: link:../packages/share

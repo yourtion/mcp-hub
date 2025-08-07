@@ -1,3 +1,4 @@
+import { McpServiceManager } from '@mcp-core/mcp-hub-core';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import * as pkg from '../../package.json';
@@ -13,18 +14,31 @@ export const mcpServer = new McpServer({
 
 // Global hub service instance
 let hubService: McpHubService | null = null;
+// Global core service manager instance
+let coreServiceManager: McpServiceManager | null = null;
 
 /**
  * Initialize the MCP Hub Service and register dynamic tools
  */
 export async function initializeMcpService(): Promise<void> {
   try {
-    logger.info('Initializing MCP Service with Hub integration');
+    logger.info(
+      'Initializing MCP Service with Hub integration and Core package',
+    );
 
     // Load configurations
     const config = await getAllConfig();
 
-    // Create and initialize hub service
+    // Create and initialize core service manager
+    coreServiceManager = new McpServiceManager();
+    // 转换配置格式以匹配核心包期望的格式
+    const coreConfig = {
+      servers: config.mcps.mcpServers as Record<string, any>,
+      groups: config.groups as Record<string, any>,
+    };
+    await coreServiceManager.initializeFromConfig(coreConfig);
+
+    // Create and initialize hub service (for backward compatibility)
     hubService = new McpHubService(
       config.mcps.mcpServers as Record<string, any>,
       config.groups as any,
@@ -418,6 +432,13 @@ export async function shutdownMcpService(): Promise<void> {
       await hubService.shutdown();
       hubService = null;
     }
+
+    if (coreServiceManager) {
+      logger.info('Shutting down Core Service Manager');
+      await coreServiceManager.shutdown();
+      coreServiceManager = null;
+    }
+
     logger.info('MCP Service shutdown completed');
   } catch (error) {
     logger.error('Error during MCP Service shutdown', error as Error);
