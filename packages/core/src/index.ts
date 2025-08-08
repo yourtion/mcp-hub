@@ -10,11 +10,15 @@ export type { ErrorHandler } from './errors/index.js';
 export {
   ConfigError,
   ConnectionError,
-  DefaultErrorHandler,
   defaultErrorHandler,
+  ErrorCategory,
+  ErrorCode,
+  ErrorFactory,
+  ErrorSeverity,
   McpHubCoreError,
   ServiceError,
   ToolExecutionError,
+  UnifiedErrorHandler,
   ValidationError,
 } from './errors/index.js';
 // 导出工厂
@@ -53,3 +57,6 @@ export {
 export * from './types/index.js';
 // 导出工具函数
 export * from './utils/index.js';
+
+// 导出日志系统
+export * from './utils/logger.js';

@@ -103,7 +103,9 @@ describe('CliMcpServer', () => {
     it('应该在初始化失败时清理资源', async () => {
       // Mock核心服务初始化失败
       const mockServiceManager = {
-        initializeFromConfig: vi.fn().mockRejectedValue(new Error('初始化失败')),
+        initializeFromConfig: vi
+          .fn()
+          .mockRejectedValue(new Error('初始化失败')),
         getAvailableTools: vi.fn(),
         getAllTools: vi.fn(),
         callTool: vi.fn(),
@@ -113,11 +115,15 @@ describe('CliMcpServer', () => {
 
       // 创建一个新的服务器实例来测试失败情况
       const failingServer = new CliMcpServer();
-      
-      // 使用反射或其他方式模拟失败
-      vi.spyOn(failingServer as any, 'createServiceManager').mockReturnValue(mockServiceManager);
 
-      await expect(failingServer.initialize(mockConfig)).rejects.toThrow('初始化失败');
+      // 使用反射或其他方式模拟失败
+      vi.spyOn(failingServer as any, 'createServiceManager').mockReturnValue(
+        mockServiceManager,
+      );
+
+      await expect(failingServer.initialize(mockConfig)).rejects.toThrow(
+        '初始化失败',
+      );
 
       const status = failingServer.getStatus();
       expect(status.initialized).toBe(false);
@@ -208,10 +214,10 @@ describe('CliMcpServer', () => {
       // 验证服务器状态和工具处理器设置
       const status = server.getStatus();
       expect(status.initialized).toBe(true);
-      
+
       // 验证协议处理器已创建
       expect((server as any).protocolHandler).toBeDefined();
-      
+
       // 验证服务管理器已创建
       expect((server as any).coreService).toBeDefined();
     });

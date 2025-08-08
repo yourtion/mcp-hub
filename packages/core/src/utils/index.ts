@@ -3,6 +3,12 @@
  * 提供MCP Hub核心包使用的通用工具函数
  */
 
+// 导出日志系统
+export * from './logger.js';
+
+// 导出性能监控系统
+export * from './performance-monitor.js';
+
 /**
  * 延迟执行函数
  */
