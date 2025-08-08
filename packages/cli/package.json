@@ -1,0 +1,46 @@
+{
+  "name": "@mcp-core/mcp-hub-cli",
+  "version": "1.0.0",
+  "description": "MCP Hub CLI包 - 提供命令行界面的MCP服务聚合器",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "mcp-hub": "./bin/mcp-hub.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "check": "biome check --write src/",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "hub",
+    "cli",
+    "command-line"
+  ],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.6.4",
+  "dependencies": {
+    "@mcp-core/mcp-hub-core": "workspace:*",
+    "@mcp-core/mcp-hub-share": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.17",
+    "typescript": "^5.8.3",
+    "vitest": "^2.1.8"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  }
+}

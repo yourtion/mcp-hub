@@ -56,32 +56,32 @@
   - 编写组管理API的集成测试
   - _Requirements: 1.4, 3.3_
 
-- [ ] 4. 创建CLI包
-- [ ] 4.1 设置CLI包基础结构
+- [x] 4. 创建CLI包
+- [x] 4.1 设置CLI包基础结构
   - 创建 `packages/cli` 目录和包配置
   - 设置CLI可执行文件和入口点
   - 配置TypeScript和构建脚本
   - _Requirements: 2.1, 2.2_
 
-- [ ] 4.2 实现CLI MCP服务器核心功能
+- [x] 4.2 实现CLI MCP服务器核心功能
   - 创建 `CliMcpServer` 使用核心包的 `McpServiceManager`
   - 实现StdioServerTransport的MCP服务器
   - 编写CLI MCP服务器的单元测试
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 4.3 实现MCP协议处理
+- [x] 4.3 实现MCP协议处理
   - 实现 `list_tools` MCP协议请求处理
   - 实现 `call_tool` MCP协议请求处理
   - 实现MCP协议错误处理和响应格式化
   - _Requirements: 2.3, 2.4_
 
-- [ ] 4.4 实现CLI配置和启动
+- [x] 4.4 实现CLI配置和启动
   - 实现配置文件加载和验证
   - 创建CLI可执行入口点
   - 添加启动参数和配置选项
   - _Requirements: 2.4, 2.5_
 
-- [ ] 4.5 添加CLI配置管理
+- [x] 4.5 添加CLI配置管理
   - 实现CLI特定的配置文件处理
   - 支持配置文件模板生成
   - 添加配置验证和错误处理

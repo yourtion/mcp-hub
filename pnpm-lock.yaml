@@ -80,6 +80,31 @@ importers:
         specifier: ^8.34.1
         version: 8.35.1(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3)
 
+  packages/cli:
+    dependencies:
+      '@mcp-core/mcp-hub-core':
+        specifier: workspace:*
+        version: link:../core
+      '@mcp-core/mcp-hub-share':
+        specifier: workspace:*
+        version: link:../share
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.0.4
+        version: 1.16.0
+      zod:
+        specifier: ^3.23.8
+        version: 3.24.4
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.17
+        version: 20.17.45
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@20.17.45)(@vitest/ui@2.1.9)(terser@5.43.1)
+
   packages/core:
     dependencies:
       '@mcp-core/mcp-hub-share':
