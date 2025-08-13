@@ -7,9 +7,21 @@
     "build": "tsc",
     "check": "rm -rf dist && biome check --write",
     "start": "node dist/src/index.js",
-    "test": "vitest --run",
+    "test": "vitest --run --config vitest.unit.config.ts",
+    "test:unit": "vitest --run --config vitest.unit.config.ts",
     "test:watch": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "test:e2e": "tsx scripts/run-e2e-tests.ts",
+    "test:e2e:verbose": "tsx scripts/run-e2e-tests.ts --verbose",
+    "test:e2e:coverage": "tsx scripts/run-e2e-tests.ts --coverage",
+    "test:scenarios": "vitest --run src/e2e/scenarios/",
+    "test:mcp": "vitest --run src/e2e/mcp-protocol/",
+    "test:mcp:basic": "vitest --run src/e2e/mcp-protocol/mcp-basic.test.ts",
+    "test:mcp:http": "vitest --run src/e2e/mcp-protocol/mcp-http-api.test.ts",
+    "test:stable": "vitest --run src/e2e/stable-tests.test.ts",
+    "test:quick": "vitest --run src/e2e/quick-scenarios.test.ts",
+    "test:mcp:watch": "vitest src/e2e/mcp-protocol/",
+    "test:all": "vitest --run && npm run test:e2e && npm run test:mcp"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",

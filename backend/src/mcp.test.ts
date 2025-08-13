@@ -102,7 +102,12 @@ describe('MCP Router', () => {
   });
 
   afterEach(async () => {
-    await shutdownMcpService();
+    try {
+      await shutdownMcpService();
+    } catch (error) {
+      // 忽略关闭错误
+    }
+    vi.clearAllMocks();
   });
 
   describe('POST /mcp', () => {

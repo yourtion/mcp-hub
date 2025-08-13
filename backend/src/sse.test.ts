@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sse } from './sse';
 
 // Mock依赖
@@ -45,6 +45,10 @@ describe('SSE Router', () => {
     vi.clearAllMocks();
     // 清理console.log mock
     vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('GET /sse', () => {
