@@ -71,10 +71,10 @@ groupsApi.get('/', async (c) => {
           // 获取组内工具数量
           let toolCount = 0;
           try {
-            const allTools = await coreServiceManager!.getAllTools();
-            toolCount = allTools.filter((tool) =>
-              groupServers.includes(tool.serverId),
-            ).length;
+            const allTools = await coreServiceManager?.getAllTools();
+            toolCount =
+              allTools?.filter((tool) => groupServers.includes(tool.serverId))
+                .length || 0;
           } catch (error) {
             logger.warn('获取组工具数量失败', {
               groupId,
@@ -540,7 +540,8 @@ groupsApi.get('/:groupId/servers', async (c) => {
         // 获取服务器工具
         let serverTools: any[] = [];
         try {
-          serverTools = await coreServiceManager!.getServerTools(serverId);
+          serverTools =
+            (await coreServiceManager?.getServerTools(serverId)) || [];
         } catch (error) {
           logger.warn('获取服务器工具失败', {
             serverId,

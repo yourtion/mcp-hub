@@ -302,7 +302,7 @@ describe('端到端用户场景测试', () => {
           if (response.status === 200) {
             successCount++;
           }
-        } catch (error) {
+        } catch (_error) {
           errorCount++;
         }
       }
@@ -345,7 +345,9 @@ describe('端到端用户场景测试', () => {
 
       // 验证系统能够区分健康和不健康的组
       const healthyGroups = healthResults.filter((result) => result.healthy);
-      const unhealthyGroups = healthResults.filter((result) => !result.healthy);
+      const _unhealthyGroups = healthResults.filter(
+        (result) => !result.healthy,
+      );
 
       // 对于健康的组，应该能够正常获取工具列表
       for (const healthyGroup of healthyGroups.slice(0, 2)) {
@@ -369,7 +371,7 @@ describe('端到端用户场景测试', () => {
       // 模拟多个用户同时使用系统
       const userSimulations = Array.from(
         { length: concurrentUsers },
-        async (_, userIndex) => {
+        async (_, _userIndex) => {
           const userRequests = [];
 
           // 每个用户执行一系列操作

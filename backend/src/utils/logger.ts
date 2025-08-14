@@ -169,10 +169,26 @@ export class ConsoleLogger implements Logger {
   }
 }
 
+/**
+ * 检查是否在测试环境中
+ */
+function isTestEnvironment(): boolean {
+  return process.env.NODE_ENV === 'test' || !!process.env.VITEST;
+}
+
+/**
+ * 检查是否启用调试模式
+ */
+function isDebugMode(): boolean {
+  return process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true';
+}
+
 // Default logger instance
 export const logger = new ConsoleLogger(
   process.env.LOG_LEVEL
     ? LogLevel[process.env.LOG_LEVEL.toUpperCase() as keyof typeof LogLevel] ||
         LogLevel.INFO
-    : LogLevel.INFO,
+    : isTestEnvironment() && !isDebugMode()
+      ? LogLevel.WARN
+      : LogLevel.INFO,
 );

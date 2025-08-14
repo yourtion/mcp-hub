@@ -83,7 +83,7 @@ describe('MCP Hub Service Integration Tests', () => {
   afterEach(async () => {
     try {
       await mcpHubService.shutdown();
-    } catch (error) {
+    } catch (_error) {
       // Ignore shutdown errors in tests
     }
   });
@@ -152,12 +152,14 @@ describe('MCP Hub Service Integration Tests', () => {
       mockClient.listTools.mockResolvedValue({ tools: [] });
       await mcpHubService.initialize();
 
-      // Mock shutdown failure by making performGracefulShutdown fail
-      // We need to mock the serverManager.shutdown method to fail
-      const originalShutdown = mcpHubService['serverManager'].shutdown;
-      mcpHubService['serverManager'].shutdown = vi
-        .fn()
-        .mockRejectedValue(new Error('Shutdown failed'));
+      // Mock shutdown failure by replacing the method temporarily
+      const serverManager = (mcpHubService as any).serverManager;
+      const originalShutdown = serverManager.shutdown.bind(serverManager);
+      Object.defineProperty(serverManager, 'shutdown', {
+        value: vi.fn().mockRejectedValue(new Error('Shutdown failed')),
+        writable: true,
+        configurable: true,
+      });
 
       // Should throw due to shutdown errors
       await expect(mcpHubService.shutdown()).rejects.toThrow(
@@ -165,7 +167,11 @@ describe('MCP Hub Service Integration Tests', () => {
       );
 
       // Restore original method
-      mcpHubService['serverManager'].shutdown = originalShutdown;
+      Object.defineProperty(serverManager, 'shutdown', {
+        value: originalShutdown,
+        writable: true,
+        configurable: true,
+      });
     });
   });
 

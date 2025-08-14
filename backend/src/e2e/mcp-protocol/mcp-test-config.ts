@@ -63,7 +63,7 @@ export async function closeMcpClient(
   if (client) {
     try {
       await client.close();
-    } catch (error) {
+    } catch (_error) {
       // 忽略关闭错误
     }
   }
@@ -71,7 +71,7 @@ export async function closeMcpClient(
   if (transport) {
     try {
       await transport.close();
-    } catch (error) {
+    } catch (_error) {
       // 忽略关闭错误
     }
   }

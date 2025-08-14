@@ -1,10 +1,6 @@
 import type { GroupConfig } from '@mcp-core/mcp-hub-share/src/config';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type {
-  ServerConnection,
-  ServerManager,
-  Tool,
-} from '../types/mcp-hub.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ServerConnection, ServerManager } from '../types/mcp-hub.js';
 import { ServerStatus } from '../types/mcp-hub.js';
 import { GroupManager } from './group_manager.js';
 
@@ -677,7 +673,7 @@ describe('GroupManager', () => {
       expect(healthMap.size).toBeGreaterThan(0);
 
       // All groups should have health status
-      for (const [groupId, health] of healthMap) {
+      for (const [_groupId, health] of healthMap) {
         expect(health).toHaveProperty('isHealthy');
         expect(health).toHaveProperty('issues');
         expect(health).toHaveProperty('warnings');

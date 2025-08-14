@@ -6,7 +6,6 @@
 import * as os from 'node:os';
 import * as path from 'node:path';
 import {
-  createLogger,
   type LogEntry,
   type LoggerConfig,
   LogLevel,
@@ -24,6 +23,20 @@ export interface CliLoggerConfig extends LoggerConfig {
 }
 
 /**
+ * 检查是否在测试环境中
+ */
+function isTestEnvironment(): boolean {
+  return process.env.NODE_ENV === 'test' || !!process.env.VITEST;
+}
+
+/**
+ * 检查是否启用调试模式
+ */
+function isDebugMode(): boolean {
+  return process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true';
+}
+
+/**
  * CLI默认日志配置
  */
 export const DEFAULT_CLI_LOGGER_CONFIG: CliLoggerConfig = {
@@ -33,7 +46,7 @@ export const DEFAULT_CLI_LOGGER_CONFIG: CliLoggerConfig = {
   format: 'text',
   enableColors: true,
   enableTimestamp: true,
-  quiet: false,
+  quiet: isTestEnvironment() && !isDebugMode(), // 测试环境下默认静默，除非启用调试模式
   verbose: false,
   logDir: path.join(os.homedir(), '.mcp-hub', 'logs'),
   maxFileSize: 5 * 1024 * 1024, // 5MB
@@ -135,10 +148,23 @@ export class CliLogger extends StructuredLogger {
     // 根据CLI特定配置调整日志级别
     const adjustedConfig = { ...config };
 
-    if (config.quiet) {
-      adjustedConfig.level = LogLevel.WARN;
-    } else if (config.verbose) {
+    // 在测试环境中，如果没有明确设置 quiet，则自动启用静默模式（除非启用调试模式）
+    if (isTestEnvironment() && config.quiet === undefined) {
+      adjustedConfig.quiet = !isDebugMode();
+    }
+
+    // 处理 verbose 和 quiet 的优先级
+    if (config.verbose) {
       adjustedConfig.level = LogLevel.DEBUG;
+      // verbose 模式下不应该是静默的
+      adjustedConfig.quiet = false;
+    } else if (adjustedConfig.quiet) {
+      adjustedConfig.level = LogLevel.WARN;
+      // 在测试环境的静默模式下，只有在没有明确设置 enableConsole 时才禁用控制台输出
+      // 但如果测试中明确设置了 enableConsole: true，则保持启用
+      if (isTestEnvironment() && config.enableConsole !== true) {
+        adjustedConfig.enableConsole = false;
+      }
     }
 
     // 设置文件路径
@@ -151,7 +177,7 @@ export class CliLogger extends StructuredLogger {
     this.cliFormatter = new CliTextFormatter(
       config.enableColors,
       config.enableTimestamp,
-      config.quiet,
+      adjustedConfig.quiet,
     );
   }
 
@@ -187,6 +213,11 @@ export class CliLogger extends StructuredLogger {
    * 显示启动横幅
    */
   showBanner(version: string): void {
+    // 在测试环境的静默模式下不显示横幅
+    if (isTestEnvironment() && !isDebugMode()) {
+      return;
+    }
+
     const banner = [
       '',
       '╭─────────────────────────────────────╮',

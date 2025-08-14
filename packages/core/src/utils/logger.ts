@@ -68,11 +68,25 @@ export interface LoggerConfig {
 }
 
 /**
+ * 检查是否在测试环境中
+ */
+function isTestEnvironment(): boolean {
+  return process.env.NODE_ENV === 'test' || !!process.env.VITEST;
+}
+
+/**
+ * 检查是否启用调试模式
+ */
+function isDebugMode(): boolean {
+  return process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true';
+}
+
+/**
  * 默认日志配置
  */
 export const DEFAULT_LOGGER_CONFIG: LoggerConfig = {
-  level: LogLevel.INFO,
-  enableConsole: true,
+  level: isTestEnvironment() && !isDebugMode() ? LogLevel.WARN : LogLevel.INFO,
+  enableConsole: !isTestEnvironment() || isDebugMode(),
   enableFile: false,
   maxFileSize: 10 * 1024 * 1024, // 10MB
   maxFiles: 5,
@@ -535,7 +549,10 @@ export const logger = createLogger({
   level: process.env.LOG_LEVEL
     ? LogLevel[process.env.LOG_LEVEL.toUpperCase() as keyof typeof LogLevel] ||
       LogLevel.INFO
-    : LogLevel.INFO,
+    : isTestEnvironment() && !isDebugMode()
+      ? LogLevel.WARN
+      : LogLevel.INFO,
+  enableConsole: !isTestEnvironment() || isDebugMode(),
   enableFile: process.env.LOG_FILE ? true : false,
   filePath: process.env.LOG_FILE,
 });

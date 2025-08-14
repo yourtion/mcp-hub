@@ -351,7 +351,7 @@ mcp.get('/mcp/health', async (c) => {
     }
 
     const status = coreServiceManager.getServiceStatus();
-    const serverConnections = coreServiceManager.getServerConnections();
+    const _serverConnections = coreServiceManager.getServerConnections();
 
     // 计算健康分数
     const totalServers = status.serverCount;

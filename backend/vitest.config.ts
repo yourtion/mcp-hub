@@ -12,6 +12,7 @@ export default defineConfig({
       'src/e2e/scenarios/**',
       'src/e2e/mcp-protocol/**',
     ],
+
     testTimeout: 10000, // 减少超时时间
     hookTimeout: 5000,
     teardownTimeout: 3000,
@@ -26,14 +27,28 @@ export default defineConfig({
     },
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'json-summary', 'html', 'lcov'],
+      reportsDirectory: './coverage',
       exclude: [
         'node_modules/',
         'dist/',
         '**/*.d.ts',
         '**/*.test.ts',
         'src/e2e/**',
+        'src/test-app.ts',
+        'src/index.ts',
+        'scripts/**',
       ],
+      thresholds: {
+        global: {
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80,
+        },
+      },
+      all: true,
+      include: ['src/**/*.ts'],
     },
   },
 });

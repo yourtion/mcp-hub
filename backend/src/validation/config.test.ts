@@ -1,8 +1,4 @@
-import type {
-  GroupConfig,
-  McpConfig,
-  SystemConfig,
-} from '@mcp-core/mcp-hub-share';
+import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share';
 import { describe, expect, it } from 'vitest';
 import {
   validateAllConfigs,

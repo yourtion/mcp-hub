@@ -232,7 +232,7 @@ process.on('uncaughtException', (error) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('未处理的 Promise 拒绝: ' + String(reason));
+  logger.error(`未处理的 Promise 拒绝: ${String(reason)}`);
   logger.info('Promise 拒绝详情', {
     reason: String(reason),
     promiseString: String(promise),

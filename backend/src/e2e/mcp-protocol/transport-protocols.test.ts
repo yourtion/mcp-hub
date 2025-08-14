@@ -14,11 +14,11 @@ import {
 } from '../test-utils.js';
 
 describe('MCP传输协议端到端测试', () => {
-  let testApp: any;
+  let _testApp: any;
   let restoreConsole: () => void;
 
   beforeAll(async () => {
-    testApp = app;
+    _testApp = app;
     restoreConsole = setupTestEnvironment();
     await sleep(2000);
   });
@@ -84,7 +84,7 @@ describe('MCP传输协议端到端测试', () => {
         try {
           await client.close();
           await transport.close();
-        } catch (cleanupError) {
+        } catch (_cleanupError) {
           // 忽略清理错误
         }
       }

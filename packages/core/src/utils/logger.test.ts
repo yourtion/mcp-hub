@@ -328,7 +328,8 @@ describe('createLogger', () => {
     const logger = createLogger();
 
     expect(logger).toBeInstanceOf(StructuredLogger);
-    expect(logger.getLevel()).toBe(LogLevel.INFO);
+    // 在测试环境中，默认日志级别是 WARN
+    expect(logger.getLevel()).toBe(LogLevel.WARN);
   });
 
   it('应该使用自定义配置创建日志记录器', () => {

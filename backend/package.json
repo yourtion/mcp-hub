@@ -21,7 +21,11 @@
     "test:stable": "vitest --run src/e2e/stable-tests.test.ts",
     "test:quick": "vitest --run src/e2e/quick-scenarios.test.ts",
     "test:mcp:watch": "vitest src/e2e/mcp-protocol/",
-    "test:all": "vitest --run && npm run test:e2e && npm run test:mcp"
+    "test:all": "vitest --run && npm run test:e2e && npm run test:mcp",
+    "test:coverage": "vitest --run --coverage",
+    "test:debug": "VITEST_DEBUG=true vitest --run",
+    "test:coverage:debug": "VITEST_DEBUG=true vitest --run --coverage",
+    "coverage:open": "open coverage/index.html"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",

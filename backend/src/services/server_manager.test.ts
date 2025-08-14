@@ -58,7 +58,7 @@ describe('ServerManager', () => {
   afterEach(async () => {
     try {
       await serverManager.shutdown();
-    } catch (error) {
+    } catch (_error) {
       // Ignore shutdown errors in tests
     }
   });
@@ -303,7 +303,7 @@ describe('ServerManager', () => {
       const server = servers.get('test-server-1');
 
       expect(server?.lastConnected).toBeInstanceOf(Date);
-      expect(server?.lastConnected!.getTime()).toBeGreaterThanOrEqual(
+      expect(server?.lastConnected?.getTime()).toBeGreaterThanOrEqual(
         beforeConnect.getTime(),
       );
     });

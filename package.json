@@ -10,10 +10,19 @@
     "check": "pnpm --filter \"@mcp-core/*\" check",
     "inspector": "pnpx @modelcontextprotocol/inspector",
     "test": "pnpm --filter \"@mcp-core/*\" test",
-    "test:e2e": "pnpm --filter \"@mcp-core/*\" test:e2e"
+    "test:e2e": "pnpm --filter \"@mcp-core/*\" test:e2e",
+    "test:coverage": "pnpm --filter \"@mcp-core/*\" test --coverage",
+    "test:debug": "VITEST_DEBUG=true pnpm --filter \"@mcp-core/*\" test",
+    "test:coverage:debug": "VITEST_DEBUG=true pnpm --filter \"@mcp-core/*\" test --coverage",
+    "coverage:report": "tsx scripts/check-coverage.ts",
+    "coverage:merge": "tsx scripts/merge-coverage.ts",
+    "coverage:full": "pnpm test:coverage && pnpm coverage:merge && pnpm coverage:report",
+    "ci:test": "pnpm test:coverage"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.0.6"
+    "@biomejs/biome": "2.0.6",
+    "tsx": "^4.7.1",
+    "vitest": "^2.1.8"
   },
   "keywords": [],
   "author": "",

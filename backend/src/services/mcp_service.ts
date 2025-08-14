@@ -269,7 +269,7 @@ async function registerDynamicTools(): Promise<void> {
     const groups = hubService.getAllGroups();
     const registeredTools = new Set<string>();
 
-    for (const [groupId, group] of groups) {
+    for (const [groupId, _group] of groups) {
       try {
         const tools = await hubService.listTools(groupId);
 

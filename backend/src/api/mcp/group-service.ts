@@ -103,7 +103,7 @@ export class GroupMcpService {
    */
   async getStatus(): Promise<GroupServiceStatus> {
     try {
-      const serviceStatus = this.coreServiceManager.getServiceStatus();
+      const _serviceStatus = this.coreServiceManager.getServiceStatus();
       const serverConnections = this.coreServiceManager.getServerConnections();
 
       // 计算该组的服务器连接状态
@@ -325,7 +325,7 @@ export class GroupMcpService {
       const zodSchema = this.convertToZodSchema(tool.inputSchema);
 
       // 注册工具
-      this.mcpServer.tool(toolName, zodSchema, async (args, extra) => {
+      this.mcpServer.tool(toolName, zodSchema, async (args, _extra) => {
         try {
           logger.debug('执行组动态工具', {
             groupId: this.groupId,

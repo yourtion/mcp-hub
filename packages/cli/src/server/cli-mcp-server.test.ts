@@ -4,54 +4,91 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CliConfig } from '../types';
-import { CliMcpServer } from './cli-mcp-server';
 
-// Mock MCP SDK
-vi.mock('@modelcontextprotocol/sdk/server/index.js', () => ({
-  Server: vi.fn().mockImplementation(() => ({
-    setRequestHandler: vi.fn(),
-    connect: vi.fn(),
-  })),
-}));
+// 创建 mock 实例
+const mockServiceManager = {
+  initializeFromConfig: vi.fn().mockResolvedValue(undefined),
+  getAllTools: vi.fn().mockResolvedValue([
+    {
+      name: 'test_tool',
+      description: '测试工具',
+      serverId: 'test_server',
+    },
+  ]),
+  executeToolCall: vi.fn().mockResolvedValue({
+    success: true,
+    data: { result: 'test result' },
+    executionTime: 100,
+  }),
+  getServiceStatus: vi.fn().mockReturnValue({
+    initialized: true,
+    serverCount: 1,
+    activeConnections: 1,
+  }),
+  shutdown: vi.fn().mockResolvedValue(undefined),
+};
 
-vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
-  StdioServerTransport: vi.fn().mockImplementation(() => ({
-    start: vi.fn(),
-    close: vi.fn(),
-  })),
-}));
+// 创建 mock transport 实例
+const mockTransport = {
+  start: vi.fn().mockResolvedValue(undefined),
+  close: vi.fn().mockResolvedValue(undefined),
+};
 
 // Mock 核心包
 vi.mock('@mcp-core/mcp-hub-core', () => ({
-  McpServiceManager: vi.fn().mockImplementation(() => ({
-    initializeFromConfig: vi.fn(),
-    getAllTools: vi.fn().mockResolvedValue([
-      {
-        name: 'test_tool',
-        description: '测试工具',
-        serverId: 'test_server',
-      },
-    ]),
-    executeToolCall: vi.fn().mockResolvedValue({
-      success: true,
-      data: { result: 'test result' },
-      executionTime: 100,
-    }),
-    getServiceStatus: vi.fn().mockReturnValue({
-      initialized: true,
-      serverCount: 1,
-      activeConnections: 1,
-    }),
-    shutdown: vi.fn(),
-  })),
+  McpServiceManager: vi.fn().mockImplementation(() => mockServiceManager),
 }));
+
+// 创建 mock MCP server 实例
+const mockMcpServer = {
+  setRequestHandler: vi.fn(),
+  connect: vi.fn().mockResolvedValue(undefined),
+  close: vi.fn().mockResolvedValue(undefined),
+  registerTool: vi.fn(),
+};
+
+// Mock MCP SDK
+vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => ({
+  McpServer: vi.fn().mockImplementation(() => mockMcpServer),
+}));
+
+vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
+  StdioServerTransport: vi.fn().mockImplementation(() => mockTransport),
+}));
+
+// 导入要测试的类
+import { CliMcpServer } from './cli-mcp-server';
 
 describe('CliMcpServer', () => {
   let server: CliMcpServer;
   let mockConfig: CliConfig;
 
   beforeEach(() => {
+    // 清除所有mock调用记录，但保留实现
+    vi.clearAllMocks();
+
+    // 重置 mock 函数的返回值
+    mockServiceManager.getAllTools.mockResolvedValue([
+      {
+        name: 'test_tool',
+        description: '测试工具',
+        serverId: 'test_server',
+      },
+    ]);
+
     server = new CliMcpServer();
+
+    // 直接 spy createServiceManager 方法
+    vi.spyOn(server as any, 'createServiceManager').mockReturnValue(
+      mockServiceManager,
+    );
+
+    // Mock registerTools 方法以避免 registerTool 错误
+    vi.spyOn(server as any, 'registerTools').mockResolvedValue(undefined);
+
+    // 直接设置 server 属性以确保 mock 正确工作
+    (server as any).server = mockMcpServer;
+
     mockConfig = {
       servers: {
         test_server: {
@@ -68,8 +105,14 @@ describe('CliMcpServer', () => {
       },
     };
 
-    // 清除所有mock调用记录
-    vi.clearAllMocks();
+    // 重置 mock 函数的返回值（在清除之后）
+    mockServiceManager.getAllTools.mockResolvedValue([
+      {
+        name: 'test_tool',
+        description: '测试工具',
+        serverId: 'test_server',
+      },
+    ]);
   });
 
   afterEach(async () => {

@@ -1,0 +1,125 @@
+name: Test Coverage
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-coverage:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout 代码
+      uses: actions/checkout@v4
+      
+    - name: 设置 Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        
+    - name: 安装 pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: 获取 pnpm store 目录
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        
+    - name: 设置 pnpm 缓存
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+          
+    - name: 安装依赖
+      run: pnpm install --frozen-lockfile
+      
+    - name: 构建项目
+      run: pnpm build
+      
+    - name: 运行测试并生成覆盖率报告
+      run: pnpm ci:test
+      
+    - name: 生成覆盖率报告
+      run: pnpm coverage:merge && pnpm coverage:report
+      
+    - name: 上传覆盖率报告到 Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: |
+          ./backend/coverage/lcov.info
+          ./packages/core/coverage/lcov.info
+          ./packages/cli/coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+        verbose: true
+        
+    - name: 上传覆盖率报告作为构建产物
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage-reports-${{ matrix.node-version }}
+        path: |
+          ./coverage/
+          ./backend/coverage/
+          ./packages/core/coverage/
+          ./packages/cli/coverage/
+        retention-days: 30
+        
+    - name: 评论 PR 覆盖率报告
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // 读取各包的覆盖率报告
+          const packages = [
+            { name: 'Backend API', path: './backend/coverage/coverage-summary.json', threshold: 80 },
+            { name: 'Core Package', path: './packages/core/coverage/coverage-summary.json', threshold: 85 },
+            { name: 'CLI Package', path: './packages/cli/coverage/coverage-summary.json', threshold: 85 }
+          ];
+          
+          let comment = '## 📊 测试覆盖率报告\n\n';
+          
+          for (const pkg of packages) {
+            if (fs.existsSync(pkg.path)) {
+              try {
+                const summary = JSON.parse(fs.readFileSync(pkg.path, 'utf8'));
+                const { total } = summary;
+                
+                comment += `### ${pkg.name}\n\n`;
+                comment += '| 指标 | 覆盖率 | 阈值 | 状态 |\n';
+                comment += '|------|--------|------|------|\n';
+                comment += `| 行覆盖率 | ${total.lines.pct.toFixed(2)}% | ${pkg.threshold}% | ${total.lines.pct >= pkg.threshold ? '✅' : '❌'} |\n`;
+                comment += `| 函数覆盖率 | ${total.functions.pct.toFixed(2)}% | ${pkg.threshold}% | ${total.functions.pct >= pkg.threshold ? '✅' : '❌'} |\n`;
+                comment += `| 语句覆盖率 | ${total.statements.pct.toFixed(2)}% | ${pkg.threshold}% | ${total.statements.pct >= pkg.threshold ? '✅' : '❌'} |\n`;
+                comment += `| 分支覆盖率 | ${total.branches.pct.toFixed(2)}% | ${pkg.threshold}% | ${total.branches.pct >= pkg.threshold ? '✅' : '❌'} |\n\n`;
+              } catch (error) {
+                comment += `### ${pkg.name}\n❌ 无法读取覆盖率报告\n\n`;
+              }
+            } else {
+              comment += `### ${pkg.name}\n⚠️ 覆盖率报告不存在\n\n`;
+            }
+          }
+          
+          comment += '💡 **提示**: 查看详细报告请下载构建产物中的 HTML 报告。\n';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });

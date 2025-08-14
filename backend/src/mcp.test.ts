@@ -104,7 +104,7 @@ describe('MCP Router', () => {
   afterEach(async () => {
     try {
       await shutdownMcpService();
-    } catch (error) {
+    } catch (_error) {
       // 忽略关闭错误
     }
     vi.clearAllMocks();

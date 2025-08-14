@@ -59,7 +59,7 @@ describe('错误处理和恢复场景端到端测试', () => {
           if (response.status === 200) {
             successCount++;
           }
-        } catch (error) {
+        } catch (_error) {
           errorCount++;
         }
 
@@ -296,7 +296,7 @@ describe('错误处理和恢复场景端到端测试', () => {
             if (healthResponse.status === 200) {
               healthyAttempts++;
             }
-          } catch (error) {
+          } catch (_error) {
             // 记录错误但继续测试
           }
 
@@ -312,7 +312,7 @@ describe('错误处理和恢复场景端到端测试', () => {
     it('应该能够在配置重载后恢复正常', async () => {
       // 记录重载前的状态
       const beforeReload = await testApp.request('/api/groups');
-      const beforeData = await safeJsonParse(beforeReload);
+      const _beforeData = await safeJsonParse(beforeReload);
 
       // 等待一段时间，模拟配置可能的变化
       await sleep(500);

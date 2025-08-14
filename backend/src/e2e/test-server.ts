@@ -107,7 +107,7 @@ export async function checkServerHealth(baseUrl: string): Promise<boolean> {
   try {
     const response = await fetch(`${baseUrl}/api/ping`);
     return response.ok;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }

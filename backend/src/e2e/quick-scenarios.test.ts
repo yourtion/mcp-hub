@@ -201,7 +201,7 @@ describe('快速场景测试', () => {
           if (response.status === 200) {
             successCount++;
           }
-        } catch (error) {
+        } catch (_error) {
           errorCount++;
         }
       }
@@ -236,7 +236,7 @@ describe('快速场景测试', () => {
             groupId: group.id,
             healthy: healthResponse.status === 200,
           });
-        } catch (error) {
+        } catch (_error) {
           healthResults.push({
             groupId: group.id,
             healthy: false,

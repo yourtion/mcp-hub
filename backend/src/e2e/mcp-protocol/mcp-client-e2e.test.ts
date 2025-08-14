@@ -15,13 +15,13 @@ import {
 } from '../test-utils.js';
 
 describe('MCP协议客户端端到端测试', () => {
-  let testApp: typeof app;
+  let _testApp: typeof app;
   let restoreConsole: () => void;
   let mcpClient: Client;
   let transport: SSEClientTransport | StdioClientTransport;
 
   beforeAll(async () => {
-    testApp = app;
+    _testApp = app;
     restoreConsole = setupTestEnvironment();
 
     // 等待应用完全初始化
@@ -32,7 +32,7 @@ describe('MCP协议客户端端到端测试', () => {
     if (mcpClient) {
       try {
         await mcpClient.close();
-      } catch (error) {
+      } catch (_error) {
         // 忽略关闭错误
       }
     }
@@ -40,7 +40,7 @@ describe('MCP协议客户端端到端测试', () => {
     if (transport) {
       try {
         await transport.close();
-      } catch (error) {
+      } catch (_error) {
         // 忽略关闭错误
       }
     }
@@ -502,7 +502,7 @@ describe('MCP协议客户端端到端测试', () => {
         try {
           await testClient.close();
           await testTransport.close();
-        } catch (cleanupError) {
+        } catch (_cleanupError) {
           // 忽略清理错误
         }
         throw error;

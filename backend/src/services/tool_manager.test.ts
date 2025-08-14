@@ -1,10 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type {
-  GroupManager,
-  ServerManager,
-  Tool,
-  ToolResult,
-} from '../types/mcp-hub.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { GroupManager, ServerManager, Tool } from '../types/mcp-hub.js';
 import { ServerStatus } from '../types/mcp-hub.js';
 import { ToolManager } from './tool_manager.js';
 
@@ -621,11 +616,15 @@ describe('ToolManager', () => {
         },
       };
 
-      // Mock finding this tool
-      const originalFindTool = toolManager['findToolDefinition'];
-      toolManager['findToolDefinition'] = vi
-        .fn()
-        .mockReturnValue(toolWithStrictSchema);
+      // Mock finding this tool by replacing the private method temporarily
+      const originalFindTool = (toolManager as any).findToolDefinition.bind(
+        toolManager,
+      );
+      Object.defineProperty(toolManager, 'findToolDefinition', {
+        value: vi.fn().mockReturnValue(toolWithStrictSchema),
+        writable: true,
+        configurable: true,
+      });
 
       const isValid3 = toolManager.validateToolArgs('strict-tool', {
         arg1: 'test',
@@ -634,7 +633,11 @@ describe('ToolManager', () => {
       expect(isValid3).toBe(false);
 
       // Restore original method
-      toolManager['findToolDefinition'] = originalFindTool;
+      Object.defineProperty(toolManager, 'findToolDefinition', {
+        value: originalFindTool,
+        writable: true,
+        configurable: true,
+      });
     });
   });
 });

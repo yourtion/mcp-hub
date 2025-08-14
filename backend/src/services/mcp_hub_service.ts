@@ -808,7 +808,7 @@ export class McpHubService implements IMcpHubService {
               toolCount: tools.length,
               isHealthy: tools.length > 0,
             };
-          } catch (error) {
+          } catch (_error) {
             return {
               id,
               name: group.name,

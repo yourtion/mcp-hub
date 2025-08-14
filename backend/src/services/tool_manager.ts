@@ -546,7 +546,7 @@ export class ToolManager implements IToolManager {
         break;
 
       case 'number':
-        if (actualType !== 'number' || isNaN(argValue as number)) {
+        if (actualType !== 'number' || Number.isNaN(argValue as number)) {
           return {
             isValid: false,
             error: `Argument '${argName}' must be a number, got ${actualType}`,
@@ -829,7 +829,7 @@ export class ToolManager implements IToolManager {
         try {
           const validation = await this.validateGroupAccess(groupId);
           groupHealth.set(groupId, validation.isValid);
-        } catch (error) {
+        } catch (_error) {
           groupHealth.set(groupId, false);
         }
       }

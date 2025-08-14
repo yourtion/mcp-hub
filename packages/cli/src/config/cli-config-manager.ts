@@ -6,7 +6,9 @@
 import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { z } from 'zod';
-import type { CliConfig, CliError, CliErrorCode } from '../types';
+import type { CliConfig, CliError } from '../types';
+import { CliErrorCode } from '../types';
+import { createCliLogger } from '../utils/logger';
 import {
   ConfigTemplateGenerator,
   type ConfigTemplateType,
@@ -60,12 +62,16 @@ export class CliConfigManager {
   private configCache = new Map<string, CliConfig>();
   private validator = new ConfigValidator();
   private templateGenerator = new ConfigTemplateGenerator();
+  private logger = createCliLogger({
+    verbose:
+      process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true',
+  }); // 检测调试模式
 
   /**
    * 加载配置文件
    */
   async loadConfig(configPath: string): Promise<CliConfig> {
-    console.debug('加载配置文件', { configPath });
+    this.logger.debug('加载配置文件', { metadata: { configPath } });
 
     try {
       // 解析配置文件路径
@@ -73,7 +79,7 @@ export class CliConfigManager {
 
       // 检查缓存
       if (this.configCache.has(resolvedPath)) {
-        console.debug('使用缓存的配置');
+        this.logger.debug('使用缓存的配置');
         return this.configCache.get(resolvedPath)!;
       }
 
@@ -89,7 +95,7 @@ export class CliConfigManager {
         rawConfig = JSON.parse(configContent);
       } catch (parseError) {
         throw this.createConfigError(
-          'INVALID_CONFIG_FORMAT' as CliErrorCode,
+          CliErrorCode.INVALID_CONFIG_FORMAT,
           `配置文件JSON格式无效: ${(parseError as Error).message}`,
           {
             configPath: resolvedPath,
@@ -107,22 +113,26 @@ export class CliConfigManager {
       // 缓存配置
       this.configCache.set(resolvedPath, validatedConfig);
 
-      console.debug('配置文件加载成功', {
-        configPath: resolvedPath,
-        serverCount: Object.keys(validatedConfig.servers).length,
-        loggingLevel: validatedConfig.logging.level,
+      this.logger.debug('配置文件加载成功', {
+        metadata: {
+          configPath: resolvedPath,
+          serverCount: Object.keys(validatedConfig.servers).length,
+          loggingLevel: validatedConfig.logging.level,
+        },
       });
 
       return validatedConfig;
     } catch (error) {
-      console.error('加载配置文件失败:', error, { configPath });
+      this.logger.error('加载配置文件失败:', error as Error, {
+        metadata: { configPath },
+      });
 
       if (this.isConfigError(error)) {
         throw error;
       }
 
       throw this.createConfigError(
-        'CONFIG_FILE_NOT_FOUND' as CliErrorCode,
+        CliErrorCode.CONFIG_FILE_NOT_FOUND,
         `无法加载配置文件: ${(error as Error).message}`,
         { configPath, originalError: (error as Error).message },
       );
@@ -137,7 +147,7 @@ export class CliConfigManager {
       CliConfigSchema.parse(config);
       return true;
     } catch (error) {
-      console.error('配置验证失败:', error);
+      this.logger.error('配置验证失败:', error as Error);
       return false;
     }
   }
@@ -196,7 +206,7 @@ export class CliConfigManager {
    */
   clearCache(): void {
     this.configCache.clear();
-    console.debug('配置缓存已清除');
+    this.logger.debug('配置缓存已清除');
   }
 
   /**
@@ -217,7 +227,7 @@ export class CliConfigManager {
       await access(filePath);
     } catch (error) {
       throw this.createConfigError(
-        'CONFIG_FILE_NOT_FOUND' as CliErrorCode,
+        CliErrorCode.CONFIG_FILE_NOT_FOUND,
         `配置文件不存在: ${filePath}`,
         { filePath },
       );
@@ -240,7 +250,7 @@ export class CliConfigManager {
           .join('; ');
 
         throw this.createConfigError(
-          'INVALID_CONFIG_FORMAT' as CliErrorCode,
+          CliErrorCode.INVALID_CONFIG_FORMAT,
           `配置文件格式无效: ${errorMessages}`,
           {
             configPath,
@@ -283,7 +293,7 @@ export class CliConfigManager {
       ServerConfigSchema.parse(serverConfig);
       return true;
     } catch (error) {
-      console.error('服务器配置验证失败:', error);
+      this.logger.error('服务器配置验证失败:', error as Error);
       return false;
     }
   }

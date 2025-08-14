@@ -3,7 +3,7 @@ import { sse } from './sse';
 
 // Mock依赖
 vi.mock('hono/streaming', () => ({
-  streamSSE: vi.fn().mockImplementation((c, callback) => {
+  streamSSE: vi.fn().mockImplementation((_c, callback) => {
     const mockStream = {
       onAbort: vi.fn().mockImplementation((fn) => {
         // 模拟立即调用abort回调
@@ -33,7 +33,7 @@ vi.mock('./services/mcp_service', () => ({
 }));
 
 vi.mock('./utils/sse.js', () => ({
-  SSETransport: vi.fn().mockImplementation((path, stream) => ({
+  SSETransport: vi.fn().mockImplementation((_path, _stream) => ({
     sessionId: 'test-session-id',
     handlePostMessage: vi.fn().mockResolvedValue(new Response('OK')),
     close: vi.fn(),

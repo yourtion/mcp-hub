@@ -8,9 +8,9 @@ import { CliTransport } from './cli-transport';
 
 // Mock MCP SDK
 const mockTransport = {
-  start: vi.fn(),
-  close: vi.fn(),
-  send: vi.fn(),
+  start: vi.fn().mockResolvedValue(undefined),
+  close: vi.fn().mockResolvedValue(undefined),
+  send: vi.fn().mockResolvedValue(undefined),
   onmessage: undefined as ((message: JSONRPCMessage) => void) | undefined,
   onerror: undefined as ((error: Error) => void) | undefined,
   onclose: undefined as (() => void) | undefined,

@@ -14,11 +14,11 @@ import {
 } from '../test-utils.js';
 
 describe('MCP Hub聚合功能端到端测试', () => {
-  let testApp: any;
+  let _testApp: any;
   let restoreConsole: () => void;
 
   beforeAll(async () => {
-    testApp = app;
+    _testApp = app;
     restoreConsole = setupTestEnvironment();
     await sleep(2000);
   });
@@ -405,8 +405,8 @@ describe('MCP Hub聚合功能端到端测试', () => {
             // 检查工具是否包含来源信息
             // 这可能在描述、名称或其他字段中
             const hasSourceInfo =
-              (tool.description && tool.description.includes('server')) ||
-              (tool.description && tool.description.includes('group')) ||
+              tool.description?.includes('server') ||
+              tool.description?.includes('group') ||
               tool.name.includes('_') ||
               tool.name.includes('-') ||
               'source' in tool ||
@@ -477,7 +477,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
               name: tool.name,
               arguments: {},
             });
-          } catch (error) {
+          } catch (_error) {
             // 调用失败是可以接受的，重要的是响应时间
           }
           const callEndTime = Date.now();

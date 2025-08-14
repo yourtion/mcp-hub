@@ -37,7 +37,7 @@ export async function safeJsonParse(response: Response): Promise<any> {
       return null;
     }
     return JSON.parse(text);
-  } catch (error) {
+  } catch (_error) {
     // 如果JSON解析失败，返回错误信息和原始文本
     return { error: 'JSON_PARSE_ERROR', rawText: 'Unable to parse response' };
   }

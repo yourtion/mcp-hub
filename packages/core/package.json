@@ -9,7 +9,11 @@
     "dev": "tsc --watch",
     "check": "biome check --write src/",
     "test": "vitest --run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage": "vitest --run --coverage",
+    "test:debug": "VITEST_DEBUG=true vitest",
+    "test:coverage:debug": "VITEST_DEBUG=true vitest --run --coverage",
+    "coverage:open": "open coverage/index.html"
   },
   "keywords": [
     "mcp",

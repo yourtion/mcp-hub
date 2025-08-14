@@ -66,7 +66,7 @@ describe('组路由功能集成测试', () => {
     });
 
     it('应该能够处理不存在的组请求', async () => {
-      const nonExistentGroupId = 'non-existent-group-' + Date.now();
+      const nonExistentGroupId = `non-existent-group-${Date.now()}`;
       const response = await testApp.request(
         `/api/groups/${nonExistentGroupId}`,
       );
