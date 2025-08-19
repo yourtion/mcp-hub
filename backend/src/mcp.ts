@@ -1,4 +1,8 @@
-import { McpServiceManager } from '@mcp-core/mcp-hub-core';
+import {
+  McpServiceManager,
+  performanceMonitor,
+  performanceOptimizer,
+} from '@mcp-core/mcp-hub-core';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { toFetchResponse, toReqRes } from 'fetch-to-node';
 import { Hono } from 'hono';
@@ -45,12 +49,16 @@ async function ensureMcpServiceInitialized(): Promise<void> {
 }
 
 mcp.post('/mcp', async (c) => {
+  const requestId = `mcp-${Date.now()}`;
+  performanceMonitor.startRequest(requestId, 'mcp-post', 'MCP-API');
+
   const { req, res } = toReqRes(c.req.raw);
 
   try {
     // Ensure MCP service is initialized
     await ensureMcpServiceInitialized();
 
+    // 创建传输层
     const transport: StreamableHTTPServerTransport =
       new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
@@ -68,11 +76,14 @@ mcp.post('/mcp', async (c) => {
       logger.debug('MCP request closed');
       transport.close();
       mcpServer.close();
+      performanceMonitor.endRequest(requestId, true);
     });
 
     return toFetchResponse(res);
   } catch (e) {
     logger.error('MCP endpoint error', e as Error);
+    performanceMonitor.endRequest(requestId, false, (e as Error).message);
+
     return c.json(
       {
         jsonrpc: '2.0',
@@ -97,7 +108,18 @@ mcp.post('/mcp', async (c) => {
  * MCP服务状态端点 - 管理和调试功能
  */
 mcp.get('/mcp/status', async (c) => {
+  const requestId = `mcp-status-${Date.now()}`;
+  performanceMonitor.startRequest(requestId, 'mcp-status', 'MCP-API');
+
   try {
+    // 尝试从缓存获取状态信息
+    const cacheKey = 'mcp-status';
+    const cachedStatus = performanceOptimizer.getCached(cacheKey);
+    if (cachedStatus) {
+      performanceMonitor.endRequest(requestId, true);
+      return c.json(cachedStatus);
+    }
+
     await ensureMcpServiceInitialized();
 
     if (!coreServiceManager) {
@@ -133,16 +155,23 @@ mcp.get('/mcp/status', async (c) => {
         groupRouting: true,
         corePackageIntegration: true,
       },
+      performance: performanceOptimizer.getMetrics(),
     };
+
+    // 缓存状态信息5秒
+    performanceOptimizer.setCached(cacheKey, response, 5000);
 
     logger.debug('MCP状态查询', {
       serverCount: status.serverCount,
       activeConnections: status.activeConnections,
     });
 
+    performanceMonitor.endRequest(requestId, true);
     return c.json(response);
   } catch (error) {
     logger.error('获取MCP状态失败', error as Error);
+    performanceMonitor.endRequest(requestId, false, (error as Error).message);
+
     return c.json(
       {
         error: {
@@ -159,7 +188,18 @@ mcp.get('/mcp/status', async (c) => {
  * MCP工具列表端点 - 管理和调试功能
  */
 mcp.get('/mcp/tools', async (c) => {
+  const requestId = `mcp-tools-${Date.now()}`;
+  performanceMonitor.startRequest(requestId, 'mcp-tools', 'MCP-API');
+
   try {
+    // 尝试从缓存获取工具列表
+    const cacheKey = 'mcp-tools';
+    const cachedTools = performanceOptimizer.getCached(cacheKey);
+    if (cachedTools) {
+      performanceMonitor.endRequest(requestId, true);
+      return c.json(cachedTools);
+    }
+
     await ensureMcpServiceInitialized();
 
     if (!coreServiceManager) {
@@ -198,14 +238,20 @@ mcp.get('/mcp/tools', async (c) => {
       timestamp: new Date().toISOString(),
     };
 
+    // 缓存工具列表30秒
+    performanceOptimizer.setCached(cacheKey, response, 30000);
+
     logger.debug('MCP工具列表查询', {
       totalTools: allTools.length,
       serverCount: Object.keys(toolsByServer).length,
     });
 
+    performanceMonitor.endRequest(requestId, true);
     return c.json(response);
   } catch (error) {
     logger.error('获取MCP工具列表失败', error as Error);
+    performanceMonitor.endRequest(requestId, false, (error as Error).message);
+
     return c.json(
       {
         error: {

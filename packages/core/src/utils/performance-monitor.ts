@@ -499,11 +499,20 @@ export function createPerformanceMonitor(
 }
 
 /**
- * 默认性能监控器实例
+ * 默认性能监控器实例（延迟初始化）
  */
-export const performanceMonitor = createPerformanceMonitor({
-  enabled: process.env.PERFORMANCE_MONITORING !== 'false',
-  collectInterval: process.env.PERFORMANCE_COLLECT_INTERVAL
-    ? parseInt(process.env.PERFORMANCE_COLLECT_INTERVAL, 10)
-    : undefined,
+let _performanceMonitor: PerformanceMonitor | null = null;
+
+export const performanceMonitor = new Proxy({} as PerformanceMonitor, {
+  get(target, prop) {
+    if (!_performanceMonitor) {
+      _performanceMonitor = createPerformanceMonitor({
+        enabled: process.env.PERFORMANCE_MONITORING !== 'false',
+        collectInterval: process.env.PERFORMANCE_COLLECT_INTERVAL
+          ? parseInt(process.env.PERFORMANCE_COLLECT_INTERVAL, 10)
+          : undefined,
+      });
+    }
+    return _performanceMonitor[prop as keyof PerformanceMonitor];
+  },
 });

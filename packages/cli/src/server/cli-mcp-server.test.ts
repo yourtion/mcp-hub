@@ -28,6 +28,22 @@ const mockServiceManager = {
   shutdown: vi.fn().mockResolvedValue(undefined),
 };
 
+// Mock 核心包
+vi.mock('@mcp-core/mcp-hub-core', () => {
+  return {
+    McpServiceManager: vi.fn().mockImplementation(() => mockServiceManager),
+    performanceOptimizer: {
+      optimizeStartupTime: vi.fn().mockImplementation(async (fn) => fn()),
+      optimizeParallelInitialization: vi
+        .fn()
+        .mockImplementation(async (tasks) => {
+          return Promise.all(tasks.map((task: any) => task()));
+        }),
+      getMetrics: vi.fn().mockReturnValue({}),
+    },
+  };
+});
+
 // 创建 mock transport 实例
 const mockTransport = {
   start: vi.fn().mockResolvedValue(undefined),

@@ -57,6 +57,15 @@ export {
 export * from './types/index.js';
 // 导出工具函数
 export * from './utils/index.js';
+export {
+  createPerformanceMonitor,
+  performanceMonitor,
+} from './utils/performance-monitor.js';
+// 导出性能优化和监控
+export {
+  createPerformanceOptimizer,
+  performanceOptimizer,
+} from './utils/performance-optimizer.js';
 
 // 导出日志系统
 // export * from './utils/logger.js';

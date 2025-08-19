@@ -3,12 +3,15 @@
  * 使用核心包的McpServiceManager和MCP SDK的StdioServerTransport
  */
 
-import { McpServiceManager } from '@mcp-core/mcp-hub-core';
+import {
+  McpServiceManager,
+  performanceOptimizer,
+} from '@mcp-core/mcp-hub-core';
 import { createCliLogger } from '@mcp-core/mcp-hub-share';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { McpProtocolHandler } from '../protocol/mcp-protocol-handler';
+import { McpProtocolHandler } from '../protocol/mcp-protocol-handler.js';
 import type { CliConfig } from '../types';
 
 /**
@@ -46,16 +49,14 @@ export class CliMcpServer {
     try {
       this.config = config;
 
-      // 创建核心服务管理器
+      // 创建和初始化核心服务管理器
       this.coreService = this.createServiceManager();
-
-      // 从配置初始化核心服务
       await this.coreService.initializeFromConfig({
         servers: config.servers,
       });
 
       // 创建协议处理器
-      this.protocolHandler = new McpProtocolHandler(this.coreService);
+      this.protocolHandler = new McpProtocolHandler(this.coreService!);
 
       // 创建MCP服务器实例
       this.server = new McpServer(
@@ -71,8 +72,8 @@ export class CliMcpServer {
         },
       );
 
-      // 注册工具
-      await this.registerTools();
+      // 延迟注册工具到启动时
+      // await this.registerTools();
 
       // 创建stdio传输层
       this.transport = new StdioServerTransport();
@@ -105,6 +106,9 @@ export class CliMcpServer {
       if (!this.server || !this.transport) {
         throw new Error('服务器或传输层未初始化');
       }
+
+      // 在启动时注册工具（延迟到真正需要时）
+      await this.registerTools();
 
       // 连接服务器和传输层（McpServer会自动启动传输层）
       await this.server.connect(this.transport);
@@ -170,7 +174,7 @@ export class CliMcpServer {
               args: z.record(z.unknown()).optional(),
             },
           },
-          async ({ args }) => {
+          async ({ args }: { args?: any }) => {
             try {
               if (!this.protocolHandler) {
                 throw new Error('协议处理器未初始化');

@@ -11,6 +11,8 @@ import type {
   ToolInfo,
   ToolResult,
 } from '../../types/index.js';
+import { performanceMonitor } from '../../utils/performance-monitor.js';
+import { performanceOptimizer } from '../../utils/performance-optimizer.js';
 
 /**
  * MCP服务管理器错误类
@@ -150,6 +152,13 @@ export class McpServiceManager implements McpServiceManagerInterface {
       return;
     }
 
+    const requestId = `init-${Date.now()}`;
+    performanceMonitor.startRequest(
+      requestId,
+      'initializeFromConfig',
+      'McpServiceManager',
+    );
+
     const initStartTime = Date.now();
     this.logger.info('开始初始化MCP服务管理器', {
       serverCount: Object.keys(config.servers).length,
@@ -162,17 +171,37 @@ export class McpServiceManager implements McpServiceManagerInterface {
         this.serverConfigs.set(serverId, serverConfig);
       }
 
-      // 初始化所有服务器连接
-      const initPromises = Array.from(this.serverConfigs.entries()).map(
+      // 使用性能优化器进行并行初始化
+      const serverEntries = Array.from(this.serverConfigs.entries());
+      const initTasks = serverEntries.map(
         ([serverId, serverConfig]) =>
-          this.initializeServer(serverId, serverConfig),
+          () =>
+            this.initializeServer(serverId, serverConfig),
       );
+      const serverNames = serverEntries.map(([serverId]) => serverId);
 
       // 并发初始化所有服务器，但不因部分失败而整体失败
-      const results = await Promise.allSettled(initPromises);
+      let results: any[];
+      try {
+        // 尝试使用性能优化器进行并行初始化
+        results = await performanceOptimizer.optimizeParallelInitialization(
+          initTasks,
+          serverNames,
+        );
+        // 将成功结果转换为Promise.allSettled格式
+        results = results.map((result) => ({
+          status: 'fulfilled',
+          value: result,
+        }));
+      } catch (error) {
+        // 如果并行初始化失败，回退到Promise.allSettled
+        results = await Promise.allSettled(initTasks.map((task) => task()));
+      }
 
       // 检查是否有严重错误（所有服务器都失败）
-      const failures = results.filter((result) => result.status === 'rejected');
+      const failures = results.filter(
+        (result: any) => result.status === 'rejected',
+      );
       if (failures.length === results.length && results.length > 0) {
         // 如果所有服务器都失败了，抛出第一个错误
         const firstFailure = failures[0] as PromiseRejectedResult;
@@ -190,6 +219,8 @@ export class McpServiceManager implements McpServiceManagerInterface {
         initializationTimeMs: initDuration,
         timestamp: new Date().toISOString(),
       });
+
+      performanceMonitor.endRequest(requestId, true);
     } catch (error) {
       const initDuration = Date.now() - initStartTime;
       this.logger.error('MCP服务管理器初始化失败', error as Error, {
@@ -199,6 +230,9 @@ export class McpServiceManager implements McpServiceManagerInterface {
 
       // 清理失败的初始化
       await this.cleanupFailedInitialization();
+
+      performanceMonitor.endRequest(requestId, false, (error as Error).message);
+
       throw new McpServiceError(
         `服务初始化失败: ${(error as Error).message}`,
         'INITIALIZATION_FAILED',
@@ -233,6 +267,23 @@ export class McpServiceManager implements McpServiceManagerInterface {
   async getAllTools(): Promise<ToolInfo[]> {
     this.ensureInitialized();
 
+    // 尝试从缓存获取
+    const cacheKey = 'all-tools';
+    const cachedTools = performanceOptimizer.getCached<ToolInfo[]>(cacheKey);
+    if (cachedTools) {
+      this.logger.debug('从缓存获取所有工具', {
+        context: { toolCount: cachedTools.length },
+      });
+      return cachedTools;
+    }
+
+    const requestId = `get-all-tools-${Date.now()}`;
+    performanceMonitor.startRequest(
+      requestId,
+      'getAllTools',
+      'McpServiceManager',
+    );
+
     this.logger.debug('获取所有可用工具');
 
     try {
@@ -245,14 +296,20 @@ export class McpServiceManager implements McpServiceManagerInterface {
         allTools.push(...server.tools);
       }
 
+      // 缓存结果
+      performanceOptimizer.setCached(cacheKey, allTools, 60000); // 缓存1分钟
+
       this.logger.debug('获取所有工具完成', {
         totalTools: allTools.length,
         connectedServers: connectedServers.length,
       });
 
+      performanceMonitor.endRequest(requestId, true);
       return allTools;
     } catch (error) {
       this.logger.error('获取所有工具失败', error as Error);
+      performanceMonitor.endRequest(requestId, false, (error as Error).message);
+
       throw new McpServiceError(
         `获取工具失败: ${(error as Error).message}`,
         'GET_TOOLS_FAILED',
@@ -288,6 +345,16 @@ export class McpServiceManager implements McpServiceManagerInterface {
     this.ensureInitialized();
 
     const executionId = `exec-${toolName}-${Date.now()}`;
+    performanceMonitor.startRequest(
+      executionId,
+      'executeToolCall',
+      'McpServiceManager',
+      {
+        toolName,
+        serverId,
+      },
+    );
+
     this.logger.info('开始执行工具调用', {
       executionId,
       toolName,
@@ -298,12 +365,14 @@ export class McpServiceManager implements McpServiceManagerInterface {
     try {
       // 如果指定了服务器ID，直接在该服务器上执行
       if (serverId) {
-        return await this.executeToolOnServer(
+        const result = await this.executeToolOnServer(
           serverId,
           toolName,
           args,
           executionId,
         );
+        performanceMonitor.endRequest(executionId, true);
+        return result;
       }
 
       // 否则查找包含该工具的服务器
@@ -312,18 +381,26 @@ export class McpServiceManager implements McpServiceManagerInterface {
         throw new ToolNotFoundError(toolName);
       }
 
-      return await this.executeToolOnServer(
+      const result = await this.executeToolOnServer(
         targetServerId,
         toolName,
         args,
         executionId,
       );
+      performanceMonitor.endRequest(executionId, true);
+      return result;
     } catch (error) {
       this.logger.error('工具执行失败', error as Error, {
         executionId,
         toolName,
         serverId,
       });
+
+      performanceMonitor.endRequest(
+        executionId,
+        false,
+        (error as Error).message,
+      );
 
       if (error instanceof McpServiceError) {
         throw error;

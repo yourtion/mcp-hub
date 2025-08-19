@@ -9,6 +9,9 @@ export * from './logger.js';
 // 导出性能监控系统
 export * from './performance-monitor.js';
 
+// 导出性能优化系统
+export * from './performance-optimizer.js';
+
 /**
  * 延迟执行函数
  */
