@@ -1,12 +1,251 @@
 # MCP Hub
 
-整合多个 MCP 服务器，将其集中到专用的 Streamable HTTP 或 SSE 端点中，每个端点都针对特定的使用场景进行了优化
+[English](README.md) | 中文版
+
+整合多个 MCP 服务器，将其集中到专用的 Streamable HTTP 或 SSE 端点中，每个端点都针对特定的使用场景进行了优化。
 
 ## 特性
 
-- 支持多个 MCP 服务器
-- 支持 Streamable HTTP 或 SSE 端点
-- 通过分组将 MCP 服务进行整合
-- 分组支持工具过滤和筛选
-- 支持验证功能，分组支持单独设置验证密钥
-- 将 HTTP 请求变成 MCP 服务
+- **多服务器 MCP 集成**: 支持多个 MCP 服务器的集中管理
+- **基于组的路由**: 通过组特定端点访问 MCP 服务 (`/:group/mcp`)
+- **CLI MCP 服务器**: 独立的命令行 MCP 服务器，用于工具聚合
+- **流式端点**: 支持 HTTP 和 SSE 端点
+- **工具过滤**: 分组支持工具过滤和筛选功能
+- **验证支持**: 分组可以设置独立的验证密钥以确保安全性
+- **模块化架构**: 核心逻辑、API 和 CLI 包之间清晰分离
+
+## 架构
+
+MCP Hub 采用模块化 monorepo 架构，包含以下包：
+
+### 核心包
+
+- **`@mcp-core/mcp-hub-core`** - 核心 MCP 服务管理、连接处理和工具执行
+- **`@mcp-core/mcp-hub-api`** - Web API 服务器，包含基于组的路由和 HTTP 端点
+- **`@mcp-core/mcp-hub-cli`** - 命令行 MCP 服务器，用于独立工具聚合
+- **`@mcp-core/mcp-hub-share`** - 跨包共享的类型和工具
+- **`@mcp-core/mcp-hub-web`** - Vue.js 前端界面（可选）
+
+### 包结构
+
+```
+├── backend/              # API 服务器 (@mcp-core/mcp-hub-api)
+├── frontend/             # Vue.js Web 界面
+├── packages/
+│   ├── core/            # 核心 MCP 逻辑 (@mcp-core/mcp-hub-core)
+│   ├── cli/             # CLI 包 (@mcp-core/mcp-hub-cli)
+│   └── share/           # 共享类型 (@mcp-core/mcp-hub-share)
+└── docs/                # 文档
+```
+## 安装
+
+### 前置要求
+
+- Node.js 18+ 
+- pnpm 包管理器
+
+### 安装依赖
+
+```bash
+# 安装所有依赖
+pnpm install
+
+# 构建所有包
+pnpm build
+```
+
+## 快速开始
+
+### 1. API 服务器（Web 界面）
+
+启动 API 服务器以使用基于 Web 的 MCP hub 功能：
+
+```bash
+# 开发模式
+pnpm dev:api
+
+# 生产构建并启动
+pnpm build
+cd backend && pnpm start
+```
+
+API 服务器将在 `http://localhost:3000` 可用，提供以下端点：
+
+- `/mcp` - 全局 MCP 端点（遗留，用于管理）
+- `/:group/mcp` - 组特定的 MCP 端点
+- `/api/groups` - 组管理 API
+
+### 2. CLI MCP 服务器
+
+将 CLI 包用作独立的 MCP 服务器：
+
+```bash
+# 全局安装 CLI（可选）
+npm install -g @mcp-core/mcp-hub-cli
+
+# 或从工作区直接运行
+cd packages/cli
+pnpm build
+node dist/cli.js
+
+# 或使用可执行文件
+./bin/mcp-hub.js
+```
+
+CLI 服务器通过 stdin/stdout 使用 MCP 协议进行通信，非常适合与 Claude Desktop 等 MCP 客户端集成。
+
+### 3. 前端界面（可选）
+
+启动 Web 界面进行可视化管理：
+
+```bash
+pnpm dev:fe
+```
+
+## 配置
+
+### MCP 服务器配置
+
+在 `backend/config/` 目录中创建 `mcp_service.json` 文件：
+
+```json
+{
+  "servers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/directory"],
+      "env": {}
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+### 组配置
+
+在 `backend/config/group.json` 中配置组：
+
+```json
+{
+  "groups": {
+    "development": {
+      "name": "开发工具",
+      "description": "软件开发工具",
+      "servers": ["filesystem", "git"],
+      "allowedTools": ["read_file", "write_file", "git_status"],
+      "validationKey": "dev-key-123"
+    },
+    "research": {
+      "name": "研究工具", 
+      "description": "研究和信息收集工具",
+      "servers": ["brave-search", "wikipedia"],
+      "allowedTools": ["search", "lookup"],
+      "validationKey": "research-key-456"
+    }
+  }
+}
+```
+
+## 使用示例
+
+### 基于组的 MCP 访问
+
+通过组特定端点访问工具：
+
+```bash
+# 列出开发组的工具
+curl http://localhost:3000/development/mcp/list_tools
+
+# 在研究组中调用工具
+curl -X POST http://localhost:3000/research/mcp/call_tool \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "search",
+    "arguments": {
+      "query": "MCP 协议文档"
+    }
+  }'
+```
+
+### CLI MCP 服务器集成
+
+在您的 MCP 客户端（如 Claude Desktop）中配置 CLI 服务器：
+
+```json
+{
+  "mcpServers": {
+    "mcp-hub": {
+      "command": "/path/to/mcp-hub/packages/cli/bin/mcp-hub.js",
+      "args": ["--config", "/path/to/mcp_service.json"]
+    }
+  }
+}
+```
+
+## 开发
+
+### 可用脚本
+
+```bash
+# 开发
+pnpm dev:api          # 以开发模式启动 API 服务器
+pnpm dev:fe           # 以开发模式启动前端
+
+# 构建
+pnpm build            # 构建所有包
+pnpm check            # 运行代码检查和格式化
+
+# 测试  
+pnpm test             # 运行所有测试
+pnpm test:coverage    # 运行带覆盖率的测试
+pnpm test:e2e         # 运行端到端测试
+
+# 工具
+pnpm inspector        # 启动 MCP 检查器进行调试
+```
+
+### 包开发
+
+每个包都可以独立开发：
+
+```bash
+# 核心包
+cd packages/core
+pnpm dev              # 监视模式编译
+pnpm test:watch       # 监视模式测试
+
+# CLI 包  
+cd packages/cli
+pnpm dev              # 监视模式编译
+pnpm test:e2e         # 端到端测试
+
+# API 包
+cd backend
+pnpm dev              # 开发服务器
+pnpm test:mcp         # MCP 协议测试
+```
+
+## 文档
+
+- [CLI 使用指南](docs/CLI_USAGE.md) - 详细的 CLI 使用和配置
+- [组路由指南](docs/GROUP_ROUTING.md) - 基于组的路由文档
+- [迁移指南](docs/MIGRATION.md) - 从旧版本升级
+- [API 参考](docs/API_REFERENCE.md) - 完整的 API 文档
+
+## 贡献
+
+1. Fork 仓库
+2. 创建功能分支
+3. 进行更改并添加测试
+4. 运行 `pnpm check` 确保代码质量
+5. 提交 Pull Request
+
+## 许可证
+
+ISC 许可证 - 详见 LICENSE 文件。

@@ -1,0 +1,51 @@
+# MCP Hub 开发环境 Docker Compose 配置
+
+version: '3.8'
+
+services:
+  # API 服务器开发模式
+  mcp-hub-api-dev:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: base
+    container_name: mcp-hub-api-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+    volumes:
+      # 挂载源代码用于热重载
+      - ./packages/share:/app/packages/share
+      - ./packages/core:/app/packages/core
+      - ./backend:/app/backend
+      - ./backend/config:/app/backend/config
+      - ./logs:/app/logs
+    command: ["pnpm", "dev:api"]
+    restart: unless-stopped
+    networks:
+      - mcp-hub-dev-network
+
+  # 前端开发服务器
+  mcp-hub-web-dev:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: base
+    container_name: mcp-hub-web-dev
+    ports:
+      - "8080:8080"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:3000
+    volumes:
+      # 挂载源代码用于热重载
+      - ./frontend:/app/frontend
+    command: ["pnpm", "dev:fe"]
+    restart: unless-stopped
+    networks:
+      - mcp-hub-dev-network
+
+networks:
+  mcp-hub-dev-network:
+    driver: bridge

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sse } from './sse';
+import { sse } from './sse.js';
 
 // Mock依赖
 vi.mock('hono/streaming', () => ({

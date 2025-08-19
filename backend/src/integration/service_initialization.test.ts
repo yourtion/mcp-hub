@@ -4,7 +4,7 @@ import type {
   SystemConfig,
 } from '@mcp-core/mcp-hub-share';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { validateAllConfigs } from '../validation/config';
+import { validateAllConfigs } from '../validation/config.js';
 
 describe('服务初始化集成测试', () => {
   beforeEach(() => {

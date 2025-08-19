@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { validateAllConfigs } from './validation/config';
+import { validateAllConfigs } from './validation/config.js';
 
 // Mock 依赖
 vi.mock('./utils/logger', () => ({

@@ -1,7 +1,11 @@
 import { McpServiceManager } from '@mcp-core/mcp-hub-core';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import * as pkg from '../../package.json';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// 读取 package.json
+const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf-8'));
 import { getAllConfig } from '../utils/config.js';
 import { logger } from '../utils/logger.js';
 import { McpHubService } from './mcp_hub_service.js';

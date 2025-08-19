@@ -1,10 +1,10 @@
 import path from 'node:path';
 import type {
+  DeepReadonly,
   GroupConfig,
   McpConfig,
   SystemConfig,
 } from '@mcp-core/mcp-hub-share';
-import type { DeepReadonly } from '@mcp-core/mcp-hub-share';
 import { JsonStorage } from './json_storage.js';
 
 const configDir =

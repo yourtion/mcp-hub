@@ -5,7 +5,11 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import type { GroupConfig, McpServerConfig, ServerConfig } from '../types/index.js';
+import type {
+  GroupConfig,
+  McpServerConfig,
+  ServerConfig,
+} from '../types/index.js';
 import type { ValidationResult } from './validator.js';
 
 /**

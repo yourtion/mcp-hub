@@ -6,8 +6,15 @@
   "scripts": {
     "dev:fe": "pnpm --filter @mcp-core/mcp-hub-web dev",
     "dev:api": "pnpm --filter @mcp-core/mcp-hub-api dev",
+    "dev:cli": "pnpm --filter @mcp-core/mcp-hub-cli dev",
     "build": "pnpm --filter \"@mcp-core/*\" build",
+    "build:core": "pnpm --filter @mcp-core/mcp-hub-core build",
+    "build:api": "pnpm --filter @mcp-core/mcp-hub-api build",
+    "build:cli": "pnpm --filter @mcp-core/mcp-hub-cli build",
+    "build:fe": "pnpm --filter @mcp-core/mcp-hub-web build",
+    "build:production": "pnpm build:core && pnpm build:api && pnpm build:cli && pnpm build:fe",
     "check": "pnpm --filter \"@mcp-core/*\" check",
+    "check:all": "biome check --write .",
     "inspector": "pnpx @modelcontextprotocol/inspector",
     "test": "pnpm --filter \"@mcp-core/*\" test",
     "test:e2e": "pnpm --filter \"@mcp-core/*\" test:e2e",
@@ -17,7 +24,15 @@
     "coverage:report": "tsx scripts/check-coverage.ts",
     "coverage:merge": "tsx scripts/merge-coverage.ts",
     "coverage:full": "pnpm test:coverage && pnpm coverage:merge && pnpm coverage:report",
-    "ci:test": "pnpm test:coverage"
+    "ci:test": "pnpm test:coverage",
+    "ci:build": "pnpm install --frozen-lockfile && pnpm build:production",
+    "ci:check": "pnpm check:all && pnpm ci:test",
+    "start:api": "pnpm --filter @mcp-core/mcp-hub-api start",
+    "start:cli": "pnpm --filter @mcp-core/mcp-hub-cli start",
+    "clean": "pnpm --filter \"@mcp-core/*\" exec rm -rf dist coverage",
+    "clean:all": "pnpm clean && rm -rf node_modules packages/*/node_modules backend/node_modules frontend/node_modules",
+    "publish:packages": "pnpm --filter \"@mcp-core/mcp-hub-*\" --filter \"!@mcp-core/mcp-hub-api\" --filter \"!@mcp-core/mcp-hub-web\" publish",
+    "version:bump": "pnpm --filter \"@mcp-core/mcp-hub-*\" version"
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.6",

@@ -1,0 +1,54 @@
+# MCP Hub Docker Compose 配置
+
+version: '3.8'
+
+services:
+  # API 服务器
+  mcp-hub-api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: mcp-hub-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      # 挂载配置文件
+      - ./backend/config:/app/backend/config:ro
+      # 挂载日志目录
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mcp-hub-network
+
+  # 前端服务器（可选）
+  mcp-hub-web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: mcp-hub-web
+    ports:
+      - "8080:80"
+    depends_on:
+      - mcp-hub-api
+    environment:
+      - VITE_API_BASE_URL=http://mcp-hub-api:3000
+    restart: unless-stopped
+    networks:
+      - mcp-hub-network
+
+networks:
+  mcp-hub-network:
+    driver: bridge
+
+volumes:
+  mcp-hub-logs:
+    driver: local

@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
-import { mcpServer } from './services/mcp_service';
+import { mcpServer } from './services/mcp_service.js';
 import { SSETransport } from './utils/sse.js';
 
 export const sse = new Hono();

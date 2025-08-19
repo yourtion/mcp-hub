@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mcp, shutdownMcpService } from './mcp';
+import { mcp, shutdownMcpService } from './mcp.js';
 
 // Mock所有依赖
 vi.mock('@mcp-core/mcp-hub-core', () => ({

@@ -4,8 +4,8 @@
  */
 
 import type { McpServiceManager } from '@mcp-core/mcp-hub-core';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { createCliLogger } from '@mcp-core/mcp-hub-share';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 /**
  * MCP协议错误代码
