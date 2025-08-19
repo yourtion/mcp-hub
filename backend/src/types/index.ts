@@ -1,4 +1,4 @@
 // Export MCP Hub types
 
-export * from './errors';
-export * from './mcp-hub';
+export * from './errors.js';
+export * from './mcp-hub.js';

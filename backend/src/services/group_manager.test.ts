@@ -1,4 +1,4 @@
-import type { GroupConfig } from '@mcp-core/mcp-hub-share/src/config';
+import type { GroupConfig } from '@mcp-core/mcp-hub-share';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ServerConnection, ServerManager } from '../types/mcp-hub.js';
 import { ServerStatus } from '../types/mcp-hub.js';

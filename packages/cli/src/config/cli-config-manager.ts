@@ -5,10 +5,10 @@
 
 import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { createCliLogger } from '@mcp-core/mcp-hub-share';
 import { z } from 'zod';
 import type { CliConfig, CliError } from '../types';
 import { CliErrorCode } from '../types';
-import { createCliLogger } from '../utils/logger';
 import {
   ConfigTemplateGenerator,
   type ConfigTemplateType,
@@ -62,16 +62,13 @@ export class CliConfigManager {
   private configCache = new Map<string, CliConfig>();
   private validator = new ConfigValidator();
   private templateGenerator = new ConfigTemplateGenerator();
-  private logger = createCliLogger({
-    verbose:
-      process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true',
-  }); // 检测调试模式
+  private logger = createCliLogger(); // 使用默认配置，会自动检测环境
 
   /**
    * 加载配置文件
    */
   async loadConfig(configPath: string): Promise<CliConfig> {
-    this.logger.debug('加载配置文件', { metadata: { configPath } });
+    this.logger.debug('加载配置文件', { context: { configPath } });
 
     try {
       // 解析配置文件路径
@@ -114,7 +111,7 @@ export class CliConfigManager {
       this.configCache.set(resolvedPath, validatedConfig);
 
       this.logger.debug('配置文件加载成功', {
-        metadata: {
+        context: {
           configPath: resolvedPath,
           serverCount: Object.keys(validatedConfig.servers).length,
           loggingLevel: validatedConfig.logging.level,
@@ -124,7 +121,7 @@ export class CliConfigManager {
       return validatedConfig;
     } catch (error) {
       this.logger.error('加载配置文件失败:', error as Error, {
-        metadata: { configPath },
+        context: { configPath },
       });
 
       if (this.isConfigError(error)) {

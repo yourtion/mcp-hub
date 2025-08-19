@@ -1,4 +1,4 @@
-import type { ServerConfig } from '@mcp-core/mcp-hub-share/src/mcp';
+import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import type {

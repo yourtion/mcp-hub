@@ -5,6 +5,7 @@
 
 import type { McpServiceManager } from '@mcp-core/mcp-hub-core';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { createCliLogger } from '@mcp-core/mcp-hub-share';
 
 /**
  * MCP协议错误代码
@@ -31,6 +32,8 @@ export interface McpError {
  * MCP协议处理器类
  */
 export class McpProtocolHandler {
+  private logger = createCliLogger({ component: 'Protocol' });
+
   constructor(private coreService: McpServiceManager) {}
 
   /**
@@ -40,7 +43,7 @@ export class McpProtocolHandler {
     tools: Array<{ name: string; description: string; inputSchema: unknown }>;
   }> {
     try {
-      console.debug('处理list_tools请求');
+      this.logger.debug('处理list_tools请求');
 
       // 获取所有可用工具
       const toolInfos = await this.coreService.getAllTools();
@@ -57,7 +60,7 @@ export class McpProtocolHandler {
         },
       }));
 
-      console.debug(`返回 ${tools.length} 个工具`);
+      this.logger.debug(`返回 ${tools.length} 个工具`);
 
       return { tools };
     } catch (error) {

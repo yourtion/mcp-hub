@@ -4,6 +4,7 @@
  */
 
 import { McpServiceManager } from '@mcp-core/mcp-hub-core';
+import { createCliLogger } from '@mcp-core/mcp-hub-share';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
@@ -22,6 +23,7 @@ export class CliMcpServer {
   private config: CliConfig | null = null;
   private isInitialized = false;
   private isStarted = false;
+  private logger = createCliLogger({ component: 'McpServer' });
 
   /**
    * 创建服务管理器（可被测试覆盖）
@@ -35,11 +37,11 @@ export class CliMcpServer {
    */
   async initialize(config: CliConfig): Promise<void> {
     if (this.isInitialized) {
-      console.warn('CLI MCP服务器已初始化，跳过重复初始化');
+      this.logger.warn('CLI MCP服务器已初始化，跳过重复初始化');
       return;
     }
 
-    console.info('开始初始化CLI MCP服务器');
+    this.logger.info('开始初始化CLI MCP服务器');
 
     try {
       this.config = config;
@@ -76,9 +78,9 @@ export class CliMcpServer {
       this.transport = new StdioServerTransport();
 
       this.isInitialized = true;
-      console.info('CLI MCP服务器初始化完成');
+      this.logger.info('CLI MCP服务器初始化完成');
     } catch (error) {
-      console.error('CLI MCP服务器初始化失败:', error);
+      this.logger.error('CLI MCP服务器初始化失败', error as Error);
       await this.cleanup();
       throw error;
     }
@@ -93,11 +95,11 @@ export class CliMcpServer {
     }
 
     if (this.isStarted) {
-      console.warn('CLI MCP服务器已启动');
+      this.logger.warn('CLI MCP服务器已启动');
       return;
     }
 
-    console.info('启动CLI MCP服务器');
+    this.logger.info('启动CLI MCP服务器');
 
     try {
       if (!this.server || !this.transport) {
@@ -108,9 +110,9 @@ export class CliMcpServer {
       await this.server.connect(this.transport);
 
       this.isStarted = true;
-      console.info('CLI MCP服务器启动成功，等待客户端连接...');
+      this.logger.info('CLI MCP服务器启动成功，等待客户端连接...');
     } catch (error) {
-      console.error('CLI MCP服务器启动失败:', error);
+      this.logger.error('CLI MCP服务器启动失败', error as Error);
       throw error;
     }
   }
@@ -119,7 +121,7 @@ export class CliMcpServer {
    * 关闭服务器
    */
   async shutdown(): Promise<void> {
-    console.info('开始关闭CLI MCP服务器');
+    this.logger.info('开始关闭CLI MCP服务器');
 
     try {
       // 关闭MCP服务器（会自动关闭传输层）
@@ -135,9 +137,9 @@ export class CliMcpServer {
 
       await this.cleanup();
 
-      console.info('CLI MCP服务器关闭完成');
+      this.logger.info('CLI MCP服务器关闭完成');
     } catch (error) {
-      console.error('CLI MCP服务器关闭时出错:', error);
+      this.logger.error('CLI MCP服务器关闭时出错', error as Error);
       throw error;
     }
   }
@@ -154,7 +156,7 @@ export class CliMcpServer {
       // 获取所有可用工具
       const toolInfos = await this.coreService.getAllTools();
 
-      console.debug(`注册 ${toolInfos.length} 个工具`);
+      this.logger.debug(`注册 ${toolInfos.length} 个工具`);
 
       // 为每个工具注册处理器
       for (const toolInfo of toolInfos) {
@@ -200,9 +202,9 @@ export class CliMcpServer {
         );
       }
 
-      console.debug('所有工具注册完成');
+      this.logger.debug('所有工具注册完成');
     } catch (error) {
-      console.error('注册工具失败:', error);
+      this.logger.error('注册工具失败', error as Error);
       throw error;
     }
   }

@@ -3,9 +3,9 @@ import type {
   GroupConfig,
   McpConfig,
   SystemConfig,
-} from '@mcp-core/mcp-hub-share/src/config';
-import type { DeepReadonly } from '@mcp-core/mcp-hub-share/src/types';
-import { JsonStorage } from './json_storage';
+} from '@mcp-core/mcp-hub-share';
+import type { DeepReadonly } from '@mcp-core/mcp-hub-share';
+import { JsonStorage } from './json_storage.js';
 
 const configDir =
   process.env.CONFIG_PATH || path.resolve(process.cwd(), 'config');

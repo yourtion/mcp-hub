@@ -1,4 +1,4 @@
-import type { GroupConfig } from '@mcp-core/mcp-hub-share/src/config';
+import type { GroupConfig } from '@mcp-core/mcp-hub-share';
 import type {
   Group,
   GroupManager as IGroupManager,

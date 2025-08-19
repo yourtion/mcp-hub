@@ -1,5 +1,4 @@
-import type { GroupConfig } from '@mcp-core/mcp-hub-share/src/config';
-import type { ServerConfig } from '@mcp-core/mcp-hub-share/src/mcp';
+import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 import type {
   Group,
   McpHubService as IMcpHubService,

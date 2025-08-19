@@ -3,6 +3,7 @@
  * 封装MCP SDK的StdioServerTransport，提供额外的CLI特定功能
  */
 
+import { createCliLogger } from '@mcp-core/mcp-hub-share';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import type { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
 
@@ -13,6 +14,7 @@ import type { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
 export class CliTransport {
   private transport: StdioServerTransport | null = null;
   private isInitialized = false;
+  private logger = createCliLogger({ component: 'Transport' });
   private isStarted = false;
   private messageCount = 0;
 
@@ -26,11 +28,11 @@ export class CliTransport {
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {
-      console.warn('CLI传输层已初始化');
+      this.logger.warn('CLI传输层已初始化');
       return;
     }
 
-    console.debug('初始化CLI传输层');
+    this.logger.debug('初始化CLI传输层');
 
     try {
       // 创建stdio传输层
@@ -40,9 +42,9 @@ export class CliTransport {
       this.setupEventHandlers();
 
       this.isInitialized = true;
-      console.debug('CLI传输层初始化完成');
+      this.logger.debug('CLI传输层初始化完成');
     } catch (error) {
-      console.error('CLI传输层初始化失败:', error);
+      this.logger.error('CLI传输层初始化失败', error as Error);
       throw error;
     }
   }
@@ -56,11 +58,11 @@ export class CliTransport {
     }
 
     if (this.isStarted) {
-      console.warn('CLI传输层已启动');
+      this.logger.warn('CLI传输层已启动');
       return;
     }
 
-    console.debug('启动CLI传输层');
+    this.logger.debug('启动CLI传输层');
 
     try {
       if (!this.transport) {
@@ -70,9 +72,9 @@ export class CliTransport {
       await this.transport.start();
 
       this.isStarted = true;
-      console.debug('CLI传输层启动成功');
+      this.logger.debug('CLI传输层启动成功');
     } catch (error) {
-      console.error('CLI传输层启动失败:', error);
+      this.logger.error('CLI传输层启动失败', error as Error);
       throw error;
     }
   }
@@ -81,7 +83,7 @@ export class CliTransport {
    * 关闭传输层
    */
   async shutdown(): Promise<void> {
-    console.debug('关闭CLI传输层');
+    this.logger.debug('关闭CLI传输层');
 
     try {
       if (this.transport) {
@@ -92,9 +94,9 @@ export class CliTransport {
       this.isInitialized = false;
       this.isStarted = false;
 
-      console.debug('CLI传输层关闭完成');
+      this.logger.debug('CLI传输层关闭完成');
     } catch (error) {
-      console.error('CLI传输层关闭时出错:', error);
+      this.logger.error('CLI传输层关闭时出错', error as Error);
       throw error;
     }
   }
@@ -113,12 +115,16 @@ export class CliTransport {
 
     try {
       await this.transport.send(message);
-      console.debug('消息发送成功', {
-        messageId: 'id' in message ? message.id : 'unknown',
+      this.logger.debug('消息发送成功', {
+        context: {
+          messageId: 'id' in message ? message.id : 'unknown',
+        },
       });
     } catch (error) {
-      console.error('消息发送失败:', error, {
-        messageId: 'id' in message ? message.id : 'unknown',
+      this.logger.error('消息发送失败', error as Error, {
+        context: {
+          messageId: 'id' in message ? message.id : 'unknown',
+        },
       });
       throw error;
     }
@@ -154,7 +160,7 @@ export class CliTransport {
     // 消息处理
     this.transport.onmessage = (message: JSONRPCMessage) => {
       this.messageCount++;
-      console.debug('收到消息', {
+      this.logger.debug('收到消息', {
         messageId: 'id' in message ? message.id : 'unknown',
         method: 'method' in message ? message.method : 'response',
         totalMessages: this.messageCount,
@@ -167,7 +173,7 @@ export class CliTransport {
 
     // 错误处理
     this.transport.onerror = (error: Error) => {
-      console.error('传输层错误:', error);
+      this.logger.error('传输层错误', error);
 
       if (this.onError) {
         this.onError(error);
@@ -176,7 +182,7 @@ export class CliTransport {
 
     // 关闭处理
     this.transport.onclose = () => {
-      console.debug('传输层连接关闭');
+      this.logger.debug('传输层连接关闭');
       this.isStarted = false;
 
       if (this.onClose) {

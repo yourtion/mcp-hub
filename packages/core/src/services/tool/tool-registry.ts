@@ -3,6 +3,8 @@
  * 负责工具发现、注册和调用功能
  */
 
+import { createLogger } from '@mcp-core/mcp-hub-share';
+
 import type { ToolFilter, ToolInfo, ToolResult } from '../../types/tool.js';
 
 /**
@@ -181,14 +183,15 @@ export class ToolRegistry implements ToolRegistryInterface {
     { count: number; errors: number; totalTime: number }
   >();
   private initialized = false;
+  private logger = createLogger({ component: 'Core' });
 
   async initialize(): Promise<void> {
     if (this.initialized) {
-      console.warn('工具注册表已初始化，跳过重复初始化');
+      this.logger.warn('工具注册表已初始化，跳过重复初始化');
       return;
     }
 
-    console.info('初始化工具注册表');
+    this.logger.info('初始化工具注册表');
 
     try {
       // 清理现有数据
@@ -198,9 +201,9 @@ export class ToolRegistry implements ToolRegistryInterface {
       this.executionStats.clear();
 
       this.initialized = true;
-      console.info('工具注册表初始化完成');
+      this.logger.info('工具注册表初始化完成');
     } catch (error) {
-      console.error('工具注册表初始化失败', error);
+      this.logger.error('工具注册表初始化失败', error as Error);
       throw new ToolRegistryError(
         `工具注册表初始化失败: ${(error as Error).message}`,
         'INITIALIZATION_FAILED',
@@ -212,7 +215,7 @@ export class ToolRegistry implements ToolRegistryInterface {
   registerTool(serverId: string, tool: ToolInfo): void {
     this.ensureInitialized();
 
-    console.debug('注册工具', { serverId, toolName: tool.name });
+    this.logger.debug('注册工具', { serverId, toolName: tool.name });
 
     // 验证工具信息
     this.validateToolInfo(tool);
@@ -221,7 +224,7 @@ export class ToolRegistry implements ToolRegistryInterface {
 
     // 检查是否已存在
     if (this.tools.has(toolKey)) {
-      console.warn('工具已存在，将覆盖', { serverId, toolName: tool.name });
+      this.logger.warn('工具已存在，将覆盖', { serverId, toolName: tool.name });
     }
 
     // 注册工具
@@ -241,13 +244,16 @@ export class ToolRegistry implements ToolRegistryInterface {
       this.executionStats.set(toolKey, { count: 0, errors: 0, totalTime: 0 });
     }
 
-    console.debug('工具注册成功', { serverId, toolName: tool.name });
+    this.logger.debug('工具注册成功', { serverId, toolName: tool.name });
   }
 
   registerTools(serverId: string, tools: ToolInfo[]): void {
     this.ensureInitialized();
 
-    console.info('批量注册工具', { serverId, toolCount: tools.length });
+    this.logger.info('批量注册工具', {
+      serverId,
+      context: { toolCount: tools.length },
+    });
 
     let successCount = 0;
     let errorCount = 0;
@@ -258,15 +264,20 @@ export class ToolRegistry implements ToolRegistryInterface {
         successCount++;
       } catch (error) {
         errorCount++;
-        console.error('工具注册失败', error, { serverId, toolName: tool.name });
+        this.logger.error('工具注册失败', error as Error, {
+          serverId,
+          toolName: tool.name,
+        });
       }
     }
 
-    console.info('批量工具注册完成', {
+    this.logger.info('批量工具注册完成', {
       serverId,
-      totalTools: tools.length,
-      successCount,
-      errorCount,
+      context: {
+        totalTools: tools.length,
+        successCount,
+        errorCount,
+      },
     });
   }
 
@@ -279,10 +290,12 @@ export class ToolRegistry implements ToolRegistryInterface {
       tools = this.applyToolFilter(tools, filter);
     }
 
-    console.debug('获取所有工具', {
-      totalTools: this.tools.size,
-      filteredTools: tools.length,
-      filter,
+    this.logger.debug('获取所有工具', {
+      context: {
+        totalTools: this.tools.size,
+        filteredTools: tools.length,
+        filter,
+      },
     });
 
     return tools;
@@ -324,7 +337,10 @@ export class ToolRegistry implements ToolRegistryInterface {
       }
     }
 
-    console.debug('获取服务器工具', { serverId, toolCount: tools.length });
+    this.logger.debug('获取服务器工具', {
+      serverId,
+      context: { toolCount: tools.length },
+    });
     return tools;
   }
 
@@ -347,7 +363,7 @@ export class ToolRegistry implements ToolRegistryInterface {
   ): ToolValidationResult {
     this.ensureInitialized();
 
-    console.debug('验证工具参数', { toolName, serverId, args });
+    this.logger.debug('验证工具参数', { toolName, serverId, args });
 
     try {
       // 获取工具定义
@@ -410,7 +426,10 @@ export class ToolRegistry implements ToolRegistryInterface {
         warnings: warnings.length > 0 ? warnings : undefined,
       };
     } catch (error) {
-      console.error('工具参数验证失败', error, { toolName, serverId });
+      this.logger.error('工具参数验证失败', error as Error, {
+        toolName,
+        serverId,
+      });
       return {
         isValid: false,
         error: `验证失败: ${(error as Error).message}`,
@@ -439,7 +458,7 @@ export class ToolRegistry implements ToolRegistryInterface {
   removeTool(serverId: string, toolName: string): void {
     this.ensureInitialized();
 
-    console.debug('移除工具', { serverId, toolName });
+    this.logger.debug('移除工具', { serverId, toolName });
 
     const toolKey = `${serverId}:${toolName}`;
     const removed = this.tools.delete(toolKey);
@@ -455,16 +474,16 @@ export class ToolRegistry implements ToolRegistryInterface {
       this.executionStats.delete(toolKey);
       this.toolExecutions.delete(toolKey);
 
-      console.debug('工具移除成功', { serverId, toolName });
+      this.logger.debug('工具移除成功', { serverId, toolName });
     } else {
-      console.warn('尝试移除不存在的工具', { serverId, toolName });
+      this.logger.warn('尝试移除不存在的工具', { serverId, toolName });
     }
   }
 
   clearServerTools(serverId: string): void {
     this.ensureInitialized();
 
-    console.info('清空服务器工具', { serverId });
+    this.logger.info('清空服务器工具', { serverId });
 
     const serverToolNames = this.serverTools.get(serverId);
     if (serverToolNames) {
@@ -482,9 +501,12 @@ export class ToolRegistry implements ToolRegistryInterface {
       }
 
       serverToolNames.clear();
-      console.info('服务器工具清空完成', { serverId, removedCount });
+      this.logger.info('服务器工具清空完成', {
+        serverId,
+        context: { removedCount },
+      });
     } else {
-      console.warn('尝试清空不存在服务器的工具', { serverId });
+      this.logger.warn('尝试清空不存在服务器的工具', { serverId });
     }
   }
 
@@ -569,11 +591,13 @@ export class ToolRegistry implements ToolRegistryInterface {
       }
     }
 
-    console.debug('工具执行记录已保存', {
+    this.logger.debug('工具执行记录已保存', {
       toolName: context.toolName,
       serverId: context.serverId,
       executionId: context.executionId,
-      success: result.success,
+      context: {
+        success: result.success,
+      },
     });
   }
 
@@ -602,7 +626,7 @@ export class ToolRegistry implements ToolRegistryInterface {
   }
 
   cleanup(): void {
-    console.info('清理工具注册表');
+    this.logger.info('清理工具注册表');
 
     this.tools.clear();
     this.serverTools.clear();
@@ -610,7 +634,7 @@ export class ToolRegistry implements ToolRegistryInterface {
     this.executionStats.clear();
     this.initialized = false;
 
-    console.info('工具注册表清理完成');
+    this.logger.info('工具注册表清理完成');
   }
 
   // 私有辅助方法
@@ -765,7 +789,9 @@ export class ToolRegistry implements ToolRegistryInterface {
         break;
 
       default:
-        console.warn('未知参数类型', { paramName: name, type });
+        this.logger.warn('未知参数类型', {
+          context: { paramName: name, type },
+        });
         break;
     }
 

@@ -6,7 +6,7 @@ import {
   validateGroupConfig,
   validateMcpConfig,
   validateSystemConfig,
-} from './config';
+} from './config.js';
 
 describe('配置验证工具', () => {
   describe('validateMcpConfig', () => {

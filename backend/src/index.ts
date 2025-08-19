@@ -1,13 +1,13 @@
 import { serve } from '@hono/node-server';
-import { shutdownHubApi } from './api/hub';
+import { shutdownHubApi } from './api/hub.js';
 import { shutdownGroupMcpRouter } from './api/mcp/group-router.js';
-import { app } from './app';
-import { shutdownMcpService } from './mcp';
-import { initConfig } from './services/config';
-import { McpHubService } from './services/mcp_hub_service';
-import { getAllConfig } from './utils/config';
-import { logger } from './utils/logger';
-import { validateAllConfigs } from './validation/config';
+import { app } from './app.js';
+import { shutdownMcpService } from './mcp.js';
+import { initConfig } from './services/config.js';
+import { McpHubService } from './services/mcp_hub_service.js';
+import { getAllConfig } from './utils/config.js';
+import { logger } from './utils/logger.js';
+import { validateAllConfigs } from './validation/config.js';
 
 // 全局服务实例
 let hubService: McpHubService | null = null;

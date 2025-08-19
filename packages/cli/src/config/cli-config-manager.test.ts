@@ -5,7 +5,7 @@
 import { mkdir, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CliConfig } from '../types';
+import type { CliConfig } from '../types/index';
 import { CliConfigManager } from './cli-config-manager';
 
 describe('CliConfigManager', () => {

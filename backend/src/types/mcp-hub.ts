@@ -1,4 +1,4 @@
-import type { ServerConfig } from '@mcp-core/mcp-hub-share/src/mcp';
+import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 
 // Server Management Types

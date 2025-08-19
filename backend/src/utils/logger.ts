@@ -1,12 +1,20 @@
-// Logging Levels
-export enum LogLevel {
-  DEBUG = 0,
-  INFO = 1,
-  WARN = 2,
-  ERROR = 3,
-}
+/**
+ * Backend 日志系统
+ * 基于统一的 logger 系统，提供 MCP 操作特有的日志方法
+ */
 
-// Log Entry Interface
+import {
+  createMcpLogger,
+  LogLevel,
+  type McpLogger,
+} from '@mcp-core/mcp-hub-share';
+
+// 重新导出需要的类型和枚举，保持向后兼容
+export { LogLevel } from '@mcp-core/mcp-hub-share';
+
+/**
+ * 日志条目接口（向后兼容）
+ */
 export interface LogEntry {
   timestamp: string;
   level: LogLevel;
@@ -18,7 +26,9 @@ export interface LogEntry {
   error?: Error;
 }
 
-// Logger Interface
+/**
+ * Logger 接口（向后兼容）
+ */
 export interface Logger {
   debug(message: string, context?: Record<string, unknown>): void;
   info(message: string, context?: Record<string, unknown>): void;
@@ -29,7 +39,7 @@ export interface Logger {
     context?: Record<string, unknown>,
   ): void;
 
-  // Specialized logging methods for MCP operations
+  // MCP 专用方法
   logServerConnection(
     serverId: string,
     status: 'connected' | 'disconnected' | 'failed',
@@ -49,80 +59,30 @@ export interface Logger {
   logConfigReload(changes: string[], context?: Record<string, unknown>): void;
 }
 
-// Console Logger Implementation
+/**
+ * 控制台日志记录器（向后兼容）
+ * 现在基于统一的 McpLogger
+ */
 export class ConsoleLogger implements Logger {
-  private minLevel: LogLevel;
+  private mcpLogger: McpLogger;
 
   constructor(minLevel: LogLevel = LogLevel.INFO) {
-    this.minLevel = minLevel;
-  }
-
-  private shouldLog(level: LogLevel): boolean {
-    return level >= this.minLevel;
-  }
-
-  private formatLogEntry(entry: LogEntry): string {
-    const timestamp = entry.timestamp;
-    const level = LogLevel[entry.level];
-    const context = entry.context ? ` ${JSON.stringify(entry.context)}` : '';
-    const serverInfo = entry.serverId ? ` [server:${entry.serverId}]` : '';
-    const groupInfo = entry.groupId ? ` [group:${entry.groupId}]` : '';
-    const toolInfo = entry.toolName ? ` [tool:${entry.toolName}]` : '';
-    const errorInfo = entry.error ? ` Error: ${entry.error.message}` : '';
-
-    return `[${timestamp}] ${level}${serverInfo}${groupInfo}${toolInfo}: ${entry.message}${context}${errorInfo}`;
-  }
-
-  private log(
-    level: LogLevel,
-    message: string,
-    context?: Record<string, unknown>,
-    error?: Error,
-    serverId?: string,
-    groupId?: string,
-    toolName?: string,
-  ): void {
-    if (!this.shouldLog(level)) return;
-
-    const entry: LogEntry = {
-      timestamp: new Date().toISOString(),
-      level,
-      message,
-      context,
-      error,
-      serverId,
-      groupId,
-      toolName,
-    };
-
-    const formattedMessage = this.formatLogEntry(entry);
-
-    switch (level) {
-      case LogLevel.DEBUG:
-        console.debug(formattedMessage);
-        break;
-      case LogLevel.INFO:
-        console.info(formattedMessage);
-        break;
-      case LogLevel.WARN:
-        console.warn(formattedMessage);
-        break;
-      case LogLevel.ERROR:
-        console.error(formattedMessage);
-        break;
-    }
+    this.mcpLogger = createMcpLogger({
+      level: minLevel,
+      component: 'Backend',
+    });
   }
 
   debug(message: string, context?: Record<string, unknown>): void {
-    this.log(LogLevel.DEBUG, message, context);
+    this.mcpLogger.debug(message, { context });
   }
 
   info(message: string, context?: Record<string, unknown>): void {
-    this.log(LogLevel.INFO, message, context);
+    this.mcpLogger.info(message, { context });
   }
 
   warn(message: string, context?: Record<string, unknown>): void {
-    this.log(LogLevel.WARN, message, context);
+    this.mcpLogger.warn(message, { context });
   }
 
   error(
@@ -130,7 +90,7 @@ export class ConsoleLogger implements Logger {
     error?: Error,
     context?: Record<string, unknown>,
   ): void {
-    this.log(LogLevel.ERROR, message, context, error);
+    this.mcpLogger.error(message, error, { context });
   }
 
   logServerConnection(
@@ -138,9 +98,7 @@ export class ConsoleLogger implements Logger {
     status: 'connected' | 'disconnected' | 'failed',
     context?: Record<string, unknown>,
   ): void {
-    const level = status === 'failed' ? LogLevel.ERROR : LogLevel.INFO;
-    const message = `Server ${status}`;
-    this.log(level, message, context, undefined, serverId);
+    this.mcpLogger.logServerConnection(serverId, status, context);
   }
 
   logToolDiscovery(
@@ -148,8 +106,7 @@ export class ConsoleLogger implements Logger {
     toolCount: number,
     context?: Record<string, unknown>,
   ): void {
-    const message = `Discovered ${toolCount} tools`;
-    this.log(LogLevel.INFO, message, context, undefined, serverId);
+    this.mcpLogger.logToolDiscovery(serverId, toolCount, context);
   }
 
   logToolExecution(
@@ -158,37 +115,13 @@ export class ConsoleLogger implements Logger {
     status: 'started' | 'completed' | 'failed',
     context?: Record<string, unknown>,
   ): void {
-    const level = status === 'failed' ? LogLevel.ERROR : LogLevel.INFO;
-    const message = `Tool execution ${status}`;
-    this.log(level, message, context, undefined, undefined, groupId, toolName);
+    this.mcpLogger.logToolExecution(toolName, groupId, status, context);
   }
 
   logConfigReload(changes: string[], context?: Record<string, unknown>): void {
-    const message = `Configuration reloaded with changes: ${changes.join(', ')}`;
-    this.log(LogLevel.INFO, message, context);
+    this.mcpLogger.logConfigReload(changes, context);
   }
 }
 
-/**
- * 检查是否在测试环境中
- */
-function isTestEnvironment(): boolean {
-  return process.env.NODE_ENV === 'test' || !!process.env.VITEST;
-}
-
-/**
- * 检查是否启用调试模式
- */
-function isDebugMode(): boolean {
-  return process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true';
-}
-
-// Default logger instance
-export const logger = new ConsoleLogger(
-  process.env.LOG_LEVEL
-    ? LogLevel[process.env.LOG_LEVEL.toUpperCase() as keyof typeof LogLevel] ||
-        LogLevel.INFO
-    : isTestEnvironment() && !isDebugMode()
-      ? LogLevel.WARN
-      : LogLevel.INFO,
-);
+// 默认 logger 实例
+export const logger = new ConsoleLogger();

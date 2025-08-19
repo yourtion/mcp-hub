@@ -3,7 +3,7 @@
  * 负责验证配置文件的格式和内容
  */
 
-import type { McpServerConfig, ServerConfig } from '../types';
+import type { McpServerConfig, ServerConfig } from '../types/index.js';
 
 /**
  * 验证结果接口

@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
-import { hubApi } from './api/hub';
+import { hubApi } from './api/hub.js';
 import { groupMcpRouter } from './api/mcp/group-router.js';
-import { mcp } from './mcp';
-import { sse } from './sse';
+import { mcp } from './mcp.js';
+import { sse } from './sse.js';
 
 export const app = new Hono();
 app.route('/', mcp);

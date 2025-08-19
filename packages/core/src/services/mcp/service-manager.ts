@@ -3,13 +3,14 @@
  * 负责MCP服务的注册、初始化和生命周期管理
  */
 
+import { createLogger } from '@mcp-core/mcp-hub-share';
 import type {
   McpServerConfig,
   ServerConfig,
   ServiceStatus,
   ToolInfo,
   ToolResult,
-} from '../../types';
+} from '../../types/index.js';
 
 /**
  * MCP服务管理器错误类
@@ -132,24 +133,25 @@ export class McpServiceManager implements McpServiceManagerInterface {
   private serverConfigs = new Map<string, ServerConfig>();
   private initialized = false;
   private shutdownInProgress = false;
+  private logger = createLogger({ component: 'Core' });
 
   constructor(config?: McpServerConfig) {
     if (config) {
       // 异步初始化将在initializeFromConfig中处理
       this.initializeFromConfig(config).catch((error) => {
-        console.error('MCP服务管理器初始化失败:', error);
+        this.logger.error('MCP服务管理器初始化失败', error as Error);
       });
     }
   }
 
   async initializeFromConfig(config: McpServerConfig): Promise<void> {
     if (this.initialized) {
-      console.warn('MCP服务管理器已初始化，跳过重复初始化');
+      this.logger.warn('MCP服务管理器已初始化，跳过重复初始化');
       return;
     }
 
     const initStartTime = Date.now();
-    console.info('开始初始化MCP服务管理器', {
+    this.logger.info('开始初始化MCP服务管理器', {
       serverCount: Object.keys(config.servers).length,
       timestamp: new Date().toISOString(),
     });
@@ -181,7 +183,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
       this.initialized = true;
 
       const initDuration = Date.now() - initStartTime;
-      console.info('MCP服务管理器初始化完成', {
+      this.logger.info('MCP服务管理器初始化完成', {
         totalServers: this.serverConfigs.size,
         connectedServers: connectedCount,
         failedServers: this.serverConfigs.size - connectedCount,
@@ -190,7 +192,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
       });
     } catch (error) {
       const initDuration = Date.now() - initStartTime;
-      console.error('MCP服务管理器初始化失败', error, {
+      this.logger.error('MCP服务管理器初始化失败', error as Error, {
         initializationTimeMs: initDuration,
         serverCount: Object.keys(config.servers).length,
       });
@@ -206,7 +208,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
   }
 
   async registerServer(serverId: string, config: ServerConfig): Promise<void> {
-    console.info('注册MCP服务器', { serverId });
+    this.logger.info('注册MCP服务器', { serverId });
 
     try {
       // 存储配置
@@ -217,9 +219,9 @@ export class McpServiceManager implements McpServiceManagerInterface {
         await this.initializeServer(serverId, config);
       }
 
-      console.info('MCP服务器注册成功', { serverId });
+      this.logger.info('MCP服务器注册成功', { serverId });
     } catch (error) {
-      console.error('MCP服务器注册失败', error, { serverId });
+      this.logger.error('MCP服务器注册失败', error as Error, { serverId });
       throw new McpServiceError(
         `服务器注册失败: ${(error as Error).message}`,
         'SERVER_REGISTRATION_FAILED',
@@ -231,7 +233,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
   async getAllTools(): Promise<ToolInfo[]> {
     this.ensureInitialized();
 
-    console.debug('获取所有可用工具');
+    this.logger.debug('获取所有可用工具');
 
     try {
       const allTools: ToolInfo[] = [];
@@ -243,14 +245,14 @@ export class McpServiceManager implements McpServiceManagerInterface {
         allTools.push(...server.tools);
       }
 
-      console.debug('获取所有工具完成', {
+      this.logger.debug('获取所有工具完成', {
         totalTools: allTools.length,
         connectedServers: connectedServers.length,
       });
 
       return allTools;
     } catch (error) {
-      console.error('获取所有工具失败', error);
+      this.logger.error('获取所有工具失败', error as Error);
       throw new McpServiceError(
         `获取工具失败: ${(error as Error).message}`,
         'GET_TOOLS_FAILED',
@@ -268,7 +270,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
     }
 
     if (server.status !== ServerStatus.CONNECTED) {
-      console.warn('服务器未连接，返回空工具列表', {
+      this.logger.warn('服务器未连接，返回空工具列表', {
         serverId,
         status: server.status,
       });
@@ -286,7 +288,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
     this.ensureInitialized();
 
     const executionId = `exec-${toolName}-${Date.now()}`;
-    console.info('开始执行工具调用', {
+    this.logger.info('开始执行工具调用', {
       executionId,
       toolName,
       serverId,
@@ -317,7 +319,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
         executionId,
       );
     } catch (error) {
-      console.error('工具执行失败', error, {
+      this.logger.error('工具执行失败', error as Error, {
         executionId,
         toolName,
         serverId,
@@ -372,26 +374,29 @@ export class McpServiceManager implements McpServiceManagerInterface {
       const targetServerId = await this.findToolServer(toolName);
       return targetServerId !== undefined;
     } catch (error) {
-      console.error('检查工具可用性失败', error, { toolName, serverId });
+      this.logger.error('检查工具可用性失败', error as Error, {
+        toolName,
+        serverId,
+      });
       return false;
     }
   }
 
   async shutdown(): Promise<void> {
     if (!this.initialized) {
-      console.warn('MCP服务管理器未初始化，跳过关闭');
+      this.logger.warn('MCP服务管理器未初始化，跳过关闭');
       return;
     }
 
     if (this.shutdownInProgress) {
-      console.warn('关闭已在进行中，等待完成');
+      this.logger.warn('关闭已在进行中，等待完成');
       return;
     }
 
     this.shutdownInProgress = true;
     const shutdownStartTime = Date.now();
 
-    console.info('开始关闭MCP服务管理器', {
+    this.logger.info('开始关闭MCP服务管理器', {
       timestamp: new Date().toISOString(),
       connectedServers: this.getConnectedServerCount(),
     });
@@ -405,10 +410,10 @@ export class McpServiceManager implements McpServiceManagerInterface {
               // 这里应该调用实际的客户端关闭方法
               // 由于我们在核心包中，暂时只更新状态
               server.status = ServerStatus.DISCONNECTED;
-              console.debug('服务器连接已关闭', { serverId: server.id });
+              this.logger.debug('服务器连接已关闭', { serverId: server.id });
             }
           } catch (error) {
-            console.error('关闭服务器连接时出错', error, {
+            this.logger.error('关闭服务器连接时出错', error as Error, {
               serverId: server.id,
             });
           }
@@ -424,14 +429,18 @@ export class McpServiceManager implements McpServiceManagerInterface {
       this.shutdownInProgress = false;
 
       const shutdownDuration = Date.now() - shutdownStartTime;
-      console.info('MCP服务管理器关闭完成', {
-        shutdownTimeMs: shutdownDuration,
-        timestamp: new Date().toISOString(),
+      this.logger.info('MCP服务管理器关闭完成', {
+        context: {
+          shutdownTimeMs: shutdownDuration,
+          timestamp: new Date().toISOString(),
+        },
       });
     } catch (error) {
       const shutdownDuration = Date.now() - shutdownStartTime;
-      console.error('MCP服务管理器关闭时出错', error, {
-        shutdownTimeMs: shutdownDuration,
+      this.logger.error('MCP服务管理器关闭时出错', error as Error, {
+        context: {
+          shutdownTimeMs: shutdownDuration,
+        },
       });
 
       this.shutdownInProgress = false;
@@ -451,11 +460,11 @@ export class McpServiceManager implements McpServiceManagerInterface {
   ): Promise<void> {
     // 跳过禁用的服务器
     if (config.disabled === true) {
-      console.info('跳过禁用的服务器', { serverId });
+      this.logger.info('跳过禁用的服务器', { serverId });
       return;
     }
 
-    console.info('初始化服务器', { serverId });
+    this.logger.info('初始化服务器', { serverId });
 
     const serverConnection: ServerConnection = {
       id: serverId,
@@ -476,14 +485,14 @@ export class McpServiceManager implements McpServiceManagerInterface {
       serverConnection.lastConnected = new Date();
       serverConnection.reconnectAttempts = 0;
 
-      console.info('服务器连接成功', { serverId });
+      this.logger.info('服务器连接成功', { serverId });
 
       // 发现工具
       await this.discoverServerTools(serverConnection);
     } catch (error) {
       serverConnection.status = ServerStatus.ERROR;
       serverConnection.lastError = error as Error;
-      console.error('服务器初始化失败', error, { serverId });
+      this.logger.error('服务器初始化失败', error as Error, { serverId });
       throw error;
     }
   }
@@ -496,7 +505,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
 
     // 这里应该实现实际的MCP客户端连接逻辑
     // 暂时只是模拟成功
-    console.debug('模拟服务器连接', { serverId: serverConnection.id });
+    this.logger.debug('模拟服务器连接', { serverId: serverConnection.id });
   }
 
   private async discoverServerTools(
@@ -521,13 +530,15 @@ export class McpServiceManager implements McpServiceManagerInterface {
       ];
 
       serverConnection.tools = mockTools;
-      console.info('工具发现完成', {
+      this.logger.info('工具发现完成', {
         serverId,
-        toolCount: mockTools.length,
-        toolNames: mockTools.map((t) => t.name),
+        context: {
+          toolCount: mockTools.length,
+          toolNames: mockTools.map((t) => t.name),
+        },
       });
     } catch (error) {
-      console.error('工具发现失败', error, { serverId });
+      this.logger.error('工具发现失败', error as Error, { serverId });
       serverConnection.tools = [];
     }
   }
@@ -558,7 +569,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
     }
 
     try {
-      console.debug('在服务器上执行工具', {
+      this.logger.debug('在服务器上执行工具', {
         executionId,
         serverId,
         toolName,
@@ -582,16 +593,18 @@ export class McpServiceManager implements McpServiceManagerInterface {
         },
       };
 
-      console.debug('工具执行完成', {
+      this.logger.debug('工具执行完成', {
         executionId,
         serverId,
         toolName,
-        success: mockResult.success,
+        context: {
+          success: mockResult.success,
+        },
       });
 
       return mockResult;
     } catch (error) {
-      console.error('工具执行失败', error, {
+      this.logger.error('工具执行失败', error as Error, {
         executionId,
         serverId,
         toolName,
@@ -627,7 +640,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
   }
 
   private async cleanupFailedInitialization(): Promise<void> {
-    console.debug('清理失败的初始化');
+    this.logger.debug('清理失败的初始化');
 
     try {
       // 清理部分初始化的服务器连接
@@ -638,9 +651,9 @@ export class McpServiceManager implements McpServiceManagerInterface {
       }
 
       this.servers.clear();
-      console.debug('初始化清理完成');
+      this.logger.debug('初始化清理完成');
     } catch (cleanupError) {
-      console.error('初始化清理时出错', cleanupError);
+      this.logger.error('初始化清理时出错', cleanupError as Error);
       // 不抛出清理错误，只记录
     }
   }

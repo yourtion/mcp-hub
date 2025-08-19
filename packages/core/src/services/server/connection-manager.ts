@@ -3,7 +3,7 @@
  * 负责MCP服务器连接池管理和状态监控
  */
 
-import type { ConnectionStatus, ServerConfig, ToolInfo } from '../../types';
+import type { ConnectionStatus, ServerConfig, ToolInfo } from '../../types/index.js';
 
 /**
  * 连接状态枚举

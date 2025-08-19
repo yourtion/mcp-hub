@@ -1,4 +1,4 @@
-import { getAllConfig } from '../utils/config';
+import { getAllConfig } from '../utils/config.js';
 
 export let config: Awaited<ReturnType<typeof getAllConfig>>;
 

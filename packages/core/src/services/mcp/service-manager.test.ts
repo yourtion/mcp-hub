@@ -13,16 +13,18 @@ import {
   ToolNotFoundError,
 } from './service-manager';
 
-// 模拟控制台方法
-const mockConsole = {
+// 模拟logger方法
+const mockLogger = {
   info: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
   debug: vi.fn(),
 };
 
-// 替换全局console
-vi.stubGlobal('console', mockConsole);
+// 模拟createLogger函数
+vi.mock('@mcp-core/mcp-hub-share', () => ({
+  createLogger: vi.fn(() => mockLogger),
+}));
 
 describe('McpServiceManager', () => {
   let serviceManager: McpServiceManager;
@@ -94,14 +96,14 @@ describe('McpServiceManager', () => {
       expect(status.activeConnections).toBe(2); // 只有启用的服务器
 
       // 验证日志调用
-      expect(mockConsole.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         '开始初始化MCP服务管理器',
         expect.objectContaining({
           serverCount: 3,
         }),
       );
 
-      expect(mockConsole.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         'MCP服务管理器初始化完成',
         expect.objectContaining({
           totalServers: 3,
@@ -115,12 +117,12 @@ describe('McpServiceManager', () => {
       await serviceManager.initializeFromConfig(mockConfig);
 
       // 清除之前的日志调用
-      mockConsole.warn.mockClear();
+      mockLogger.warn.mockClear();
 
       // 尝试再次初始化
       await serviceManager.initializeFromConfig(mockConfig);
 
-      expect(mockConsole.warn).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'MCP服务管理器已初始化，跳过重复初始化',
       );
     });
@@ -128,7 +130,7 @@ describe('McpServiceManager', () => {
     it('应该跳过禁用的服务器', async () => {
       await serviceManager.initializeFromConfig(mockConfig);
 
-      expect(mockConsole.info).toHaveBeenCalledWith('跳过禁用的服务器', {
+      expect(mockLogger.info).toHaveBeenCalledWith('跳过禁用的服务器', {
         serverId: 'disabledServer',
       });
     });
@@ -180,11 +182,11 @@ describe('McpServiceManager', () => {
       const status = serviceManager.getServiceStatus();
       expect(status.serverCount).toBe(4);
 
-      expect(mockConsole.info).toHaveBeenCalledWith('注册MCP服务器', {
+      expect(mockLogger.info).toHaveBeenCalledWith('注册MCP服务器', {
         serverId: 'newServer',
       });
 
-      expect(mockConsole.info).toHaveBeenCalledWith('MCP服务器注册成功', {
+      expect(mockLogger.info).toHaveBeenCalledWith('MCP服务器注册成功', {
         serverId: 'newServer',
       });
     });
@@ -233,8 +235,8 @@ describe('McpServiceManager', () => {
         serverId: 'server1',
       });
 
-      expect(mockConsole.debug).toHaveBeenCalledWith('获取所有可用工具');
-      expect(mockConsole.debug).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith('获取所有可用工具');
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         '获取所有工具完成',
         expect.objectContaining({
           totalTools: 4,
@@ -440,7 +442,7 @@ describe('McpServiceManager', () => {
     it('应该在未初始化时跳过关闭', async () => {
       await serviceManager.shutdown();
 
-      expect(mockConsole.warn).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'MCP服务管理器未初始化，跳过关闭',
       );
     });
@@ -449,7 +451,7 @@ describe('McpServiceManager', () => {
       await serviceManager.initializeFromConfig(mockConfig);
 
       // 清除初始化日志
-      mockConsole.info.mockClear();
+      mockLogger.info.mockClear();
 
       await serviceManager.shutdown();
 
@@ -458,17 +460,19 @@ describe('McpServiceManager', () => {
       expect(status.serverCount).toBe(0);
       expect(status.activeConnections).toBe(0);
 
-      expect(mockConsole.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         '开始关闭MCP服务管理器',
         expect.objectContaining({
           connectedServers: 2,
         }),
       );
 
-      expect(mockConsole.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         'MCP服务管理器关闭完成',
         expect.objectContaining({
-          shutdownTimeMs: expect.any(Number),
+          context: expect.objectContaining({
+            shutdownTimeMs: expect.any(Number),
+          }),
         }),
       );
     });
@@ -484,7 +488,7 @@ describe('McpServiceManager', () => {
 
       await Promise.all([shutdownPromise1, shutdownPromise2]);
 
-      expect(mockConsole.warn).toHaveBeenCalledWith('关闭已在进行中，等待完成');
+      expect(mockLogger.warn).toHaveBeenCalledWith('关闭已在进行中，等待完成');
     });
   });
 

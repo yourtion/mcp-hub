@@ -144,4 +144,4 @@ export class ValidationError extends Error implements McpHubError {
 }
 
 // Import ToolResult from mcp-hub types
-import type { ToolResult } from './mcp-hub';
+import type { ToolResult } from './mcp-hub.js';

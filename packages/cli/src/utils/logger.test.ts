@@ -2,100 +2,13 @@
  * CLI日志系统测试
  */
 
-import { type LogEntry, LogLevel } from '@mcp-core/mcp-hub-core/utils/logger';
+import { LogLevel } from '@mcp-core/mcp-hub-share';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CliLogger,
-  CliTextFormatter,
-  createCliLogger,
+  createCliLoggerFromOptions,
   DEFAULT_CLI_LOGGER_CONFIG,
 } from './logger';
-
-describe('CliTextFormatter', () => {
-  it('应该正确格式化普通日志条目', () => {
-    const formatter = new CliTextFormatter(false, true, false); // 无颜色，有时间戳，非静默
-    const entry: LogEntry = {
-      timestamp: '2024-01-01T12:00:00.000Z',
-      level: LogLevel.INFO,
-      levelName: 'INFO',
-      message: '测试消息',
-      component: 'TestComponent',
-      operation: 'testOperation',
-    };
-
-    const result = formatter.format(entry);
-
-    expect(result).toMatch(/\d{1,2}:\d{2}:\d{2}/);
-    expect(result).toContain('[INFO]');
-    expect(result).toContain('[TestComponent]');
-    expect(result).toContain('测试消息');
-  });
-
-  it('应该在静默模式下过滤低级别日志', () => {
-    const formatter = new CliTextFormatter(false, true, true); // 静默模式
-    const infoEntry: LogEntry = {
-      timestamp: '2024-01-01T12:00:00.000Z',
-      level: LogLevel.INFO,
-      levelName: 'INFO',
-      message: '信息消息',
-      component: 'TestComponent',
-    };
-
-    const warnEntry: LogEntry = {
-      timestamp: '2024-01-01T12:00:00.000Z',
-      level: LogLevel.WARN,
-      levelName: 'WARN',
-      message: '警告消息',
-      component: 'TestComponent',
-    };
-
-    expect(formatter.format(infoEntry)).toBe('');
-    expect(formatter.format(warnEntry)).toContain('警告消息');
-  });
-
-  it('应该正确格式化包含上下文的日志条目', () => {
-    const formatter = new CliTextFormatter(false, false, false); // 无颜色，无时间戳
-    const entry: LogEntry = {
-      timestamp: '2024-01-01T12:00:00.000Z',
-      level: LogLevel.INFO,
-      levelName: 'INFO',
-      message: '测试消息',
-      component: 'TestComponent',
-      serverId: 'server1',
-      groupId: 'group1',
-      toolName: 'testTool',
-      duration: 1500,
-    };
-
-    const result = formatter.format(entry);
-
-    expect(result).toContain('[INFO]');
-    expect(result).toContain('测试消息');
-    expect(result).toContain('[server:server1, group:group1, tool:testTool]');
-    expect(result).toContain('(1500ms)');
-  });
-
-  it('应该正确格式化错误日志', () => {
-    const formatter = new CliTextFormatter(false, false, false);
-    const entry: LogEntry = {
-      timestamp: '2024-01-01T12:00:00.000Z',
-      level: LogLevel.ERROR,
-      levelName: 'ERROR',
-      message: '操作失败',
-      component: 'TestComponent',
-      error: {
-        name: 'TestError',
-        message: '测试错误消息',
-      },
-    };
-
-    const result = formatter.format(entry);
-
-    expect(result).toContain('[ERROR]');
-    expect(result).toContain('操作失败');
-    expect(result).toContain('错误: 测试错误消息');
-  });
-});
 
 describe('CliLogger', () => {
   let logger: CliLogger;
@@ -292,9 +205,9 @@ describe('CliLogger', () => {
   });
 });
 
-describe('createCliLogger', () => {
+describe('createCliLoggerFromOptions', () => {
   it('应该根据选项创建CLI日志记录器', () => {
-    const logger = createCliLogger({
+    const logger = createCliLoggerFromOptions({
       verbose: true,
       quiet: false,
       logFile: '/tmp/test.log',
@@ -307,7 +220,7 @@ describe('createCliLogger', () => {
   });
 
   it('应该处理静默模式', () => {
-    const logger = createCliLogger({
+    const logger = createCliLoggerFromOptions({
       quiet: true,
     });
 
@@ -315,7 +228,7 @@ describe('createCliLogger', () => {
   });
 
   it('应该处理详细模式', () => {
-    const logger = createCliLogger({
+    const logger = createCliLoggerFromOptions({
       verbose: true,
     });
 
@@ -323,7 +236,7 @@ describe('createCliLogger', () => {
   });
 
   it('应该处理无效的日志级别', () => {
-    const logger = createCliLogger({
+    const logger = createCliLoggerFromOptions({
       logLevel: 'INVALID',
     });
 
@@ -332,7 +245,7 @@ describe('createCliLogger', () => {
   });
 
   it('应该启用文件日志当提供日志文件路径时', () => {
-    const logger = createCliLogger({
+    const logger = createCliLoggerFromOptions({
       logFile: '/tmp/test.log',
     });
 

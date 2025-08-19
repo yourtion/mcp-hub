@@ -4,7 +4,7 @@
  */
 
 import { readFile } from 'node:fs/promises';
-import type { McpServerConfig } from '../types';
+import type { McpServerConfig } from '../types/index.js';
 
 /**
  * 配置加载器接口

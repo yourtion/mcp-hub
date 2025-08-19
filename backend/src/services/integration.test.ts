@@ -1,5 +1,4 @@
-import type { GroupConfig } from '@mcp-core/mcp-hub-share/src/config';
-import type { ServerConfig } from '@mcp-core/mcp-hub-share/src/mcp';
+import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { McpHubService } from './mcp_hub_service.js';

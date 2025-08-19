@@ -5,8 +5,8 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import type { GroupConfig, McpServerConfig, ServerConfig } from '../types';
-import type { ValidationResult } from './validator';
+import type { GroupConfig, McpServerConfig, ServerConfig } from '../types/index.js';
+import type { ValidationResult } from './validator.js';
 
 /**
  * 配置处理器错误类

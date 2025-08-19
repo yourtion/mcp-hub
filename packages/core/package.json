@@ -2,6 +2,7 @@
   "name": "@mcp-core/mcp-hub-core",
   "version": "1.0.0",
   "description": "MCP Hub核心包 - 提供MCP服务管理、连接管理和工具调用的核心功能",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

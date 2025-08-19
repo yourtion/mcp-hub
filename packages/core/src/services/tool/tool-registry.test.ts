@@ -13,16 +13,18 @@ import {
   ToolValidationError,
 } from './tool-registry';
 
-// 模拟控制台方法
-const mockConsole = {
+// 模拟logger方法
+const mockLogger = {
   info: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
   debug: vi.fn(),
 };
 
-// 替换全局console
-vi.stubGlobal('console', mockConsole);
+// 模拟createLogger函数
+vi.mock('@mcp-core/mcp-hub-share', () => ({
+  createLogger: vi.fn(() => mockLogger),
+}));
 
 describe('ToolRegistry', () => {
   let toolRegistry: ToolRegistry;
@@ -94,20 +96,20 @@ describe('ToolRegistry', () => {
       const registry = new ToolRegistry();
       await registry.initialize();
 
-      expect(mockConsole.info).toHaveBeenCalledWith('初始化工具注册表');
-      expect(mockConsole.info).toHaveBeenCalledWith('工具注册表初始化完成');
+      expect(mockLogger.info).toHaveBeenCalledWith('初始化工具注册表');
+      expect(mockLogger.info).toHaveBeenCalledWith('工具注册表初始化完成');
 
       registry.cleanup();
     });
 
     it('应该跳过重复初始化', async () => {
       // 清除之前的日志调用
-      mockConsole.warn.mockClear();
+      mockLogger.warn.mockClear();
 
       // 尝试再次初始化
       await toolRegistry.initialize();
 
-      expect(mockConsole.warn).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         '工具注册表已初始化，跳过重复初始化',
       );
     });
@@ -133,7 +135,7 @@ describe('ToolRegistry', () => {
         category: 'test',
       });
 
-      expect(mockConsole.debug).toHaveBeenCalledWith('注册工具', {
+      expect(mockLogger.debug).toHaveBeenCalledWith('注册工具', {
         serverId: 'server1',
         toolName: 'test_tool_1',
       });
@@ -146,18 +148,22 @@ describe('ToolRegistry', () => {
       const serverTools = toolRegistry.getToolsByServer('server1');
       expect(serverTools).toHaveLength(3);
 
-      expect(mockConsole.info).toHaveBeenCalledWith('批量注册工具', {
+      expect(mockLogger.info).toHaveBeenCalledWith('批量注册工具', {
         serverId: 'server1',
-        toolCount: 3,
+        context: {
+          toolCount: 3,
+        },
       });
 
-      expect(mockConsole.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         '批量工具注册完成',
         expect.objectContaining({
           serverId: 'server1',
-          totalTools: 3,
-          successCount: 3,
-          errorCount: 0,
+          context: expect.objectContaining({
+            totalTools: 3,
+            successCount: 3,
+            errorCount: 0,
+          }),
         }),
       );
     });
@@ -171,11 +177,14 @@ describe('ToolRegistry', () => {
       const serverTools = toolRegistry.getToolsByServer('server1');
       expect(serverTools).toHaveLength(2); // 只有有效工具被注册
 
-      expect(mockConsole.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         '批量工具注册完成',
         expect.objectContaining({
-          successCount: 2,
-          errorCount: 1,
+          serverId: 'server1',
+          context: expect.objectContaining({
+            successCount: 2,
+            errorCount: 1,
+          }),
         }),
       );
     });
@@ -184,13 +193,13 @@ describe('ToolRegistry', () => {
       toolRegistry.registerTool('server1', mockTool1);
 
       // 清除日志
-      mockConsole.warn.mockClear();
+      mockLogger.warn.mockClear();
 
       // 注册同名工具
       const updatedTool = { ...mockTool1, description: '更新的工具描述' };
       toolRegistry.registerTool('server1', updatedTool);
 
-      expect(mockConsole.warn).toHaveBeenCalledWith('工具已存在，将覆盖', {
+      expect(mockLogger.warn).toHaveBeenCalledWith('工具已存在，将覆盖', {
         serverId: 'server1',
         toolName: 'test_tool_1',
       });
@@ -431,7 +440,7 @@ describe('ToolRegistry', () => {
       expect(server1Tools).toHaveLength(1);
       expect(server1Tools[0].name).toBe('test_tool_2');
 
-      expect(mockConsole.debug).toHaveBeenCalledWith('工具移除成功', {
+      expect(mockLogger.debug).toHaveBeenCalledWith('工具移除成功', {
         serverId: 'server1',
         toolName: 'test_tool_1',
       });
@@ -440,7 +449,7 @@ describe('ToolRegistry', () => {
     it('应该处理移除不存在的工具', () => {
       toolRegistry.removeTool('server1', 'nonexistent');
 
-      expect(mockConsole.warn).toHaveBeenCalledWith('尝试移除不存在的工具', {
+      expect(mockLogger.warn).toHaveBeenCalledWith('尝试移除不存在的工具', {
         serverId: 'server1',
         toolName: 'nonexistent',
       });
@@ -455,16 +464,18 @@ describe('ToolRegistry', () => {
       const server2Tools = toolRegistry.getToolsByServer('server2');
       expect(server2Tools).toHaveLength(1); // 不受影响
 
-      expect(mockConsole.info).toHaveBeenCalledWith('服务器工具清空完成', {
+      expect(mockLogger.info).toHaveBeenCalledWith('服务器工具清空完成', {
         serverId: 'server1',
-        removedCount: 2,
+        context: {
+          removedCount: 2,
+        },
       });
     });
 
     it('应该处理清空不存在服务器的工具', () => {
       toolRegistry.clearServerTools('nonexistent');
 
-      expect(mockConsole.warn).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         '尝试清空不存在服务器的工具',
         { serverId: 'nonexistent' },
       );
@@ -612,8 +623,8 @@ describe('ToolRegistry', () => {
     it('应该清理所有数据', () => {
       toolRegistry.cleanup();
 
-      expect(mockConsole.info).toHaveBeenCalledWith('清理工具注册表');
-      expect(mockConsole.info).toHaveBeenCalledWith('工具注册表清理完成');
+      expect(mockLogger.info).toHaveBeenCalledWith('清理工具注册表');
+      expect(mockLogger.info).toHaveBeenCalledWith('工具注册表清理完成');
 
       // 验证数据已清理
       expect(() => toolRegistry.getAllTools()).toThrow(ToolRegistryError);

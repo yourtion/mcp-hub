@@ -4,7 +4,7 @@
  */
 
 // MCP服务管理器
-export type { McpServiceManagerInterface } from './mcp/service-manager';
+export type { McpServiceManagerInterface } from './mcp/service-manager.js';
 export {
   McpServiceError,
   McpServiceManager,
@@ -13,10 +13,10 @@ export {
   ServerStatus,
   ServiceNotInitializedError,
   ToolNotFoundError as McpToolNotFoundError,
-} from './mcp/service-manager';
+} from './mcp/service-manager.js';
 
 // 服务器连接管理器
-export type { ServerConnectionManagerInterface } from './server/connection-manager';
+export type { ServerConnectionManagerInterface } from './server/connection-manager.js';
 export {
   ConnectionFailedError,
   ConnectionManagerError,
@@ -25,10 +25,10 @@ export {
   ConnectionState,
   type ServerConnectionInfo,
   ServerConnectionManager,
-} from './server/connection-manager';
+} from './server/connection-manager.js';
 
 // 工具注册和管理
-export type { ToolRegistryInterface } from './tool/tool-registry';
+export type { ToolRegistryInterface } from './tool/tool-registry.js';
 export {
   DuplicateToolError,
   type ToolExecutionContext,
@@ -38,4 +38,4 @@ export {
   type ToolStats,
   ToolValidationError,
   type ToolValidationResult,
-} from './tool/tool-registry';
+} from './tool/tool-registry.js';

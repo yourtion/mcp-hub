@@ -2,7 +2,11 @@
   "name": "@mcp-core/mcp-hub-share",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "check": "biome check --write"
   },

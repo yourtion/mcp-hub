@@ -4,6 +4,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    // 支持 ES 模块
+    deps: {
+      external: [/node_modules/],
+    },
     include: ['src/**/*.test.ts'],
     exclude: [
       'node_modules',
