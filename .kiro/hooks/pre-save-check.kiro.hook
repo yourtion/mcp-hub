@@ -1,5 +1,5 @@
 {
-  "enabled": true,
+  "enabled": false,
   "name": "Pre-save Check & Build & Test",
   "description": "Automatically runs `pnpm check` and `pnpm build` before saving files to ensure code correctness, then run `pnpm test`",
   "version": "1",

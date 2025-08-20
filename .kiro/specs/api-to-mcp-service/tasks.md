@@ -1,8 +1,8 @@
 # 实现计划
 
-- [ ] 1. 创建核心包结构和基础配置
+- [x] 1. 创建核心包结构和基础配置
   - 在现有的 `packages/core` 中添加API转MCP服务的核心模块
-  - 设置TypeScript配置和依赖项（axios、jsonata、ajv等）
+  - 设置TypeScript配置和依赖项（fetch、jsonata、zod等）
   - 定义核心接口和类型定义
   - _Requirements: 1.1, 1.2_
 
