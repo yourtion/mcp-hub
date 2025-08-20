@@ -69,3 +69,6 @@ export {
 
 // 导出日志系统
 // export * from './utils/logger.js';
+
+// 导出API转MCP服务模块（使用命名空间避免冲突）
+export * as ApiToMcp from './api-to-mcp/index.js';

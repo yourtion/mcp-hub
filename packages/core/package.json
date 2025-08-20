@@ -28,7 +28,8 @@
   "dependencies": {
     "@mcp-core/mcp-hub-share": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.0.4",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "jsonata": "^2.0.3"
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
@@ -57,6 +58,10 @@
     "./utils/logger": {
       "types": "./dist/utils/logger.d.ts",
       "import": "./dist/utils/logger.js"
+    },
+    "./api-to-mcp": {
+      "types": "./dist/api-to-mcp/index.d.ts",
+      "import": "./dist/api-to-mcp/index.js"
     }
   }
 }

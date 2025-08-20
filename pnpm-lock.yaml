@@ -125,10 +125,16 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.0.4
         version: 1.16.0
+      jsonata:
+        specifier: ^2.0.3
+        version: 2.1.0
       zod:
         specifier: ^3.23.8
         version: 3.24.4
     devDependencies:
+      '@types/jsonata':
+        specifier: ^1.5.1
+        version: 1.5.1
       '@types/node':
         specifier: ^20.11.17
         version: 20.17.45
@@ -877,6 +883,10 @@ packages:
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
+
+  '@types/jsonata@1.5.1':
+    resolution: {integrity: sha512-zBVjNYS7FUUIZ4Ckq3p7xOkJKndT6h+kHUeKiud1E6h/OLPkQOagzq8UJYN07QvtkA03XFadQER1zSIWSJj2EA==}
+    deprecated: This is a stub types definition. jsonata provides its own type definitions, so you do not need this installed.
 
   '@types/node@20.17.45':
     resolution: {integrity: sha512-vO9+E1smq+149wsmmLdM8SKVW7gRzLjfo0mU7kiykhV6rL+GEUhUmW7VywJNSxJHQzt9QBIHEo+3SG4MrFTqbA==}
@@ -1669,6 +1679,10 @@ packages:
 
   json-stable-stringify-without-jsonify@1.0.1:
     resolution: {integrity: sha512-Bdboy+l7tA3OGW6FjyFHWkP5LuByj1Tk33Ljyq0axyzdk9//JSi2u3fP1QSmd1KNwq6VOKYGlAu87CisVir6Pw==}
+
+  jsonata@2.1.0:
+    resolution: {integrity: sha512-OCzaRMK8HobtX8fp37uIVmL8CY1IGc/a6gLsDqz3quExFR09/U78HUzWYr7T31UEB6+Eu0/8dkVD5fFDOl9a8w==}
+    engines: {node: '>= 8'}
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
@@ -2841,6 +2855,10 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
+  '@types/jsonata@1.5.1':
+    dependencies:
+      jsonata: 2.1.0
+
   '@types/node@20.17.45':
     dependencies:
       undici-types: 6.19.8
@@ -3788,6 +3806,8 @@ snapshots:
   json-schema-traverse@1.0.0: {}
 
   json-stable-stringify-without-jsonify@1.0.1: {}
+
+  jsonata@2.1.0: {}
 
   keyv@4.5.4:
     dependencies:
