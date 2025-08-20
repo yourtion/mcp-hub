@@ -19,7 +19,7 @@ export interface TemplateVariable {
  */
 export interface TemplateContext {
   /** 数据对象 */
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   /** 环境变量 */
   env: Record<string, string>;
 }

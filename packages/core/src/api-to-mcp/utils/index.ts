@@ -5,3 +5,4 @@
 export * from './environment-resolver.js';
 export * from './error-handler.js';
 export * from './template-engine.js';
+export * from './template-generator.js';

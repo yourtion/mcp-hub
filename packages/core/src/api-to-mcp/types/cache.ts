@@ -9,9 +9,9 @@ export interface CacheStrategy {
   /** 策略名称 */
   name: string;
   /** 是否应该缓存 */
-  shouldCache: (key: string, value: any) => boolean;
+  shouldCache: (key: string, value: unknown) => boolean;
   /** 获取TTL */
-  getTtl: (key: string, value: any) => number;
+  getTtl: (key: string, value: unknown) => number;
 }
 
 /**
@@ -21,7 +21,7 @@ export interface CacheEntry {
   /** 缓存键 */
   key: string;
   /** 缓存值 */
-  value: any;
+  value: unknown;
   /** 创建时间 */
   createdAt: Date;
   /** 过期时间 */

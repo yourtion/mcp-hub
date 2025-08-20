@@ -3,9 +3,13 @@
  * 使用Zod验证API配置的正确性
  */
 
+import jsonata from 'jsonata';
 import { z } from 'zod';
 import type { ApiToolConfig, ApiToolsConfig } from '../types/api-config.js';
-import type { ValidationResult } from '../types/api-tool.js';
+import type {
+  ValidationResult,
+  ValidationResultWithData,
+} from '../types/api-tool.js';
 import {
   ApiToolConfigSchema,
   ApiToolsConfigSchema,
@@ -21,7 +25,7 @@ export interface ConfigValidator {
    */
   validateApiToolsConfig(
     config: unknown,
-  ): ValidationResult & { data?: ApiToolsConfig };
+  ): ValidationResultWithData<ApiToolsConfig>;
 
   /**
    * 验证单个API工具配置
@@ -29,7 +33,7 @@ export interface ConfigValidator {
    */
   validateApiToolConfig(
     config: unknown,
-  ): ValidationResult & { data?: ApiToolConfig };
+  ): ValidationResultWithData<ApiToolConfig>;
 
   /**
    * 验证JSONata表达式语法
@@ -42,6 +46,16 @@ export interface ConfigValidator {
    * @param url URL字符串
    */
   validateUrl(url: string): ValidationResult;
+
+  /**
+   * 使用指定的Zod schema验证数据
+   * @param schema Zod schema
+   * @param data 要验证的数据
+   */
+  validateWithSchema<T>(
+    schema: z.ZodSchema<T>,
+    data: unknown,
+  ): ValidationResultWithData<T>;
 }
 
 /**
@@ -50,78 +64,18 @@ export interface ConfigValidator {
 export class ConfigValidatorImpl implements ConfigValidator {
   validateApiToolsConfig(
     config: unknown,
-  ): ValidationResult & { data?: ApiToolsConfig } {
-    try {
-      const validatedConfig = ApiToolsConfigSchema.parse(config);
-      return {
-        valid: true,
-        errors: [],
-        data: validatedConfig,
-      };
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return {
-          valid: false,
-          errors: error.errors.map((err) => ({
-            path: err.path.join('.'),
-            message: err.message,
-            code: err.code,
-          })),
-        };
-      }
-
-      return {
-        valid: false,
-        errors: [
-          {
-            path: 'config',
-            message: error instanceof Error ? error.message : '未知验证错误',
-            code: 'UNKNOWN_ERROR',
-          },
-        ],
-      };
-    }
+  ): ValidationResultWithData<ApiToolsConfig> {
+    return this.validateWithSchema(ApiToolsConfigSchema, config);
   }
 
   validateApiToolConfig(
     config: unknown,
-  ): ValidationResult & { data?: ApiToolConfig } {
-    try {
-      const validatedConfig = ApiToolConfigSchema.parse(config);
-      return {
-        valid: true,
-        errors: [],
-        data: validatedConfig,
-      };
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return {
-          valid: false,
-          errors: error.errors.map((err) => ({
-            path: err.path.join('.'),
-            message: err.message,
-            code: err.code,
-          })),
-        };
-      }
-
-      return {
-        valid: false,
-        errors: [
-          {
-            path: 'config',
-            message: error instanceof Error ? error.message : '未知验证错误',
-            code: 'UNKNOWN_ERROR',
-          },
-        ],
-      };
-    }
+  ): ValidationResultWithData<ApiToolConfig> {
+    return this.validateWithSchema(ApiToolConfigSchema, config);
   }
 
   validateJsonataExpression(expression: string): ValidationResult {
     try {
-      // TODO: 实际的JSONata语法验证
-      // 这里应该使用jsonata库来验证表达式语法
       if (!expression || typeof expression !== 'string') {
         return {
           valid: false,
@@ -135,7 +89,7 @@ export class ConfigValidatorImpl implements ConfigValidator {
         };
       }
 
-      // 基本语法检查
+      // 基本语法检查 - JSONata表达式不应包含模板语法
       if (expression.includes('{{') || expression.includes('}}')) {
         return {
           valid: false,
@@ -149,10 +103,25 @@ export class ConfigValidatorImpl implements ConfigValidator {
         };
       }
 
-      return {
-        valid: true,
-        errors: [],
-      };
+      // 使用jsonata库验证表达式语法
+      try {
+        jsonata(expression);
+        return {
+          valid: true,
+          errors: [],
+        };
+      } catch (jsonataError) {
+        return {
+          valid: false,
+          errors: [
+            {
+              path: 'jsonata',
+              message: `JSONata语法错误: ${jsonataError instanceof Error ? jsonataError.message : '未知错误'}`,
+              code: 'INVALID_JSONATA_SYNTAX',
+            },
+          ],
+        };
+      }
     } catch (error) {
       return {
         valid: false,
@@ -189,15 +158,10 @@ export class ConfigValidatorImpl implements ConfigValidator {
     }
   }
 
-  /**
-   * 验证Zod schema本身
-   * @param schema Zod schema
-   * @param data 要验证的数据
-   */
   validateWithSchema<T>(
     schema: z.ZodSchema<T>,
     data: unknown,
-  ): ValidationResult & { data?: T } {
+  ): ValidationResultWithData<T> {
     try {
       const validatedData = schema.parse(data);
       return {

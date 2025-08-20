@@ -15,7 +15,11 @@ export interface SecurityLogger {
    * @param parameters 调用参数
    * @param response 响应数据
    */
-  logApiCall(toolId: string, parameters: any, response: any): void;
+  logApiCall(
+    toolId: string,
+    parameters: Record<string, unknown>,
+    response: unknown,
+  ): void;
 
   /**
    * 记录认证失败
@@ -48,7 +52,7 @@ export interface SecurityLogger {
   logSecurityEvent(
     type: SecurityEventType,
     toolId: string,
-    details: Record<string, any>,
+    details: Record<string, unknown>,
     severity: 'low' | 'medium' | 'high' | 'critical',
     clientId?: string,
   ): void;
@@ -66,7 +70,11 @@ export class SecurityLoggerImpl implements SecurityLogger {
     'authorization',
   ]);
 
-  logApiCall(toolId: string, parameters: any, response: any): void {
+  logApiCall(
+    toolId: string,
+    parameters: Record<string, unknown>,
+    response: unknown,
+  ): void {
     const sanitizedParams = this.sanitizeData(parameters);
     const sanitizedResponse = this.sanitizeData(response);
 
@@ -120,7 +128,7 @@ export class SecurityLoggerImpl implements SecurityLogger {
   logSecurityEvent(
     type: SecurityEventType,
     toolId: string,
-    details: Record<string, any>,
+    details: Record<string, unknown>,
     severity: 'low' | 'medium' | 'high' | 'critical',
     clientId?: string,
   ): void {
@@ -129,7 +137,7 @@ export class SecurityLoggerImpl implements SecurityLogger {
       toolId,
       clientId,
       timestamp: new Date(),
-      details: this.sanitizeData(details),
+      details: this.sanitizeData(details) as Record<string, unknown>,
       severity,
     };
 
@@ -149,7 +157,7 @@ export class SecurityLoggerImpl implements SecurityLogger {
     );
   }
 
-  private sanitizeData(data: any): any {
+  private sanitizeData(data: unknown): unknown {
     if (data === null || data === undefined) {
       return data;
     }
@@ -163,7 +171,7 @@ export class SecurityLoggerImpl implements SecurityLogger {
     }
 
     if (typeof data === 'object') {
-      const sanitized: any = {};
+      const sanitized: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(data)) {
         const lowerKey = key.toLowerCase();
         if (this.sensitiveFields.has(lowerKey)) {

@@ -35,7 +35,10 @@ export interface ApiToMcpServiceManager {
    * @param toolId 工具ID
    * @param parameters 调用参数
    */
-  executeApiTool(toolId: string, parameters: any): Promise<ApiToolResult>;
+  executeApiTool(
+    toolId: string,
+    parameters: Record<string, unknown>,
+  ): Promise<ApiToolResult>;
 
   /**
    * 获取工具定义
@@ -48,7 +51,10 @@ export interface ApiToMcpServiceManager {
    * @param toolId 工具ID
    * @param parameters 参数
    */
-  validateToolParameters(toolId: string, parameters: any): ValidationResult;
+  validateToolParameters(
+    toolId: string,
+    parameters: Record<string, unknown>,
+  ): ValidationResult;
 
   /**
    * 关闭服务管理器
@@ -86,8 +92,8 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
   }
 
   async executeApiTool(
-    toolId: string,
-    parameters: any,
+    _toolId: string,
+    _parameters: Record<string, unknown>,
   ): Promise<ApiToolResult> {
     if (!this.initialized) {
       throw new Error('服务管理器未初始化');
@@ -99,12 +105,15 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
     };
   }
 
-  getToolDefinition(toolId: string): McpTool | undefined {
+  getToolDefinition(_toolId: string): McpTool | undefined {
     // TODO: 实现获取工具定义逻辑
     return undefined;
   }
 
-  validateToolParameters(toolId: string, parameters: any): ValidationResult {
+  validateToolParameters(
+    _toolId: string,
+    _parameters: Record<string, unknown>,
+  ): ValidationResult {
     // TODO: 实现参数验证逻辑
     return {
       valid: true,

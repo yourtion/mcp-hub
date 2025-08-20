@@ -61,7 +61,7 @@ export class EnvironmentResolverImpl implements EnvironmentResolver {
     }
 
     if (typeof obj === 'object') {
-      const resolved: any = {};
+      const resolved: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(obj)) {
         resolved[key] = this.resolveObject(value);
       }
@@ -106,10 +106,10 @@ export class EnvironmentResolverImpl implements EnvironmentResolver {
    * 从对象中提取所有环境变量引用
    * @param obj 要分析的对象
    */
-  extractAllEnvironmentVariables(obj: any): string[] {
+  extractAllEnvironmentVariables(obj: unknown): string[] {
     const variables = new Set<string>();
 
-    const extract = (value: any): void => {
+    const extract = (value: unknown): void => {
       if (typeof value === 'string') {
         const vars = this.extractEnvironmentVariables(value);
         vars.forEach((v) => variables.add(v));

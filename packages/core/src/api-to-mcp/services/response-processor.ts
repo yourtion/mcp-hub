@@ -15,7 +15,10 @@ export interface ResponseProcessor {
    * @param response HTTP响应
    * @param jsonataExpression JSONata表达式
    */
-  processWithJsonata(response: any, jsonataExpression: string): Promise<any>;
+  processWithJsonata(
+    response: unknown,
+    jsonataExpression: string,
+  ): Promise<unknown>;
 
   /**
    * 处理错误响应
@@ -36,19 +39,19 @@ export interface ResponseProcessor {
  */
 export class ResponseProcessorImpl implements ResponseProcessor {
   async processWithJsonata(
-    response: any,
-    jsonataExpression: string,
-  ): Promise<any> {
+    response: unknown,
+    _jsonataExpression: string,
+  ): Promise<unknown> {
     // TODO: 实现JSONata处理逻辑
     return response;
   }
 
-  processErrorResponse(response: HttpResponse, errorPath?: string): Error {
+  processErrorResponse(response: HttpResponse, _errorPath?: string): Error {
     // TODO: 实现错误响应处理逻辑
     return new Error(`API调用失败: ${response.status} ${response.statusText}`);
   }
 
-  validateJsonataExpression(expression: string): ValidationResult {
+  validateJsonataExpression(_expression: string): ValidationResult {
     // TODO: 实现JSONata表达式验证逻辑
     return {
       valid: true,

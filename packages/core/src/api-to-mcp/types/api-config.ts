@@ -5,6 +5,39 @@
 import { z } from 'zod';
 
 /**
+ * JSON Schema 基础类型定义
+ */
+export interface JsonSchemaProperty {
+  type: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'null';
+  description?: string;
+  default?: unknown;
+  enum?: unknown[];
+  format?: string;
+  minimum?: number;
+  maximum?: number;
+  minLength?: number;
+  maxLength?: number;
+  minItems?: number;
+  maxItems?: number;
+  pattern?: string;
+  items?: JsonSchemaProperty;
+  properties?: Record<string, JsonSchemaProperty>;
+  required?: string[];
+  additionalProperties?: boolean | JsonSchemaProperty;
+}
+
+/**
+ * JSON Schema 对象定义
+ */
+export interface JsonSchema {
+  type: 'object';
+  properties: Record<string, JsonSchemaProperty>;
+  required?: string[];
+  additionalProperties?: boolean;
+  description?: string;
+}
+
+/**
  * HTTP请求方法的Zod schema
  */
 export const HttpMethodSchema = z.enum([
@@ -47,13 +80,20 @@ export const SecurityConfigSchema = z.object({
 });
 
 /**
+ * 缓存键生成函数类型
+ */
+export type CacheKeyGenerator = (
+  toolId: string,
+  parameters: Record<string, unknown>,
+) => string;
+
+/**
  * 缓存配置的Zod schema
  */
 export const CacheConfigSchema = z.object({
   enabled: z.boolean(),
   ttl: z.number().positive(),
   maxSize: z.number().positive().optional(),
-  keyGenerator: z.function().optional(),
 });
 
 /**
@@ -66,6 +106,11 @@ export const ResponseConfigSchema = z.object({
 });
 
 /**
+ * 请求体类型定义
+ */
+export type RequestBody = string | Record<string, unknown>;
+
+/**
  * API端点配置的Zod schema
  */
 export const ApiEndpointConfigSchema = z.object({
@@ -73,9 +118,46 @@ export const ApiEndpointConfigSchema = z.object({
   method: HttpMethodSchema,
   headers: z.record(z.string()).optional(),
   queryParams: z.record(z.string()).optional(),
-  body: z.union([z.string(), z.record(z.any())]).optional(),
+  body: z.union([z.string(), z.record(z.unknown())]).optional(),
   timeout: z.number().positive().optional(),
   retries: z.number().nonnegative().optional(),
+});
+
+/**
+ * JSON Schema 验证器
+ */
+const JsonSchemaPropertySchema: z.ZodSchema<JsonSchemaProperty> = z.lazy(() =>
+  z.object({
+    type: z.enum(['string', 'number', 'boolean', 'object', 'array', 'null']),
+    description: z.string().optional(),
+    default: z.unknown().optional(),
+    enum: z.array(z.unknown()).optional(),
+    format: z.string().optional(),
+    minimum: z.number().optional(),
+    maximum: z.number().optional(),
+    minLength: z.number().optional(),
+    maxLength: z.number().optional(),
+    minItems: z.number().optional(),
+    maxItems: z.number().optional(),
+    pattern: z.string().optional(),
+    items: JsonSchemaPropertySchema.optional(),
+    properties: z.record(JsonSchemaPropertySchema).optional(),
+    required: z.array(z.string()).optional(),
+    additionalProperties: z
+      .union([z.boolean(), JsonSchemaPropertySchema])
+      .optional(),
+  }),
+);
+
+/**
+ * JSON Schema 对象验证器
+ */
+export const JsonSchemaSchema = z.object({
+  type: z.literal('object'),
+  properties: z.record(JsonSchemaPropertySchema),
+  required: z.array(z.string()).optional(),
+  additionalProperties: z.boolean().optional(),
+  description: z.string().optional(),
 });
 
 /**
@@ -86,7 +168,7 @@ export const ApiToolConfigSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(1),
   api: ApiEndpointConfigSchema,
-  parameters: z.record(z.any()), // JSON Schema object for parameters
+  parameters: JsonSchemaSchema,
   response: ResponseConfigSchema,
   security: SecurityConfigSchema.optional(),
   cache: CacheConfigSchema.optional(),
@@ -107,10 +189,23 @@ export type HttpMethod = z.infer<typeof HttpMethodSchema>;
 export type AuthConfig = z.infer<typeof AuthConfigSchema>;
 export type RateLimitConfig = z.infer<typeof RateLimitConfigSchema>;
 export type SecurityConfig = z.infer<typeof SecurityConfigSchema>;
-export type CacheConfig = z.infer<typeof CacheConfigSchema>;
 export type ResponseConfig = z.infer<typeof ResponseConfigSchema>;
 export type ApiEndpointConfig = z.infer<typeof ApiEndpointConfigSchema>;
 export type ApiToolsConfig = z.infer<typeof ApiToolsConfigSchema>;
+
+/**
+ * 缓存配置接口（运行时使用）
+ */
+export interface CacheConfig {
+  /** 是否启用缓存 */
+  enabled: boolean;
+  /** 缓存生存时间（秒） */
+  ttl: number;
+  /** 最大缓存条目数 */
+  maxSize?: number;
+  /** 缓存键生成函数 */
+  keyGenerator?: CacheKeyGenerator;
+}
 
 /**
  * API工具配置接口（用于运行时）
@@ -125,7 +220,7 @@ export interface ApiToolConfig {
   /** API端点配置 */
   api: ApiEndpointConfig;
   /** 参数schema（JSON Schema格式） */
-  parameters: Record<string, any>;
+  parameters: JsonSchema;
   /** 响应处理配置 */
   response: ResponseConfig;
   /** 安全配置 */

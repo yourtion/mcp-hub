@@ -15,9 +15,9 @@ export interface HttpRequestConfig {
   /** 请求头 */
   headers?: Record<string, string>;
   /** 查询参数 */
-  params?: Record<string, any>;
+  params?: Record<string, unknown>;
   /** 请求体数据 */
-  data?: any;
+  data?: unknown;
   /** 超时时间（毫秒） */
   timeout?: number;
   /** 重试次数 */
@@ -35,7 +35,7 @@ export interface HttpResponse {
   /** 响应头 */
   headers: Headers;
   /** 响应数据 */
-  data: any;
+  data: unknown;
   /** 原始Response对象 */
   raw: Response;
   /** 请求配置 */
@@ -49,7 +49,7 @@ export interface ApiResponse {
   /** 原始HTTP响应 */
   raw: HttpResponse;
   /** 处理后的数据 */
-  data: any;
+  data: unknown;
   /** 是否成功 */
   success: boolean;
   /** 错误信息 */

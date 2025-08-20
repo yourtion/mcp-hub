@@ -3,7 +3,7 @@
  * 提供多级缓存支持
  */
 
-import type { CacheEntry, CacheStats, CacheStrategy } from '../types/cache.js';
+import type { CacheEntry, CacheStats } from '../types/cache.js';
 
 /**
  * 缓存管理器接口
@@ -13,7 +13,7 @@ export interface CacheManager {
    * 获取缓存
    * @param key 缓存键
    */
-  get(key: string): Promise<any | null>;
+  get(key: string): Promise<unknown | null>;
 
   /**
    * 设置缓存
@@ -21,7 +21,7 @@ export interface CacheManager {
    * @param value 缓存值
    * @param ttl 生存时间（秒）
    */
-  set(key: string, value: any, ttl?: number): Promise<void>;
+  set(key: string, value: unknown, ttl?: number): Promise<void>;
 
   /**
    * 删除缓存
@@ -39,7 +39,7 @@ export interface CacheManager {
    * @param toolId 工具ID
    * @param parameters 参数
    */
-  generateCacheKey(toolId: string, parameters: any): string;
+  generateCacheKey(toolId: string, parameters: Record<string, unknown>): string;
 
   /**
    * 获取缓存统计信息
@@ -61,7 +61,7 @@ export class CacheManagerImpl implements CacheManager {
     maxSize: 1000,
   };
 
-  async get(key: string): Promise<any | null> {
+  async get(key: string): Promise<unknown | null> {
     this.stats.totalRequests++;
 
     const entry = this.cache.get(key);
@@ -88,7 +88,7 @@ export class CacheManagerImpl implements CacheManager {
     return entry.value;
   }
 
-  async set(key: string, value: any, ttl = 300): Promise<void> {
+  async set(key: string, value: unknown, ttl = 300): Promise<void> {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + ttl * 1000);
 
@@ -120,7 +120,10 @@ export class CacheManagerImpl implements CacheManager {
     this.stats.currentSize = 0;
   }
 
-  generateCacheKey(toolId: string, parameters: any): string {
+  generateCacheKey(
+    toolId: string,
+    parameters: Record<string, unknown>,
+  ): string {
     // TODO: 实现更复杂的缓存键生成逻辑
     const paramStr = JSON.stringify(parameters);
     return `${toolId}:${Buffer.from(paramStr).toString('base64')}`;

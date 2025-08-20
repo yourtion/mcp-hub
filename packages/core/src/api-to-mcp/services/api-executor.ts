@@ -19,14 +19,20 @@ export interface ApiExecutor {
    * @param config API工具配置
    * @param parameters 调用参数
    */
-  executeApiCall(config: ApiToolConfig, parameters: any): Promise<ApiResponse>;
+  executeApiCall(
+    config: ApiToolConfig,
+    parameters: Record<string, unknown>,
+  ): Promise<ApiResponse>;
 
   /**
    * 构建HTTP请求
    * @param config API工具配置
    * @param parameters 调用参数
    */
-  buildHttpRequest(config: ApiToolConfig, parameters: any): HttpRequestConfig;
+  buildHttpRequest(
+    config: ApiToolConfig,
+    parameters: Record<string, unknown>,
+  ): HttpRequestConfig;
 
   /**
    * 处理认证
@@ -51,10 +57,10 @@ export interface ApiExecutor {
 export class ApiExecutorImpl implements ApiExecutor {
   async executeApiCall(
     config: ApiToolConfig,
-    parameters: any,
+    _parameters: Record<string, unknown>,
   ): Promise<ApiResponse> {
     // TODO: 实现API调用逻辑
-    const request = this.buildHttpRequest(config, parameters);
+    const request = this.buildHttpRequest(config, _parameters);
     const response = await this.handleTimeoutAndRetry(request);
 
     return {
@@ -65,7 +71,10 @@ export class ApiExecutorImpl implements ApiExecutor {
     };
   }
 
-  buildHttpRequest(config: ApiToolConfig, parameters: any): HttpRequestConfig {
+  buildHttpRequest(
+    config: ApiToolConfig,
+    _parameters: Record<string, unknown>,
+  ): HttpRequestConfig {
     // TODO: 实现HTTP请求构建逻辑
     return {
       url: config.api.url,
@@ -80,14 +89,14 @@ export class ApiExecutorImpl implements ApiExecutor {
 
   applyAuthentication(
     request: HttpRequestConfig,
-    authConfig: AuthConfig,
+    _authConfig: AuthConfig,
   ): HttpRequestConfig {
     // TODO: 实现认证处理逻辑
     return request;
   }
 
   async handleTimeoutAndRetry(
-    request: HttpRequestConfig,
+    _request: HttpRequestConfig,
   ): Promise<HttpResponse> {
     // TODO: 实现超时和重试逻辑
     throw new Error('未实现');

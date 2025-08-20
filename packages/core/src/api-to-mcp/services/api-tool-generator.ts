@@ -46,7 +46,7 @@ export class ApiToolGeneratorImpl implements ApiToolGenerator {
     };
   }
 
-  validateGeneratedTool(tool: McpTool): ValidationResult {
+  validateGeneratedTool(_tool: McpTool): ValidationResult {
     // TODO: 实现工具验证逻辑
     return {
       valid: true,

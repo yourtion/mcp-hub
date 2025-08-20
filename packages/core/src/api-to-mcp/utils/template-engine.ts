@@ -119,7 +119,10 @@ export class TemplateEngineImpl implements TemplateEngine {
     return variables;
   }
 
-  private resolveVariable(variablePath: string, context: TemplateContext): any {
+  private resolveVariable(
+    variablePath: string,
+    context: TemplateContext,
+  ): unknown {
     const parts = variablePath.split('.');
 
     if (parts.length < 2) {
@@ -127,7 +130,7 @@ export class TemplateEngineImpl implements TemplateEngine {
     }
 
     const [namespace, ...propertyPath] = parts;
-    let source: any;
+    let source: Record<string, unknown>;
 
     switch (namespace) {
       case 'data':
@@ -141,12 +144,16 @@ export class TemplateEngineImpl implements TemplateEngine {
     }
 
     // 遍历属性路径
-    let current = source;
+    let current: unknown = source;
     for (const property of propertyPath) {
       if (current === null || current === undefined) {
         return undefined;
       }
-      current = current[property];
+      if (typeof current === 'object' && current !== null) {
+        current = (current as Record<string, unknown>)[property];
+      } else {
+        return undefined;
+      }
     }
 
     return current;

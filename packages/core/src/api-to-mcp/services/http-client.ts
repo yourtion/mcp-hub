@@ -82,7 +82,7 @@ export class HttpClientImpl implements HttpClient {
   }
 
   private async performRequest(
-    config: HttpRequestConfig,
+    _config: HttpRequestConfig,
   ): Promise<HttpResponse> {
     // TODO: 实现实际的fetch请求逻辑
     throw new Error('未实现');

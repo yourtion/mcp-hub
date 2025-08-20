@@ -31,7 +31,7 @@ export interface SecurityEvent {
   /** 事件时间 */
   timestamp: Date;
   /** 事件详情 */
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   /** 严重程度 */
   severity: 'low' | 'medium' | 'high' | 'critical';
 }
