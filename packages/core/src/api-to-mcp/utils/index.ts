@@ -4,5 +4,7 @@
 
 export * from './environment-resolver.js';
 export * from './error-handler.js';
+export * from './http-request-builder.js';
+export * from './parameter-validator.js';
 export * from './template-engine.js';
 export * from './template-generator.js';
