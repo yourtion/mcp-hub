@@ -19,7 +19,9 @@ describe('API转MCP服务模块', () => {
 
     it('应该在未初始化时抛出错误', async () => {
       const manager = new ApiToMcpServiceManagerImpl();
-      await expect(manager.getApiTools()).rejects.toThrow('服务管理器未初始化');
+      await expect(manager.getApiTools()).rejects.toThrow(
+        '服务管理器未运行，当前状态: not_initialized',
+      );
     });
   });
 

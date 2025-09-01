@@ -35,6 +35,8 @@ export class ApiToolIntegrationService {
     logger.info('初始化API工具集成服务', { configPath });
 
     try {
+      this.configPath = configPath; // 保存配置路径用于重启
+
       if (configPath) {
         await this.apiServiceManager.initialize(configPath);
         logger.info('API工具集成服务初始化完成');
@@ -210,6 +212,99 @@ export class ApiToolIntegrationService {
   }
 
   /**
+   * 获取服务健康状态
+   */
+  getHealthStatus(): {
+    initialized: boolean;
+    healthy: boolean;
+    serviceStatus?: string;
+    errors?: string[];
+  } {
+    if (!this.initialized) {
+      return {
+        initialized: false,
+        healthy: false,
+        errors: ['服务未初始化'],
+      };
+    }
+
+    try {
+      const health = this.apiServiceManager.getHealthStatus();
+      return {
+        initialized: true,
+        healthy: health.healthy,
+        serviceStatus: health.status,
+        errors: health.errors,
+      };
+    } catch (error) {
+      return {
+        initialized: true,
+        healthy: false,
+        errors: [`获取健康状态失败: ${(error as Error).message}`],
+      };
+    }
+  }
+
+  /**
+   * 执行健康检查
+   */
+  async performHealthCheck(): Promise<{
+    initialized: boolean;
+    healthy: boolean;
+    serviceStatus?: string;
+    errors?: string[];
+  }> {
+    if (!this.initialized) {
+      return {
+        initialized: false,
+        healthy: false,
+        errors: ['服务未初始化'],
+      };
+    }
+
+    try {
+      const health = await this.apiServiceManager.performHealthCheck();
+      return {
+        initialized: true,
+        healthy: health.healthy,
+        serviceStatus: health.status,
+        errors: health.errors,
+      };
+    } catch (error) {
+      logger.error('API工具集成服务健康检查失败', error as Error);
+      return {
+        initialized: true,
+        healthy: false,
+        errors: [`健康检查失败: ${(error as Error).message}`],
+      };
+    }
+  }
+
+  /**
+   * 重启API工具集成服务
+   */
+  async restart(): Promise<void> {
+    if (!this.initialized) {
+      logger.warn('API工具集成服务未初始化，无法重启');
+      return;
+    }
+
+    logger.info('重启API工具集成服务');
+
+    try {
+      const configPath = this.configPath; // 保存配置路径
+      await this.shutdown();
+      await this.initialize(configPath);
+      logger.info('API工具集成服务重启完成');
+    } catch (error) {
+      logger.error('API工具集成服务重启失败', error as Error);
+      throw error;
+    }
+  }
+
+  private configPath?: string;
+
+  /**
    * 关闭API工具集成服务
    */
   async shutdown(): Promise<void> {
@@ -222,6 +317,7 @@ export class ApiToolIntegrationService {
     try {
       await this.apiServiceManager.shutdown();
       this.initialized = false;
+      this.configPath = undefined;
       logger.info('API工具集成服务已关闭');
     } catch (error) {
       logger.error('关闭API工具集成服务时发生错误', error as Error);

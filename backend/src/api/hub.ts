@@ -37,6 +37,7 @@ async function getHubService(): Promise<McpHubService> {
     hubService = new McpHubService(
       config.mcps.mcpServers as Record<string, any>,
       config.groups as any,
+      config.apiToolsConfigPath,
     );
 
     // Initialize the service with timeout
@@ -337,7 +338,8 @@ hubApi.get('/health', async (c) => {
     }
 
     const serverHealth = service.getServerHealth();
-    const serviceStatus = service.getServiceStatus();
+    const serviceStatus = await service.getDetailedServiceStatus();
+    const apiToolHealth = service.getApiToolServiceHealth();
 
     const healthData = {
       service: {
@@ -346,8 +348,11 @@ hubApi.get('/health', async (c) => {
         serverCount: serviceStatus.serverCount,
         connectedServers: serviceStatus.connectedServers,
         groupCount: serviceStatus.groupCount,
+        totalTools: serviceStatus.totalTools,
+        apiTools: serviceStatus.apiTools,
       },
       servers: Object.fromEntries(serverHealth),
+      apiToolService: apiToolHealth,
       timestamp: new Date().toISOString(),
     };
 
@@ -359,6 +364,7 @@ hubApi.get('/health', async (c) => {
       overallStatus,
       connectedServers: serviceStatus.connectedServers,
       totalServers: serviceStatus.serverCount,
+      apiTools: serviceStatus.apiTools,
     });
 
     return c.json({
@@ -386,11 +392,53 @@ hubApi.get('/diagnostics', async (c) => {
       serverCount: diagnostics.servers.total,
       connectedServers: diagnostics.servers.connected,
       groupCount: diagnostics.groups.total,
+      apiTools: diagnostics.apiTools.totalTools,
     });
 
     return c.json({
       success: true,
       data: diagnostics,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return c.json(handleApiError(error as Error), { status: 500 });
+  }
+});
+
+// GET /api/api-tools/health - Get API tool service health
+hubApi.get('/api-tools/health', async (c) => {
+  try {
+    const service = await getHubService();
+    const health = await service.performApiToolHealthCheck();
+
+    logger.debug('API tool health check completed', {
+      healthy: health.healthy,
+      initialized: health.initialized,
+    });
+
+    return c.json({
+      success: true,
+      data: health,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return c.json(handleApiError(error as Error), { status: 500 });
+  }
+});
+
+// POST /api/api-tools/reload - Reload API tool configuration
+hubApi.post('/api-tools/reload', async (c) => {
+  try {
+    const service = await getHubService();
+    await service.reloadApiToolConfig();
+
+    logger.info('API tool configuration reloaded successfully');
+
+    return c.json({
+      success: true,
+      data: {
+        message: 'API工具配置重新加载完成',
+      },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

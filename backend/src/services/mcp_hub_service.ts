@@ -473,7 +473,7 @@ export class McpHubService implements IMcpHubService {
   }
 
   /**
-   * Get detailed service status
+   * Get detailed service status (synchronous version for backward compatibility)
    */
   getServiceStatus(): {
     isInitialized: boolean;
@@ -496,7 +496,64 @@ export class McpHubService implements IMcpHubService {
       groupCount: this.isInitialized
         ? this.groupManager.getAllGroups().size
         : 0,
-      totalTools: 0, // Will be implemented in next subtask
+      totalTools: 0, // 保持简单的同步版本
+    };
+  }
+
+  /**
+   * Get detailed service status with API tools information (async version)
+   */
+  async getDetailedServiceStatus(): Promise<{
+    isInitialized: boolean;
+    serverCount: number;
+    connectedServers: number;
+    groupCount: number;
+    totalTools: number;
+    apiTools: number;
+  }> {
+    const serverHealth = this.isInitialized
+      ? this.getServerHealth()
+      : new Map();
+    const connectedServers = Array.from(serverHealth.values()).filter(
+      (status) => status === ServerStatus.CONNECTED,
+    ).length;
+
+    // 获取API工具统计
+    let apiToolCount = 0;
+    if (this.isInitialized) {
+      try {
+        const apiStats = await this.apiToolService.getStats();
+        apiToolCount = apiStats.totalApiTools;
+      } catch (error) {
+        logger.warn('获取API工具统计失败', {
+          error: (error as Error).message,
+        });
+      }
+    }
+
+    // 计算总工具数（包括MCP工具和API工具）
+    let totalMcpTools = 0;
+    if (this.isInitialized) {
+      try {
+        // 获取默认组的工具数量作为总数的估算
+        const tools = await this.listTools();
+        totalMcpTools = tools.length - apiToolCount; // 减去API工具数量避免重复计算
+      } catch (error) {
+        logger.warn('获取MCP工具统计失败', {
+          error: (error as Error).message,
+        });
+      }
+    }
+
+    return {
+      isInitialized: this.isInitialized,
+      serverCount: Object.keys(this.serverConfigs).length,
+      connectedServers,
+      groupCount: this.isInitialized
+        ? this.groupManager.getAllGroups().size
+        : 0,
+      totalTools: totalMcpTools + apiToolCount,
+      apiTools: apiToolCount,
     };
   }
 
@@ -540,6 +597,69 @@ export class McpHubService implements IMcpHubService {
         groupId: targetGroupId,
       });
       return null;
+    }
+  }
+
+  /**
+   * Get API tool service health status
+   */
+  getApiToolServiceHealth(): {
+    initialized: boolean;
+    healthy: boolean;
+    serviceStatus?: string;
+    errors?: string[];
+  } {
+    this.ensureInitialized();
+
+    try {
+      return this.apiToolService.getHealthStatus();
+    } catch (error) {
+      logger.error('Error getting API tool service health', error as Error);
+      return {
+        initialized: false,
+        healthy: false,
+        errors: [`获取API工具服务健康状态失败: ${(error as Error).message}`],
+      };
+    }
+  }
+
+  /**
+   * Perform API tool service health check
+   */
+  async performApiToolHealthCheck(): Promise<{
+    initialized: boolean;
+    healthy: boolean;
+    serviceStatus?: string;
+    errors?: string[];
+  }> {
+    this.ensureInitialized();
+
+    try {
+      return await this.apiToolService.performHealthCheck();
+    } catch (error) {
+      logger.error('Error performing API tool health check', error as Error);
+      return {
+        initialized: false,
+        healthy: false,
+        errors: [`API工具健康检查失败: ${(error as Error).message}`],
+      };
+    }
+  }
+
+  /**
+   * Reload API tool configuration
+   */
+  async reloadApiToolConfig(): Promise<void> {
+    this.ensureInitialized();
+
+    logger.info('重新加载API工具配置');
+
+    try {
+      await this.apiToolService.reloadConfig();
+      logger.info('API工具配置重新加载完成');
+    } catch (error) {
+      logger.error('重新加载API工具配置失败', error as Error);
+      throw error;
     }
   }
 
@@ -783,6 +903,12 @@ export class McpHubService implements IMcpHubService {
         isHealthy: boolean;
       }>;
     };
+    apiTools: {
+      initialized: boolean;
+      healthy: boolean;
+      totalTools: number;
+      errors: string[];
+    };
     performance: {
       cacheStats: any;
     };
@@ -840,6 +966,29 @@ export class McpHubService implements IMcpHubService {
       // Performance diagnostics
       const cacheStats = (this.toolManager as any).getCacheStats?.() || {};
 
+      // API tool diagnostics
+      let apiToolDiagnostics = {
+        initialized: false,
+        healthy: false,
+        totalTools: 0,
+        errors: [] as string[],
+      };
+
+      try {
+        const apiHealth = await this.apiToolService.performHealthCheck();
+        const apiStats = await this.apiToolService.getStats();
+        apiToolDiagnostics = {
+          initialized: apiHealth.initialized,
+          healthy: apiHealth.healthy,
+          totalTools: apiStats.totalApiTools,
+          errors: apiHealth.errors || [],
+        };
+      } catch (error) {
+        apiToolDiagnostics.errors.push(
+          `API工具诊断失败: ${(error as Error).message}`,
+        );
+      }
+
       const diagnostics = {
         service: {
           isInitialized: this.isInitialized,
@@ -857,6 +1006,7 @@ export class McpHubService implements IMcpHubService {
           loaded: allGroups.size,
           details: groupDetails,
         },
+        apiTools: apiToolDiagnostics,
         performance: {
           cacheStats,
         },

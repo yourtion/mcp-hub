@@ -27,15 +27,31 @@ const systemConfigInstance = new JsonStorage<SystemConfig>(
   {} as SystemConfig,
 ); // Renamed and added type assertion for default value
 
+// API工具配置路径
+const apiToolsPath = path.resolve(configDir, 'api-tools.json');
+
 export async function getAllConfig(): Promise<
   DeepReadonly<{
     mcps: McpConfig;
     groups: GroupConfig;
     system: SystemConfig;
+    apiToolsConfigPath?: string;
   }>
 > {
   const mcps = await mcpServerInstance.read();
   const groups = await groupConfigInstance.read();
   const system = await systemConfigInstance.read();
-  return { mcps, groups, system };
+
+  // 检查API工具配置文件是否存在
+  let apiToolsConfigPath: string | undefined;
+  try {
+    const fs = await import('node:fs/promises');
+    await fs.access(apiToolsPath);
+    apiToolsConfigPath = apiToolsPath;
+  } catch {
+    // API工具配置文件不存在，这是可选的
+    apiToolsConfigPath = undefined;
+  }
+
+  return { mcps, groups, system, apiToolsConfigPath };
 }

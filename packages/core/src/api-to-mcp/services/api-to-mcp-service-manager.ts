@@ -18,6 +18,42 @@ import { AuthenticationManager } from './authentication.js';
 import { HttpClient } from './http-client.js';
 
 /**
+ * 服务状态枚举
+ */
+export enum ServiceStatus {
+  NOT_INITIALIZED = 'not_initialized',
+  INITIALIZING = 'initializing',
+  RUNNING = 'running',
+  SHUTTING_DOWN = 'shutting_down',
+  SHUTDOWN = 'shutdown',
+  ERROR = 'error',
+}
+
+/**
+ * 服务健康状态
+ */
+export interface ServiceHealth {
+  /** 服务状态 */
+  status: ServiceStatus;
+  /** 是否健康 */
+  healthy: boolean;
+  /** 初始化时间 */
+  initializationTime?: Date;
+  /** 最后健康检查时间 */
+  lastHealthCheck?: Date;
+  /** 运行时间（毫秒） */
+  uptime?: number;
+  /** 工具统计 */
+  toolStats: {
+    total: number;
+    registered: number;
+    failed: number;
+  };
+  /** 错误信息 */
+  errors?: string[];
+}
+
+/**
  * API转MCP服务管理器接口
  */
 export interface ApiToMcpServiceManager {
@@ -64,6 +100,21 @@ export interface ApiToMcpServiceManager {
   ): ValidationResult;
 
   /**
+   * 获取服务健康状态
+   */
+  getHealthStatus(): ServiceHealth;
+
+  /**
+   * 执行健康检查
+   */
+  performHealthCheck(): Promise<ServiceHealth>;
+
+  /**
+   * 重启服务
+   */
+  restart(): Promise<void>;
+
+  /**
    * 关闭服务管理器
    */
   shutdown(): Promise<void>;
@@ -74,7 +125,11 @@ export interface ApiToMcpServiceManager {
  */
 export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
   private configPath?: string;
-  private initialized = false;
+  private status: ServiceStatus = ServiceStatus.NOT_INITIALIZED;
+  private initializationTime?: Date;
+  private lastHealthCheck?: Date;
+  private healthCheckInterval?: NodeJS.Timeout;
+  private readonly HEALTH_CHECK_INTERVAL_MS = 30000; // 30秒
 
   // 核心组件
   private configManager: ApiConfigManagerImpl;
@@ -97,6 +152,12 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
   }
 
   async initialize(configPath: string): Promise<void> {
+    if (this.status !== ServiceStatus.NOT_INITIALIZED) {
+      logger.warn('服务管理器已初始化或正在初始化中', { status: this.status });
+      return;
+    }
+
+    this.status = ServiceStatus.INITIALIZING;
     logger.info('初始化API转MCP服务管理器', { context: { configPath } });
 
     try {
@@ -111,21 +172,30 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
         await this.reloadConfig();
       });
 
-      this.initialized = true;
+      this.status = ServiceStatus.RUNNING;
+      this.initializationTime = new Date();
+
+      // 启动健康检查
+      this.startHealthMonitoring();
+
       logger.info('API转MCP服务管理器初始化完成', {
         context: {
           toolCount: this.toolRegistry.getToolCount(),
+          status: this.status,
         },
       });
     } catch (error) {
+      this.status = ServiceStatus.ERROR;
       logger.error('API转MCP服务管理器初始化失败', error as Error);
       throw new Error(`初始化失败: ${(error as Error).message}`);
     }
   }
 
   async reloadConfig(): Promise<void> {
+    this.ensureInitialized();
+
     if (!this.configPath) {
-      throw new Error('服务管理器未初始化');
+      throw new Error('配置文件路径未设置');
     }
 
     logger.info('重新加载API工具配置');
@@ -143,16 +213,14 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
         },
       });
     } catch (error) {
+      this.status = ServiceStatus.ERROR;
       logger.error('重新加载配置失败', error as Error);
       throw new Error(`重新加载失败: ${(error as Error).message}`);
     }
   }
 
   async getApiTools(): Promise<McpTool[]> {
-    if (!this.initialized) {
-      throw new Error('服务管理器未初始化');
-    }
-
+    this.ensureInitialized();
     return this.toolRegistry.getAllTools();
   }
 
@@ -160,9 +228,7 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
     toolId: string,
     parameters: Record<string, unknown>,
   ): Promise<ApiToolResult> {
-    if (!this.initialized) {
-      throw new Error('服务管理器未初始化');
-    }
+    this.ensureInitialized();
 
     logger.debug('执行API工具', { context: { toolId, parameters } });
 
@@ -252,19 +318,174 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
     return this.parameterValidator.validate(parameters, config.parameters);
   }
 
+  getHealthStatus(): ServiceHealth {
+    const now = new Date();
+    const uptime = this.initializationTime
+      ? now.getTime() - this.initializationTime.getTime()
+      : undefined;
+
+    const toolStats = this.toolRegistry.getStats();
+
+    return {
+      status: this.status,
+      healthy: this.status === ServiceStatus.RUNNING,
+      initializationTime: this.initializationTime,
+      lastHealthCheck: this.lastHealthCheck,
+      uptime,
+      toolStats: {
+        total: toolStats.totalTools,
+        registered: toolStats.totalTools,
+        failed: 0, // TODO: 实现失败工具统计
+      },
+    };
+  }
+
+  async performHealthCheck(): Promise<ServiceHealth> {
+    this.lastHealthCheck = new Date();
+
+    logger.debug('执行服务健康检查');
+
+    try {
+      const health = this.getHealthStatus();
+
+      // 检查核心组件状态
+      const errors: string[] = [];
+
+      // 检查工具注册表
+      if (this.toolRegistry.getToolCount() === 0) {
+        errors.push('没有注册的API工具');
+      }
+
+      // 检查配置管理器
+      if (!this.configPath) {
+        errors.push('配置文件路径未设置');
+      }
+
+      // 更新健康状态
+      const updatedHealth: ServiceHealth = {
+        ...health,
+        healthy: this.status === ServiceStatus.RUNNING && errors.length === 0,
+        errors: errors.length > 0 ? errors : undefined,
+      };
+
+      if (errors.length > 0) {
+        logger.warn('健康检查发现问题', { context: { errors } });
+      } else {
+        logger.debug('健康检查通过');
+      }
+
+      return updatedHealth;
+    } catch (error) {
+      logger.error('健康检查执行失败', error as Error);
+      return {
+        status: ServiceStatus.ERROR,
+        healthy: false,
+        errors: [`健康检查失败: ${(error as Error).message}`],
+        toolStats: {
+          total: 0,
+          registered: 0,
+          failed: 0,
+        },
+      };
+    }
+  }
+
+  async restart(): Promise<void> {
+    logger.info('重启API转MCP服务管理器');
+
+    try {
+      // 先关闭服务
+      await this.shutdown();
+
+      // 等待一小段时间确保资源清理完成
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // 重新初始化
+      if (this.configPath) {
+        await this.initialize(this.configPath);
+        logger.info('服务管理器重启完成');
+      } else {
+        throw new Error('无法重启：配置文件路径未设置');
+      }
+    } catch (error) {
+      logger.error('服务管理器重启失败', error as Error);
+      throw error;
+    }
+  }
+
   async shutdown(): Promise<void> {
+    if (this.status === ServiceStatus.SHUTDOWN) {
+      logger.warn('服务管理器已关闭');
+      return;
+    }
+
+    this.status = ServiceStatus.SHUTTING_DOWN;
     logger.info('关闭API转MCP服务管理器');
 
     try {
+      // 停止健康检查
+      this.stopHealthMonitoring();
+
       // 清理资源
       this.toolRegistry.clear();
       this.toolRegistry.removeAllEventListeners();
 
-      this.initialized = false;
+      this.status = ServiceStatus.SHUTDOWN;
       logger.info('API转MCP服务管理器已关闭');
     } catch (error) {
+      this.status = ServiceStatus.ERROR;
       logger.error('关闭服务管理器时发生错误', error as Error);
       throw error;
+    }
+  }
+
+  /**
+   * 确保服务已初始化
+   */
+  private ensureInitialized(): void {
+    if (this.status !== ServiceStatus.RUNNING) {
+      throw new Error(`服务管理器未运行，当前状态: ${this.status}`);
+    }
+  }
+
+  /**
+   * 启动健康监控
+   */
+  private startHealthMonitoring(): void {
+    if (this.healthCheckInterval) {
+      return; // 已经启动
+    }
+
+    logger.debug('启动健康监控', {
+      context: { intervalMs: this.HEALTH_CHECK_INTERVAL_MS },
+    });
+
+    this.healthCheckInterval = setInterval(async () => {
+      try {
+        await this.performHealthCheck();
+      } catch (error) {
+        logger.error('定期健康检查失败', error as Error);
+      }
+    }, this.HEALTH_CHECK_INTERVAL_MS);
+
+    // 立即执行一次健康检查
+    setImmediate(async () => {
+      try {
+        await this.performHealthCheck();
+      } catch (error) {
+        logger.error('初始健康检查失败', error as Error);
+      }
+    });
+  }
+
+  /**
+   * 停止健康监控
+   */
+  private stopHealthMonitoring(): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = undefined;
+      logger.debug('健康监控已停止');
     }
   }
 
