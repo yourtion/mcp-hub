@@ -3,7 +3,6 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CacheConfig } from '../types/cache.js';
 import { CacheManagerImpl } from './cache-manager.js';
 
 // Mock日志记录器
