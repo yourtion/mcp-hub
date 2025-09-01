@@ -7,6 +7,7 @@ import type {
 } from '../types/mcp-hub.js';
 import { ServerStatus } from '../types/mcp-hub.js';
 import { logger } from '../utils/logger.js';
+import { ApiToolIntegrationService } from './api_tool_integration_service.js';
 import { GroupManager } from './group_manager.js';
 import { ServerManager } from './server_manager.js';
 import { ToolManager } from './tool_manager.js';
@@ -62,6 +63,7 @@ export class McpHubService implements IMcpHubService {
   private serverManager: ServerManager;
   private groupManager: GroupManager;
   private toolManager: ToolManager;
+  private apiToolService: ApiToolIntegrationService;
   private isInitialized = false;
   private readonly DEFAULT_GROUP = 'default';
 
@@ -76,11 +78,17 @@ export class McpHubService implements IMcpHubService {
   constructor(
     private serverConfigs: Record<string, ServerConfig>,
     private groupConfigs: GroupConfig,
+    private apiToolConfigPath?: string,
   ) {
     // Initialize managers
     this.serverManager = new ServerManager(serverConfigs);
     this.groupManager = new GroupManager(groupConfigs, this.serverManager);
-    this.toolManager = new ToolManager(this.serverManager, this.groupManager);
+    this.apiToolService = new ApiToolIntegrationService();
+    this.toolManager = new ToolManager(
+      this.serverManager,
+      this.groupManager,
+      this.apiToolService,
+    );
   }
 
   async initialize(): Promise<void> {
@@ -119,6 +127,16 @@ export class McpHubService implements IMcpHubService {
         totalGroups: Object.keys(this.groupConfigs).length,
         loadedGroups,
         failedGroups: Object.keys(this.groupConfigs).length - loadedGroups,
+      });
+
+      // Initialize API tool service if config path is provided
+      logger.debug('Initializing API tool integration service');
+      await this.apiToolService.initialize(this.apiToolConfigPath);
+
+      const apiToolStats = await this.apiToolService.getStats();
+      logger.info('API tool integration service initialized', {
+        apiToolsEnabled: apiToolStats.initialized,
+        totalApiTools: apiToolStats.totalApiTools,
       });
 
       // Validate service health after initialization
@@ -1119,6 +1137,14 @@ export class McpHubService implements IMcpHubService {
    */
   private async performGracefulShutdown(): Promise<void> {
     logger.debug('Performing graceful shutdown');
+
+    // Shutdown API tool service
+    try {
+      await this.apiToolService.shutdown();
+      logger.debug('API tool service shutdown completed');
+    } catch (error) {
+      logger.error('API tool service shutdown failed', error as Error);
+    }
 
     // Shutdown server manager with proper cleanup
     await this.serverManager.shutdown();

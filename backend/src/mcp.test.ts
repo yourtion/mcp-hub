@@ -44,6 +44,17 @@ vi.mock('@mcp-core/mcp-hub-core', () => ({
     }),
     shutdown: vi.fn().mockResolvedValue(undefined),
   })),
+  performanceMonitor: {
+    startRequest: vi.fn(),
+    endRequest: vi.fn(),
+    recordMetric: vi.fn(),
+    getMetrics: vi.fn().mockReturnValue({}),
+  },
+  performanceOptimizer: {
+    getCached: vi.fn().mockReturnValue(null),
+    setCached: vi.fn(),
+    clearCache: vi.fn(),
+  },
 }));
 
 vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', () => ({

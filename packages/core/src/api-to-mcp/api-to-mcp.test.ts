@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { ConfigValidatorImpl } from './config/config-validator.js';
 import { ApiConfigManagerImpl } from './services/api-config-manager.js';
 import { ApiToMcpServiceManagerImpl } from './services/api-to-mcp-service-manager.js';
-import { ApiToolGeneratorImpl } from './services/api-tool-generator.js';
+import { ApiToolGenerator } from './services/api-tool-generator.js';
 import { EnvironmentResolverImpl } from './utils/environment-resolver.js';
 import { TemplateEngineImpl } from './utils/template-engine.js';
 
@@ -32,12 +32,12 @@ describe('API转MCP服务模块', () => {
 
   describe('ApiToolGenerator', () => {
     it('应该能够创建工具生成器实例', () => {
-      const generator = new ApiToolGeneratorImpl();
+      const generator = new ApiToolGenerator();
       expect(generator).toBeDefined();
     });
 
     it('应该能够生成基本的MCP工具定义', () => {
-      const generator = new ApiToolGeneratorImpl();
+      const generator = new ApiToolGenerator();
       const apiConfig = {
         id: 'test-tool',
         name: '测试工具',
@@ -57,7 +57,10 @@ describe('API转MCP服务模块', () => {
 
       const tool = generator.generateMcpTool(apiConfig);
       expect(tool.name).toBe('test-tool');
-      expect(tool.description).toBe('这是一个测试工具');
+      expect(tool.description).toContain('这是一个测试工具');
+      expect(tool.description).toContain(
+        'API端点: GET https://api.example.com/test',
+      );
     });
   });
 

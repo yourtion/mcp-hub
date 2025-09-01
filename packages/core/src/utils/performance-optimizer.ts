@@ -79,11 +79,11 @@ export class PerformanceOptimizer extends EventEmitter {
   private logger = createLogger({ component: 'PerformanceOptimizer' });
 
   // 缓存系统
-  private cache = new Map<string, CacheItem<any>>();
+  private cache = new Map<string, CacheItem<unknown>>();
   private cacheCleanupTimer?: NodeJS.Timeout;
 
   // 连接池
-  private connectionPool = new Map<string, any[]>();
+  private connectionPool = new Map<string, unknown[]>();
   private connectionStats = new Map<
     string,
     { created: number; used: number; errors: number }
@@ -243,7 +243,7 @@ export class PerformanceOptimizer extends EventEmitter {
     item.lastAccessed = Date.now();
     this.metrics.cacheHits++;
 
-    return item.value;
+    return item.value as T;
   }
 
   /**
@@ -293,8 +293,8 @@ export class PerformanceOptimizer extends EventEmitter {
    */
   async getPooledConnection(
     poolName: string,
-    connectionFactory: () => Promise<any>,
-  ): Promise<any> {
+    connectionFactory: () => Promise<unknown>,
+  ): Promise<unknown> {
     if (!this.config.enableConnectionPooling) {
       return connectionFactory();
     }
@@ -324,7 +324,7 @@ export class PerformanceOptimizer extends EventEmitter {
   /**
    * 连接池优化 - 归还连接
    */
-  returnPooledConnection(poolName: string, connection: any): void {
+  returnPooledConnection(poolName: string, connection: unknown): void {
     if (!this.config.enableConnectionPooling) {
       return;
     }
@@ -337,10 +337,16 @@ export class PerformanceOptimizer extends EventEmitter {
       this.connectionPool.set(poolName, pool);
     } else {
       // 池已满，关闭连接
-      if (connection && typeof connection.close === 'function') {
-        connection.close().catch((error: Error) => {
-          this.logger.error('关闭多余连接失败', error);
-        });
+      if (
+        connection &&
+        typeof (connection as { close?: () => Promise<void> }).close ===
+          'function'
+      ) {
+        (connection as { close: () => Promise<void> })
+          .close()
+          .catch((error: Error) => {
+            this.logger.error('关闭多余连接失败', error);
+          });
       }
     }
   }
@@ -536,12 +542,18 @@ export class PerformanceOptimizer extends EventEmitter {
       const toClose = pool.splice(keepCount);
 
       for (const connection of toClose) {
-        if (connection && typeof connection.close === 'function') {
-          connection.close().catch((error: Error) => {
-            this.logger.error('关闭空闲连接失败', error, {
-              context: { poolName },
+        if (
+          connection &&
+          typeof (connection as { close?: () => Promise<void> }).close ===
+            'function'
+        ) {
+          (connection as { close: () => Promise<void> })
+            .close()
+            .catch((error: Error) => {
+              this.logger.error('关闭空闲连接失败', error, {
+                context: { poolName },
+              });
             });
-          });
         }
       }
 
@@ -563,10 +575,18 @@ export class PerformanceOptimizer extends EventEmitter {
   private clearConnectionPools(): void {
     for (const [poolName, pool] of this.connectionPool) {
       for (const connection of pool) {
-        if (connection && typeof connection.close === 'function') {
-          connection.close().catch((error: Error) => {
-            this.logger.error('关闭连接失败', error, { context: { poolName } });
-          });
+        if (
+          connection &&
+          typeof (connection as { close?: () => Promise<void> }).close ===
+            'function'
+        ) {
+          (connection as { close: () => Promise<void> })
+            .close()
+            .catch((error: Error) => {
+              this.logger.error('关闭连接失败', error, {
+                context: { poolName },
+              });
+            });
         }
       }
     }

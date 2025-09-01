@@ -184,7 +184,7 @@ export class PerformanceMonitor extends EventEmitter {
     const startTime = Date.now();
 
     // 临时存储请求开始信息
-    (this as any)[`_req_${requestId}`] = {
+    (this as Record<string, unknown>)[`_req_${requestId}`] = {
       requestId,
       operation,
       component,
@@ -200,16 +200,16 @@ export class PerformanceMonitor extends EventEmitter {
     if (!this.config.enabled) return;
 
     const endTime = Date.now();
-    const startData = (this as any)[`_req_${requestId}`];
+    const startData = (this as Record<string, unknown>)[`_req_${requestId}`];
 
     if (!startData) {
       return;
     }
 
     const requestPerformance: RequestPerformance = {
-      ...startData,
+      ...(startData as RequestPerformance),
       endTime,
-      duration: endTime - startData.startTime,
+      duration: endTime - (startData as RequestPerformance).startTime,
       success,
       error,
     };
@@ -222,7 +222,7 @@ export class PerformanceMonitor extends EventEmitter {
     }
 
     // 清理临时数据
-    delete (this as any)[`_req_${requestId}`];
+    delete (this as Record<string, unknown>)[`_req_${requestId}`];
 
     // 检查性能阈值
     this.checkThresholds(requestPerformance);
@@ -504,7 +504,7 @@ export function createPerformanceMonitor(
 let _performanceMonitor: PerformanceMonitor | null = null;
 
 export const performanceMonitor = new Proxy({} as PerformanceMonitor, {
-  get(target, prop) {
+  get(_target, prop) {
     if (!_performanceMonitor) {
       _performanceMonitor = createPerformanceMonitor({
         enabled: process.env.PERFORMANCE_MONITORING !== 'false',

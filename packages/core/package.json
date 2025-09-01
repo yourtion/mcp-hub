@@ -28,10 +28,12 @@
   "dependencies": {
     "@mcp-core/mcp-hub-share": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.0.4",
-    "zod": "^3.23.8",
-    "jsonata": "^2.0.3"
+    "axios": "^1.6.7",
+    "jsonata": "^2.0.3",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/jsonata": "^1.5.1",
     "@types/node": "^20.11.17",
     "@vitest/coverage-v8": "2.1.9",
     "typescript": "^5.8.3",

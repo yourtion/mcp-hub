@@ -8,6 +8,7 @@ import type {
   ToolResult,
 } from '../types/mcp-hub.js';
 import { logger } from '../utils/logger.js';
+import type { ApiToolIntegrationService } from './api_tool_integration_service.js';
 
 export class ToolManager implements IToolManager {
   private toolCache: Map<string, { tools: Tool[]; lastUpdated: Date }> =
@@ -17,6 +18,7 @@ export class ToolManager implements IToolManager {
   constructor(
     private serverManager: ServerManager,
     private groupManager: GroupManager,
+    private apiToolService?: ApiToolIntegrationService,
   ) {}
 
   async getToolsForGroup(groupId: string): Promise<Tool[]> {
@@ -33,18 +35,37 @@ export class ToolManager implements IToolManager {
         return cached;
       }
 
-      // Get tools from group manager
-      const tools = await this.groupManager.getGroupTools(groupId);
+      // Get tools from group manager (MCP servers)
+      const mcpTools = await this.groupManager.getGroupTools(groupId);
+
+      // Get API tools if service is available
+      let apiTools: Tool[] = [];
+      if (this.apiToolService) {
+        try {
+          apiTools = await this.apiToolService.getApiTools();
+          logger.debug('Retrieved API tools', { count: apiTools.length });
+        } catch (error) {
+          logger.warn('Failed to get API tools', {
+            error: (error as Error).message,
+          });
+          // Continue without API tools
+        }
+      }
+
+      // Combine MCP tools and API tools
+      const allTools = [...mcpTools, ...apiTools];
 
       // Cache the results
-      this.cacheTools(groupId, tools);
+      this.cacheTools(groupId, allTools);
 
       logger.debug('Retrieved and cached tools for group', {
         groupId,
-        toolCount: tools.length,
+        mcpToolCount: mcpTools.length,
+        apiToolCount: apiTools.length,
+        totalToolCount: allTools.length,
       });
 
-      return tools;
+      return allTools;
     } catch (error) {
       logger.error('Failed to get tools for group', error as Error, {
         groupId,
@@ -106,7 +127,7 @@ export class ToolManager implements IToolManager {
         return this.createErrorResult(routingResult.error);
       }
 
-      const { serverId, tool } = routingResult;
+      const { serverId, tool, isApiTool } = routingResult;
 
       // Step 4: Validate tool arguments against schema
       const argsValidation = this.validateToolArgsWithSchema(tool, args);
@@ -125,12 +146,19 @@ export class ToolManager implements IToolManager {
       }
 
       // Step 5: Execute the tool with comprehensive error handling
-      const result = await this.executeToolWithRetry(
-        serverId,
-        toolName,
-        args,
-        executionId,
-      );
+      let result: ToolResult;
+      if (isApiTool && this.apiToolService) {
+        // Execute API tool
+        result = await this.apiToolService.executeApiTool(toolName, args);
+      } else {
+        // Execute MCP tool
+        result = await this.executeToolWithRetry(
+          serverId,
+          toolName,
+          args,
+          executionId,
+        );
+      }
 
       logger.info('Tool execution completed successfully', {
         executionId,
@@ -159,13 +187,33 @@ export class ToolManager implements IToolManager {
     toolName: string,
     executionId: string,
   ): Promise<
-    | { success: true; serverId: string; tool: Tool }
+    | { success: true; serverId: string; tool: Tool; isApiTool?: boolean }
     | { success: false; error: string }
   > {
     logger.debug('Routing tool execution', { executionId, groupId, toolName });
 
     try {
-      // Find the server that has this tool
+      // First check if this is an API tool
+      if (this.apiToolService && this.apiToolService.isApiTool(toolName)) {
+        const apiTool = this.apiToolService.getApiToolDefinition(toolName);
+        if (apiTool) {
+          logger.debug('Tool routing successful (API tool)', {
+            executionId,
+            toolName,
+            serverId: 'api-tools',
+            groupId,
+          });
+
+          return {
+            success: true,
+            serverId: 'api-tools',
+            tool: apiTool,
+            isApiTool: true,
+          };
+        }
+      }
+
+      // Find the server that has this tool (MCP servers)
       const serverId = this.findToolServer(toolName, groupId);
       if (!serverId) {
         return {
@@ -194,14 +242,14 @@ export class ToolManager implements IToolManager {
         };
       }
 
-      logger.debug('Tool routing successful', {
+      logger.debug('Tool routing successful (MCP tool)', {
         executionId,
         toolName,
         serverId,
         groupId,
       });
 
-      return { success: true, serverId, tool };
+      return { success: true, serverId, tool, isApiTool: false };
     } catch (error) {
       logger.error('Error during tool routing', error as Error, {
         executionId,
