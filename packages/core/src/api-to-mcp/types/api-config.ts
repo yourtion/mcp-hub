@@ -187,11 +187,30 @@ export const ApiToolsConfigSchema = z.object({
  */
 export type HttpMethod = z.infer<typeof HttpMethodSchema>;
 export type AuthConfig = z.infer<typeof AuthConfigSchema>;
-export type RateLimitConfig = z.infer<typeof RateLimitConfigSchema>;
 export type SecurityConfig = z.infer<typeof SecurityConfigSchema>;
 export type ResponseConfig = z.infer<typeof ResponseConfigSchema>;
 export type ApiEndpointConfig = z.infer<typeof ApiEndpointConfigSchema>;
 export type ApiToolsConfig = z.infer<typeof ApiToolsConfigSchema>;
+
+/**
+ * 扩展的频率限制配置（用于安全模块）
+ */
+export interface RateLimitConfig {
+  /** 时间窗口（秒） */
+  windowSeconds: number;
+  /** 最大请求数 */
+  maxRequests: number;
+  /** 是否启用 */
+  enabled: boolean;
+  /** 工具特定配置 */
+  toolSpecific?: Record<
+    string,
+    {
+      windowSeconds: number;
+      maxRequests: number;
+    }
+  >;
+}
 
 /**
  * 缓存配置接口（运行时使用）

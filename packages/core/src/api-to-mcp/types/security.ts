@@ -55,3 +55,17 @@ export interface DomainValidationResult {
   /** 拒绝原因 */
   reason?: string;
 }
+
+/**
+ * 频率限制状态
+ */
+export interface RateLimitStatus {
+  /** 是否被限制 */
+  limited: boolean;
+  /** 剩余请求数 */
+  remaining: number;
+  /** 重置时间 */
+  resetTime: Date;
+  /** 当前窗口开始时间 */
+  windowStart: Date;
+}
