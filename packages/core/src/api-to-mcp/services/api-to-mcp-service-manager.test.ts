@@ -553,7 +553,7 @@ describe('ApiToMcpServiceManagerImpl', () => {
             name: '并发工具',
             description: '用于并发测试的工具',
             api: {
-              url: 'https://httpbin.org/delay/1',
+              url: 'http://localhost:3001/api/test',
               method: 'GET',
             },
             parameters: {
@@ -580,7 +580,7 @@ describe('ApiToMcpServiceManagerImpl', () => {
       results.forEach((result) => {
         expect(result.status).toBe('fulfilled');
       });
-    });
+    }, 10000);
 
     it('应该正确清理资源', async () => {
       const config: ApiToolsConfig = {

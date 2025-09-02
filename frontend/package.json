@@ -10,11 +10,18 @@
     "preview": "rsbuild preview"
   },
   "dependencies": {
-    "vue": "^3.5.17"
+    "@vueuse/core": "^13.9.0",
+    "axios": "^1.6.7",
+    "pinia": "^3.0.3",
+    "tdesign-icons-vue-next": "^0.3.7",
+    "tdesign-vue-next": "^1.16.1",
+    "vue": "^3.5.17",
+    "vue-router": "^4.5.1"
   },
   "devDependencies": {
     "@rsbuild/core": "^1.4.2",
     "@rsbuild/plugin-vue": "^1.0.7",
+    "@types/node": "^20.11.17",
     "@vue/eslint-config-typescript": "^14.5.1",
     "eslint-plugin-vue": "^10.2.0",
     "globals": "^16.2.0",

@@ -111,13 +111,14 @@ export class HttpClient {
           } else {
             fetchOptions.body = JSON.stringify(processedConfig.data);
             // 确保Content-Type是application/json
-            (fetchOptions.headers as Record<string, string>)['Content-Type'] = 'application/json';
+            (fetchOptions.headers as Record<string, string>)['Content-Type'] =
+              'application/json';
           }
         }
 
         // 设置超时
         const timeout = processedConfig.timeout ?? this.config.timeout;
-        
+
         // 执行请求
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -140,8 +141,10 @@ export class HttpClient {
         const httpResponse: HttpResponse = {
           status: response.status,
           statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
+          headers: response.headers,
           data: await response.json().catch(() => ({})), // 尝试解析JSON，失败则返回空对象
+          raw: response,
+          config: processedConfig,
         };
 
         // 记录连接使用情况

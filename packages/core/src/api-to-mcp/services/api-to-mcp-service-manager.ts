@@ -153,7 +153,10 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
 
   async initialize(configPath: string): Promise<void> {
     // 如果当前状态是ERROR，允许重新初始化
-    if (this.status !== ServiceStatus.NOT_INITIALIZED && this.status !== ServiceStatus.ERROR) {
+    if (
+      this.status !== ServiceStatus.NOT_INITIALIZED &&
+      this.status !== ServiceStatus.ERROR
+    ) {
       logger.warn('服务管理器已初始化或正在初始化中', { status: this.status });
       return;
     }

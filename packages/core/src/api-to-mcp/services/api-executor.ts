@@ -366,7 +366,10 @@ export class ApiExecutorImpl implements ApiExecutor {
     }
 
     // 如果无法提取具体错误信息，返回状态文本
-    return response.statusText || (response.status ? `HTTP ${response.status}` : '请求失败');
+    return (
+      response.statusText ||
+      (response.status ? `HTTP ${response.status}` : '请求失败')
+    );
   }
 }
 

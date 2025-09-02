@@ -673,7 +673,7 @@ describe('API转MCP服务性能测试', () => {
           responseData = result.content[0].text;
         }
       }
-      
+
       // 由于JSONata处理可能有问题，先检查响应数据是否存在
       if (responseData && typeof responseData === 'object') {
         // 如果JSONata处理成功，检查预期字段
@@ -788,7 +788,7 @@ describe('API转MCP服务性能测试', () => {
           responseData = result.content[0].text;
         }
       }
-      
+
       // 由于JSONata处理可能有问题，先检查响应数据是否存在
       if (responseData && typeof responseData === 'object') {
         // 如果JSONata处理成功，检查预期字段

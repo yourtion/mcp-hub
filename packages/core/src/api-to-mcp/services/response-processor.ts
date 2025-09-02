@@ -398,7 +398,8 @@ export class ResponseProcessorImpl implements ResponseProcessor {
         errors: [
           {
             path: 'jsonata',
-            message: error instanceof Error ? error.message : '无效的JSONata表达式',
+            message:
+              error instanceof Error ? error.message : '无效的JSONata表达式',
             code: 'INVALID_JSONATA_SYNTAX',
           },
         ],

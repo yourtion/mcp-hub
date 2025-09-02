@@ -58,7 +58,7 @@ describe('HttpClient', () => {
           status: 200,
           statusText: 'OK',
           headers: { 'content-type': 'application/json' },
-        }
+        },
       );
 
       mockFetch.mockResolvedValueOnce(mockResponse);
@@ -76,7 +76,7 @@ describe('HttpClient', () => {
         'https://api.example.com/test',
         expect.objectContaining({
           method: 'GET',
-        })
+        }),
       );
     });
 
@@ -87,14 +87,11 @@ describe('HttpClient', () => {
         .mockRejectedValueOnce(error)
         .mockImplementationOnce(() => {
           return Promise.resolve(
-            new Response(
-              JSON.stringify({ message: 'success after retry' }),
-              {
-                status: 200,
-                statusText: 'OK',
-                headers: {},
-              }
-            )
+            new Response(JSON.stringify({ message: 'success after retry' }), {
+              status: 200,
+              statusText: 'OK',
+              headers: {},
+            }),
           );
         });
 
@@ -126,14 +123,11 @@ describe('HttpClient', () => {
     });
 
     it('应该支持POST请求和请求体', async () => {
-      const mockResponse = new Response(
-        JSON.stringify({ id: 1 }),
-        {
-          status: 201,
-          statusText: 'Created',
-          headers: {},
-        }
-      );
+      const mockResponse = new Response(JSON.stringify({ id: 1 }), {
+        status: 201,
+        statusText: 'Created',
+        headers: {},
+      });
 
       mockFetch.mockResolvedValueOnce(mockResponse);
 
@@ -155,7 +149,7 @@ describe('HttpClient', () => {
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
           }),
-        })
+        }),
       );
     });
   });
@@ -169,7 +163,9 @@ describe('HttpClient', () => {
 
       // 由于HttpClient现在是基于fetch的，我们不能直接访问axios实例
       // 这里我们只需要验证方法不抛出错误
-      expect(() => httpClient.addRequestInterceptor(requestInterceptor)).not.toThrow();
+      expect(() =>
+        httpClient.addRequestInterceptor(requestInterceptor),
+      ).not.toThrow();
     });
 
     it('应该支持添加响应拦截器', () => {
@@ -179,7 +175,9 @@ describe('HttpClient', () => {
 
       // 由于HttpClient现在是基于fetch的，我们不能直接访问axios实例
       // 这里我们只需要验证方法不抛出错误
-      expect(() => httpClient.addResponseInterceptor(responseInterceptor)).not.toThrow();
+      expect(() =>
+        httpClient.addResponseInterceptor(responseInterceptor),
+      ).not.toThrow();
     });
   });
 

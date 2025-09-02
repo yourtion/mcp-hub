@@ -475,7 +475,9 @@ describe('API转MCP服务集成测试', () => {
       );
       expect(result.isError).toBe(true);
       // 网络错误可能有不同的错误消息格式
-      expect(result.content[0].text).toContain('Cannot read properties of undefined');
+      expect(result.content[0].text).toContain(
+        'Cannot read properties of undefined',
+      );
     }, 10000); // 增加测试超时时间到10秒
 
     it('应该处理JSONata表达式错误', async () => {
@@ -655,7 +657,7 @@ describe('API转MCP服务集成测试', () => {
       await serviceManager.initialize(configPath);
 
       // 添加小延迟确保uptime大于0
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       const health = await serviceManager.performHealthCheck();
 
