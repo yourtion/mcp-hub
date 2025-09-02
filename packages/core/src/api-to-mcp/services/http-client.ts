@@ -1,13 +1,9 @@
 /**
  * HTTP客户端实现
- * 基于axios提供HTTP请求功能，支持连接池、拦截器和重试机制
+ * 基于fetch提供HTTP请求功能，支持连接池、拦截器和重试机制
  */
 
-import axios, {
-  type AxiosInstance,
-  type AxiosRequestConfig,
-  type AxiosResponse,
-} from 'axios';
+// 基于fetch的HTTP客户端不需要额外导入
 import { createLogger } from '../../utils/logger.js';
 import type {
   HttpConnection,
@@ -70,7 +66,6 @@ const DEFAULT_CONFIG: HttpClientConfig = {
  * 提供HTTP请求功能，支持连接池、拦截器和重试机制
  */
 export class HttpClient {
-  private readonly axiosInstance: AxiosInstance;
   private readonly config: HttpClientConfig;
   private readonly requestInterceptors: RequestInterceptor[] = [];
   private readonly responseInterceptors: ResponseInterceptor[] = [];
@@ -78,52 +73,6 @@ export class HttpClient {
 
   constructor(config: Partial<HttpClientConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
-
-    // 创建axios实例
-    this.axiosInstance = axios.create({
-      timeout: this.config.timeout,
-      headers: this.config.defaultHeaders,
-      // 启用连接池和保持连接
-      httpAgent: this.createHttpAgent(),
-      httpsAgent: this.createHttpsAgent(),
-    });
-
-    // 设置请求拦截器
-    this.axiosInstance.interceptors.request.use(
-      async (axiosConfig) => {
-        let config = this.convertToHttpRequestConfig(axiosConfig);
-
-        // 应用自定义请求拦截器
-        for (const interceptor of this.requestInterceptors) {
-          config = await interceptor(config);
-        }
-
-        const convertedConfig = this.convertToAxiosConfig(config);
-        return convertedConfig as typeof axiosConfig;
-      },
-      (error) => {
-        logger.error('请求拦截器错误:', error);
-        return Promise.reject(error);
-      },
-    );
-
-    // 设置响应拦截器
-    this.axiosInstance.interceptors.response.use(
-      async (axiosResponse) => {
-        let response = this.convertToHttpResponse(axiosResponse);
-
-        // 应用自定义响应拦截器
-        for (const interceptor of this.responseInterceptors) {
-          response = await interceptor(response);
-        }
-
-        return axiosResponse;
-      },
-      (error) => {
-        logger.error('响应拦截器错误:', error);
-        return Promise.reject(error);
-      },
-    );
 
     logger.info('HTTP客户端初始化完成');
   }
@@ -140,19 +89,76 @@ export class HttpClient {
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        const axiosConfig = this.convertToAxiosConfig(config);
-        const axiosResponse = await this.axiosInstance.request(axiosConfig);
-        const response = this.convertToHttpResponse(axiosResponse);
+        // 应用请求拦截器
+        let processedConfig = { ...config };
+        for (const interceptor of this.requestInterceptors) {
+          processedConfig = await interceptor(processedConfig);
+        }
+
+        // 构建fetch请求选项
+        const fetchOptions: RequestInit = {
+          method: processedConfig.method,
+          headers: {
+            ...this.config.defaultHeaders,
+            ...processedConfig.headers,
+          },
+        };
+
+        // 添加请求体（如果存在）
+        if (processedConfig.data) {
+          if (typeof processedConfig.data === 'string') {
+            fetchOptions.body = processedConfig.data;
+          } else {
+            fetchOptions.body = JSON.stringify(processedConfig.data);
+            // 确保Content-Type是application/json
+            (fetchOptions.headers as Record<string, string>)['Content-Type'] = 'application/json';
+          }
+        }
+
+        // 设置超时
+        const timeout = processedConfig.timeout ?? this.config.timeout;
+        
+        // 执行请求
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        fetchOptions.signal = controller.signal;
+
+        let response: Response;
+        try {
+          response = await fetch(processedConfig.url, fetchOptions);
+          clearTimeout(timeoutId);
+        } catch (error) {
+          clearTimeout(timeoutId);
+          // 检查是否是超时错误
+          if (error instanceof Error && error.name === 'AbortError') {
+            throw new Error('Network timeout');
+          }
+          throw error;
+        }
+
+        // 构建HttpResponse对象
+        const httpResponse: HttpResponse = {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          data: await response.json().catch(() => ({})), // 尝试解析JSON，失败则返回空对象
+        };
 
         // 记录连接使用情况
-        this.recordConnectionUsage(config.url);
+        this.recordConnectionUsage(processedConfig.url);
 
         const _duration = Date.now() - startTime;
         logger.debug(
-          `HTTP请求成功: ${config.method} ${config.url} ${response.status}`,
+          `HTTP请求成功: ${processedConfig.method} ${processedConfig.url} ${httpResponse.status}`,
         );
 
-        return response;
+        // 应用响应拦截器
+        let finalResponse = httpResponse;
+        for (const interceptor of this.responseInterceptors) {
+          finalResponse = await interceptor(finalResponse);
+        }
+
+        return finalResponse;
       } catch (error) {
         lastError = error as Error;
         const _duration = Date.now() - startTime;
@@ -197,13 +203,8 @@ export class HttpClient {
   /**
    * 设置默认配置
    */
-  setDefaults(config: Partial<HttpRequestConfig>): void {
-    if (config.headers) {
-      Object.assign(this.axiosInstance.defaults.headers.common, config.headers);
-    }
-    if (config.timeout) {
-      this.axiosInstance.defaults.timeout = config.timeout;
-    }
+  setDefaults(config: Partial<HttpClientConfig>): void {
+    Object.assign(this.config, config);
     logger.debug('更新默认配置');
   }
 
@@ -345,68 +346,6 @@ export class HttpClient {
         },
       });
     }
-  }
-
-  /**
-   * 转换HttpRequestConfig到AxiosRequestConfig
-   */
-  private convertToAxiosConfig(config: HttpRequestConfig): AxiosRequestConfig {
-    return {
-      url: config.url,
-      method: config.method,
-      headers: config.headers,
-      params: config.params,
-      data: config.data,
-      timeout: config.timeout,
-    };
-  }
-
-  /**
-   * 转换AxiosRequestConfig到HttpRequestConfig
-   */
-  private convertToHttpRequestConfig(
-    axiosConfig: AxiosRequestConfig,
-  ): HttpRequestConfig {
-    return {
-      url: axiosConfig.url || '',
-      method: (
-        axiosConfig.method || 'GET'
-      ).toUpperCase() as HttpRequestConfig['method'],
-      headers: axiosConfig.headers as Record<string, string>,
-      params: axiosConfig.params,
-      data: axiosConfig.data,
-      timeout: axiosConfig.timeout,
-    };
-  }
-
-  /**
-   * 转换AxiosResponse到HttpResponse
-   */
-  private convertToHttpResponse(axiosResponse: AxiosResponse): HttpResponse {
-    // 创建Headers对象
-    const headers = new Headers();
-    if (axiosResponse.headers) {
-      for (const [key, value] of Object.entries(axiosResponse.headers)) {
-        if (typeof value === 'string') {
-          headers.set(key, value);
-        } else if (Array.isArray(value)) {
-          for (const v of value) {
-            headers.append(key, String(v));
-          }
-        } else if (value !== undefined) {
-          headers.set(key, String(value));
-        }
-      }
-    }
-
-    return {
-      status: axiosResponse.status,
-      statusText: axiosResponse.statusText,
-      headers,
-      data: axiosResponse.data,
-      raw: axiosResponse as unknown as Response,
-      config: this.convertToHttpRequestConfig(axiosResponse.config),
-    };
   }
 
   /**

@@ -186,7 +186,7 @@ export class ApiExecutorImpl implements ApiExecutor {
 
       // 返回错误响应
       return {
-        raw: null as unknown as HttpResponse,
+        raw: undefined as unknown as HttpResponse,
         data: null,
         success: false,
         error: errorMessage,
@@ -340,6 +340,11 @@ export class ApiExecutorImpl implements ApiExecutor {
    * 从HTTP响应中提取错误信息
    */
   private extractErrorMessage(response: HttpResponse): string {
+    // 检查响应是否存在
+    if (!response) {
+      return '网络错误或请求失败';
+    }
+
     // 尝试从响应体中提取错误信息
     if (response.data && typeof response.data === 'object') {
       const data = response.data as Record<string, unknown>;
@@ -361,7 +366,7 @@ export class ApiExecutorImpl implements ApiExecutor {
     }
 
     // 如果无法提取具体错误信息，返回状态文本
-    return response.statusText || `HTTP ${response.status}`;
+    return response.statusText || (response.status ? `HTTP ${response.status}` : '请求失败');
   }
 }
 

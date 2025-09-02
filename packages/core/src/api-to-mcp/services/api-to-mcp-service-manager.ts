@@ -152,7 +152,8 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
   }
 
   async initialize(configPath: string): Promise<void> {
-    if (this.status !== ServiceStatus.NOT_INITIALIZED) {
+    // 如果当前状态是ERROR，允许重新初始化
+    if (this.status !== ServiceStatus.NOT_INITIALIZED && this.status !== ServiceStatus.ERROR) {
       logger.warn('服务管理器已初始化或正在初始化中', { status: this.status });
       return;
     }
@@ -270,12 +271,80 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
         parameters,
       );
 
+      logger.debug('API调用响应', {
+        context: {
+          toolId,
+          response,
+        },
+      });
+
+      // 处理错误响应
+      if (!response.success) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text',
+              text: response.error || 'API调用失败',
+            },
+          ],
+        };
+      }
+
+      // 处理成功响应，应用JSONata表达式（如果有）
+      let resultData = response.data;
+      if (config.response?.jsonata) {
+        try {
+          // 使用ResponseProcessor处理JSONata表达式
+          const { ResponseProcessorImpl } = await import(
+            './response-processor.js'
+          );
+          const processor = new ResponseProcessorImpl();
+          // 确保响应数据是有效的JSON对象
+          let jsonData = response.data;
+          if (typeof response.data === 'string') {
+            try {
+              jsonData = JSON.parse(response.data);
+            } catch (parseError) {
+              // 如果解析失败，保持原始数据
+              jsonData = response.data;
+            }
+          }
+          resultData = await processor.processWithJsonata(
+            jsonData,
+            config.response.jsonata,
+          );
+        } catch (jsonataError) {
+          logger.error('JSONata处理失败', jsonataError as Error, {
+            context: { toolId },
+          });
+          return {
+            isError: true,
+            content: [
+              {
+                type: 'text',
+                text: `响应处理失败: ${(jsonataError as Error).message}`,
+              },
+            ],
+          };
+        }
+      }
+
+      // 确保结果数据是字符串格式
+      let resultText: string;
+      if (typeof resultData === 'string') {
+        // 对于字符串结果，我们不需要额外的JSON序列化
+        resultText = resultData;
+      } else {
+        resultText = JSON.stringify(resultData, null, 2);
+      }
+
       return {
         isError: false,
         content: [
           {
             type: 'text',
-            text: JSON.stringify(response.data, null, 2),
+            text: resultText,
           },
         ],
       };
@@ -321,8 +390,8 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
   getHealthStatus(): ServiceHealth {
     const now = new Date();
     const uptime = this.initializationTime
-      ? now.getTime() - this.initializationTime.getTime()
-      : undefined;
+      ? Math.max(0, now.getTime() - this.initializationTime.getTime())
+      : 0;
 
     const toolStats = this.toolRegistry.getStats();
 
@@ -402,12 +471,27 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
 
       // 重新初始化
       if (this.configPath) {
+        // 重置状态以便重新初始化
+        this.status = ServiceStatus.NOT_INITIALIZED;
+        // 重新创建核心组件以确保干净状态
+        this.configManager = new ApiConfigManagerImpl();
+        this.toolGenerator = new ApiToolGenerator();
+        this.toolRegistry = new ApiToolRegistry();
+
+        // 创建HTTP客户端和认证管理器
+        const httpClient = new HttpClient();
+        const authManager = new AuthenticationManager();
+        this.apiExecutor = new ApiExecutorImpl(httpClient, authManager);
+
+        this.parameterValidator = new ParameterValidatorImpl();
+
         await this.initialize(this.configPath);
         logger.info('服务管理器重启完成');
       } else {
         throw new Error('无法重启：配置文件路径未设置');
       }
     } catch (error) {
+      this.status = ServiceStatus.ERROR;
       logger.error('服务管理器重启失败', error as Error);
       throw error;
     }

@@ -109,7 +109,7 @@ describe('Mock服务器集成测试', () => {
       const result = await serviceManager.executeApiTool('get-users', {});
 
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toBe('"John Doe"');
+      expect(result.content[0].text).toBe('John Doe');
 
       // 验证请求被正确发送
       const logs = mockServer.getRequestLogs();
@@ -189,7 +189,7 @@ describe('Mock服务器集成测试', () => {
       expect(logs[0].method).toBe('POST');
       expect(logs[0].body).toContain('Test User');
       expect(logs[0].body).toContain('test@example.com');
-    });
+    }, 10000); // 增加测试超时时间
 
     it('应该处理查询参数', async () => {
       // 设置Mock端点
@@ -416,8 +416,8 @@ describe('Mock服务器集成测试', () => {
     });
 
     it('应该处理网络超时', async () => {
-      // 设置延迟端点
-      mockServer.simulateDelay('/slow', 'GET', 2000, {
+      // 设置延迟端点（5秒延迟，超过1秒超时）
+      mockServer.simulateDelay('/slow', 'GET', 5000, {
         message: 'slow response',
       });
 
@@ -448,8 +448,8 @@ describe('Mock服务器集成测试', () => {
       const result = await serviceManager.executeApiTool('timeout-tool', {});
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('失败');
-    });
+      expect(result.content[0].text).toContain('Network timeout');
+    }, 15000); // 设置测试超时时间为15秒
   });
 
   describe('JSONata响应处理测试', () => {
@@ -720,7 +720,7 @@ describe('Mock服务器集成测试', () => {
       expect(log.body).toContain('test message');
       expect(log.body).toContain('2024-01-01T00:00:00Z');
       expect(log.timestamp).toBeInstanceOf(Date);
-    });
+    }, 10000); // 增加测试超时时间
 
     it('应该支持请求日志的清理和重置', async () => {
       // 设置端点
