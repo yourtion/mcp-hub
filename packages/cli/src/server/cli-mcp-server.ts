@@ -29,6 +29,38 @@ export class CliMcpServer {
   private logger = createCliLogger({ component: 'McpServer' });
 
   /**
+   * 创建工具处理器
+   */
+  private createToolHandler(toolName: string) {
+    return async ({ args }: { args?: Record<string, unknown> }) => {
+      try {
+        if (!this.protocolHandler) {
+          throw new Error('协议处理器未初始化');
+        }
+
+        // 使用协议处理器执行工具调用
+        return await this.protocolHandler.handleCallTool(toolName, args);
+      } catch (error) {
+        // 使用协议处理器处理错误
+        if (this.protocolHandler) {
+          return this.protocolHandler.handleProtocolError(error);
+        }
+
+        // 降级错误处理
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `工具执行失败: ${(error as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    };
+  }
+
+  /**
    * 创建服务管理器（可被测试覆盖）
    */
   private createServiceManager(): McpServiceManager {
@@ -164,7 +196,8 @@ export class CliMcpServer {
 
       // 为每个工具注册处理器
       for (const toolInfo of toolInfos) {
-        this.server.registerTool(
+        const toolHandler = this.createToolHandler(toolInfo.name);
+        (this.server as any).registerTool(
           toolInfo.name,
           {
             description:
@@ -174,35 +207,7 @@ export class CliMcpServer {
               args: z.record(z.unknown()).optional(),
             },
           },
-          async ({ args }: { args?: any }) => {
-            try {
-              if (!this.protocolHandler) {
-                throw new Error('协议处理器未初始化');
-              }
-
-              // 使用协议处理器执行工具调用
-              return await this.protocolHandler.handleCallTool(
-                toolInfo.name,
-                args,
-              );
-            } catch (error) {
-              // 使用协议处理器处理错误
-              if (this.protocolHandler) {
-                return this.protocolHandler.handleProtocolError(error);
-              }
-
-              // 降级错误处理
-              return {
-                content: [
-                  {
-                    type: 'text',
-                    text: `工具执行失败: ${(error as Error).message}`,
-                  },
-                ],
-                isError: true,
-              };
-            }
-          },
+          toolHandler,
         );
       }
 

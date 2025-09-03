@@ -203,7 +203,8 @@ export function corsMiddleware() {
 
     // 处理预检请求
     if (c.req.method === 'OPTIONS') {
-      return new Response('', { status: 204 });
+      c.status(204);
+      return c.body(null);
     }
 
     await next();
