@@ -11,10 +11,137 @@
 
 ## 认证
 
-某些端点需要验证密钥：
+MCP Hub 支持两种认证方式：
+
+### 1. JWT 认证（推荐）
+
+用于Web界面和需要用户身份验证的API端点：
+
+```http
+Authorization: Bearer <access-token>
+```
+
+### 2. 验证密钥认证
+
+用于组级别的工具访问控制：
 
 ```http
 X-Validation-Key: your-validation-key
+```
+
+## 认证 API
+
+### 用户登录
+
+用户登录获取访问令牌。
+
+```http
+POST /api/auth/login
+```
+
+**请求体**:
+```json
+{
+  "username": "admin",
+  "password": "password123"
+}
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "admin",
+      "username": "admin",
+      "role": "admin"
+    },
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 刷新访问令牌
+
+使用刷新令牌获取新的访问令牌。
+
+```http
+POST /api/auth/refresh
+```
+
+**请求体**:
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 用户登出
+
+撤销当前访问令牌。
+
+```http
+POST /api/auth/logout
+```
+
+**请求头**:
+```http
+Authorization: Bearer <access-token>
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "message": "登出成功",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 获取当前用户信息
+
+获取当前登录用户的详细信息。
+
+```http
+GET /api/auth/me
+```
+
+**请求头**:
+```http
+Authorization: Bearer <access-token>
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "admin",
+      "username": "admin",
+      "role": "admin",
+      "groups": ["admin-group"],
+      "createdAt": "2024-01-01T00:00:00Z",
+      "lastLogin": "2024-01-15T10:30:00Z"
+    }
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
 ```
 
 ## 全局 MCP 端点
@@ -500,6 +627,15 @@ GET /api/system/metrics
 
 | 错误代码 | HTTP 状态码 | 描述 |
 |----------|-------------|------|
+| `AUTH_LOGIN_FAILED` | 401 | 登录失败 |
+| `AUTH_INVALID_CREDENTIALS` | 401 | 用户名或密码错误 |
+| `AUTH_ACCOUNT_LOCKED` | 423 | 账户被锁定 |
+| `AUTH_MISSING_TOKEN` | 401 | 缺少认证令牌 |
+| `AUTH_INVALID_TOKEN` | 401 | 无效的认证令牌 |
+| `AUTH_TOKEN_EXPIRED` | 401 | 认证令牌已过期 |
+| `AUTH_TOKEN_REVOKED` | 401 | 认证令牌已被撤销 |
+| `AUTH_INVALID_REFRESH_TOKEN` | 401 | 无效的刷新令牌 |
+| `AUTH_USER_NOT_FOUND` | 404 | 用户不存在 |
 | `GROUP_NOT_FOUND` | 404 | 指定的组不存在 |
 | `TOOL_NOT_FOUND` | 404 | 指定的工具不存在 |
 | `TOOL_NOT_ALLOWED` | 403 | 工具不在组的允许列表中 |

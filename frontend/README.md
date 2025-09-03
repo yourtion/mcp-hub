@@ -1,36 +1,188 @@
-# Rsbuild project
+# MCP Hub Web Interface
 
-## Setup
+Vue.js 前端界面，为 MCP Hub 提供完整的 Web 管理功能。
 
-Install the dependencies:
+## 功能特性
+
+- **JWT 认证系统**: 安全的登录和会话管理
+- **服务器管理**: 可视化的 MCP 服务器配置和监控
+- **工具管理**: 浏览和测试可用的 MCP 工具
+- **组管理**: 配置和管理服务器组
+- **实时监控**: 系统状态的实时更新
+- **响应式设计**: 适配不同屏幕尺寸的设备
+
+## 技术栈
+
+- **Vue 3** - 响应式前端框架
+- **TDesign Vue Next** - 企业级 UI 组件库
+- **Pinia** - 状态管理
+- **Vue Router** - 路由管理
+- **Axios** - HTTP 客户端
+- **TypeScript** - 类型安全
+- **Rsbuild** - 构建工具
+
+## 开发环境
+
+### 安装依赖
 
 ```bash
 pnpm install
 ```
 
-## Get started
-
-Start the dev server, and the app will be available at [http://localhost:3000](http://localhost:3000).
+### 启动开发服务器
 
 ```bash
 pnpm dev
 ```
 
-Build the app for production:
+### 构建生产版本
 
 ```bash
 pnpm build
 ```
 
-Preview the production build locally:
+### 运行测试
 
 ```bash
-pnpm preview
+pnpm test
 ```
 
-## Learn more
+### 代码检查和格式化
 
-To learn more about Rsbuild, check out the following resources:
+```bash
+pnpm check
+```
 
-- [Rsbuild documentation](https://rsbuild.rs) - explore Rsbuild features and APIs.
-- [Rsbuild GitHub repository](https://github.com/web-infra-dev/rsbuild) - your feedback and contributions are welcome!
+## 项目结构
+
+```
+src/
+├── components/          # 通用组件
+├── views/              # 页面组件
+│   ├── Login.vue       # 登录页面
+│   ├── Dashboard.vue   # 仪表板
+│   └── NotFound.vue    # 404页面
+├── stores/             # Pinia 状态管理
+│   └── auth.ts         # 认证状态
+├── services/           # API 服务层
+│   ├── api.ts          # HTTP 客户端配置
+│   └── auth.ts         # 认证服务
+├── types/              # TypeScript 类型定义
+│   ├── auth.ts         # 认证相关类型
+│   └── api.ts          # API 响应类型
+├── router/             # 路由配置
+│   └── index.ts        # 路由定义和守卫
+└── App.vue             # 主应用组件
+```
+
+## 认证系统
+
+### 登录流程
+
+1. 用户在登录页面输入凭据
+2. 前端调用 `/api/auth/login` 接口
+3. 后端验证凭据并返回 JWT token
+4. 前端存储 token 并跳转到仪表板
+5. 后续请求自动携带 token
+
+### Token 管理
+
+- **访问 Token**: 短期有效，用于 API 请求认证
+- **刷新 Token**: 长期有效，用于自动刷新访问 token
+- **自动刷新**: HTTP 拦截器自动处理 token 过期和刷新
+- **持久化存储**: Token 存储在 localStorage 中
+
+### 路由守卫
+
+- 未认证用户自动跳转到登录页面
+- 已认证用户访问登录页面时跳转到仪表板
+- Token 过期时自动尝试刷新或跳转登录
+
+## API 集成
+
+### HTTP 客户端配置
+
+```typescript
+// 自动添加认证头
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// 自动处理 token 刷新
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // 尝试刷新 token
+      await refreshToken();
+      // 重试原始请求
+    }
+  }
+);
+```
+
+### 状态管理
+
+使用 Pinia 管理应用状态：
+
+```typescript
+const authStore = useAuthStore();
+
+// 登录
+await authStore.login({ username, password });
+
+// 登出
+await authStore.logout();
+
+// 检查认证状态
+if (authStore.isAuthenticated) {
+  // 用户已登录
+}
+```
+
+## 开发指南
+
+### 添加新页面
+
+1. 在 `src/views/` 创建 Vue 组件
+2. 在 `src/router/index.ts` 添加路由配置
+3. 设置适当的 `meta.requiresAuth` 属性
+
+### 添加新的 API 服务
+
+1. 在 `src/types/` 定义相关类型
+2. 在 `src/services/` 创建服务函数
+3. 在组件中使用服务函数
+
+### 状态管理
+
+1. 在 `src/stores/` 创建新的 store
+2. 使用 Pinia 的 Composition API 风格
+3. 在组件中通过 `useXxxStore()` 使用
+
+## 部署
+
+### 环境变量
+
+在生产环境中，确保正确配置：
+
+- API 基础 URL
+- 认证相关配置
+- 其他环境特定设置
+
+### 构建优化
+
+- 代码分割和懒加载
+- 静态资源压缩
+- CDN 配置
+
+### 安全考虑
+
+- HTTPS 强制使用
+- CSP 头部设置
+- XSS 防护
+- CSRF 保护

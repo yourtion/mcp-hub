@@ -103,6 +103,24 @@ Start the web interface for visual management:
 pnpm dev:fe
 ```
 
+The frontend provides a comprehensive web-based management interface with:
+
+- **JWT Authentication**: Secure login system with token-based authentication
+- **Server Management**: Visual interface for managing MCP servers
+- **Tool Management**: Browse and test available MCP tools
+- **Group Management**: Configure and manage server groups
+- **Real-time Monitoring**: Live status updates and system monitoring
+- **API to MCP Integration**: Convert REST APIs to MCP tools
+
+#### Authentication
+
+The frontend uses JWT-based authentication. Default credentials can be configured in the backend authentication service. The system includes:
+
+- Secure login with username/password
+- Automatic token refresh
+- Route guards for protected pages
+- Persistent authentication state
+
 ## Configuration
 
 ### MCP Server Configuration

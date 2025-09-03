@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "@mcp-core/mcp-hub-web",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -7,7 +7,8 @@
     "build": "rsbuild build",
     "check": "biome check --write",
     "dev": "rsbuild dev --open",
-    "preview": "rsbuild preview"
+    "preview": "rsbuild preview",
+    "test": "vitest --run"
   },
   "dependencies": {
     "@vueuse/core": "^13.9.0",
@@ -25,7 +26,9 @@
     "@vue/eslint-config-typescript": "^14.5.1",
     "eslint-plugin-vue": "^10.2.0",
     "globals": "^16.2.0",
+    "jsdom": "^25.0.1",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.34.1"
+    "typescript-eslint": "^8.34.1",
+    "vitest": "^2.1.9"
   }
 }

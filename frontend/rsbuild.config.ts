@@ -1,6 +1,6 @@
+import path from 'node:path';
 import { defineConfig } from '@rsbuild/core';
 import { pluginVue } from '@rsbuild/plugin-vue';
-import path from 'node:path';
 
 export default defineConfig({
   plugins: [pluginVue()],
