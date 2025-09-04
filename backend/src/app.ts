@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { createAuthApi } from './api/auth/index.js';
 import { hubApi } from './api/hub.js';
 import { groupMcpRouter } from './api/mcp/group-router.js';
+import { serversApi } from './api/servers/index.js';
 import { mcp } from './mcp.js';
 import { AuthService } from './services/auth.js';
 import { sse } from './sse.js';
@@ -27,6 +28,7 @@ app.route('/', sse);
 app.route('/', groupMcpRouter); // 组特定MCP路由
 app.route('/api', hubApi);
 app.route('/api/auth', createAuthApi(authService));
+app.route('/api/servers', serversApi);
 
 // 导出认证服务供其他模块使用
 export { authService };

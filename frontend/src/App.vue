@@ -1,6 +1,17 @@
 <template>
   <div id="app">
-    <router-view />
+    <div v-if="authStore.isAuthenticated" class="app-layout">
+      <div class="app-nav">
+        <router-link to="/dashboard">仪表板</router-link>
+        <router-link to="/servers">服务器管理</router-link>
+      </div>
+      <div class="app-content">
+        <router-view />
+      </div>
+    </div>
+    <div v-else>
+      <router-view />
+    </div>
   </div>
 </template>
 
@@ -34,5 +45,41 @@ body {
 
 #app {
   min-height: 100vh;
+}
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-nav {
+  width: 200px;
+  background: var(--td-bg-color-container);
+  border-right: 1px solid var(--td-border-level-1-color);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.app-nav a {
+  padding: 8px 12px;
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--td-text-color-primary);
+  transition: background-color 0.2s;
+}
+
+.app-nav a:hover {
+  background: var(--td-bg-color-container-hover);
+}
+
+.app-nav a.router-link-active {
+  background: var(--td-brand-color-1);
+  color: var(--td-brand-color);
+}
+
+.app-content {
+  flex: 1;
 }
 </style>

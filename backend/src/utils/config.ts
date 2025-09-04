@@ -55,3 +55,27 @@ export async function getAllConfig(): Promise<
 
   return { mcps, groups, system, apiToolsConfigPath };
 }
+
+/**
+ * 保存配置到指定的配置文件
+ * @param configType - 配置文件类型 ('mcp_server.json', 'group.json', 'system.json')
+ * @param data - 要保存的配置数据
+ */
+export async function saveConfig(
+  configType: 'mcp_server.json' | 'group.json' | 'system.json',
+  data: McpConfig | GroupConfig | SystemConfig
+): Promise<void> {
+  switch (configType) {
+    case 'mcp_server.json':
+      await mcpServerInstance.write(data as McpConfig);
+      break;
+    case 'group.json':
+      await groupConfigInstance.write(data as GroupConfig);
+      break;
+    case 'system.json':
+      await systemConfigInstance.write(data as SystemConfig);
+      break;
+    default:
+      throw new Error(`不支持的配置文件类型: ${configType}`);
+  }
+}

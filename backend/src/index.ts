@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { shutdownHubApi } from './api/hub.js';
 import { shutdownGroupMcpRouter } from './api/mcp/group-router.js';
+import { shutdownServersApi } from './api/servers/index.js';
 import { app } from './app.js';
 import { shutdownMcpService } from './mcp.js';
 import { initConfig } from './services/config.js';
@@ -164,6 +165,12 @@ async function cleanupResources() {
   cleanupPromises.push(
     shutdownHubApi().catch((error) => {
       logger.error('Hub API 关闭失败', error);
+    }),
+  );
+
+  cleanupPromises.push(
+    shutdownServersApi().catch((error) => {
+      logger.error('服务器管理API 关闭失败', error);
     }),
   );
 

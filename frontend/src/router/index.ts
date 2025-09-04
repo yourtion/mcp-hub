@@ -24,6 +24,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/servers',
+      name: 'Servers',
+      component: () => import('@/views/Servers.vue'),
+      meta: {
+        requiresAuth: true,
+        title: '服务器管理',
+      },
+    },
+    {
       path: '/',
       redirect: '/dashboard',
     },
