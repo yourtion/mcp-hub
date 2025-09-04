@@ -54,7 +54,7 @@ export class AuthService {
     if (!this.config) return;
 
     let configChanged = false;
-    for (const [username, user] of Object.entries(this.config.users)) {
+    for (const [_username, user] of Object.entries(this.config.users)) {
       if (!user.passwordHash && user.password) {
         user.passwordHash = await bcrypt.hash(user.password, 10);
         configChanged = true;
@@ -215,7 +215,7 @@ export class AuthService {
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
       };
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Invalid refresh token');
     }
   }
@@ -265,7 +265,7 @@ export class AuthService {
       }
 
       return payload;
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Invalid or expired token');
     }
   }

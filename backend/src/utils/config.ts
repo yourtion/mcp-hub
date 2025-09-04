@@ -63,7 +63,7 @@ export async function getAllConfig(): Promise<
  */
 export async function saveConfig(
   configType: 'mcp_server.json' | 'group.json' | 'system.json',
-  data: McpConfig | GroupConfig | SystemConfig
+  data: McpConfig | GroupConfig | SystemConfig,
 ): Promise<void> {
   switch (configType) {
     case 'mcp_server.json':

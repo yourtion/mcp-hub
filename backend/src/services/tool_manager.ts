@@ -194,7 +194,7 @@ export class ToolManager implements IToolManager {
 
     try {
       // First check if this is an API tool
-      if (this.apiToolService && this.apiToolService.isApiTool(toolName)) {
+      if (this.apiToolService?.isApiTool(toolName)) {
         const apiTool = this.apiToolService.getApiToolDefinition(toolName);
         if (apiTool) {
           logger.debug('Tool routing successful (API tool)', {

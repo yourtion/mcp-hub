@@ -219,7 +219,7 @@ export function requestLogMiddleware() {
     const start = Date.now();
     const method = c.req.method;
     const path = c.req.path;
-    const userAgent = c.req.header('User-Agent') || 'Unknown';
+    const _userAgent = c.req.header('User-Agent') || 'Unknown';
     const ip =
       c.req.header('X-Forwarded-For') || c.req.header('X-Real-IP') || 'Unknown';
 

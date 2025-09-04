@@ -3,10 +3,10 @@
  * 使用核心包功能为特定组提供MCP服务
  */
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { z } from 'zod';
 
 // 读取 package.json

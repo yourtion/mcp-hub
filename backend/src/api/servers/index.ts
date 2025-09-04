@@ -251,7 +251,7 @@ serversApi.post('/', async (c) => {
 
     // 重新初始化服务器管理器以包含新服务器
     serverManager = null;
-    const manager = await getServerManager();
+    const _manager = await getServerManager();
 
     logger.info('服务器创建成功', {
       serverId,
@@ -330,7 +330,7 @@ serversApi.put('/:id', async (c) => {
 
     // 重新初始化服务器管理器以应用新配置
     serverManager = null;
-    const manager = await getServerManager();
+    const _manager = await getServerManager();
 
     logger.info('服务器配置更新成功', {
       serverId,
@@ -385,7 +385,7 @@ serversApi.delete('/:id', async (c) => {
 
     // 重新初始化服务器管理器
     serverManager = null;
-    const manager = await getServerManager();
+    const _manager = await getServerManager();
 
     logger.info('服务器删除成功', {
       serverId,
@@ -846,7 +846,7 @@ serversApi.post('/validate', async (c) => {
               code: 'HTTP_SECURITY_WARNING',
             });
           }
-        } catch (urlError) {
+        } catch (_urlError) {
           validationResponse.errors.push({
             field: 'url',
             message: 'URL格式无效',

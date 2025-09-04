@@ -13,7 +13,6 @@ import {
   createOptionalAuthMiddleware,
   createRoleMiddleware,
   errorHandlerMiddleware,
-  requestLogMiddleware,
 } from './auth.js';
 
 describe('认证中间件', () => {
