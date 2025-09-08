@@ -1,11 +1,12 @@
 #!/usr/bin/env tsx
+
 /**
  * 性能测试脚本
  * 验证系统性能指标是否满足要求
  */
 
-import { performance } from 'node:perf_hooks';
 import { spawn } from 'node:child_process';
+import { performance } from 'node:perf_hooks';
 import { promisify } from 'node:util';
 
 interface PerformanceResult {
@@ -31,17 +32,25 @@ interface PerformanceReport {
 /**
  * 执行命令并测量性能
  */
-async function measureCommand(command: string, args: string[], timeout = 30000): Promise<PerformanceResult> {
+async function measureCommand(
+  command: string,
+  args: string[],
+  timeout = 30000,
+): Promise<PerformanceResult> {
   const testName = `${command} ${args.join(' ')}`;
   const startTime = performance.now();
-  
+
   try {
     const child = spawn(command, args, {
       stdio: 'pipe',
       timeout,
     });
 
-    const result = await new Promise<{ code: number; stdout: string; stderr: string }>((resolve, reject) => {
+    const result = await new Promise<{
+      code: number;
+      stdout: string;
+      stderr: string;
+    }>((resolve, reject) => {
       let stdout = '';
       let stderr = '';
 
@@ -138,33 +147,38 @@ async function runPerformanceTests(): Promise<PerformanceReport> {
 
   for (const test of tests) {
     console.log(`⏱️  测试: ${test.name}`);
-    const result = await measureCommand(test.command, test.args, test.expectedMaxDuration + 5000);
+    const result = await measureCommand(
+      test.command,
+      test.args,
+      test.expectedMaxDuration + 5000,
+    );
     results.push(result);
 
     const status = result.success ? '✅' : '❌';
     const duration = `${Math.round(result.duration)}ms`;
     const expected = `(期望 < ${test.expectedMaxDuration}ms)`;
-    
+
     console.log(`   ${status} ${duration} ${expected}`);
-    
+
     if (!result.success) {
       console.log(`   错误: ${result.error}`);
     }
-    
+
     if (result.duration > test.expectedMaxDuration) {
       console.log(`   ⚠️  性能警告: 执行时间超过预期`);
     }
-    
+
     console.log('');
   }
 
   // 计算汇总统计
-  const durations = results.map(r => r.duration);
+  const durations = results.map((r) => r.duration);
   const summary = {
     totalTests: results.length,
-    passedTests: results.filter(r => r.success).length,
-    failedTests: results.filter(r => !r.success).length,
-    averageDuration: durations.reduce((sum, d) => sum + d, 0) / durations.length,
+    passedTests: results.filter((r) => r.success).length,
+    failedTests: results.filter((r) => !r.success).length,
+    averageDuration:
+      durations.reduce((sum, d) => sum + d, 0) / durations.length,
     maxDuration: Math.max(...durations),
     minDuration: Math.min(...durations),
   };
@@ -194,7 +208,7 @@ function generateReport(report: PerformanceReport): void {
   // 性能评估
   const performanceScore = calculatePerformanceScore(report);
   console.log(`性能评分: ${performanceScore}/100`);
-  
+
   if (performanceScore >= 80) {
     console.log('🎉 性能表现优秀！');
   } else if (performanceScore >= 60) {
@@ -206,12 +220,12 @@ function generateReport(report: PerformanceReport): void {
   console.log('');
   console.log('详细结果:');
   console.log('-'.repeat(50));
-  
+
   report.results.forEach((result, index) => {
     const status = result.success ? '✅' : '❌';
     const duration = `${Math.round(result.duration)}ms`;
     console.log(`${index + 1}. ${status} ${result.test} - ${duration}`);
-    
+
     if (result.error) {
       console.log(`   错误: ${result.error.substring(0, 100)}...`);
     }
@@ -223,10 +237,10 @@ function generateReport(report: PerformanceReport): void {
  */
 function calculatePerformanceScore(report: PerformanceReport): number {
   let score = 100;
-  
+
   // 失败测试扣分
   score -= report.summary.failedTests * 20;
-  
+
   // 平均耗时评分
   const avgDuration = report.summary.averageDuration;
   if (avgDuration > 20000) {
@@ -238,7 +252,7 @@ function calculatePerformanceScore(report: PerformanceReport): number {
   } else if (avgDuration > 5000) {
     score -= 5;
   }
-  
+
   // 最大耗时评分
   const maxDuration = report.summary.maxDuration;
   if (maxDuration > 30000) {
@@ -248,7 +262,7 @@ function calculatePerformanceScore(report: PerformanceReport): number {
   } else if (maxDuration > 15000) {
     score -= 5;
   }
-  
+
   return Math.max(0, score);
 }
 
@@ -259,19 +273,19 @@ async function main(): Promise<void> {
   try {
     const report = await runPerformanceTests();
     generateReport(report);
-    
+
     // 如果有失败的测试，退出码为1
     if (report.summary.failedTests > 0) {
       process.exit(1);
     }
-    
+
     // 如果性能评分过低，退出码为2
     const score = calculatePerformanceScore(report);
     if (score < 60) {
       console.log('\n❌ 性能测试未达到最低要求 (60分)');
       process.exit(2);
     }
-    
+
     console.log('\n✅ 性能测试通过！');
   } catch (error) {
     console.error('❌ 性能测试执行失败:', error);

@@ -169,26 +169,26 @@
   - 添加工具错误信息和调试面板
   - _需求: 3.5_
 
-- [ ] 8. 后端组管理API扩展
+- [x] 8. 后端组管理API扩展
   - 扩展现有组管理功能提供完整Web API
   - 实现组配置和工具过滤管理
   - 创建组验证密钥管理功能
   - _需求: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 8.1 扩展组CRUD API端点
+- [x] 8.1 扩展组CRUD API端点
   - 扩展现有GET /api/groups端点返回详细信息
   - 实现POST /api/groups创建新组配置
   - 添加PUT /api/groups/:id更新组配置
   - 创建DELETE /api/groups/:id删除组
   - _需求: 4.1, 4.2, 4.3_
 
-- [ ] 8.2 实现组工具过滤管理API
+- [x] 8.2 实现组工具过滤管理API
   - 创建POST /api/groups/:id/tools配置组工具过滤
   - 实现GET /api/groups/:id/available-tools获取可用工具
   - 添加组工具权限验证和访问控制
   - _需求: 4.4_
 
-- [ ] 8.3 添加组验证密钥管理API
+- [x] 8.3 添加组验证密钥管理API
   - 创建POST /api/groups/:id/validation-key设置验证密钥
   - 实现密钥加密存储和安全管理
   - 添加密钥验证和访问日志记录

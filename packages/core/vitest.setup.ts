@@ -9,7 +9,8 @@ import { afterEach, beforeEach, vi } from 'vitest';
 const originalConsole = { ...console };
 
 // 检查是否启用调试模式
-const isDebugMode = process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true';
+const isDebugMode =
+  process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true';
 
 // 在测试环境中静默大部分 console 输出（除非在调试模式下）
 if ((process.env.NODE_ENV === 'test' || process.env.VITEST) && !isDebugMode) {
@@ -18,7 +19,7 @@ if ((process.env.NODE_ENV === 'test' || process.env.VITEST) && !isDebugMode) {
   console.info = vi.fn();
   console.debug = vi.fn();
   console.warn = vi.fn();
-  
+
   // 静默所有错误输出，包括预期的错误
   console.error = vi.fn();
 } else if (isDebugMode) {

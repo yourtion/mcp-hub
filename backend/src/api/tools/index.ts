@@ -45,7 +45,7 @@ async function getHubService(): Promise<McpHubService> {
 }
 
 // 安全获取hub服务
-async function getHubServiceSafe(): Promise<McpHubService | null> {
+async function _getHubServiceSafe(): Promise<McpHubService | null> {
   try {
     return await getHubService();
   } catch (error) {
@@ -104,7 +104,7 @@ toolsApi.get('/', async (c) => {
       if (!toolsByServer.has(tool.serverId)) {
         toolsByServer.set(tool.serverId, []);
       }
-      toolsByServer.get(tool.serverId)!.push(tool);
+      toolsByServer.get(tool.serverId)?.push(tool);
     });
 
     return c.json({
@@ -1109,8 +1109,7 @@ toolsApi.get('/performance', async (c) => {
     >();
 
     filteredHistory.forEach((record) => {
-      const hour =
-        new Date(record.timestamp).toISOString().slice(0, 13) + ':00:00.000Z';
+      const hour = `${new Date(record.timestamp).toISOString().slice(0, 13)}:00:00.000Z`;
       if (!timeSeriesData.has(hour)) {
         timeSeriesData.set(hour, { executions: 0, errors: 0, averageTime: 0 });
       }
@@ -1124,7 +1123,7 @@ toolsApi.get('/performance', async (c) => {
     timeSeriesData.forEach((data, hour) => {
       const hourExecutions = filteredHistory.filter(
         (r) =>
-          new Date(r.timestamp).toISOString().slice(0, 13) + ':00:00.000Z' ===
+          `${new Date(r.timestamp).toISOString().slice(0, 13)}:00:00.000Z` ===
           hour,
       );
       data.averageTime =
@@ -1252,7 +1251,7 @@ toolsApi.get('/errors', async (c) => {
         const textContent = record.result.find(
           (content: any) => content.type === 'text',
         );
-        if (textContent && textContent.text) {
+        if (textContent?.text) {
           errorMessage = textContent.text;
         }
       }
@@ -1260,7 +1259,7 @@ toolsApi.get('/errors', async (c) => {
       // 简化错误消息用于分组
       const errorKey =
         errorMessage.length > 100
-          ? errorMessage.substring(0, 100) + '...'
+          ? `${errorMessage.substring(0, 100)}...`
           : errorMessage;
 
       if (!errorAnalysis.has(errorKey)) {

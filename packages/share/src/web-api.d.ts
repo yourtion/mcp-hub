@@ -271,25 +271,54 @@ export interface ToolExecution {
   executionTime: number;
 }
 
+/**
+ * 工具复杂度估算
+ */
+export interface ToolComplexityEstimation {
+  /** 复杂度级别 */
+  complexity: 'simple' | 'medium' | 'complex';
+  /** 参数数量 */
+  parameterCount: number;
+  /** 必需参数数量 */
+  requiredParameterCount: number;
+  /** 预估执行时间 */
+  estimatedExecutionTime: 'fast' | 'medium' | 'slow';
+}
+
 // ============================================================================
 // 组管理相关类型
 // ============================================================================
 
 /**
- * 组信息
+ * 组信息（扩展版，包含运行时状态）
  */
-export interface GroupInfo {
-  /** 组ID */
-  id: string;
-  /** 组名称 */
-  name: string;
-  /** 组描述 */
-  description?: string;
-  /** 包含的服务器ID列表 */
-  servers: string[];
-  /** 包含的工具名称列表 */
-  tools: string[];
-  /** 统计信息 */
+export interface ExtendedGroupInfo extends GroupInfo {
+  /** 服务器数量 */
+  serverCount: number;
+  /** 已连接服务器数量 */
+  connectedServers: number;
+  /** 工具数量 */
+  toolCount: number;
+  /** 过滤后工具数量 */
+  filteredToolCount: number;
+  /** 工具过滤模式 */
+  toolFilterMode: 'whitelist' | 'blacklist' | 'none';
+  /** 是否健康 */
+  isHealthy: boolean;
+  /** 健康评分 */
+  healthScore: number;
+  /** 验证配置 */
+  validation: {
+    /** 是否启用验证 */
+    enabled: boolean;
+    /** 是否有密钥 */
+    hasKey: boolean;
+    /** 创建时间 */
+    createdAt?: string;
+    /** 最后更新时间 */
+    lastUpdated?: string;
+  };
+  /** 扩展统计信息 */
   stats: {
     /** 总服务器数 */
     totalServers: number;
@@ -297,7 +326,15 @@ export interface GroupInfo {
     availableServers: number;
     /** 总工具数 */
     totalTools: number;
+    /** 过滤后工具数 */
+    filteredTools: number;
+    /** 健康百分比 */
+    healthPercentage: number;
   };
+  /** 最后更新时间 */
+  lastUpdated: string;
+  /** 错误信息（如果有） */
+  error?: string;
 }
 
 /**
@@ -331,11 +368,92 @@ export interface UpdateGroupRequest {
 }
 
 /**
- * 组列表响应
+ * 组验证密钥配置
  */
-export interface GroupListResponse {
+export interface GroupValidationConfig {
+  /** 是否启用验证 */
+  enabled: boolean;
+  /** 验证密钥（加密存储） */
+  validationKey?: string;
+  /** 密钥创建时间 */
+  createdAt?: string;
+  /** 密钥最后更新时间 */
+  lastUpdated?: string;
+}
+
+/**
+ * 设置组验证密钥请求
+ */
+export interface SetGroupValidationKeyRequest {
+  /** 验证密钥 */
+  validationKey: string;
+  /** 是否启用验证 */
+  enabled?: boolean;
+}
+
+/**
+ * 组工具过滤配置请求
+ */
+export interface ConfigureGroupToolsRequest {
+  /** 允许的工具名称列表 */
+  tools: string[];
+  /** 过滤模式：'whitelist' 白名单模式，'blacklist' 黑名单模式 */
+  filterMode?: 'whitelist' | 'blacklist';
+}
+
+/**
+ * 组可用工具响应
+ */
+export interface GroupAvailableToolsResponse {
+  /** 组ID */
+  groupId: string;
+  /** 可用工具列表 */
+  tools: ToolInfo[];
+  /** 按服务器分组的工具 */
+  toolsByServer: Record<string, ToolInfo[]>;
+  /** 总工具数 */
+  totalTools: number;
+  /** 过滤后的工具数 */
+  filteredTools: number;
+  /** 工具过滤配置 */
+  toolFilter: string[];
+  /** 时间戳 */
+  timestamp: string;
+}
+
+/**
+ * 组列表响应（扩展版）
+ */
+export interface ExtendedGroupListResponse {
   /** 组列表 */
-  groups: GroupInfo[];
+  groups: ExtendedGroupInfo[];
+  /** 总组数 */
+  totalGroups: number;
+  /** 健康组数 */
+  healthyGroups: number;
+  /** 总服务器数 */
+  totalServers: number;
+  /** 已连接服务器数 */
+  connectedServers: number;
+  /** 总工具数 */
+  totalTools: number;
+  /** 过滤后工具数 */
+  filteredTools: number;
+  /** 平均健康评分 */
+  averageHealthScore: number;
+  /** 启用验证的组数 */
+  groupsWithValidation: number;
+  /** 启用工具过滤的组数 */
+  groupsWithToolFilter: number;
+  /** 系统摘要 */
+  summary: {
+    /** 系统状态 */
+    status: 'healthy' | 'partial' | 'unhealthy';
+    /** 问题列表 */
+    issues: string[];
+  };
+  /** 时间戳 */
+  timestamp: string;
 }
 
 // ============================================================================

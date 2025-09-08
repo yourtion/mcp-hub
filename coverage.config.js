@@ -11,7 +11,7 @@ module.exports = {
     // 推荐覆盖率阈值
     recommendedThreshold: 85,
   },
-  
+
   // 各包的覆盖率配置
   packages: {
     backend: {
@@ -24,14 +24,9 @@ module.exports = {
         statements: 80,
       },
       // 排除的文件模式
-      exclude: [
-        'src/e2e/**',
-        'src/test-app.ts',
-        'src/index.ts',
-        'scripts/**',
-      ],
+      exclude: ['src/e2e/**', 'src/test-app.ts', 'src/index.ts', 'scripts/**'],
     },
-    
+
     core: {
       name: '@mcp-core/mcp-hub-core',
       path: './packages/core',
@@ -43,7 +38,7 @@ module.exports = {
       },
       exclude: [],
     },
-    
+
     cli: {
       name: '@mcp-core/mcp-hub-cli',
       path: './packages/cli',
@@ -53,12 +48,10 @@ module.exports = {
         lines: 85,
         statements: 85,
       },
-      exclude: [
-        'bin/**',
-      ],
+      exclude: ['bin/**'],
     },
   },
-  
+
   // 报告设置
   reports: {
     // 输出格式
@@ -70,7 +63,7 @@ module.exports = {
     // 是否在控制台显示
     console: true,
   },
-  
+
   // CI/CD 集成设置
   ci: {
     // 是否在覆盖率不达标时失败
@@ -80,4 +73,4 @@ module.exports = {
     // 是否生成 PR 评论
     commentOnPR: true,
   },
-}
+};

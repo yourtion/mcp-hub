@@ -1,4 +1,4 @@
-import { defineWorkspace } from 'vitest/config'
+import { defineWorkspace } from 'vitest/config';
 
 export default defineWorkspace([
   // 后端API包
@@ -25,4 +25,4 @@ export default defineWorkspace([
       root: './packages/cli',
     },
   },
-])
+]);
