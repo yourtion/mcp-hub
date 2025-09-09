@@ -6,11 +6,10 @@ import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { groupsApi } from './index.js';
 
-// 定义路由类型
+// 定义路由类型 - 修改以匹配Hono的实际路由类型
 interface RouteInfo {
   path: string;
   method: string;
-  handler: (...args: unknown[]) => unknown;
 }
 
 // 定义测试上下文类型

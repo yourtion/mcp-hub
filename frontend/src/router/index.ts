@@ -33,6 +33,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/groups',
+      name: 'Groups',
+      component: () => import('@/views/Groups.vue'),
+      meta: {
+        requiresAuth: true,
+        title: '组管理',
+      },
+    },
+    {
       path: '/',
       redirect: '/dashboard',
     },
