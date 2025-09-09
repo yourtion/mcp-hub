@@ -417,6 +417,20 @@ export interface GroupAvailableToolsResponse {
   filteredTools: number;
   /** 工具过滤配置 */
   toolFilter: string[];
+  /** 过滤信息 */
+  filtering?: {
+    isFilteringEnabled: boolean;
+    filterRatio: number;
+    excludedTools: number;
+  };
+  /** 工具分类 */
+  categories?: string[];
+  /** 服务器分布 */
+  serverDistribution?: Array<{
+    serverId: string;
+    toolCount: number;
+    percentage: number;
+  }>;
   /** 时间戳 */
   timestamp: string;
 }

@@ -9,7 +9,6 @@ import type {
   GroupDetailInfo,
   GroupInfo,
   GroupKeyValidationRequest,
-  GroupOperationResponse,
   SetGroupValidationKeyRequest,
   UpdateGroupRequest,
 } from '@/types/group';

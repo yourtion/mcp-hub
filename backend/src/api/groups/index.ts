@@ -23,8 +23,30 @@ import { Hono } from 'hono';
 import { getAllConfig, saveConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 
+// 定义 JsonSchema 类型
+interface JsonSchema {
+  type?: string;
+  properties?: Record<string, JsonSchemaProperty>;
+  required?: string[];
+}
+
+interface JsonSchemaProperty {
+  type: string;
+  description?: string;
+  enum?: string[];
+  default?: unknown;
+  minimum?: number;
+  maximum?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  items?: JsonSchemaProperty;
+  properties?: Record<string, JsonSchemaProperty>;
+  required?: string[];
+}
+
 // 定义组配置类型
-interface GroupConfigItem {
+export interface GroupConfigItem {
   id: string;
   name: string;
   description?: string;
@@ -57,7 +79,7 @@ async function ensureCoreServiceInitialized(): Promise<void> {
 
     coreServiceManager = new McpServiceManager();
     const coreConfig = {
-      servers: config.mcps.mcpServers as Record<string, unknown>,
+      servers: config.mcps.mcpServers as any,
       groups: config.groups as Record<string, GroupConfigItem>,
     };
     await coreServiceManager.initializeFromConfig(coreConfig);
@@ -77,7 +99,7 @@ groupsApi.get('/', async (c) => {
     logger.debug('获取所有组列表');
 
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
 
     await ensureCoreServiceInitialized();
 
@@ -104,8 +126,8 @@ groupsApi.get('/', async (c) => {
           try {
             const allTools = await coreServiceManager?.getAllTools();
             availableTools =
-              allTools?.filter((tool) =>
-                groupServers.includes(tool.serverId),
+              allTools?.filter(
+                (tool) => tool.serverId && groupServers.includes(tool.serverId),
               ) || [];
             toolCount = availableTools.length;
           } catch (error) {
@@ -268,7 +290,7 @@ groupsApi.get('/:groupId', async (c) => {
     logger.debug('获取组详细信息', { groupId });
 
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
     const groupConfig = groups[groupId];
 
     if (!groupConfig) {
@@ -309,7 +331,7 @@ groupsApi.get('/:groupId', async (c) => {
     try {
       const allTools = await coreServiceManager.getAllTools();
       groupTools = allTools
-        .filter((tool) => groupServers.includes(tool.serverId))
+        .filter((tool) => tool.serverId && groupServers.includes(tool.serverId))
         .map((tool) => ({
           name: tool.name,
           description: tool.description,
@@ -417,7 +439,7 @@ groupsApi.get('/:groupId/health', async (c) => {
     logger.debug('执行组健康检查', { groupId });
 
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
     const groupConfig = groups[groupId];
 
     if (!groupConfig) {
@@ -538,7 +560,7 @@ groupsApi.get('/:groupId/tools', async (c) => {
     logger.debug('获取组工具列表', { groupId });
 
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
     const groupConfig = groups[groupId];
 
     if (!groupConfig) {
@@ -642,7 +664,7 @@ groupsApi.get('/:groupId/servers', async (c) => {
     logger.debug('获取组服务器列表', { groupId });
 
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
     const groupConfig = groups[groupId];
 
     if (!groupConfig) {
@@ -1278,7 +1300,7 @@ groupsApi.put('/:groupId', async (c) => {
 
     // 检查组是否存在
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
     const existingGroup = groups[groupId];
 
     if (!existingGroup) {
@@ -1418,7 +1440,7 @@ groupsApi.delete('/:groupId', async (c) => {
 
     // 检查组是否存在
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
     const existingGroup = groups[groupId];
 
     if (!existingGroup) {
@@ -1561,7 +1583,7 @@ groupsApi.post('/:groupId/tools', async (c) => {
 
     // 检查组是否存在
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
     const existingGroup = groups[groupId];
 
     if (!existingGroup) {
@@ -1704,7 +1726,7 @@ groupsApi.get('/:groupId/available-tools', async (c) => {
 
     // 检查组是否存在
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
     const groupConfig = groups[groupId];
 
     if (!groupConfig) {
@@ -1755,8 +1777,8 @@ groupsApi.get('/:groupId/available-tools', async (c) => {
           name: tool.name,
           description: tool.description || '',
           serverId: tool.serverId || '',
-          serverName: serverId, // 可以从服务器配置中获取实际名称
-          inputSchema: tool.inputSchema || { type: 'object', properties: {} },
+          serverName: tool.serverId || '',
+          inputSchema: { type: 'object', properties: {} },
           status: 'available' as const,
         });
         return acc;
@@ -1771,18 +1793,13 @@ groupsApi.get('/:groupId/available-tools', async (c) => {
         name: tool.name,
         description: tool.description || '',
         serverId: tool.serverId || '',
-        serverName: tool.serverId || '', // 可以从服务器配置中获取实际名称
-        inputSchema: tool.inputSchema || { type: 'object', properties: {} },
+        serverName: tool.serverId || '',
+        inputSchema: { type: 'object', properties: {} },
         status: 'available' as const,
-        category: tool.category || 'general',
-        deprecated: tool.deprecated || false,
-        version: tool.version || '1.0.0',
       })),
       toolsByServer,
       totalTools: availableTools.length,
       filteredTools: filteredTools.length,
-      toolFilter,
-      toolFilterMode: toolFilter.length > 0 ? 'whitelist' : 'none',
       filtering: {
         isFilteringEnabled: toolFilter.length > 0,
         filterRatio:
@@ -1867,7 +1884,7 @@ groupsApi.post('/:groupId/validate-tool-access', async (c) => {
 
     // 检查组是否存在
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
     const groupConfig = groups[groupId];
 
     if (!groupConfig) {
@@ -1953,17 +1970,15 @@ groupsApi.post('/:groupId/validate-tool-access', async (c) => {
               name: tool.name,
               description: tool.description,
               serverId: tool.serverId,
-              serverName: tool.serverId || '', // TODO: 获取实际服务器名称
+              serverName: tool.serverId || '',
               category: tool.category || 'general',
               version: tool.version || '1.0.0',
               deprecated: tool.deprecated || false,
-              inputSchema: tool.inputSchema || {
+              inputSchema: { type: 'object', properties: {} },
+              estimatedComplexity: estimateToolComplexity({
                 type: 'object',
                 properties: {},
-              },
-              estimatedComplexity: estimateToolComplexity(
-                tool.inputSchema || {},
-              ),
+              }),
             }
           : undefined,
         alternatives:
@@ -2029,7 +2044,7 @@ groupsApi.post('/:groupId/validation-key', async (c) => {
 
     // 检查组是否存在
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
     const existingGroup = groups[groupId];
 
     if (!existingGroup) {
@@ -2130,7 +2145,7 @@ groupsApi.get('/:groupId/validation-key', async (c) => {
 
     // 检查组是否存在
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
     const groupConfig = groups[groupId];
 
     if (!groupConfig) {
@@ -2145,7 +2160,12 @@ groupsApi.get('/:groupId/validation-key', async (c) => {
       );
     }
 
-    const validation = groupConfig.validation || {};
+    const validation = groupConfig.validation || {
+      enabled: false,
+      validationKey: undefined,
+      createdAt: undefined,
+      lastUpdated: undefined,
+    };
 
     return c.json({
       success: true,
@@ -2212,7 +2232,7 @@ groupsApi.post('/:groupId/validate-key', async (c) => {
 
     // 检查组是否存在
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
     const groupConfig = groups[groupId];
 
     if (!groupConfig) {
@@ -2227,7 +2247,12 @@ groupsApi.post('/:groupId/validate-key', async (c) => {
       );
     }
 
-    const validation = groupConfig.validation || {};
+    const validation = groupConfig.validation || {
+      enabled: false,
+      validationKey: undefined,
+      createdAt: undefined,
+      lastUpdated: undefined,
+    };
 
     // 检查是否启用了验证
     if (!validation.enabled) {
@@ -2332,7 +2357,7 @@ groupsApi.delete('/:groupId/validation-key', async (c) => {
 
     // 检查组是否存在
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
     const existingGroup = groups[groupId];
 
     if (!existingGroup) {
@@ -2414,7 +2439,7 @@ groupsApi.post('/:groupId/generate-validation-key', async (c) => {
 
     // 检查组是否存在
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
+    const groups = config.groups;
     const existingGroup = groups[groupId];
 
     if (!existingGroup) {

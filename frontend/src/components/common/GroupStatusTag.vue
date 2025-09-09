@@ -12,10 +12,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { 
-  CheckCircleIcon, 
-  CloseCircleIcon, 
-  WarningCircleIcon,
-  ErrorCircleIcon 
+  CheckCircleFilledIcon, 
+  CloseCircleFilledIcon, 
+  InfoCircleFilledIcon,
+  ErrorCircleFilledIcon 
 } from 'tdesign-icons-vue-next';
 
 interface Props {
@@ -32,17 +32,17 @@ const statusConfig = {
   healthy: {
     theme: 'success' as const,
     text: '健康',
-    icon: CheckCircleIcon,
+    icon: CheckCircleFilledIcon,
   },
   partial: {
     theme: 'warning' as const,
     text: '部分健康',
-    icon: WarningCircleIcon,
+    icon: InfoCircleFilledIcon,
   },
   unhealthy: {
     theme: 'danger' as const,
     text: '不健康',
-    icon: ErrorCircleIcon,
+    icon: ErrorCircleFilledIcon,
   },
 };
 

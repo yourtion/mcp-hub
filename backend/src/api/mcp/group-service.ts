@@ -9,11 +9,35 @@ import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
+// JSON Schema types
+interface JsonSchema {
+  type: string;
+  properties?: Record<string, JsonSchemaProperty>;
+  required?: string[];
+  description?: string;
+}
+
+interface JsonSchemaProperty {
+  type: string;
+  description?: string;
+  enum?: string[];
+  default?: unknown;
+  minimum?: number;
+  maximum?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  items?: JsonSchemaProperty;
+  properties?: Record<string, JsonSchemaProperty>;
+  required?: string[];
+}
+
 // 读取 package.json
 const pkg = JSON.parse(
   readFileSync(join(process.cwd(), 'package.json'), 'utf-8'),
 );
 
+import type { Group, GroupConfig } from '@mcp-core/mcp-hub-share';
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 
@@ -45,7 +69,7 @@ export interface GroupToolInfo {
 export class GroupMcpService {
   private mcpServer: McpServer;
   private isInitialized = false;
-  private groupConfig: any = null;
+  private groupConfig: Group | null = null;
   private availableTools: GroupToolInfo[] = [];
 
   constructor(
@@ -173,9 +197,7 @@ export class GroupMcpService {
   private async loadGroupConfig(): Promise<void> {
     try {
       const config = await getAllConfig();
-      const groups = config.groups as Record<string, any>;
-
-      this.groupConfig = groups[this.groupId];
+      this.groupConfig = config.groups[this.groupId] as Group;
       if (!this.groupConfig) {
         throw new Error(`组 '${this.groupId}' 的配置未找到`);
       }
@@ -273,12 +295,12 @@ export class GroupMcpService {
 
       // 获取组内所有可用工具
       const allTools = await this.coreServiceManager.getAllTools();
-      const groupTools = allTools.filter((tool) =>
-        groupServers.includes(tool.serverId),
+      const groupTools = allTools.filter(
+        (tool) => tool.serverId && groupServers.includes(tool.serverId),
       );
 
       // 应用组工具过滤规则
-      const filteredTools = this.applyToolFilter(groupTools);
+      const filteredTools = this.applyToolFilter(groupTools as GroupToolInfo[]);
 
       // 注册每个工具
       for (const tool of filteredTools) {
@@ -308,7 +330,7 @@ export class GroupMcpService {
   /**
    * 应用组工具过滤规则
    */
-  private applyToolFilter(tools: any[]): any[] {
+  private applyToolFilter(tools: GroupToolInfo[]): GroupToolInfo[] {
     const toolFilter = this.groupConfig?.tools;
 
     // 如果没有配置工具过滤，返回所有工具
@@ -323,13 +345,18 @@ export class GroupMcpService {
   /**
    * 注册单个动态工具
    */
-  private async registerDynamicTool(tool: any): Promise<void> {
+  private async registerDynamicTool(tool: GroupToolInfo): Promise<void> {
     try {
       // 创建工具名称（避免冲突）
       const toolName = `${tool.serverId}_${tool.name}`;
 
       // 转换输入模式为Zod模式
-      const zodSchema = this.convertToZodSchema(tool.inputSchema);
+      const zodSchema = this.convertToZodSchema(
+        (tool.inputSchema || {
+          type: 'object',
+          properties: {},
+        }) as unknown as JsonSchema,
+      );
 
       // 注册工具
       this.mcpServer.tool(toolName, zodSchema, async (args, _extra) => {
@@ -400,15 +427,17 @@ export class GroupMcpService {
   /**
    * 转换JSON Schema到Zod Schema
    */
-  private convertToZodSchema(inputSchema: any): Record<string, any> {
+  private convertToZodSchema(
+    inputSchema: JsonSchema,
+  ): Record<string, z.ZodTypeAny> {
     if (!inputSchema || !inputSchema.properties) {
       return {};
     }
 
-    const zodSchema: Record<string, any> = {};
+    const zodSchema: Record<string, z.ZodTypeAny> = {};
 
     for (const [propName, propDef] of Object.entries(inputSchema.properties)) {
-      const prop = propDef as any;
+      const prop = propDef as JsonSchemaProperty;
 
       // 基本类型转换
       switch (prop.type) {

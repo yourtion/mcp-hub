@@ -79,12 +79,12 @@ export interface ServerActions {
   createServer(server: {
     id: string;
     name: string;
-    config: any;
+    config: Record<string, unknown>;
   }): Promise<void>;
   /** 更新服务器 */
   updateServer(
     id: string,
-    updates: { name?: string; config: any },
+    updates: { name?: string; config: Record<string, unknown> },
   ): Promise<void>;
   /** 删除服务器 */
   deleteServer(id: string): Promise<void>;
@@ -93,7 +93,7 @@ export interface ServerActions {
   /** 断开服务器连接 */
   disconnectServer(id: string): Promise<void>;
   /** 测试服务器连接 */
-  testServer(config: any): Promise<boolean>;
+  testServer(config: Record<string, unknown>): Promise<boolean>;
   /** 设置选中的服务器 */
   setSelectedServer(id: string | null): void;
   /** 清除错误 */
@@ -144,7 +144,7 @@ export interface ToolActions {
     toolName: string,
     args: Record<string, unknown>,
     options?: { serverId?: string; groupId?: string },
-  ): Promise<any>;
+  ): Promise<Record<string, unknown>>;
   /** 获取工具详情 */
   getToolDetails(toolName: string): Promise<ToolInfo | null>;
   /** 设置过滤条件 */
@@ -256,9 +256,9 @@ export interface ApiToMcpActions {
   /** 获取API配置列表 */
   fetchConfigs(): Promise<void>;
   /** 创建API配置 */
-  createConfig(config: any): Promise<void>;
+  createConfig(config: Record<string, unknown>): Promise<void>;
   /** 更新API配置 */
-  updateConfig(id: string, config: any): Promise<void>;
+  updateConfig(id: string, config: Record<string, unknown>): Promise<void>;
   /** 删除API配置 */
   deleteConfig(id: string): Promise<void>;
   /** 测试API配置 */
@@ -350,7 +350,7 @@ export interface DebugState {
     search?: string;
   };
   /** 工具测试结果 */
-  toolTestResults: Map<string, any>;
+  toolTestResults: Map<string, Record<string, unknown>>;
   /** 加载状态 */
   loading: boolean;
   /** 错误信息 */
@@ -378,7 +378,7 @@ export interface DebugActions {
     options?: { serverId?: string; groupId?: string },
   ): Promise<void>;
   /** 获取工具测试结果 */
-  getToolTestResult(testId: string): any;
+  getToolTestResult(testId: string): Record<string, unknown>;
   /** 清除消息 */
   clearMessages(): void;
   /** 清除测试结果 */

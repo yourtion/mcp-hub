@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import { ToolService } from '@/services/tool';
+import * as ToolService from '@/services/tool';
 import type {
   ToolExecuteRequest,
   ToolExecuteResponse,
@@ -8,7 +8,6 @@ import type {
   ToolFilterParams,
   ToolHistoryFilterParams,
   ToolInfo,
-  ToolListResponse,
   ToolMonitoring,
   ToolPerformance,
   ToolStats,

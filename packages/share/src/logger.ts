@@ -78,29 +78,27 @@ export interface LoggerConfig {
 }
 
 /**
- * 环境检测工具类
+ * 环境检测工具函数
  */
-export class EnvironmentDetector {
+export const EnvironmentDetector = {
   /**
    * 检查是否在测试环境中
    */
-  static isTestEnvironment(): boolean {
+  isTestEnvironment(): boolean {
     return process.env.NODE_ENV === 'test' || !!process.env.VITEST;
-  }
+  },
 
   /**
    * 检查是否启用调试模式
    */
-  static isDebugMode(): boolean {
+  isDebugMode(): boolean {
     return process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true';
-  }
+  },
 
   /**
    * 获取环境适配的日志级别
    */
-  static getEnvironmentLogLevel(
-    defaultLevel: LogLevel = LogLevel.INFO,
-  ): LogLevel {
+  getEnvironmentLogLevel(defaultLevel: LogLevel = LogLevel.INFO): LogLevel {
     // 如果设置了 LOG_LEVEL 环境变量，优先使用
     if (process.env.LOG_LEVEL) {
       const envLevel =
@@ -119,20 +117,20 @@ export class EnvironmentDetector {
     }
 
     return defaultLevel;
-  }
+  },
 
   /**
    * 获取环境适配的控制台输出设置
    */
-  static getEnvironmentConsoleEnabled(defaultEnabled: boolean = true): boolean {
+  getEnvironmentConsoleEnabled(defaultEnabled: boolean = true): boolean {
     // 测试环境中，只有在调试模式下才启用控制台输出
     if (EnvironmentDetector.isTestEnvironment()) {
       return EnvironmentDetector.isDebugMode();
     }
 
     return defaultEnabled;
-  }
-}
+  },
+};
 
 /**
  * 日志格式化器接口

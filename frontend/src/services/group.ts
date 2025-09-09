@@ -6,7 +6,6 @@ import type {
   GroupAvailableToolsResponse,
   GroupDetailInfo,
   GroupHealthResponse,
-  GroupInfo,
   GroupKeyValidationRequest,
   GroupKeyValidationResponse,
   GroupListResponse,
@@ -65,9 +64,7 @@ export async function updateGroup(
 /**
  * 删除组
  */
-export async function deleteGroup(
-  groupId: string,
-): Promise<{
+export async function deleteGroup(groupId: string): Promise<{
   success: true;
   data: { id: string; name: string; deleted: boolean };
   timestamp: string;

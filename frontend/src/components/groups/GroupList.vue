@@ -190,7 +190,7 @@
                 @click="handleManageMembers(row)"
               >
                 <template #icon>
-                  <UserGroupIcon />
+                  <UsergroupFilledIcon />
                 </template>
               </t-button>
             </t-tooltip>
@@ -245,11 +245,11 @@ import {
   SearchIcon, 
   InfoCircleIcon,
   EditIcon,
-  UserGroupIcon,
+  UsergroupFilledIcon,
   KeyIcon,
   MoreIcon,
   DeleteIcon,
-  HealthCheckIcon
+  HeartFilledIcon
 } from 'tdesign-icons-vue-next';
 import GroupStatusTag from '@/components/common/GroupStatusTag.vue';
 import { useGroupStore } from '@/stores/group';
@@ -325,13 +325,13 @@ const statsCards = computed(() => [
     key: 'total',
     value: groupStore.summary.totalGroups,
     label: '总组数',
-    icon: UserGroupIcon,
+    icon: UsergroupFilledIcon,
   },
   {
     key: 'healthy',
     value: groupStore.summary.healthyGroups,
     label: '健康组',
-    icon: HealthCheckIcon,
+    icon: HeartFilledIcon,
   },
   {
     key: 'servers',

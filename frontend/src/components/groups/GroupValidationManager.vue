@@ -11,7 +11,7 @@
       <t-alert
         v-if="group"
         theme="info"
-        :message="`管理组 "${group.name}" 的验证密钥设置`"
+        :message="groupMessage"
         class="group-info"
       />
 
@@ -63,7 +63,7 @@
             :loading="generatingKey"
           >
             <template #icon>
-              <KeyGenerateIcon />
+              <AddIcon />
             </template>
             生成新密钥
           </t-button>
@@ -74,7 +74,7 @@
             @click="handleSetKey"
           >
             <template #icon>
-              <KeySetIcon />
+              <KeyIcon />
             </template>
             设置密钥
           </t-button>
@@ -85,7 +85,7 @@
             @click="handleValidateKey"
           >
             <template #icon>
-              <KeyCheckIcon />
+              <CheckCircleFilledIcon />
             </template>
             验证密钥
           </t-button>
@@ -96,7 +96,7 @@
             @click="handleDeleteKey"
           >
             <template #icon>
-              <KeyDeleteIcon />
+              <DeleteIcon />
             </template>
             删除密钥
           </t-button>
@@ -264,10 +264,10 @@
 import { ref, computed } from 'vue';
 import { MessagePlugin } from 'tdesign-vue-next';
 import {
-  KeyGenerateIcon,
-  KeySetIcon,
-  KeyCheckIcon,
-  KeyDeleteIcon,
+  AddIcon,
+  KeyIcon,
+  CheckCircleFilledIcon,
+  DeleteIcon,
   CopyIcon,
 } from 'tdesign-icons-vue-next';
 import type { FormInstance, FormRule } from 'tdesign-vue-next';
@@ -321,6 +321,10 @@ const generatedKey = ref<{
 const dialogVisible = computed({
   get: () => props.visible,
   set: (value) => emit('update:visible', value),
+});
+
+const groupMessage = computed(() => {
+  return props.group ? `管理组 "${props.group.name}" 的验证密钥设置` : '';
 });
 
 // 表单数据

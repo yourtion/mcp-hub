@@ -1,3 +1,4 @@
+import type { GroupConfig } from '@mcp-core/mcp-hub-share';
 import { Hono } from 'hono';
 import { McpHubService } from '../services/mcp_hub_service.js';
 import { getAllConfig } from '../utils/config.js';
@@ -35,8 +36,8 @@ async function getHubService(): Promise<McpHubService> {
 
     // Create hub service instance
     hubService = new McpHubService(
-      config.mcps.mcpServers as Record<string, any>,
-      config.groups as any,
+      config.mcps.mcpServers,
+      config.groups as GroupConfig,
       config.apiToolsConfigPath,
     );
 

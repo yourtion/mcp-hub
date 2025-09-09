@@ -1,7 +1,9 @@
+import type { GroupConfig } from '@mcp-core/mcp-hub-share';
 import { Hono } from 'hono';
 import { McpHubService } from '../../services/mcp_hub_service.js';
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
+import type { GroupToolInfo } from '../mcp/group-service.js';
 
 export const toolsApi = new Hono();
 
@@ -22,8 +24,8 @@ async function getHubService(): Promise<McpHubService> {
 
     // 创建hub服务实例
     hubService = new McpHubService(
-      config.mcps.mcpServers as Record<string, any>,
-      config.groups as any,
+      config.mcps.mcpServers,
+      config.groups as GroupConfig,
       config.apiToolsConfigPath,
     );
 
@@ -76,7 +78,7 @@ toolsApi.get('/', async (c) => {
     const serverId = c.req.query('serverId');
     const groupId = c.req.query('groupId') || 'default';
 
-    let tools;
+    let tools: GroupToolInfo[];
 
     if (serverId) {
       // 按服务器过滤工具
@@ -336,7 +338,7 @@ toolsApi.post('/:toolName/execute', async (c) => {
       serverId: tool.serverId,
       groupId,
       arguments: args,
-      result: result.content,
+      result: result.content as unknown as Record<string, unknown>,
       isError: result.isError || false,
       executionTime,
       timestamp,
@@ -361,7 +363,7 @@ toolsApi.post('/:toolName/execute', async (c) => {
         toolName,
         serverId: tool.serverId,
         groupId,
-        result: result.content,
+        result: result.content as unknown as Record<string, unknown>,
         isError: result.isError,
         executionTime,
         timestamp,
@@ -457,7 +459,7 @@ interface ToolExecutionRecord {
   serverId: string;
   groupId: string;
   arguments: Record<string, unknown>;
-  result: any;
+  result: Record<string, unknown>;
   isError: boolean;
   executionTime: number;
   timestamp: string;
@@ -485,7 +487,7 @@ function addExecutionRecord(record: ToolExecutionRecord): void {
 
 // 参数验证函数
 async function validateToolArguments(
-  tool: any,
+  tool: GroupToolInfo,
   args: Record<string, unknown>,
 ): Promise<{
   isValid: boolean;
@@ -504,7 +506,7 @@ async function validateToolArguments(
 
     const schema = tool.inputSchema as {
       type?: string;
-      properties?: Record<string, any>;
+      properties?: Record<string, unknown>;
       required?: string[];
       additionalProperties?: boolean;
     };
@@ -531,10 +533,10 @@ async function validateToolArguments(
           const typeValidation = validateArgumentType(
             argName,
             argValue,
-            propSchema,
+            propSchema as Record<string, unknown>,
           );
-          if (!typeValidation.isValid) {
-            errors.push(typeValidation.error!);
+          if (!typeValidation.isValid && typeValidation.error) {
+            errors.push(typeValidation.error);
           }
         }
       }
@@ -573,7 +575,7 @@ async function validateToolArguments(
 function validateArgumentType(
   argName: string,
   argValue: unknown,
-  propSchema: any,
+  propSchema: Record<string, unknown>,
 ): { isValid: boolean; error?: string } {
   if (!propSchema.type) {
     return { isValid: true }; // 没有指定类型，允许任何值
@@ -799,7 +801,8 @@ toolsApi.get('/monitoring', async (c) => {
 
     // 计算每个工具的监控信息
     allTools.forEach((tool) => {
-      const serverGroup = toolsByServer.get(tool.serverId)!;
+      const serverGroup = toolsByServer.get(tool.serverId);
+      if (!serverGroup) return;
 
       // 从执行历史中获取工具统计信息
       const toolExecutions = executionHistory.filter(
@@ -1079,7 +1082,8 @@ toolsApi.get('/performance', async (c) => {
         });
       }
 
-      const perf = toolPerformance.get(toolName)!;
+      const perf = toolPerformance.get(toolName);
+      if (!perf) return;
       perf.executions++;
       if (record.isError) {
         perf.failures++;
@@ -1114,7 +1118,8 @@ toolsApi.get('/performance', async (c) => {
         timeSeriesData.set(hour, { executions: 0, errors: 0, averageTime: 0 });
       }
 
-      const data = timeSeriesData.get(hour)!;
+      const data = timeSeriesData.get(hour);
+      if (!data) return;
       data.executions++;
       if (record.isError) data.errors++;
     });
@@ -1248,9 +1253,9 @@ toolsApi.get('/errors', async (c) => {
       // 尝试从结果中提取错误信息
       let errorMessage = '未知错误';
       if (record.result && Array.isArray(record.result)) {
-        const textContent = record.result.find(
-          (content: any) => content.type === 'text',
-        );
+        const textContent = (
+          record.result as Array<{ type: string; text?: string }>
+        ).find((content) => content.type === 'text');
         if (textContent?.text) {
           errorMessage = textContent.text;
         }
@@ -1272,7 +1277,8 @@ toolsApi.get('/errors', async (c) => {
         });
       }
 
-      const analysis = errorAnalysis.get(errorKey)!;
+      const analysis = errorAnalysis.get(errorKey);
+      if (!analysis) return;
       analysis.count++;
       analysis.tools.add(record.toolName);
       analysis.servers.add(record.serverId);
@@ -1399,7 +1405,8 @@ toolsApi.get('/stats', async (c) => {
         });
       }
 
-      const stats = toolStats.get(toolName)!;
+      const stats = toolStats.get(toolName);
+      if (!stats) return;
       stats.executions++;
       if (record.isError) {
         stats.failures++;

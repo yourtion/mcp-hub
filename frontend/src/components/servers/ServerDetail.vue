@@ -388,8 +388,7 @@ const handleExecuteTest = async () => {
     const startTime = Date.now();
     
     // 这里应该调用实际的工具执行API
-    // const result = await ToolService.executeTool(selectedTool.value.name, params);
-    
+        
     // 模拟结果
     const executionTime = Date.now() - startTime;
     testResult.value = {

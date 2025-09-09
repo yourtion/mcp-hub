@@ -6,9 +6,11 @@
 import { McpServiceManager } from '@mcp-core/mcp-hub-core';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { toFetchResponse, toReqRes } from 'fetch-to-node';
+import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
+import type { GroupConfigItem } from '../groups/index.js';
 import { GroupMcpService } from './group-service.js';
 
 export const groupMcpRouter = new Hono();
@@ -31,8 +33,8 @@ async function ensureCoreServiceInitialized(): Promise<void> {
 
     coreServiceManager = new McpServiceManager();
     const coreConfig = {
-      servers: config.mcps.mcpServers as Record<string, any>,
-      groups: config.groups as Record<string, any>,
+      servers: config.mcps.mcpServers,
+      groups: config.groups as unknown as Record<string, GroupConfigItem>,
     };
     await coreServiceManager.initializeFromConfig(coreConfig);
 
@@ -74,8 +76,7 @@ async function getGroupMcpService(groupId: string): Promise<GroupMcpService> {
 async function validateGroupExists(groupId: string): Promise<boolean> {
   try {
     const config = await getAllConfig();
-    const groups = config.groups as Record<string, any>;
-    return groupId in groups;
+    return groupId in config.groups;
   } catch (error) {
     logger.error('验证组存在性时出错', error as Error, { groupId });
     return false;
@@ -85,7 +86,10 @@ async function validateGroupExists(groupId: string): Promise<boolean> {
 /**
  * 组验证中间件
  */
-async function groupValidationMiddleware(c: any, next: () => Promise<void>) {
+async function groupValidationMiddleware(
+  c: Context,
+  next: () => Promise<void>,
+) {
   const groupId = c.req.param('group');
 
   if (!groupId) {

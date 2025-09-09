@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import GroupList from '@/components/groups/GroupList.vue';
 import { useGroupStore } from '@/stores/group';
 import type { GroupInfo } from '@/types/group';

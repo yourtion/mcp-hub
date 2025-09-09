@@ -199,6 +199,25 @@ export interface ToolErrorResponse {
   };
 }
 
+// 工具健康检查响应
+export interface ToolHealthResponse {
+  totalTools: number;
+  availableTools: number;
+  unavailableTools: number;
+  healthyServers: number;
+  totalServers: number;
+  availabilityRate: number;
+  toolsByServer: Record<
+    string,
+    {
+      serverId: string;
+      serverName: string;
+      serverStatus: string;
+      tools: ToolInfo[];
+    }
+  >;
+}
+
 // 工具过滤和搜索参数
 export interface ToolFilterParams {
   serverId?: string;

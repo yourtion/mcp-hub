@@ -13,7 +13,7 @@
       <t-alert
         v-if="group"
         theme="info"
-        :message="`管理组 "${group.name}" 的成员服务器和工具访问权限`"
+        :message="groupMessage"
         class="group-info"
       />
 
@@ -261,6 +261,10 @@ const selectedTools = ref<string[]>([]);
 const dialogVisible = computed({
   get: () => props.visible,
   set: (value) => emit('update:visible', value),
+});
+
+const groupMessage = computed(() => {
+  return props.group ? `管理组 "${props.group.name}" 的成员服务器和工具访问权限` : '';
 });
 
 const availableServers = computed(() => serverStore.serverList);
