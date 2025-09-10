@@ -42,6 +42,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/api-to-mcp',
+      name: 'ApiToMcp',
+      component: () => import('@/views/ApiToMcp.vue'),
+      meta: {
+        requiresAuth: true,
+        title: 'API到MCP管理',
+      },
+    },
+    {
       path: '/',
       redirect: '/dashboard',
     },

@@ -4,6 +4,8 @@
       <div class="app-nav">
         <router-link to="/dashboard">仪表板</router-link>
         <router-link to="/servers">服务器管理</router-link>
+        <router-link to="/groups">组管理</router-link>
+        <router-link to="/api-to-mcp">API到MCP管理</router-link>
       </div>
       <div class="app-content">
         <router-view />
