@@ -4,10 +4,10 @@
  */
 
 import {
-  createCipher,
-  createDecipher,
   createHash,
   randomBytes,
+  createCipheriv,
+  createDecipheriv,
 } from 'node:crypto';
 import { McpServiceManager } from '@mcp-core/mcp-hub-core';
 import type {

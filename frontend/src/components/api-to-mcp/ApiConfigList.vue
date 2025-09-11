@@ -150,7 +150,7 @@
                   size="small"
                   @click="handleView(row)"
                 >
-                  <template #icon><view-icon /></template>
+                  <template #icon><browse-icon /></template>
                 </t-button>
               </t-tooltip>
               <t-tooltip content="编辑配置">
@@ -218,7 +218,7 @@ import {
   DownloadIcon,
   AddIcon,
   SearchIcon,
-  ViewIcon,
+  BrowseIcon,
   EditIcon,
   PlayIcon,
 } from 'tdesign-icons-vue-next';

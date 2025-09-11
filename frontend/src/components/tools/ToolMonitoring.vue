@@ -7,7 +7,7 @@
           <t-card size="small" class="overview-card">
             <div class="overview-item">
               <div class="overview-icon">
-                <tool-icon size="24px" />
+                <api-icon size="24px" />
               </div>
               <div class="overview-content">
                 <div class="overview-value">{{ monitoringData?.overview.totalTools || 0 }}</div>
@@ -500,7 +500,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import {
-  ToolIcon,
+  ApiIcon,
   CheckCircleIcon,
   CloseCircleIcon,
   ServerIcon,

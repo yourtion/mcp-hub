@@ -8,7 +8,7 @@
           size="small"
           @click="autoMap"
         >
-          <template #icon><auto-icon /></template>
+          <template #icon><star-icon /></template>
           自动映射
         </t-button>
         <t-button
@@ -16,7 +16,7 @@
           size="small"
           @click="clearMappings"
         >
-          <template #icon><clear-icon /></template>
+          <template #icon><close-icon /></template>
           清空映射
         </t-button>
         <t-button
@@ -228,10 +228,10 @@ import { MessagePlugin } from 'tdesign-vue-next';
 import {
   DeleteIcon,
   AddIcon,
-  AutoIcon,
-  ClearIcon,
-  PreviewIcon,
-  TestIcon,
+  StarIcon,
+  CloseIcon,
+  EyeIcon,
+  PlayIcon,
 } from 'tdesign-icons-vue-next';
 import type { ParameterMapping } from '@/types/api-to-mcp';
 

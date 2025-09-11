@@ -16,7 +16,7 @@
           size="small"
           @click="generateToolPreview"
         >
-          <template #icon><tool-icon /></template>
+          <template #icon><api-icon /></template>
           生成工具预览
         </t-button>
       </t-space>
@@ -307,7 +307,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { MessagePlugin } from 'tdesign-vue-next';
 import {
   RefreshIcon,
-  ToolIcon,
+  ApiIcon,
   AddIcon,
   DeleteIcon,
   PlayIcon,

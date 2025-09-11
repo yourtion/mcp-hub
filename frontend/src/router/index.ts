@@ -51,6 +51,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/debug',
+      name: 'Debug',
+      component: () => import('@/views/Debug.vue'),
+      meta: {
+        requiresAuth: true,
+        title: '调试工具',
+      },
+    },
+    {
       path: '/',
       redirect: '/dashboard',
     },
