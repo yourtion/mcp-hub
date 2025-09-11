@@ -466,3 +466,6 @@ export async function shutdownHubApi(): Promise<void> {
     throw error;
   }
 }
+
+// Export the getHubService function for use in other modules
+export { getHubService };

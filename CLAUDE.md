@@ -130,13 +130,13 @@ The project uses a comprehensive testing approach:
 - **E2E Tests**: Full MCP protocol testing with mock servers
 - **Coverage Reports**: Code coverage tracking and reporting
 
-### Development Workflow
+## 开发习惯（必须遵循）
 
-1. **Local Development**: Use `pnpm dev:*` commands for hot reload
-2. **Testing**: Run `pnpm test` and `pnpm test:coverage` before commits
-3. **Code Quality**: Use `pnpm check` for linting and formatting
-4. **Building**: Use `pnpm build` to verify compilation
-5. **API Testing**: Use `pnpm inspector` for MCP protocol debugging
+- 任务完成后需要执行 `pnpm test` 取保测试全部通过，确保新代码不破坏原有逻辑
+- 同时对新开发的代码编写相应的测试，保证代码的正确性
+- 再执行 `pnpm check`和`pnpm build`保证代码质量，执行后需要再运行 `pnpm test` 保证测试通过
+- 代码中不要使用 `any`类型！！！通过泛型或`Record`确保类型正确
+- 任务或者需求完成后，需要检查是否需要更新 README 或者其他相关的文档，确保文档的信息有效，并于代码同步
 
 ### Package Dependencies
 

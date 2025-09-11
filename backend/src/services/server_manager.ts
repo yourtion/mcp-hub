@@ -13,6 +13,14 @@ export class ServerManager implements IServerManager {
   private servers: Map<string, ServerConnection> = new Map();
   private serverConfigs: Map<string, ServerConfig> = new Map();
 
+  // Method to track MCP messages (to be set by the hub service)
+  private messageTracker: ((serverId: string, type: 'request' | 'response' | 'notification', method: string, content: unknown) => void) | null = null;
+
+  // Set the message tracker function
+  public setMessageTracker(tracker: (serverId: string, type: 'request' | 'response' | 'notification', method: string, content: unknown) => void): void {
+    this.messageTracker = tracker;
+  }
+
   constructor(serverConfigs: Record<string, ServerConfig>) {
     // Store server configurations
     for (const [serverId, config] of Object.entries(serverConfigs)) {
@@ -149,7 +157,15 @@ export class ServerManager implements IServerManager {
     const { id: serverId, client } = serverConnection;
 
     try {
+      // Track the request
+      if (this.messageTracker) {
+        this.messageTracker(serverId, 'request', 'listTools', {});
+      }
+
+      const startTime = Date.now();
       const response = await client.listTools();
+      const executionTime = Date.now() - startTime;
+
       const tools: Tool[] = response.tools.map((tool) => ({
         name: tool.name,
         description: tool.description,
@@ -159,11 +175,28 @@ export class ServerManager implements IServerManager {
 
       serverConnection.tools = tools;
       logger.logToolDiscovery(serverId, tools.length);
+
+      // Track the response
+      if (this.messageTracker) {
+        this.messageTracker(serverId, 'response', 'listTools', {
+          ...response,
+          executionTime,
+          toolCount: tools.length,
+        });
+      }
     } catch (error) {
       logger.error('Failed to discover tools for server', error as Error, {
         serverId,
       });
       serverConnection.tools = [];
+      
+      // Track the error response
+      if (this.messageTracker) {
+        this.messageTracker(serverId, 'response', 'listTools', {
+          error: (error as Error).message,
+          isError: true,
+        });
+      }
     }
   }
 
@@ -199,15 +232,34 @@ export class ServerManager implements IServerManager {
         args,
       });
 
+      // Track the request
+      if (this.messageTracker) {
+        this.messageTracker(serverId, 'request', 'callTool', {
+          name: toolName,
+          arguments: args,
+        });
+      }
+
+      const startTime = Date.now();
       const response = await server.client.callTool({
         name: toolName,
         arguments: args,
       });
+      const executionTime = Date.now() - startTime;
 
       logger.debug('Tool execution completed', {
         serverId,
         toolName,
+        executionTime,
       });
+
+      // Track the response
+      if (this.messageTracker) {
+        this.messageTracker(serverId, 'response', 'callTool', {
+          ...response,
+          executionTime,
+        });
+      }
 
       return response;
     } catch (error) {
@@ -215,6 +267,15 @@ export class ServerManager implements IServerManager {
         serverId,
         toolName,
       });
+      
+      // Track the error response
+      if (this.messageTracker) {
+        this.messageTracker(serverId, 'response', 'callTool', {
+          error: (error as Error).message,
+          isError: true,
+        });
+      }
+      
       throw error;
     }
   }

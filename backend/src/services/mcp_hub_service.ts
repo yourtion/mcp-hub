@@ -67,6 +67,16 @@ export class McpHubService implements IMcpHubService {
   private isInitialized = false;
   private readonly DEFAULT_GROUP = 'default';
 
+  // Message tracking for debugging
+  private mcpMessages: Array<{
+    id: string;
+    timestamp: string;
+    serverId: string;
+    type: 'request' | 'response' | 'notification';
+    method: string;
+    content: unknown;
+  }> = [];
+
   // Lifecycle management properties
   private healthCheckInterval?: NodeJS.Timeout;
   private readonly HEALTH_CHECK_INTERVAL_MS = 30000; // 30 seconds
@@ -88,6 +98,13 @@ export class McpHubService implements IMcpHubService {
       this.serverManager,
       this.groupManager,
       this.apiToolService,
+    );
+
+    // Set up message tracking
+    this.serverManager.setMessageTracker(
+      (serverId, type, method, content) => {
+        this.addMcpMessage(serverId, type, method, content);
+      }
     );
   }
 
@@ -1396,5 +1413,109 @@ export class McpHubService implements IMcpHubService {
 
     logger.info('Manual health check triggered');
     await this.performHealthCheck();
+  }
+
+  // Debug and Message Tracking Methods
+
+  /**
+   * Add an MCP message to the tracking log
+   * @param serverId The server ID
+   * @param type The message type
+   * @param method The method name
+   * @param content The message content
+   */
+  public addMcpMessage(
+    serverId: string,
+    type: 'request' | 'response' | 'notification',
+    method: string,
+    content: unknown,
+  ): void {
+    const message = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date().toISOString(),
+      serverId,
+      type,
+      method,
+      content,
+    };
+
+    // Add to the beginning of the array
+    this.mcpMessages.unshift(message);
+
+    // Keep only the last 1000 messages to prevent memory issues
+    if (this.mcpMessages.length > 1000) {
+      this.mcpMessages = this.mcpMessages.slice(0, 1000);
+    }
+
+    logger.debug('MCP message tracked', {
+      serverId,
+      type,
+      method,
+      messageId: message.id,
+    });
+  }
+
+  /**
+   * Get recent MCP messages
+   * @param limit Maximum number of messages to return (default: 50)
+   * @param serverId Filter by server ID (optional)
+   * @param type Filter by message type (optional)
+   */
+  public getMcpMessages(
+    limit: number = 50,
+    serverId?: string,
+    type?: 'request' | 'response' | 'notification',
+  ): Array<{
+    id: string;
+    timestamp: string;
+    serverId: string;
+    type: 'request' | 'response' | 'notification';
+    method: string;
+    content: unknown;
+  }> {
+    let messages = this.mcpMessages;
+
+    // Apply filters
+    if (serverId) {
+      messages = messages.filter(msg => msg.serverId === serverId);
+    }
+
+    if (type) {
+      messages = messages.filter(msg => msg.type === type);
+    }
+
+    // Return limited results
+    return messages.slice(0, Math.min(limit, messages.length));
+  }
+
+  /**
+   * Clear all tracked MCP messages
+   */
+  public clearMcpMessages(): void {
+    this.mcpMessages = [];
+    logger.info('MCP message tracking cleared');
+  }
+
+  /**
+   * Get performance statistics
+   */
+  public getPerformanceStats(): {
+    totalRequests: number;
+    averageResponseTime: number;
+    errorRate: number;
+    topTools: Array<{
+      name: string;
+      calls: number;
+      avgTime: number;
+    }>;
+  } {
+    // For now, return basic stats
+    // In a real implementation, we would track execution times and calculate proper stats
+    return {
+      totalRequests: this.mcpMessages.filter(msg => msg.type === 'request').length,
+      averageResponseTime: 0,
+      errorRate: 0,
+      topTools: [],
+    };
   }
 }

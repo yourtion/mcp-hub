@@ -606,6 +606,161 @@ GET /api/system/metrics
 }
 ```
 
+## 调试工具 API
+
+调试工具 API 提供了 MCP 协议监控、工具测试、性能分析和错误诊断功能，帮助开发者和系统管理员调试和优化 MCP 服务。
+
+### 获取 MCP 协议消息
+
+**GET** `/api/debug/mcp-messages`
+
+获取跟踪的 MCP 协议消息列表，用于调试和监控 MCP 协议交互。
+
+**查询参数:**
+- `limit` (可选, 数字): 返回消息的最大数量，默认为 50
+- `serverId` (可选, 字符串): 按服务器 ID 过滤消息
+- `type` (可选, 字符串): 按消息类型过滤 ('request', 'response', 'notification')
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "messages": [
+      {
+        "id": "1640995200000-abc123",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "serverId": "time-mcp",
+        "type": "request",
+        "method": "callTool",
+        "content": {
+          "name": "get_current_time",
+          "arguments": {}
+        }
+      }
+    ]
+  },
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### 测试工具执行
+
+**POST** `/api/debug/tool-test`
+
+测试工具执行并获取详细的执行结果和性能指标。
+
+**请求体:**
+```json
+{
+  "toolName": "get_current_time",
+  "serverId": "time-mcp",     // 可选
+  "groupId": "default",       // 可选
+  "arguments": {              // 可选
+    "format": "ISO"
+  }
+}
+```
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "toolName": "get_current_time",
+    "serverId": "time-mcp",
+    "groupId": "default",
+    "arguments": {
+      "format": "ISO"
+    },
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "2024-01-01T00:00:00.000Z"
+        }
+      ],
+      "isError": false
+    },
+    "executionTime": 45
+  },
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### 获取性能统计
+
+**GET** `/api/debug/performance-stats`
+
+获取系统性能统计信息，包括请求量、响应时间和错误率。
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "stats": {
+      "totalRequests": 127,
+      "averageResponseTime": 52,
+      "errorRate": 2.3,
+      "topTools": [
+        {
+          "name": "get_current_time",
+          "calls": 45,
+          "avgTime": 48
+        },
+        {
+          "name": "calculate_sum",
+          "calls": 32,
+          "avgTime": 65
+        }
+      ]
+    }
+  },
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### 错误分析
+
+**GET** `/api/debug/error-analysis`
+
+分析系统中的错误模式，识别常见的错误类型和问题。
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "errors": [
+      {
+        "id": "1640995200000-def456",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "serverId": "calculator-mcp",
+        "type": "response",
+        "method": "callTool",
+        "content": {
+          "isError": true,
+          "error": "Invalid input: expected number, got string"
+        }
+      }
+    ],
+    "analysis": {
+      "totalErrors": 3,
+      "errorRate": 2.3,
+      "mostCommonErrors": {
+        "Invalid input: expected number, got string": 2,
+        "Server timeout": 1
+      },
+      "recentErrors": [
+        // 最近的错误消息数组
+      ]
+    }
+  },
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
 ## 错误响应
 
 所有 API 端点在出错时返回标准错误格式：
