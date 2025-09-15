@@ -4,9 +4,8 @@
  */
 
 import { Hono } from 'hono';
+import { requireAuth } from '../../middleware/simple-auth.js';
 import type { ApiToMcpWebService } from '../../services/api-to-mcp-web-service.js';
-import { logger } from '../../utils/logger.js';
-import { requireAuth } from '../middleware/simple-auth.js';
 import type {
   ApiConfigListResponse,
   ApiResponse,
@@ -14,7 +13,8 @@ import type {
   CreateApiConfigRequest,
   TestApiConfigRequest,
   TestApiConfigResponse,
-} from '../types/web-api.js';
+} from '../../types/web-api.js';
+import { logger } from '../../utils/logger.js';
 
 // 扩展Hono的Context类型以包含API到MCP服务
 declare module 'hono' {

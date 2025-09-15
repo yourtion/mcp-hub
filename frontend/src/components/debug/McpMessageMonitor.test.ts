@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { describe, expect, it } from 'vitest';
 import McpMessageMonitor from './McpMessageMonitor.vue';
 
 describe('McpMessageMonitor', () => {
@@ -10,7 +10,9 @@ describe('McpMessageMonitor', () => {
 
   it('should have search input', () => {
     const wrapper = mount(McpMessageMonitor);
-    expect(wrapper.find('input[placeholder="搜索消息内容"]').exists()).toBe(true);
+    expect(wrapper.find('input[placeholder="搜索消息内容"]').exists()).toBe(
+      true,
+    );
   });
 
   it('should have table component', () => {

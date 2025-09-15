@@ -17,7 +17,7 @@ describe('调试API', () => {
   it('应该有正确的路由定义', () => {
     app = new Hono();
     app.route('/api/debug', debugApi);
-    
+
     // Just test that the app can be created without errors
     expect(app).toBeDefined();
   });

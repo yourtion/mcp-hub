@@ -1,6 +1,11 @@
 // API到MCP相关类型定义
 
-import type { JsonSchema, HttpMethod, SecurityConfig, CacheConfig } from './api';
+import type {
+  CacheConfig,
+  HttpMethod,
+  JsonSchema,
+  SecurityConfig,
+} from './api';
 
 /**
  * API端点配置

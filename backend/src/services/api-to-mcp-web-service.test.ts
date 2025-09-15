@@ -8,7 +8,7 @@ import type { ApiToolConfig } from '../types/web-api.js';
 import { ApiToMcpWebService } from './api-to-mcp-web-service.js';
 
 // Mock API工具集成服务
-vi.mock('./api_tool_integration_service.js', () => ({
+vi.mock('./api_tool_integration_service', () => ({
   ApiToolIntegrationService: vi.fn().mockImplementation(() => ({
     initialize: vi.fn(),
     getApiTools: vi.fn(),
@@ -42,13 +42,15 @@ describe('ApiToMcpWebService', () => {
   let mockApiToolIntegrationService: any;
   let mockConfigManager: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     service = new ApiToMcpWebService();
-    
+
     // Get mocked instances
-    const { ApiToolIntegrationService } = await import('./api_tool_integration_service.js');
+    const { ApiToolIntegrationService } = await import(
+      './api_tool_integration_service.js'
+    );
     mockApiToolIntegrationService = (service as any).apiToolIntegrationService;
-    
+
     vi.spyOn(fs, 'mkdir').mockResolvedValue(undefined);
     vi.spyOn(fs, 'writeFile').mockResolvedValue(undefined);
     vi.spyOn(fs, 'readFile').mockResolvedValue('{}');
@@ -67,16 +69,18 @@ describe('ApiToMcpWebService', () => {
 
       await service.initialize(configPath);
 
-      expect(mockApiToolIntegrationService.initialize).toHaveBeenCalledWith(configPath);
+      expect(mockApiToolIntegrationService.initialize).toHaveBeenCalledWith(
+        configPath,
+      );
     });
 
     it('应该在未提供配置路径时发出警告', async () => {
       const consoleSpy = vi.spyOn(console, 'warn');
-      
+
       await service.initialize();
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        '未提供API配置文件路径，部分功能将不可用'
+        '未提供API配置文件路径，部分功能将不可用',
       );
       expect(mockApiToolIntegrationService.initialize).not.toHaveBeenCalled();
     });
@@ -86,7 +90,9 @@ describe('ApiToMcpWebService', () => {
       const error = new Error('初始化失败');
       mockApiToolIntegrationService.initialize.mockRejectedValue(error);
 
-      await expect(service.initialize(configPath)).rejects.toThrow('初始化失败: 初始化失败');
+      await expect(service.initialize(configPath)).rejects.toThrow(
+        '初始化失败: 初始化失败',
+      );
     });
   });
 
@@ -130,7 +136,9 @@ describe('ApiToMcpWebService', () => {
       const error = new Error('获取失败');
       mockApiToolIntegrationService.getApiTools.mockRejectedValue(error);
 
-      await expect(service.getConfigs()).rejects.toThrow('获取配置列表失败: 获取失败');
+      await expect(service.getConfigs()).rejects.toThrow(
+        '获取配置列表失败: 获取失败',
+      );
     });
   });
 
@@ -157,10 +165,12 @@ describe('ApiToMcpWebService', () => {
     };
 
     beforeEach(async () => {
-      vi.spyOn(fs, 'readFile').mockResolvedValue(JSON.stringify({
-        version: '1.0.0',
-        tools: [],
-      }));
+      vi.spyOn(fs, 'readFile').mockResolvedValue(
+        JSON.stringify({
+          version: '1.0.0',
+          tools: [],
+        }),
+      );
       await service.initialize('/path/to/config.json');
     });
 
@@ -176,10 +186,12 @@ describe('ApiToMcpWebService', () => {
     });
 
     it('应该拒绝创建重复ID的配置', async () => {
-      vi.spyOn(fs, 'readFile').mockResolvedValue(JSON.stringify({
-        version: '1.0.0',
-        tools: [validConfig],
-      }));
+      vi.spyOn(fs, 'readFile').mockResolvedValue(
+        JSON.stringify({
+          version: '1.0.0',
+          tools: [validConfig],
+        }),
+      );
 
       const result = await service.createConfig(validConfig);
 
@@ -224,10 +236,12 @@ describe('ApiToMcpWebService', () => {
     };
 
     beforeEach(async () => {
-      vi.spyOn(fs, 'readFile').mockResolvedValue(JSON.stringify({
-        version: '1.0.0',
-        tools: [existingConfig],
-      }));
+      vi.spyOn(fs, 'readFile').mockResolvedValue(
+        JSON.stringify({
+          version: '1.0.0',
+          tools: [existingConfig],
+        }),
+      );
       await service.initialize('/path/to/config.json');
     });
 
@@ -250,7 +264,10 @@ describe('ApiToMcpWebService', () => {
     it('应该拒绝ID不匹配的更新', async () => {
       const mismatchedConfig = { ...existingConfig, id: 'different-id' };
 
-      const result = await service.updateConfig('test-config', mismatchedConfig);
+      const result = await service.updateConfig(
+        'test-config',
+        mismatchedConfig,
+      );
 
       expect(result.success).toBe(false);
       expect(result.message).toBe('配置ID不匹配');
@@ -259,7 +276,10 @@ describe('ApiToMcpWebService', () => {
     it('应该处理不存在的配置', async () => {
       const nonExistentConfig = { ...existingConfig, id: 'non-existent' };
 
-      const result = await service.updateConfig('non-existent', nonExistentConfig);
+      const result = await service.updateConfig(
+        'non-existent',
+        nonExistentConfig,
+      );
 
       expect(result.success).toBe(false);
       expect(result.message).toContain('不存在');
@@ -283,10 +303,12 @@ describe('ApiToMcpWebService', () => {
     };
 
     beforeEach(async () => {
-      vi.spyOn(fs, 'readFile').mockResolvedValue(JSON.stringify({
-        version: '1.0.0',
-        tools: [existingConfig],
-      }));
+      vi.spyOn(fs, 'readFile').mockResolvedValue(
+        JSON.stringify({
+          version: '1.0.0',
+          tools: [existingConfig],
+        }),
+      );
       await service.initialize('/path/to/config.json');
     });
 
@@ -324,7 +346,9 @@ describe('ApiToMcpWebService', () => {
         ],
       };
 
-      mockApiToolIntegrationService.executeApiTool.mockResolvedValue(mockResult);
+      mockApiToolIntegrationService.executeApiTool.mockResolvedValue(
+        mockResult,
+      );
 
       const parameters = { test: 'value' };
       const result = await service.testConfig('test-tool', parameters);
@@ -332,7 +356,10 @@ describe('ApiToMcpWebService', () => {
       expect(result.success).toBe(true);
       expect(result.response).toBe('Test result');
       expect(result.executionTime).toBeGreaterThan(0);
-      expect(mockApiToolIntegrationService.executeApiTool).toHaveBeenCalledWith('test-tool', parameters);
+      expect(mockApiToolIntegrationService.executeApiTool).toHaveBeenCalledWith(
+        'test-tool',
+        parameters,
+      );
     });
 
     it('应该正确处理测试失败', async () => {
@@ -346,7 +373,9 @@ describe('ApiToMcpWebService', () => {
         ],
       };
 
-      mockApiToolIntegrationService.executeApiTool.mockResolvedValue(mockResult);
+      mockApiToolIntegrationService.executeApiTool.mockResolvedValue(
+        mockResult,
+      );
 
       const result = await service.testConfig('test-tool', {});
 
@@ -384,10 +413,12 @@ describe('ApiToMcpWebService', () => {
     };
 
     beforeEach(async () => {
-      vi.spyOn(fs, 'readFile').mockResolvedValue(JSON.stringify({
-        version: '1.0.0',
-        tools: [existingConfig],
-      }));
+      vi.spyOn(fs, 'readFile').mockResolvedValue(
+        JSON.stringify({
+          version: '1.0.0',
+          tools: [existingConfig],
+        }),
+      );
       mockApiToolIntegrationService.getApiToolDefinition.mockReturnValue({
         name: 'test-tool',
         description: 'Test tool',
@@ -445,8 +476,9 @@ describe('ApiToMcpWebService', () => {
       expect(result.initialized).toBe(false);
       expect(result.healthy).toBe(false);
       expect(result.toolCount).toBe(0);
+      expect(result.errors).toBeDefined();
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0]).toContain('获取健康状态失败');
+      expect(result.errors![0]).toContain('获取健康状态失败');
     });
   });
 

@@ -88,7 +88,7 @@ export class ApiToMcpWebService {
       const configs: ApiConfigInfo[] = apiTools.map((tool) => ({
         id: tool.name,
         name: tool.name,
-        description: tool.description,
+        description: tool.description || '',
         status: 'active' as const,
         api: {
           url: this.extractApiUrl(tool.inputSchema),
@@ -382,7 +382,10 @@ export class ApiToMcpWebService {
     try {
       return await this.configManager.loadConfig(this.configPath);
     } catch (error) {
-      if (error instanceof ConfigLoadError && error.cause?.code === 'ENOENT') {
+      if (
+        error instanceof ConfigLoadError &&
+        (error.cause as NodeJS.ErrnoException)?.code === 'ENOENT'
+      ) {
         // 文件不存在，返回空配置
         return [];
       }
@@ -404,7 +407,7 @@ export class ApiToMcpWebService {
       await fs.mkdir(configDir, { recursive: true });
     } catch (error) {
       // 目录已存在，忽略错误
-      if ((error as any).code !== 'EEXIST') {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
         throw error;
       }
     }

@@ -14,10 +14,24 @@ export class ServerManager implements IServerManager {
   private serverConfigs: Map<string, ServerConfig> = new Map();
 
   // Method to track MCP messages (to be set by the hub service)
-  private messageTracker: ((serverId: string, type: 'request' | 'response' | 'notification', method: string, content: unknown) => void) | null = null;
+  private messageTracker:
+    | ((
+        serverId: string,
+        type: 'request' | 'response' | 'notification',
+        method: string,
+        content: unknown,
+      ) => void)
+    | null = null;
 
   // Set the message tracker function
-  public setMessageTracker(tracker: (serverId: string, type: 'request' | 'response' | 'notification', method: string, content: unknown) => void): void {
+  public setMessageTracker(
+    tracker: (
+      serverId: string,
+      type: 'request' | 'response' | 'notification',
+      method: string,
+      content: unknown,
+    ) => void,
+  ): void {
     this.messageTracker = tracker;
   }
 
@@ -189,7 +203,7 @@ export class ServerManager implements IServerManager {
         serverId,
       });
       serverConnection.tools = [];
-      
+
       // Track the error response
       if (this.messageTracker) {
         this.messageTracker(serverId, 'response', 'listTools', {
@@ -267,7 +281,7 @@ export class ServerManager implements IServerManager {
         serverId,
         toolName,
       });
-      
+
       // Track the error response
       if (this.messageTracker) {
         this.messageTracker(serverId, 'response', 'callTool', {
@@ -275,7 +289,7 @@ export class ServerManager implements IServerManager {
           isError: true,
         });
       }
-      
+
       throw error;
     }
   }

@@ -4,10 +4,10 @@
  */
 
 import {
-  createHash,
-  randomBytes,
   createCipheriv,
   createDecipheriv,
+  createHash,
+  randomBytes,
 } from 'node:crypto';
 import { McpServiceManager } from '@mcp-core/mcp-hub-core';
 import type {
@@ -767,16 +767,17 @@ function encryptValidationKey(key: string): string {
     // 使用系统密钥进行加密（在实际生产环境中应该使用更安全的密钥管理）
     const systemKey =
       process.env.VALIDATION_KEY_SECRET || 'mcp-hub-default-secret-key';
-    const hash = createHash('sha256')
-      .update(systemKey)
-      .digest('hex')
-      .substring(0, 32);
+    const keyHash = createHash('sha256').update(systemKey).digest();
 
-    const cipher = createCipher('aes-256-cbc', hash);
+    // 生成随机IV
+    const iv = randomBytes(16);
+
+    const cipher = createCipheriv('aes-256-cbc', keyHash, iv);
     let encrypted = cipher.update(key, 'utf8', 'hex');
     encrypted += cipher.final('hex');
 
-    return encrypted;
+    // 将IV和加密数据一起返回
+    return iv.toString('hex') + ':' + encrypted;
   } catch (error) {
     logger.error('加密验证密钥失败', error as Error);
     throw new Error('密钥加密失败');
@@ -790,13 +791,15 @@ function decryptValidationKey(encryptedKey: string): string {
   try {
     const systemKey =
       process.env.VALIDATION_KEY_SECRET || 'mcp-hub-default-secret-key';
-    const hash = createHash('sha256')
-      .update(systemKey)
-      .digest('hex')
-      .substring(0, 32);
+    const keyHash = createHash('sha256').update(systemKey).digest();
 
-    const decipher = createDecipher('aes-256-cbc', hash);
-    let decrypted = decipher.update(encryptedKey, 'hex', 'utf8');
+    // 分离IV和加密数据
+    const parts = encryptedKey.split(':');
+    const iv = Buffer.from(parts[0], 'hex');
+    const encrypted = parts[1];
+
+    const decipher = createDecipheriv('aes-256-cbc', keyHash, iv);
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
 
     return decrypted;

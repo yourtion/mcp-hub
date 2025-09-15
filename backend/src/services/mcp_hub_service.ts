@@ -101,11 +101,9 @@ export class McpHubService implements IMcpHubService {
     );
 
     // Set up message tracking
-    this.serverManager.setMessageTracker(
-      (serverId, type, method, content) => {
-        this.addMcpMessage(serverId, type, method, content);
-      }
-    );
+    this.serverManager.setMessageTracker((serverId, type, method, content) => {
+      this.addMcpMessage(serverId, type, method, content);
+    });
   }
 
   async initialize(): Promise<void> {
@@ -1477,11 +1475,11 @@ export class McpHubService implements IMcpHubService {
 
     // Apply filters
     if (serverId) {
-      messages = messages.filter(msg => msg.serverId === serverId);
+      messages = messages.filter((msg) => msg.serverId === serverId);
     }
 
     if (type) {
-      messages = messages.filter(msg => msg.type === type);
+      messages = messages.filter((msg) => msg.type === type);
     }
 
     // Return limited results
@@ -1512,7 +1510,8 @@ export class McpHubService implements IMcpHubService {
     // For now, return basic stats
     // In a real implementation, we would track execution times and calculate proper stats
     return {
-      totalRequests: this.mcpMessages.filter(msg => msg.type === 'request').length,
+      totalRequests: this.mcpMessages.filter((msg) => msg.type === 'request')
+        .length,
       averageResponseTime: 0,
       errorRate: 0,
       topTools: [],

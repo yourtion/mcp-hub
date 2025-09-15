@@ -7,7 +7,7 @@ type DeepReadonlyObject<T> = {
 // Define DeepReadonly utility type
 export type DeepReadonly<T> = T extends (infer R)[]
   ? DeepReadonlyArray<R>
-  : T extends (...args: any[]) => any
+  : T extends (...args: unknown[]) => unknown
     ? T
     : T extends object
       ? DeepReadonlyObject<T>
