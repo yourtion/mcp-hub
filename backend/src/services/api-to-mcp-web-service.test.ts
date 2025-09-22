@@ -5,9 +5,9 @@
 import { promises as fs } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ApiToolConfig } from '../types/web-api.js';
-import { ApiToMcpWebService } from './api-to-mcp-web-service.js';
+import { logger } from '../utils/logger.js';
 
-// Mock API工具集成服务
+// 创建mock函数
 const mockApiToolIntegrationService = {
   initialize: vi.fn(),
   getApiTools: vi.fn(),
@@ -19,8 +19,11 @@ const mockApiToolIntegrationService = {
   shutdown: vi.fn(),
 };
 
-vi.mock('./api_tool_integration_service', () => ({
-  ApiToolIntegrationService: vi.fn().mockImplementation(() => mockApiToolIntegrationService),
+// Mock API工具集成服务
+vi.mock('./api_tool_integration_service.js', () => ({
+  ApiToolIntegrationService: vi
+    .fn()
+    .mockImplementation(() => mockApiToolIntegrationService),
 }));
 
 // Mock API配置管理器
@@ -36,8 +39,19 @@ const mockConfigManager = {
 
 vi.mock('@mcp-core/mcp-hub-core/api-to-mcp', () => ({
   ApiConfigManagerImpl: vi.fn().mockImplementation(() => mockConfigManager),
-  ...vi.importActual('@mcp-core/mcp-hub-core/api-to-mcp'),
+  ConfigLoadError: class ConfigLoadError extends Error {
+    constructor(
+      message: string,
+      public cause?: Error,
+    ) {
+      super(message);
+      this.name = 'ConfigLoadError';
+    }
+  },
 }));
+
+// 动态导入服务类
+const { ApiToMcpWebService } = await import('./api-to-mcp-web-service.js');
 
 describe('ApiToMcpWebService', () => {
   let service: ApiToMcpWebService;
@@ -45,7 +59,7 @@ describe('ApiToMcpWebService', () => {
   beforeEach(async () => {
     // 重置所有mock
     vi.clearAllMocks();
-    
+
     service = new ApiToMcpWebService();
 
     vi.spyOn(fs, 'mkdir').mockResolvedValue(undefined);
@@ -72,14 +86,17 @@ describe('ApiToMcpWebService', () => {
     });
 
     it('应该在未提供配置路径时发出警告', async () => {
-      const consoleSpy = vi.spyOn(console, 'warn');
+      const loggerSpy = vi.spyOn(logger, 'warn');
+      mockApiToolIntegrationService.initialize.mockResolvedValue(undefined);
 
       await service.initialize();
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(loggerSpy).toHaveBeenCalledWith(
         '未提供API配置文件路径，部分功能将不可用',
       );
-      expect(mockApiToolIntegrationService.initialize).not.toHaveBeenCalled();
+      expect(mockApiToolIntegrationService.initialize).toHaveBeenCalledWith(
+        undefined,
+      );
     });
 
     it('应该正确处理初始化错误', async () => {
@@ -95,6 +112,7 @@ describe('ApiToMcpWebService', () => {
 
   describe('getConfigs', () => {
     beforeEach(async () => {
+      mockApiToolIntegrationService.initialize.mockResolvedValue(undefined);
       await service.initialize('/path/to/config.json');
     });
 
@@ -162,12 +180,8 @@ describe('ApiToMcpWebService', () => {
     };
 
     beforeEach(async () => {
-      vi.spyOn(fs, 'readFile').mockResolvedValue(
-        JSON.stringify({
-          version: '1.0.0',
-          tools: [],
-        }),
-      );
+      mockConfigManager.loadConfig.mockResolvedValue([]);
+      mockApiToolIntegrationService.initialize.mockResolvedValue(undefined);
       await service.initialize('/path/to/config.json');
     });
 
@@ -183,12 +197,7 @@ describe('ApiToMcpWebService', () => {
     });
 
     it('应该拒绝创建重复ID的配置', async () => {
-      vi.spyOn(fs, 'readFile').mockResolvedValue(
-        JSON.stringify({
-          version: '1.0.0',
-          tools: [validConfig],
-        }),
-      );
+      mockConfigManager.loadConfig.mockResolvedValue([validConfig]);
 
       const result = await service.createConfig(validConfig);
 
@@ -233,12 +242,8 @@ describe('ApiToMcpWebService', () => {
     };
 
     beforeEach(async () => {
-      vi.spyOn(fs, 'readFile').mockResolvedValue(
-        JSON.stringify({
-          version: '1.0.0',
-          tools: [existingConfig],
-        }),
-      );
+      mockConfigManager.loadConfig.mockResolvedValue([existingConfig]);
+      mockApiToolIntegrationService.initialize.mockResolvedValue(undefined);
       await service.initialize('/path/to/config.json');
     });
 
@@ -300,12 +305,8 @@ describe('ApiToMcpWebService', () => {
     };
 
     beforeEach(async () => {
-      vi.spyOn(fs, 'readFile').mockResolvedValue(
-        JSON.stringify({
-          version: '1.0.0',
-          tools: [existingConfig],
-        }),
-      );
+      mockConfigManager.loadConfig.mockResolvedValue([existingConfig]);
+      mockApiToolIntegrationService.initialize.mockResolvedValue(undefined);
       await service.initialize('/path/to/config.json');
     });
 
@@ -329,6 +330,7 @@ describe('ApiToMcpWebService', () => {
 
   describe('testConfig', () => {
     beforeEach(async () => {
+      mockApiToolIntegrationService.initialize.mockResolvedValue(undefined);
       await service.initialize('/path/to/config.json');
     });
 
@@ -410,12 +412,7 @@ describe('ApiToMcpWebService', () => {
     };
 
     beforeEach(async () => {
-      vi.spyOn(fs, 'readFile').mockResolvedValue(
-        JSON.stringify({
-          version: '1.0.0',
-          tools: [existingConfig],
-        }),
-      );
+      mockConfigManager.loadConfig.mockResolvedValue([existingConfig]);
       mockApiToolIntegrationService.getApiToolDefinition.mockReturnValue({
         name: 'test-tool',
         description: 'Test tool',
@@ -424,6 +421,7 @@ describe('ApiToMcpWebService', () => {
           properties: {},
         },
       });
+      mockApiToolIntegrationService.initialize.mockResolvedValue(undefined);
       await service.initialize('/path/to/config.json');
     });
 
@@ -475,7 +473,7 @@ describe('ApiToMcpWebService', () => {
       expect(result.toolCount).toBe(0);
       expect(result.errors).toBeDefined();
       expect(result.errors).toHaveLength(1);
-      expect(result.errors![0]).toContain('获取健康状态失败');
+      expect(result.errors?.[0]).toContain('获取健康状态失败');
     });
   });
 
@@ -489,6 +487,7 @@ describe('ApiToMcpWebService', () => {
 
   describe('shutdown', () => {
     beforeEach(async () => {
+      mockApiToolIntegrationService.initialize.mockResolvedValue(undefined);
       mockApiToolIntegrationService.shutdown.mockResolvedValue(undefined);
       await service.initialize('/path/to/config.json');
     });

@@ -127,13 +127,19 @@ describe('仪表板API', () => {
 
   it('应该有正确的服务结构', async () => {
     // 验证服务类存在
-    const dashboardService = await import('../../services/dashboard_service.js');
+    const dashboardService = await import(
+      '../../services/dashboard_service.js'
+    );
     expect(typeof dashboardService.DashboardService).toBe('function');
-    
+
     const sseEventManager = await import('../../services/sse_event_manager.js');
     expect(typeof sseEventManager.SSEEventManager).toBe('function');
-    
-    const eventIntegrationService = await import('../../services/event_integration_service.js');
-    expect(typeof eventIntegrationService.EventIntegrationService).toBe('function');
+
+    const eventIntegrationService = await import(
+      '../../services/event_integration_service.js'
+    );
+    expect(typeof eventIntegrationService.EventIntegrationService).toBe(
+      'function',
+    );
   });
 });
