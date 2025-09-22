@@ -8,17 +8,19 @@ import type { ApiToolConfig } from '../types/web-api.js';
 import { ApiToMcpWebService } from './api-to-mcp-web-service.js';
 
 // Mock API工具集成服务
+const mockApiToolIntegrationService = {
+  initialize: vi.fn(),
+  getApiTools: vi.fn(),
+  executeApiTool: vi.fn(),
+  getApiToolDefinition: vi.fn(),
+  reloadConfig: vi.fn(),
+  getStats: vi.fn(),
+  getHealthStatus: vi.fn(),
+  shutdown: vi.fn(),
+};
+
 vi.mock('./api_tool_integration_service', () => ({
-  ApiToolIntegrationService: vi.fn().mockImplementation(() => ({
-    initialize: vi.fn(),
-    getApiTools: vi.fn(),
-    executeApiTool: vi.fn(),
-    getApiToolDefinition: vi.fn(),
-    reloadConfig: vi.fn(),
-    getStats: vi.fn(),
-    getHealthStatus: vi.fn(),
-    shutdown: vi.fn(),
-  })),
+  ApiToolIntegrationService: vi.fn().mockImplementation(() => mockApiToolIntegrationService),
 }));
 
 // Mock API配置管理器
@@ -39,17 +41,12 @@ vi.mock('@mcp-core/mcp-hub-core/api-to-mcp', () => ({
 
 describe('ApiToMcpWebService', () => {
   let service: ApiToMcpWebService;
-  let mockApiToolIntegrationService: any;
-  let mockConfigManager: any;
 
   beforeEach(async () => {
+    // 重置所有mock
+    vi.clearAllMocks();
+    
     service = new ApiToMcpWebService();
-
-    // Get mocked instances
-    const { ApiToolIntegrationService } = await import(
-      './api_tool_integration_service.js'
-    );
-    mockApiToolIntegrationService = (service as any).apiToolIntegrationService;
 
     vi.spyOn(fs, 'mkdir').mockResolvedValue(undefined);
     vi.spyOn(fs, 'writeFile').mockResolvedValue(undefined);

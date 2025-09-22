@@ -1,4 +1,8 @@
 import { serve } from '@hono/node-server';
+import {
+  initializeDashboardServices,
+  shutdownDashboardServices,
+} from './api/dashboard/index.js';
 import { shutdownHubApi } from './api/hub.js';
 import { shutdownGroupMcpRouter } from './api/mcp/group-router.js';
 import { shutdownServersApi } from './api/servers/index.js';
@@ -109,7 +113,14 @@ async function startServer() {
     // 3. 初始化 MCP Hub 服务
     await initializeHubService(validatedConfig);
 
-    // 4. 创建 HTTP 服务器
+    // 4. 初始化仪表板服务
+    if (hubService) {
+      logger.info('初始化仪表板服务...');
+      initializeDashboardServices(hubService);
+      logger.info('仪表板服务初始化完成');
+    }
+
+    // 5. 创建 HTTP 服务器
     logger.info('创建 HTTP 服务器...');
     httpServer = serve(
       {
@@ -156,6 +167,12 @@ async function cleanupResources() {
   }
 
   // 关闭其他服务
+  cleanupPromises.push(
+    shutdownDashboardServices().catch((error) => {
+      logger.error('仪表板服务关闭失败', error);
+    }),
+  );
+
   cleanupPromises.push(
     shutdownMcpService().catch((error) => {
       logger.error('MCP 服务关闭失败', error);

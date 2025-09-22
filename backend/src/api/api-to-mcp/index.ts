@@ -43,6 +43,7 @@ apiToMcpRoutes.get('/configs', requireAuth, async (c) => {
     const response: ApiResponse<ApiConfigListResponse> = {
       success: true,
       data: configs,
+      timestamp: new Date().toISOString(),
     };
 
     return c.json(response);
@@ -103,6 +104,7 @@ apiToMcpRoutes.post('/configs', requireAuth, async (c) => {
         message: result.message,
         config: result.config,
       },
+      timestamp: new Date().toISOString(),
     };
 
     return c.json(response, 201);
@@ -110,7 +112,10 @@ apiToMcpRoutes.post('/configs', requireAuth, async (c) => {
     logger.error('创建API配置失败', error as Error);
 
     // Check if it's a JSON parsing error
-    if (error instanceof SyntaxError && (error as any).message?.includes('JSON')) {
+    if (
+      error instanceof SyntaxError &&
+      (error as any).message?.includes('JSON')
+    ) {
       const response = {
         success: false,
         error: {
@@ -203,6 +208,7 @@ apiToMcpRoutes.put('/configs/:id', requireAuth, async (c) => {
         message: result.message,
         config: result.config,
       },
+      timestamp: new Date().toISOString(),
     };
 
     return c.json(response);
@@ -258,6 +264,7 @@ apiToMcpRoutes.delete('/configs/:id', requireAuth, async (c) => {
         id: configId,
         message: result.message,
       },
+      timestamp: new Date().toISOString(),
     };
 
     return c.json(response);
@@ -344,6 +351,7 @@ apiToMcpRoutes.get('/configs/:id', requireAuth, async (c) => {
     const response: ApiResponse<ApiToolConfig> = {
       success: true,
       data: config,
+      timestamp: new Date().toISOString(),
     };
 
     return c.json(response);
