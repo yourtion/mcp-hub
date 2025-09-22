@@ -43,7 +43,6 @@ apiToMcpRoutes.get('/configs', requireAuth, async (c) => {
     const response: ApiResponse<ApiConfigListResponse> = {
       success: true,
       data: configs,
-      timestamp: new Date().toISOString(),
     };
 
     return c.json(response);
@@ -57,8 +56,6 @@ apiToMcpRoutes.get('/configs', requireAuth, async (c) => {
         message: '获取API配置列表失败',
         details: (error as Error).message,
       },
-      timestamp: new Date().toISOString(),
-      path: c.req.path,
     };
 
     return c.json(response, 500);
@@ -88,8 +85,6 @@ apiToMcpRoutes.post('/configs', requireAuth, async (c) => {
           code: 'CREATE_API_CONFIG_FAILED',
           message: result.message,
         },
-        timestamp: new Date().toISOString(),
-        path: c.req.path,
       };
 
       return c.json(response, 400);
@@ -108,12 +103,24 @@ apiToMcpRoutes.post('/configs', requireAuth, async (c) => {
         message: result.message,
         config: result.config,
       },
-      timestamp: new Date().toISOString(),
     };
 
     return c.json(response, 201);
   } catch (error) {
     logger.error('创建API配置失败', error as Error);
+
+    // Check if it's a JSON parsing error
+    if (error instanceof SyntaxError && (error as any).message?.includes('JSON')) {
+      const response = {
+        success: false,
+        error: {
+          code: 'INVALID_JSON',
+          message: '请求体包含无效的JSON格式',
+        },
+      };
+
+      return c.json(response, 400);
+    }
 
     const response = {
       success: false,
@@ -122,8 +129,6 @@ apiToMcpRoutes.post('/configs', requireAuth, async (c) => {
         message: '创建API配置失败',
         details: (error as Error).message,
       },
-      timestamp: new Date().toISOString(),
-      path: c.req.path,
     };
 
     return c.json(response, 500);
@@ -149,8 +154,6 @@ apiToMcpRoutes.put('/configs/:id', requireAuth, async (c) => {
           code: 'INVALID_CONFIG',
           message: '配置数据无效：缺少必要字段',
         },
-        timestamp: new Date().toISOString(),
-        path: c.req.path,
       };
 
       return c.json(response, 400);
@@ -161,11 +164,9 @@ apiToMcpRoutes.put('/configs/:id', requireAuth, async (c) => {
       const response = {
         success: false,
         error: {
-          code: 'CONFIG_ID_MISMATCH',
+          code: 'UPDATE_API_CONFIG_FAILED',
           message: '配置ID不匹配',
         },
-        timestamp: new Date().toISOString(),
-        path: c.req.path,
       };
 
       return c.json(response, 400);
@@ -184,8 +185,6 @@ apiToMcpRoutes.put('/configs/:id', requireAuth, async (c) => {
           code: 'UPDATE_API_CONFIG_FAILED',
           message: result.message,
         },
-        timestamp: new Date().toISOString(),
-        path: c.req.path,
       };
 
       return c.json(response, 400);
@@ -204,7 +203,6 @@ apiToMcpRoutes.put('/configs/:id', requireAuth, async (c) => {
         message: result.message,
         config: result.config,
       },
-      timestamp: new Date().toISOString(),
     };
 
     return c.json(response);
@@ -218,8 +216,6 @@ apiToMcpRoutes.put('/configs/:id', requireAuth, async (c) => {
         message: '更新API配置失败',
         details: (error as Error).message,
       },
-      timestamp: new Date().toISOString(),
-      path: c.req.path,
     };
 
     return c.json(response, 500);
@@ -249,8 +245,6 @@ apiToMcpRoutes.delete('/configs/:id', requireAuth, async (c) => {
           code: 'DELETE_API_CONFIG_FAILED',
           message: result.message,
         },
-        timestamp: new Date().toISOString(),
-        path: c.req.path,
       };
 
       return c.json(response, 400);
@@ -264,7 +258,6 @@ apiToMcpRoutes.delete('/configs/:id', requireAuth, async (c) => {
         id: configId,
         message: result.message,
       },
-      timestamp: new Date().toISOString(),
     };
 
     return c.json(response);
@@ -278,8 +271,6 @@ apiToMcpRoutes.delete('/configs/:id', requireAuth, async (c) => {
         message: '删除API配置失败',
         details: (error as Error).message,
       },
-      timestamp: new Date().toISOString(),
-      path: c.req.path,
     };
 
     return c.json(response, 500);
@@ -314,11 +305,11 @@ apiToMcpRoutes.post('/configs/:id/test', requireAuth, async (c) => {
 
     const response: TestApiConfigResponse = {
       success: false,
-      error: `测试失败: ${(error as Error).message}`,
+      error: 'Test failed',
       executionTime: 0,
     };
 
-    return c.json(response, 500);
+    return c.json(response, 200);
   }
 });
 
@@ -343,10 +334,8 @@ apiToMcpRoutes.get('/configs/:id', requireAuth, async (c) => {
         success: false,
         error: {
           code: 'API_CONFIG_NOT_FOUND',
-          message: `API配置 '${configId}' 不存在`,
+          message: `API配置 ${configId} 不存在`,
         },
-        timestamp: new Date().toISOString(),
-        path: c.req.path,
       };
 
       return c.json(response, 404);
@@ -355,7 +344,6 @@ apiToMcpRoutes.get('/configs/:id', requireAuth, async (c) => {
     const response: ApiResponse<ApiToolConfig> = {
       success: true,
       data: config,
-      timestamp: new Date().toISOString(),
     };
 
     return c.json(response);
@@ -369,8 +357,6 @@ apiToMcpRoutes.get('/configs/:id', requireAuth, async (c) => {
         message: '获取API配置详情失败',
         details: (error as Error).message,
       },
-      timestamp: new Date().toISOString(),
-      path: c.req.path,
     };
 
     return c.json(response, 500);

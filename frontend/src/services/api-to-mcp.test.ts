@@ -1,4 +1,4 @@
-import { type AxiosResponse } from 'axios';
+import type { AxiosResponse } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import api from '@/services/api';
 import { ApiToMcpService } from '@/services/api-to-mcp';
@@ -12,7 +12,9 @@ vi.mock('@/services/api', () => ({
     put: vi.fn(),
     delete: vi.fn(),
   },
-  handleApiResponse: vi.fn((response: unknown) => (response as { data: { data: unknown } }).data.data),
+  handleApiResponse: vi.fn(
+    (response: unknown) => (response as { data: { data: unknown } }).data.data,
+  ),
 }));
 
 describe('ApiToMcpService', () => {

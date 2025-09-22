@@ -1,12 +1,13 @@
 <template>
   <t-dialog
-    v-model:visible="visible"
+    :visible="visible"
     :header="config ? '编辑API配置' : '新建API配置'"
     width="1000px"
     :confirm-btn="{ content: '保存', theme: 'primary', loading }"
     :cancel-btn="{ content: '取消' }"
     @confirm="handleSubmit"
     @cancel="handleCancel"
+    @update:visible="emit('update:visible', $event)"
   >
     <template #body>
       <t-form

@@ -78,6 +78,9 @@ importers:
 
   frontend:
     dependencies:
+      '@mcp-core/mcp-hub-share':
+        specifier: workspace:^
+        version: link:../packages/share
       '@vueuse/core':
         specifier: ^13.9.0
         version: 13.9.0(vue@3.5.17(typescript@5.8.3))

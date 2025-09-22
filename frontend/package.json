@@ -11,6 +11,7 @@
     "test": "vitest --run"
   },
   "dependencies": {
+    "@mcp-core/mcp-hub-share": "workspace:^",
     "@vueuse/core": "^13.9.0",
     "axios": "^1.6.7",
     "pinia": "^3.0.3",

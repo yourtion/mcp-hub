@@ -323,9 +323,9 @@ const updateFormDataArguments = () => {
 // Lifecycle
 onMounted(() => {
   // Load tools, servers, and groups
-  toolStore.loadTools();
-  serverStore.loadServers();
-  groupStore.loadGroups();
+  toolStore.fetchTools();
+  serverStore.fetchServers();
+  groupStore.fetchGroups();
 });
 </script>
 

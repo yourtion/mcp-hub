@@ -95,6 +95,7 @@ import { getPerformanceStats } from '@/services/debug';
 import type { PerformanceStats } from '@/types/debug';
 // @ts-ignore
 import * as echarts from 'echarts';
+import { frontendLogger } from '@mcp-core/mcp-hub-share';
 
 // Reactive data
 const stats = ref<PerformanceStats>({
@@ -139,7 +140,7 @@ const loadStats = async () => {
     stats.value = response.stats;
     updateChart();
   } catch (error) {
-    console.error('Failed to load performance stats:', error);
+    frontendLogger.error('Failed to load performance stats', error as Error);
   } finally {
     loading.value = false;
   }

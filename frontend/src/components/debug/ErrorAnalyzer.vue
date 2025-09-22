@@ -162,6 +162,7 @@ import { getErrorAnalysis } from '@/services/debug';
 import type { McpMessage, ErrorAnalysis } from '@/types/debug';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { frontendLogger } from '@mcp-core/mcp-hub-share';
 
 // Reactive data
 const errorAnalysis = ref<ErrorAnalysis>({
@@ -249,7 +250,7 @@ const loadAnalysis = async () => {
     const response = await getErrorAnalysis();
     errorAnalysis.value = response.analysis;
   } catch (error) {
-    console.error('Failed to load error analysis:', error);
+    frontendLogger.error('Failed to load error analysis', error as Error);
   } finally {
     loading.value = false;
   }

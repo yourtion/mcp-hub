@@ -145,6 +145,7 @@ import type { ServerInfo } from '@/types/server';
 import { useServerStore } from '@/stores/server';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { frontendLogger } from '@mcp-core/mcp-hub-share';
 
 // Stores
 const serverStore = useServerStore();
@@ -249,7 +250,7 @@ const loadMessages = async () => {
     messages.value = response.messages;
     pagination.value.total = response.messages.length;
   } catch (error) {
-    console.error('Failed to load MCP messages:', error);
+    frontendLogger.error('Failed to load MCP messages', error as Error);
   } finally {
     loading.value = false;
   }

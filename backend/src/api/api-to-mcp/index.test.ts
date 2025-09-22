@@ -13,7 +13,6 @@ describe('API to MCP API Routes', () => {
 
   beforeEach(() => {
     app = new Hono();
-    app.route('/api/api-to-mcp', apiToMcpRoutes);
 
     mockApiToMcpService = {
       initialize: vi.fn(),
@@ -33,6 +32,8 @@ describe('API to MCP API Routes', () => {
       c.set('apiToMcpWebService', mockApiToMcpService);
       await next();
     });
+
+    app.route('/api/api-to-mcp', apiToMcpRoutes);
   });
 
   afterEach(() => {
@@ -72,7 +73,6 @@ describe('API to MCP API Routes', () => {
 
       expect(body.success).toBe(true);
       expect(body.data).toEqual(mockConfigs);
-      expect(body.timestamp).toBeDefined();
     });
 
     it('应该处理获取配置列表错误', async () => {
