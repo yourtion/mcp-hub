@@ -25,10 +25,47 @@ export interface GroupConfig {
 }
 
 export interface SystemConfig {
+  server: {
+    port: number;
+    host: string;
+  };
+  auth: {
+    jwt: {
+      secret: string;
+      expiresIn: string;
+      refreshExpiresIn: string;
+      issuer: string;
+    };
+    security: {
+      maxLoginAttempts: number;
+      lockoutDuration: number;
+      passwordMinLength: number;
+      requireStrongPassword: boolean;
+    };
+  };
   users: {
     [username: string]: {
+      id: string;
+      username: string;
       password: string;
+      passwordHash: string;
+      role: string;
       groups: string[];
+      createdAt: string;
     };
+  };
+  ui: {
+    title: string;
+    theme: string;
+    features: {
+      apiToMcp: boolean;
+      debugging: boolean;
+      monitoring: boolean;
+    };
+  };
+  monitoring: {
+    metricsEnabled: boolean;
+    logLevel: string;
+    retentionDays: number;
   };
 }

@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { createAuthApi } from './api/auth/index.js';
+import { configApi } from './api/config/index.js';
 import { dashboardApi } from './api/dashboard/index.js';
 import { debugApi } from './api/debug/index.js';
 import { hubApi } from './api/hub.js';
@@ -31,6 +32,7 @@ app.route('/', sse);
 app.route('/', groupMcpRouter); // 组特定MCP路由
 app.route('/api', hubApi);
 app.route('/api/auth', createAuthApi(authService));
+app.route('/api/config', configApi);
 app.route('/api/dashboard', dashboardApi);
 app.route('/api/debug', debugApi);
 app.route('/api/servers', serversApi);

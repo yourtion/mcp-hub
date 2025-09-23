@@ -75,6 +75,10 @@ The API server will be available at `http://localhost:3000` with the following e
 - `/mcp` - Global MCP endpoint (legacy, for management)
 - `/:group/mcp` - Group-specific MCP endpoints
 - `/api/groups` - Group management API
+- `/api/config` - System configuration management API
+- `/api/servers` - MCP server management API
+- `/api/tools` - Tool management and execution API
+- `/api/debug` - Debugging and monitoring API
 
 ### 2. CLI MCP Server
 
@@ -109,8 +113,10 @@ The frontend provides a comprehensive web-based management interface with:
 - **Server Management**: Visual interface for managing MCP servers
 - **Tool Management**: Browse and test available MCP tools
 - **Group Management**: Configure and manage server groups
+- **Configuration Management**: System configuration with validation, testing, and backup/restore
 - **Real-time Monitoring**: Live status updates and system monitoring
 - **API to MCP Integration**: Convert REST APIs to MCP tools
+- **Debug Tools**: MCP protocol debugging and performance analysis
 
 #### Authentication
 
