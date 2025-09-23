@@ -184,15 +184,57 @@ describe('配置验证工具', () => {
   describe('validateSystemConfig', () => {
     it('应该验证有效的系统配置', () => {
       const config = {
+        server: {
+          port: 3000,
+          host: 'localhost',
+        },
+        auth: {
+          jwt: {
+            secret: 'test-secret-key-with-sufficient-length-for-security',
+            expiresIn: '15m',
+            refreshExpiresIn: '7d',
+            issuer: 'mcp-hub',
+          },
+          security: {
+            maxLoginAttempts: 5,
+            lockoutDuration: 900000,
+            passwordMinLength: 6,
+            requireStrongPassword: false,
+          },
+        },
         users: {
           admin: {
+            id: 'admin',
+            username: 'admin',
             password: 'admin123',
+            passwordHash: 'hash',
+            role: 'admin',
             groups: ['default', 'admin'],
+            createdAt: '2024-01-01T00:00:00.000Z',
           },
           user: {
+            id: 'user',
+            username: 'user',
             password: 'user123',
+            passwordHash: 'hash',
+            role: 'user',
             groups: ['default'],
+            createdAt: '2024-01-01T00:00:00.000Z',
           },
+        },
+        ui: {
+          title: 'MCP Hub',
+          theme: 'light',
+          features: {
+            apiToMcp: true,
+            debugging: true,
+            monitoring: true,
+          },
+        },
+        monitoring: {
+          metricsEnabled: true,
+          logLevel: 'info',
+          retentionDays: 30,
         },
       };
 
@@ -313,11 +355,48 @@ describe('配置验证工具', () => {
       };
 
       const systemConfig = {
+        server: {
+          port: 3000,
+          host: 'localhost',
+        },
+        auth: {
+          jwt: {
+            secret: 'test-secret-key-with-sufficient-length-for-security',
+            expiresIn: '15m',
+            refreshExpiresIn: '7d',
+            issuer: 'mcp-hub',
+          },
+          security: {
+            maxLoginAttempts: 5,
+            lockoutDuration: 900000,
+            passwordMinLength: 6,
+            requireStrongPassword: false,
+          },
+        },
         users: {
           admin: {
+            id: 'admin',
+            username: 'admin',
             password: 'admin123',
+            passwordHash: 'hash',
+            role: 'admin',
             groups: ['default'],
+            createdAt: '2024-01-01T00:00:00.000Z',
           },
+        },
+        ui: {
+          title: 'MCP Hub',
+          theme: 'light',
+          features: {
+            apiToMcp: true,
+            debugging: true,
+            monitoring: true,
+          },
+        },
+        monitoring: {
+          metricsEnabled: true,
+          logLevel: 'info',
+          retentionDays: 30,
         },
       };
 

@@ -64,16 +64,17 @@ vi.mock('node:fs', async () => {
   };
 });
 
-// 动态导入服务类
-const { ApiToMcpWebService } = await import('./api-to-mcp-web-service.js');
-
 describe('ApiToMcpWebService', () => {
-  let service: ApiToMcpWebService;
+  let service: any;
+  let ApiToMcpWebService: any;
 
   beforeEach(async () => {
     // 重置所有mock
     vi.clearAllMocks();
 
+    // 动态导入服务类
+    const module = await import('./api-to-mcp-web-service.js');
+    ApiToMcpWebService = module.ApiToMcpWebService;
     service = new ApiToMcpWebService();
 
     // 设置默认的mock返回值

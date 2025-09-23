@@ -75,19 +75,66 @@ describe('服务初始化集成测试', () => {
     };
 
     const systemConfig: SystemConfig = {
+      server: {
+        port: 3000,
+        host: 'localhost',
+      },
+      auth: {
+        jwt: {
+          secret: 'test-secret-key-with-sufficient-length-for-security',
+          expiresIn: '15m',
+          refreshExpiresIn: '7d',
+          issuer: 'mcp-hub',
+        },
+        security: {
+          maxLoginAttempts: 5,
+          lockoutDuration: 900000,
+          passwordMinLength: 6,
+          requireStrongPassword: false,
+        },
+      },
       users: {
         admin: {
+          id: 'admin',
+          username: 'admin',
           password: 'admin123',
+          passwordHash: 'hash',
+          role: 'admin',
           groups: ['default', 'time-tools', 'web-tools'],
+          createdAt: '2024-01-01T00:00:00.000Z',
         },
         'time-user': {
+          id: 'time-user',
+          username: 'time-user',
           password: 'time123',
+          passwordHash: 'hash',
+          role: 'user',
           groups: ['time-tools'],
+          createdAt: '2024-01-01T00:00:00.000Z',
         },
         'web-user': {
+          id: 'web-user',
+          username: 'web-user',
           password: 'web123',
+          passwordHash: 'hash',
+          role: 'user',
           groups: ['web-tools'],
+          createdAt: '2024-01-01T00:00:00.000Z',
         },
+      },
+      ui: {
+        title: 'MCP Hub',
+        theme: 'light',
+        features: {
+          apiToMcp: true,
+          debugging: true,
+          monitoring: true,
+        },
+      },
+      monitoring: {
+        metricsEnabled: true,
+        logLevel: 'info',
+        retentionDays: 30,
       },
     };
 
