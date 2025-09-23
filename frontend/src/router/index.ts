@@ -60,6 +60,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/config',
+      name: 'Config',
+      component: () => import('@/views/Config.vue'),
+      meta: {
+        requiresAuth: true,
+        title: '系统配置',
+      },
+    },
+    {
       path: '/',
       redirect: '/dashboard',
     },
