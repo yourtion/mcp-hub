@@ -1,31 +1,36 @@
 <template>
   <div id="app">
-    <div v-if="authStore.isAuthenticated" class="app-layout">
-      <div class="app-nav">
-        <router-link to="/dashboard">仪表板</router-link>
-        <router-link to="/servers">服务器管理</router-link>
-        <router-link to="/groups">组管理</router-link>
-        <router-link to="/api-to-mcp">API到MCP管理</router-link>
-      </div>
-      <div class="app-content">
-        <router-view />
-      </div>
-    </div>
-    <div v-else>
-      <router-view />
-    </div>
+    <!-- 已登录：显示主布局 -->
+    <MainLayout v-if="authStore.isAuthenticated" />
+    <!-- 未登录：显示登录页面 -->
+    <router-view v-else />
+    
+    <!-- 全局加载指示器 -->
+    <GlobalLoading />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth';
+import { useTheme, usePageTitle } from '@/composables';
+import MainLayout from '@/components/layout/MainLayout.vue';
+import GlobalLoading from '@/components/common/GlobalLoading.vue';
 
 const authStore = useAuthStore();
+const { loadTheme } = useTheme();
+const { updateTitleFromRoute } = usePageTitle();
 
-// 应用启动时初始化认证状态
+// 应用启动时初始化
 onMounted(() => {
+  // 初始化认证状态
   authStore.initializeAuth();
+  
+  // 加载主题设置
+  loadTheme();
+  
+  // 初始化页面标题
+  updateTitleFromRoute();
 });
 </script>
 
@@ -47,41 +52,5 @@ body {
 
 #app {
   min-height: 100vh;
-}
-
-.app-layout {
-  display: flex;
-  min-height: 100vh;
-}
-
-.app-nav {
-  width: 200px;
-  background: var(--td-bg-color-container);
-  border-right: 1px solid var(--td-border-level-1-color);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.app-nav a {
-  padding: 8px 12px;
-  border-radius: 4px;
-  text-decoration: none;
-  color: var(--td-text-color-primary);
-  transition: background-color 0.2s;
-}
-
-.app-nav a:hover {
-  background: var(--td-bg-color-container-hover);
-}
-
-.app-nav a.router-link-active {
-  background: var(--td-brand-color-1);
-  color: var(--td-brand-color);
-}
-
-.app-content {
-  flex: 1;
 }
 </style>

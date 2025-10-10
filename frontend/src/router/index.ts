@@ -33,6 +33,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/tools',
+      name: 'Tools',
+      component: () => import('@/views/Tools.vue'),
+      meta: {
+        requiresAuth: true,
+        title: '工具管理',
+      },
+    },
+    {
       path: '/groups',
       name: 'Groups',
       component: () => import('@/views/Groups.vue'),
