@@ -142,5 +142,6 @@ export const useAuthStore = defineStore('auth', () => {
     validateToken,
     refreshAuthToken,
     clearAuth,
+    setAuth, // 导出setAuth方法供测试使用
   };
 });

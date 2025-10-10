@@ -5,16 +5,21 @@ import { dashboardApi } from './api/dashboard/index.js';
 import { debugApi } from './api/debug/index.js';
 import { hubApi } from './api/hub.js';
 import { groupMcpRouter } from './api/mcp/group-router.js';
+import { performanceApi } from './api/performance/index.js';
 import { serversApi } from './api/servers/index.js';
 import { toolsApi } from './api/tools/index.js';
 import { mcp } from './mcp.js';
 import { AuthService } from './services/auth.js';
 import { sse } from './sse.js';
+import { createPerformanceMiddleware } from './utils/performance-monitor.js';
 
 // 创建认证服务实例
 const authService = new AuthService();
 
 export const app = new Hono();
+
+// 性能监控中间件（在所有路由之前）
+app.use('*', createPerformanceMiddleware());
 
 // 初始化认证服务
 app.use('*', async (_c, next) => {
@@ -37,6 +42,7 @@ app.route('/api/dashboard', dashboardApi);
 app.route('/api/debug', debugApi);
 app.route('/api/servers', serversApi);
 app.route('/api/tools', toolsApi);
+app.route('/api/performance', performanceApi);
 
 // 导出认证服务供其他模块使用
 export { authService };
