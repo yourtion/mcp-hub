@@ -104,28 +104,123 @@ The CLI server communicates via stdin/stdout using the MCP protocol, perfect for
 Start the web interface for visual management:
 
 ```bash
+# Development mode
 pnpm dev:fe
+
+# Production build
+pnpm build:fe
 ```
 
-The frontend provides a comprehensive web-based management interface with:
+The frontend will be available at `http://localhost:8080` (development) or served through the backend in production.
 
+#### Web Interface Features
+
+The frontend provides a comprehensive web-based management interface with the following features:
+
+##### 1. Authentication & Security
 - **JWT Authentication**: Secure login system with token-based authentication
-- **Server Management**: Visual interface for managing MCP servers
-- **Tool Management**: Browse and test available MCP tools
-- **Group Management**: Configure and manage server groups
-- **Configuration Management**: System configuration with validation, testing, and backup/restore
-- **Real-time Monitoring**: Live status updates and system monitoring
-- **API to MCP Integration**: Convert REST APIs to MCP tools
-- **Debug Tools**: MCP protocol debugging and performance analysis
+- **Automatic Token Refresh**: Seamless session management without interruption
+- **Route Guards**: Protected pages requiring authentication
+- **Persistent Sessions**: Remember user login state across browser sessions
+- **Default Credentials**: Username: `admin`, Password: `admin` (change in production!)
 
-#### Authentication
+##### 2. Dashboard & Monitoring
+- **System Overview**: Real-time statistics of servers, tools, and groups
+- **Live Status Updates**: Server-Sent Events (SSE) for real-time monitoring
+- **Performance Metrics**: Request rates, response times, and error rates
+- **Activity Feed**: Recent system activities and events
+- **Health Monitoring**: System health checks and alerts
 
-The frontend uses JWT-based authentication. Default credentials can be configured in the backend authentication service. The system includes:
+##### 3. Server Management
+- **Server List**: View all configured MCP servers with status indicators
+- **Add/Edit Servers**: Visual forms for server configuration
+- **Connection Control**: Connect, disconnect, and test server connections
+- **Status Monitoring**: Real-time server connection status
+- **Configuration Validation**: Test server configurations before saving
 
-- Secure login with username/password
-- Automatic token refresh
-- Route guards for protected pages
-- Persistent authentication state
+##### 4. Tool Management
+- **Tool Browser**: Browse all available MCP tools across servers
+- **Tool Search & Filter**: Find tools by name, server, or group
+- **Tool Testing**: Interactive tool execution with parameter input
+- **Execution History**: View past tool executions and results
+- **Tool Details**: Complete tool documentation and schema information
+
+##### 5. Group Management
+- **Group Configuration**: Create and manage server groups
+- **Member Management**: Assign servers to groups
+- **Tool Filtering**: Configure which tools are available per group
+- **Validation Keys**: Set and manage group-level authentication
+- **Group Statistics**: Usage statistics and performance metrics
+
+##### 6. API to MCP Integration
+- **API Configuration**: Convert REST APIs to MCP tools
+- **Parameter Mapping**: Visual editor for API-to-MCP parameter mapping
+- **API Testing**: Test API configurations before deployment
+- **Import/Export**: Share API configurations across environments
+- **Auto-generation**: Automatically generate MCP tools from API specs
+
+##### 7. Debug & Development Tools
+- **MCP Protocol Monitor**: View raw MCP protocol messages
+- **Tool Debugger**: Test tools with detailed execution logs
+- **Performance Analyzer**: Analyze tool performance and bottlenecks
+- **Error Analysis**: Intelligent error diagnosis and fix suggestions
+- **Message Inspector**: Inspect request/response payloads
+
+##### 8. Configuration Management
+- **System Settings**: Configure system-wide settings
+- **Configuration Editor**: Edit configurations with validation
+- **Backup & Restore**: Create and restore configuration backups
+- **Configuration History**: Track configuration changes over time
+- **Validation**: Real-time configuration validation
+
+#### Authentication Setup
+
+The frontend uses JWT-based authentication. To configure authentication:
+
+1. **Default Credentials** (Development):
+   - Username: `admin`
+   - Password: `admin`
+
+2. **Production Setup**:
+   - Configure credentials in `backend/config/system.json`
+   - Set strong passwords using bcrypt hashing
+   - Configure JWT secret in environment variables
+
+3. **Environment Variables**:
+   ```bash
+   # Backend (.env)
+   JWT_SECRET=your-secret-key-here
+   JWT_EXPIRES_IN=1h
+   JWT_REFRESH_EXPIRES_IN=7d
+   ```
+
+#### Accessing the Web Interface
+
+1. **Start the Backend**:
+   ```bash
+   pnpm dev:api
+   # Backend runs on http://localhost:3000
+   ```
+
+2. **Start the Frontend** (Development):
+   ```bash
+   pnpm dev:fe
+   # Frontend runs on http://localhost:8080
+   ```
+
+3. **Login**:
+   - Navigate to `http://localhost:8080`
+   - Enter credentials (default: admin/admin)
+   - You'll be redirected to the dashboard
+
+4. **Production Deployment**:
+   ```bash
+   # Build frontend
+   pnpm build:fe
+   
+   # Frontend static files will be in frontend/dist
+   # Serve through backend or separate web server
+   ```
 
 ## Configuration
 
@@ -258,10 +353,20 @@ pnpm test:mcp         # MCP protocol tests
 
 ## Documentation
 
+### User Guides
+- [Web UI Guide](docs/WEB_UI_GUIDE.md) - Complete web interface usage guide
 - [CLI Usage Guide](docs/CLI_USAGE.md) - Detailed CLI usage and configuration
+- [FAQ](docs/FAQ.md) - Frequently asked questions and troubleshooting
+
+### Technical Documentation
+- [API Reference](docs/API_REFERENCE.md) - Complete API documentation
 - [Group Routing Guide](docs/GROUP_ROUTING.md) - Group-based routing documentation
 - [Migration Guide](docs/MIGRATION.md) - Upgrading from previous versions
-- [API Reference](docs/API_REFERENCE.md) - Complete API documentation
+
+### Development & Deployment
+- [Development Guide](docs/DEVELOPMENT.md) - Development environment setup and contribution guide
+- [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment instructions
+- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ## Contributing
 

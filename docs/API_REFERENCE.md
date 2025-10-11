@@ -606,6 +606,581 @@ GET /api/system/metrics
 }
 ```
 
+## 服务器管理 API
+
+服务器管理 API 提供了 MCP 服务器的完整 CRUD 操作和连接控制功能。
+
+### 获取服务器列表
+
+**GET** `/api/servers`
+
+获取所有已配置的 MCP 服务器列表。
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "servers": [
+      {
+        "id": "filesystem",
+        "name": "文件系统服务器",
+        "type": "stdio",
+        "status": "connected",
+        "config": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-filesystem", "/workspace"]
+        },
+        "tools": ["read_file", "write_file", "list_directory"],
+        "lastConnected": "2024-01-15T10:30:00Z"
+      }
+    ]
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 创建服务器
+
+**POST** `/api/servers`
+
+创建新的 MCP 服务器配置。
+
+**请求体:**
+```json
+{
+  "id": "git-server",
+  "name": "Git 服务器",
+  "type": "stdio",
+  "config": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-git"],
+    "env": {}
+  }
+}
+```
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "server": {
+      "id": "git-server",
+      "name": "Git 服务器",
+      "type": "stdio",
+      "status": "disconnected",
+      "config": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-git"]
+      }
+    }
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 更新服务器
+
+**PUT** `/api/servers/:id`
+
+更新现有服务器的配置。
+
+**路径参数:**
+- `id` (字符串): 服务器 ID
+
+**请求体:**
+```json
+{
+  "name": "Git 服务器（更新）",
+  "config": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-git", "--verbose"]
+  }
+}
+```
+
+### 删除服务器
+
+**DELETE** `/api/servers/:id`
+
+删除服务器配置。
+
+**路径参数:**
+- `id` (字符串): 服务器 ID
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "message": "服务器已删除",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 连接服务器
+
+**POST** `/api/servers/:id/connect`
+
+连接到指定的 MCP 服务器。
+
+**路径参数:**
+- `id` (字符串): 服务器 ID
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "status": "connected",
+    "tools": ["read_file", "write_file", "list_directory"]
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 断开服务器
+
+**POST** `/api/servers/:id/disconnect`
+
+断开与 MCP 服务器的连接。
+
+**路径参数:**
+- `id` (字符串): 服务器 ID
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "status": "disconnected"
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 测试服务器连接
+
+**POST** `/api/servers/test`
+
+测试服务器配置是否有效。
+
+**请求体:**
+```json
+{
+  "config": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-filesystem", "/workspace"]
+  }
+}
+```
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "valid": true,
+    "tools": ["read_file", "write_file"],
+    "testDuration": 1234
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+## 工具管理 API
+
+工具管理 API 提供了工具查询、执行和监控功能。
+
+### 获取工具列表
+
+**GET** `/api/tools`
+
+获取所有可用的 MCP 工具列表。
+
+**查询参数:**
+- `serverId` (可选, 字符串): 按服务器 ID 过滤
+- `groupId` (可选, 字符串): 按组 ID 过滤
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "tools": [
+      {
+        "name": "read_file",
+        "description": "读取文件内容",
+        "serverId": "filesystem",
+        "serverName": "文件系统服务器",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "文件路径"
+            }
+          },
+          "required": ["path"]
+        },
+        "status": "available"
+      }
+    ]
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 获取工具详情
+
+**GET** `/api/tools/:toolName`
+
+获取指定工具的详细信息。
+
+**路径参数:**
+- `toolName` (字符串): 工具名称
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "tool": {
+      "name": "read_file",
+      "description": "读取文件内容",
+      "serverId": "filesystem",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "文件路径"
+          }
+        },
+        "required": ["path"]
+      },
+      "examples": [
+        {
+          "description": "读取 README 文件",
+          "arguments": {
+            "path": "/workspace/README.md"
+          }
+        }
+      ]
+    }
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 执行工具
+
+**POST** `/api/tools/:toolName/execute`
+
+执行指定的 MCP 工具。
+
+**路径参数:**
+- `toolName` (字符串): 工具名称
+
+**请求体:**
+```json
+{
+  "serverId": "filesystem",
+  "arguments": {
+    "path": "/workspace/README.md"
+  }
+}
+```
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "# MCP Hub\n\n..."
+        }
+      ],
+      "isError": false
+    },
+    "executionTime": 45
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+## 配置管理 API
+
+配置管理 API 提供了系统配置的查询、更新、验证和备份功能。
+
+### 获取配置
+
+**GET** `/api/config`
+
+获取当前系统配置。
+
+**查询参数:**
+- `category` (可选, 字符串): 配置分类 (`system`, `servers`, `groups`, `auth`)
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "config": {
+      "system": {
+        "server": {
+          "port": 3000,
+          "host": "0.0.0.0"
+        },
+        "logging": {
+          "level": "info"
+        }
+      }
+    }
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 更新配置
+
+**PUT** `/api/config`
+
+更新系统配置。
+
+**请求体:**
+```json
+{
+  "category": "system",
+  "config": {
+    "logging": {
+      "level": "debug"
+    }
+  }
+}
+```
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "message": "配置已更新",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 验证配置
+
+**POST** `/api/config/validate`
+
+验证配置的有效性。
+
+**请求体:**
+```json
+{
+  "category": "servers",
+  "config": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem"]
+    }
+  }
+}
+```
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "valid": true,
+    "errors": [],
+    "warnings": []
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 获取配置历史
+
+**GET** `/api/config/history`
+
+获取配置变更历史。
+
+**查询参数:**
+- `limit` (可选, 数字): 返回的历史记录数量，默认 50
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "history": [
+      {
+        "id": "hist_123",
+        "timestamp": "2024-01-15T10:30:00Z",
+        "user": "admin",
+        "category": "system",
+        "action": "update",
+        "changes": {
+          "logging.level": {
+            "from": "info",
+            "to": "debug"
+          }
+        }
+      }
+    ]
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 创建配置备份
+
+**POST** `/api/config/backup`
+
+创建配置备份。
+
+**请求体:**
+```json
+{
+  "description": "部署前备份"
+}
+```
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "backup": {
+      "id": "backup_123",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "description": "部署前备份",
+      "path": "/config/.backups/backup_20240115_103000.json"
+    }
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 恢复配置
+
+**POST** `/api/config/restore`
+
+从备份恢复配置。
+
+**请求体:**
+```json
+{
+  "backupId": "backup_123"
+}
+```
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "message": "配置已恢复",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+## 仪表板 API
+
+仪表板 API 提供系统概览、统计信息和实时监控功能。
+
+### 获取仪表板统计
+
+**GET** `/api/dashboard/stats`
+
+获取系统概览统计信息。
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "overview": {
+      "totalServers": 5,
+      "connectedServers": 4,
+      "totalTools": 23,
+      "totalGroups": 3
+    },
+    "recentActivity": [
+      {
+        "id": "act_123",
+        "type": "server_connected",
+        "message": "服务器 filesystem 已连接",
+        "timestamp": "2024-01-15T10:30:00Z",
+        "severity": "info"
+      }
+    ],
+    "systemHealth": {
+      "status": "healthy",
+      "issues": []
+    }
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### SSE 事件流
+
+**GET** `/api/events`
+
+建立 Server-Sent Events 连接以接收实时事件。
+
+**事件类型:**
+- `server_status`: 服务器状态变更
+- `tool_execution`: 工具执行事件
+- `system_alert`: 系统告警
+
+**事件示例:**
+```
+event: server_status
+data: {"serverId":"filesystem","status":"connected","timestamp":"2024-01-15T10:30:00Z"}
+
+event: tool_execution
+data: {"toolName":"read_file","serverId":"filesystem","success":true,"executionTime":45}
+```
+
+### 获取系统日志
+
+**GET** `/api/dashboard/logs`
+
+获取系统日志。
+
+**查询参数:**
+- `limit` (可选, 数字): 返回的日志条数，默认 100
+- `level` (可选, 字符串): 日志级别过滤 (`debug`, `info`, `warn`, `error`)
+- `since` (可选, 字符串): 起始时间 (ISO 8601 格式)
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "logs": [
+      {
+        "timestamp": "2024-01-15T10:30:00Z",
+        "level": "info",
+        "message": "服务器已连接",
+        "serverId": "filesystem",
+        "metadata": {}
+      }
+    ],
+    "total": 1234,
+    "hasMore": true
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
 ## 调试工具 API
 
 调试工具 API 提供了 MCP 协议监控、工具测试、性能分析和错误诊断功能，帮助开发者和系统管理员调试和优化 MCP 服务。
