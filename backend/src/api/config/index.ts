@@ -1,8 +1,6 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { authService } from '../../app.js';
-import { createAuthMiddleware } from '../../middleware/auth.js';
 import { ConfigService } from '../../services/config_service.js';
 import type {
   ConfigBackupRequest,
@@ -43,9 +41,6 @@ const configRestoreSchema = z.object({
 });
 
 export const configApi = new Hono();
-
-// 应用认证中间件到所有配置API
-configApi.use('*', createAuthMiddleware(authService));
 
 /**
  * GET /api/config - 获取当前系统配置

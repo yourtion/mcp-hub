@@ -255,7 +255,7 @@ describe('服务初始化测试', () => {
 
       const systemConfig = {
         server: {
-          port: 3000,
+          port: 3001,
           host: 'localhost',
         },
         auth: {

@@ -11,6 +11,7 @@ import { toolsApi } from './api/tools/index.js';
 import { mcp } from './mcp.js';
 import { AuthService } from './services/auth.js';
 import { sse } from './sse.js';
+import { createAuthMiddleware } from './middleware/auth.js';
 import { createPerformanceMiddleware } from './utils/performance-monitor.js';
 
 // 创建认证服务实例
@@ -31,6 +32,9 @@ app.use('*', async (_c, next) => {
   }
   await next();
 });
+
+// 应用认证中间件到配置API
+configApi.use('*', createAuthMiddleware(authService));
 
 app.route('/', mcp);
 app.route('/', sse);

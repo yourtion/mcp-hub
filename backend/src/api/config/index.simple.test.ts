@@ -121,7 +121,7 @@ describe('配置管理API - 简化测试', () => {
       const validationRequest = {
         configType: 'system',
         config: {
-          server: { port: 3000, host: 'localhost' },
+          server: { port: 3003, host: 'localhost' },
         },
       };
 
@@ -144,7 +144,7 @@ describe('配置管理API - 简化测试', () => {
       const testRequest = {
         configType: 'system',
         config: {
-          server: { port: 3000, host: 'localhost' },
+          server: { port: 3003, host: 'localhost' },
         },
       };
 

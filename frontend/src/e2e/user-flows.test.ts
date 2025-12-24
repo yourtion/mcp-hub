@@ -144,7 +144,7 @@ describe('前端用户流程端到端测试', () => {
           name: '测试服务器2',
           type: 'sse' as const,
           status: 'disconnected' as const,
-          config: { url: 'http://localhost:3000' },
+          config: { url: 'http://localhost:3001' },
           tools: [],
         },
       ];

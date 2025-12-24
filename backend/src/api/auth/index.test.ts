@@ -21,7 +21,7 @@ describe('认证API', () => {
     tempConfigPath = path.join(process.cwd(), 'config', 'system.json.test');
     const testConfig = {
       server: {
-        port: 3000,
+        port: 3002,
         host: 'localhost',
       },
       auth: {
