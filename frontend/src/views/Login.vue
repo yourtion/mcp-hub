@@ -8,7 +8,7 @@
 
       <t-form
         ref="formRef"
-        :model="formData"
+        :data="formData"
         :rules="formRules"
         class="login-form"
         @submit="handleSubmit"
@@ -35,7 +35,6 @@
             size="large"
             :disabled="loading"
             clearable
-            @keyup.enter="handleSubmit"
           >
             <template #prefix-icon>
               <LockOnIcon />
@@ -50,7 +49,6 @@
             size="large"
             block
             :loading="loading"
-            :disabled="!isFormValid"
           >
             {{ loading ? '登录中...' : '登录' }}
           </t-button>
@@ -71,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { MessagePlugin } from 'tdesign-vue-next';
 import { UserIcon, LockOnIcon } from 'tdesign-icons-vue-next';
@@ -93,21 +91,18 @@ const formData = ref({
 // 表单验证规则
 const formRules: Record<string, FormRule[]> = {
   username: [
-    { required: true, message: '请输入用户名', type: 'error' },
-    { min: 2, message: '用户名至少2个字符', type: 'error' },
+    { required: true, message: '请输入用户名' },
+    { min: 2, message: '用户名至少2个字符', type: 'string' },
   ],
   password: [
-    { required: true, message: '请输入密码', type: 'error' },
-    { min: 6, message: '密码至少6个字符', type: 'error' },
+    { required: true, message: '请输入密码' },
+    { min: 6, message: '密码至少6个字符', type: 'string' },
   ],
 };
 
 // 计算属性
 const loading = computed(() => authStore.loading);
 const error = computed(() => authStore.error);
-const isFormValid = computed(() => {
-  return formData.value.username.length >= 2 && formData.value.password.length >= 6;
-});
 
 // 清除错误信息
 const clearError = () => {
@@ -115,39 +110,38 @@ const clearError = () => {
 };
 
 // 处理表单提交
-const handleSubmit = async (e?: { validateResult: boolean }) => {
-  // 如果是通过表单验证触发的提交
-  if (e && !e.validateResult) {
-    return;
-  }
+const handleSubmit = async ({ validateResult, firstError }: { validateResult: boolean | Record<string, unknown>, firstError?: string }) => {
+  if (validateResult === true) {
+    try {
+      await authStore.login({
+        username: formData.value.username,
+        password: formData.value.password,
+      });
 
-  // 手动验证表单
-  const validateResult = await formRef.value?.validate();
-  if (validateResult !== true) {
-    return;
-  }
+      MessagePlugin.success('登录成功');
 
-  try {
-    await authStore.login({
-      username: formData.value.username,
-      password: formData.value.password,
-    });
+      // 等待状态更新后再跳转
+      await nextTick();
 
-    MessagePlugin.success('登录成功');
-    
-    // 跳转到首页或之前访问的页面
-    const redirect = router.currentRoute.value.query.redirect as string;
-    await router.push(redirect || '/dashboard');
-  } catch (err) {
-    console.error('登录失败:', err);
-    // 错误信息已经在store中设置，组件会自动显示
+      // 跳转到首页或之前访问的页面
+      const redirect = router.currentRoute.value.query.redirect as string;
+      await router.push(redirect || '/dashboard');
+    } catch (err) {
+      console.error('登录失败:', err);
+      // 错误信息已经在store中设置，组件会自动显示
+    }
+  } else {
+    // 验证失败，显示第一个错误信息
+    if (firstError) {
+      MessagePlugin.warning(firstError);
+    }
   }
 };
 
 // 组件挂载时检查是否已登录
-onMounted(() => {
+onMounted(async () => {
   if (authStore.isAuthenticated) {
-    router.push('/dashboard');
+    await router.push('/dashboard');
   }
 });
 </script>
