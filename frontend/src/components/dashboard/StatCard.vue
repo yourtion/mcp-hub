@@ -2,13 +2,13 @@
   <t-card class="stat-card" :class="[`stat-card--${color}`]">
     <div class="stat-card__content">
       <div class="stat-card__icon">
-        <t-icon :name="iconName" size="24px" />
+        <component :is="iconComponent" size="24px" />
       </div>
       <div class="stat-card__info">
         <div class="stat-card__value">{{ formattedValue }}</div>
         <div class="stat-card__label">{{ label }}</div>
         <div v-if="trend" class="stat-card__trend" :class="[`trend--${trend.direction}`]">
-          <t-icon :name="trendIcon" size="12px" />
+          <component :is="trendIconComponent" size="12px" />
           <span>{{ trend.value }}{{ trend.value === parseInt(trend.value.toString()) ? '' : '%' }} {{ trend.period }}</span>
         </div>
       </div>
@@ -17,7 +17,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, markRaw, type Component } from 'vue';
+import {
+  ServerIcon,
+  LinkIcon,
+  ToolsIcon,
+  FolderIcon,
+  UserIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  MinusIcon,
+} from 'tdesign-icons-vue-next';
 import type { StatCardData } from '@/types/dashboard';
 
 interface Props {
@@ -25,6 +35,25 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+// 图标组件映射
+const iconComponentMap: Record<string, Component> = {
+  server: markRaw(ServerIcon),
+  link: markRaw(LinkIcon),
+  tool: markRaw(ToolsIcon),
+  tools: markRaw(ToolsIcon),
+  folder: markRaw(FolderIcon),
+  user: markRaw(UserIcon),
+  chart: markRaw(MinusIcon), // 临时使用
+  warning: markRaw(MinusIcon), // 临时使用
+  success: markRaw(MinusIcon), // 临时使用
+};
+
+const trendIconMap: Record<string, Component> = {
+  up: markRaw(ChevronUpIcon),
+  down: markRaw(ChevronDownIcon),
+  stable: markRaw(MinusIcon),
+};
 
 // 格式化数值显示
 const formattedValue = computed(() => {
@@ -41,31 +70,17 @@ const formattedValue = computed(() => {
   return value;
 });
 
-// 图标映射
-const iconName = computed(() => {
-  const iconMap: Record<string, string> = {
-    server: 'server',
-    link: 'link',
-    tool: 'tools',
-    folder: 'folder',
-    user: 'user',
-    chart: 'chart-line',
-    warning: 'error-circle',
-    success: 'check-circle',
-  };
-  return iconMap[props.data.icon || 'chart'] || 'chart-line';
+// 图标组件
+const iconComponent = computed(() => {
+  const iconKey = props.data.icon || 'chart';
+  return iconComponentMap[iconKey] || iconComponentMap.chart;
 });
 
-// 趋势图标
-const trendIcon = computed(() => {
-  if (!props.data.trend) return '';
-  
-  const iconMap: Record<string, string> = {
-    up: 'chevron-up',
-    down: 'chevron-down',
-    stable: 'minus',
-  };
-  return iconMap[props.data.trend.direction] || 'minus';
+// 趋势图标组件
+const trendIconComponent = computed(() => {
+  if (!props.data.trend) return markRaw(MinusIcon);
+  const direction = props.data.trend.direction;
+  return trendIconMap[direction] || trendIconMap.stable;
 });
 
 // 颜色和标签

@@ -4,13 +4,13 @@
       <div class="monitor-actions">
         <!-- 连接状态 -->
         <div class="connection-status" :class="[`status--${connectionState}`]">
-          <t-icon :name="statusIcon" size="14px" />
+          <component :is="statusIconComponent" size="14px" />
           <span>{{ statusText }}</span>
         </div>
-        
+
         <!-- 事件过滤 -->
-        <t-select 
-          v-model="eventFilter" 
+        <t-select
+          v-model="eventFilter"
           size="small"
           style="width: 120px;"
           @change="handleFilterChange"
@@ -21,39 +21,39 @@
           <t-option value="system_alert" label="系统告警" />
           <t-option value="health_check" label="健康检查" />
         </t-select>
-        
+
         <!-- 控制按钮 -->
-        <t-button 
+        <t-button
           v-if="connectionState === 'closed'"
-          theme="primary" 
+          theme="primary"
           size="small"
           @click="connect"
         >
           <template #icon>
-            <t-icon name="play" />
+            <PlayIcon />
           </template>
           连接
         </t-button>
-        
-        <t-button 
+
+        <t-button
           v-else
-          theme="default" 
+          theme="default"
           size="small"
           @click="disconnect"
         >
           <template #icon>
-            <t-icon name="stop" />
+            <StopIcon />
           </template>
           断开
         </t-button>
-        
-        <t-button 
-          theme="default" 
+
+        <t-button
+          theme="default"
           size="small"
           @click="clearEvents"
         >
           <template #icon>
-            <t-icon name="delete" />
+            <DeleteIcon />
           </template>
           清空
         </t-button>
@@ -80,20 +80,20 @@
       <!-- 事件列表 -->
       <div class="events-container">
         <div v-if="filteredEvents.length === 0" class="events-empty">
-          <t-icon name="inbox" size="32px" />
+          <InfoCircleIcon size="32px" />
           <span>暂无事件</span>
         </div>
-        
+
         <div v-else class="events-list" ref="eventsListRef">
-          <div 
-            v-for="event in displayEvents" 
+          <div
+            v-for="event in displayEvents"
             :key="event.id"
             class="event-item"
             :class="[`event--${event.severity}`]"
           >
             <div class="event-header">
               <div class="event-type">
-                <t-icon :name="getEventIcon(event.type)" size="16px" />
+                <component :is="getEventIconComponent(event.type)" size="16px" />
                 <span>{{ getEventTypeText(event.type) }}</span>
               </div>
               <div class="event-time">{{ formatTime(event.timestamp) }}</div>
@@ -129,10 +129,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, markRaw, type Component } from 'vue';
 import { MessagePlugin } from 'tdesign-vue-next';
+import {
+  CheckCircleIcon,
+  CloseIcon,
+  DeleteIcon,
+  ErrorCircleIcon,
+  InfoCircleIcon,
+  LinkIcon,
+  PlayIcon,
+  StopIcon,
+  ToolsIcon,
+} from 'tdesign-icons-vue-next';
 import { sseService } from '@/services/sse';
 import type { SSEEvent } from '@/types/dashboard';
+
+// 图标组件映射
+const statusIconMap: Record<string, Component> = {
+  connecting: markRaw(InfoCircleIcon),
+  open: markRaw(CheckCircleIcon),
+  closed: markRaw(CloseIcon),
+};
+
+// 事件图标映射
+const eventIconMap: Record<string, Component> = {
+  server_status: markRaw(LinkIcon),
+  tool_execution: markRaw(ToolsIcon),
+  system_alert: markRaw(ErrorCircleIcon),
+  health_check: markRaw(CheckCircleIcon),
+};
+
+// 获取状态图标组件
+const statusIconComponent = computed(() => {
+  return statusIconMap[connectionState.value] || statusIconMap.closed;
+});
+
+// 获取事件图标组件
+const getEventIconComponent = (type: string): Component => {
+  return eventIconMap[type] || eventIconMap.system_alert;
+};
 
 interface SSEEventWithId extends SSEEvent {
   id: string;
@@ -182,15 +218,6 @@ const hasMoreEvents = computed(() => {
   return filteredEvents.value.length > displayLimit.value;
 });
 
-const statusIcon = computed(() => {
-  const iconMap: Record<string, string> = {
-    connecting: 'loading',
-    open: 'check-circle',
-    closed: 'close-circle',
-  };
-  return iconMap[connectionState.value] || 'close-circle';
-});
-
 const statusText = computed(() => {
   const textMap: Record<string, string> = {
     connecting: '连接中',
@@ -199,17 +226,6 @@ const statusText = computed(() => {
   };
   return textMap[connectionState.value] || '未连接';
 });
-
-// 获取事件图标
-const getEventIcon = (type: string): string => {
-  const iconMap: Record<string, string> = {
-    server_status: 'server',
-    tool_execution: 'tools',
-    system_alert: 'error-circle',
-    health_check: 'heart',
-  };
-  return iconMap[type] || 'info-circle';
-};
 
 // 获取事件类型文本
 const getEventTypeText = (type: string): string => {

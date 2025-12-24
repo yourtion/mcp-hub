@@ -108,7 +108,7 @@
         <h4 class="section-title">设置验证密钥</h4>
         <t-form
           ref="formRef"
-          :model="keyForm"
+          :data="keyForm"
           :rules="keyFormRules"
           label-align="top"
           @submit="handleKeySubmit"
@@ -155,7 +155,7 @@
         <h4 class="section-title">验证密钥</h4>
         <t-form
           ref="validateFormRef"
-          :model="validateForm"
+          :data="validateForm"
           :rules="validateFormRules"
           label-align="top"
           @submit="handleValidateSubmit"

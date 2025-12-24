@@ -12,7 +12,7 @@
           @click="handleCreateBackup"
         >
           <template #icon>
-            <t-icon name="add" />
+            <AddIcon />
           </template>
           创建新备份
         </t-button>
@@ -77,6 +77,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import { AddIcon } from 'tdesign-icons-vue-next';
 import type { ConfigBackup, ConfigType } from '@/types/config';
 
 // Props

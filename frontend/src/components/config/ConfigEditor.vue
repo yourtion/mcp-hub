@@ -19,7 +19,7 @@
             @click="handleValidate"
           >
             <template #icon>
-              <t-icon name="check-circle" />
+              <CheckCircleIcon />
             </template>
             验证
           </t-button>
@@ -30,7 +30,7 @@
             @click="handleTest"
           >
             <template #icon>
-              <t-icon name="play-circle" />
+              <PlayCircleIcon />
             </template>
             测试
           </t-button>
@@ -41,7 +41,7 @@
             @click="handlePreview"
           >
             <template #icon>
-              <t-icon name="view-list" />
+              <ViewListIcon />
             </template>
             预览
           </t-button>
@@ -96,15 +96,15 @@
       <div class="footer-info">
         <t-space>
           <span class="info-item">
-            <t-icon name="time" />
+            <TimeIcon />
             最后更新: {{ formatTime(configData.lastUpdated) }}
           </span>
           <span class="info-item">
-            <t-icon name="layers" />
+            <LayersIcon />
             版本: {{ configData.version }}
           </span>
           <span class="info-item" :class="{ 'has-changes': hasChanges }">
-            <t-icon :name="hasChanges ? 'edit' : 'check'" />
+            <component :is="hasChanges ? EditIcon : CheckIcon" />
             {{ hasChanges ? '有未保存的更改' : '配置已同步' }}
           </span>
         </t-space>
@@ -115,6 +115,15 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import {
+  CheckCircleIcon,
+  CheckIcon,
+  EditIcon,
+  LayersIcon,
+  PlayCircleIcon,
+  TimeIcon,
+  ViewListIcon,
+} from 'tdesign-icons-vue-next';
 import type { ConfigData, ConfigType, SystemConfig, McpConfig, GroupConfig } from '@/types/config';
 
 // 导入子组件

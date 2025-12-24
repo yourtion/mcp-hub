@@ -32,7 +32,7 @@
                   class="error-item"
                 >
                   <div class="error-icon">
-                    <t-icon name="close-circle-filled" />
+                    <CloseCircleFilledIcon />
                   </div>
                   <div class="error-content">
                     <div class="error-path">{{ error.path }}</div>
@@ -53,7 +53,7 @@
                   class="warning-item"
                 >
                   <div class="warning-icon">
-                    <t-icon name="error-circle-filled" />
+                    <ErrorCircleFilledIcon />
                   </div>
                   <div class="warning-content">
                     <div class="warning-path">{{ warning.path }}</div>
@@ -153,8 +153,8 @@
                   :class="test.status"
                 >
                   <div class="test-icon">
-                    <t-icon
-                      :name="getTestIcon(test.status)"
+                    <component
+                      :is="getTestIconComponent(test.status)"
                       :class="test.status"
                     />
                   </div>
@@ -230,7 +230,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, markRaw, type Component } from 'vue';
+import {
+  CheckCircleIcon,
+  CloseCircleIcon,
+  CloseCircleFilledIcon,
+  ErrorCircleFilledIcon,
+  InfoCircleIcon,
+} from 'tdesign-icons-vue-next';
 import type {
   ConfigValidationResponse,
   ConfigTestResult,
@@ -315,17 +322,13 @@ const getTestDescription = (): string => {
   return `共执行 ${summary.total} 项测试，${summary.passed} 项通过，${summary.failed} 项失败，${summary.warnings} 项警告。`;
 };
 
-const getTestIcon = (status: string): string => {
-  switch (status) {
-    case 'passed':
-      return 'check-circle-filled';
-    case 'failed':
-      return 'close-circle-filled';
-    case 'warning':
-      return 'error-circle-filled';
-    default:
-      return 'help-circle-filled';
-  }
+const getTestIconComponent = (status: string): Component => {
+  const iconMap: Record<string, Component> = {
+    passed: markRaw(CheckCircleIcon),
+    failed: markRaw(CloseCircleFilledIcon),
+    warning: markRaw(ErrorCircleFilledIcon),
+  };
+  return iconMap[status] || markRaw(InfoCircleIcon);
 };
 
 const formatTestDetails = (details: unknown): string => {

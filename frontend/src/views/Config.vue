@@ -16,7 +16,7 @@
               @click="handleRefresh"
             >
               <template #icon>
-                <t-icon name="refresh" />
+                <RefreshIcon />
               </template>
               刷新
             </t-button>
@@ -26,7 +26,7 @@
               @click="handleCreateBackup"
             >
               <template #icon>
-                <t-icon name="backup" />
+                <BackupIcon />
               </template>
               创建备份
             </t-button>
@@ -37,7 +37,7 @@
               @click="handleSaveConfig"
             >
               <template #icon>
-                <t-icon name="check" />
+                <CheckIcon />
               </template>
               保存配置
             </t-button>
@@ -220,6 +220,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next';
+import { BackupIcon, CheckIcon, RefreshIcon } from 'tdesign-icons-vue-next';
 import { useConfigStore } from '@/stores/config';
 import type { ConfigType, ConfigFormData } from '@/types/config';
 

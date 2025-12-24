@@ -8,7 +8,7 @@
           size="small"
           @click="autoMap"
         >
-          <template #icon><star-icon /></template>
+          <template #icon><StarIcon /></template>
           自动映射
         </t-button>
         <t-button
@@ -16,7 +16,7 @@
           size="small"
           @click="clearMappings"
         >
-          <template #icon><close-icon /></template>
+          <template #icon><CloseIcon /></template>
           清空映射
         </t-button>
         <t-button
@@ -24,7 +24,7 @@
           size="small"
           @click="addMapping"
         >
-          <template #icon><add-icon /></template>
+          <template #icon><AddIcon /></template>
           添加映射
         </t-button>
       </t-space>
@@ -48,7 +48,7 @@
             draggable="true"
           >
             <div class="param-icon">
-              <t-icon :name="getParamTypeIcon(param.type)" />
+              <component :is="getParamTypeIconComponent(param.type)" />
             </div>
             <div class="param-info">
               <div class="param-name">{{ param.name }}</div>
@@ -80,7 +80,7 @@
                 theme="danger"
                 @click="removeMapping(index)"
               >
-                <template #icon><delete-icon /></template>
+                <template #icon><DeleteIcon /></template>
               </t-button>
             </div>
             
@@ -93,7 +93,7 @@
               </div>
 
               <div class="mapping-arrow">
-                <t-icon name="arrow-right" />
+                <ChevronRightIcon />
               </div>
 
               <div class="mapping-target">
@@ -156,7 +156,7 @@
             size="small"
             @click="previewMapping"
           >
-            <template #icon><preview-icon /></template>
+            <template #icon><InfoCircleIcon /></template>
             预览
           </t-button>
         </div>
@@ -190,7 +190,7 @@
               theme="primary"
               @click="testMapping"
             >
-              <template #icon><test-icon /></template>
+              <template #icon><PlayIcon /></template>
               测试映射
             </t-button>
           </t-form-item>
@@ -223,17 +223,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, nextTick } from 'vue';
+import { ref, reactive, computed, onMounted, nextTick, markRaw, type Component } from 'vue';
 import { MessagePlugin } from 'tdesign-vue-next';
 import {
-  DeleteIcon,
   AddIcon,
-  StarIcon,
+  ChevronRightIcon,
   CloseIcon,
-  EyeIcon,
+  DeleteIcon,
+  InfoCircleIcon,
   PlayIcon,
+  StarIcon,
 } from 'tdesign-icons-vue-next';
 import type { ParameterMapping } from '@/types/api-to-mcp';
+
+// 参数类型图标组件映射
+const paramTypeIconMap: Record<string, Component> = {
+  string: markRaw(StarIcon),
+  number: markRaw(PlayIcon),
+  boolean: markRaw(CloseIcon),
+  array: markRaw(AddIcon),
+  object: markRaw(InfoCircleIcon),
+};
+
+// 获取参数类型图标组件
+const getParamTypeIconComponent = (type: string): Component => {
+  return paramTypeIconMap[type] || paramTypeIconMap.string;
+};
 
 interface Props {
   sourceSchema: any;

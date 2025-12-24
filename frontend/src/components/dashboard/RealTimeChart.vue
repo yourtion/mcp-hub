@@ -16,14 +16,14 @@
           <t-option value="24h" label="24小时" />
         </t-select>
         
-        <t-button 
-          theme="default" 
+        <t-button
+          theme="default"
           size="small"
           :disabled="!autoRefresh"
           @click="toggleAutoRefresh"
         >
           <template #icon>
-            <t-icon :name="autoRefresh ? 'pause' : 'play'" />
+            <component :is="autoRefresh ? PauseIcon : PlayIcon" />
           </template>
           {{ autoRefresh ? '暂停' : '开始' }}
         </t-button>
@@ -37,7 +37,7 @@
       </div>
       
       <div v-else-if="error" class="chart-error">
-        <t-icon name="close-circle" size="24px" />
+        <CloseCircleIcon size="24px" />
         <span>{{ error }}</span>
       </div>
       
@@ -75,6 +75,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { CloseCircleIcon, PauseIcon, PlayIcon } from 'tdesign-icons-vue-next';
 import type { TimeSeriesData, ChartDataPoint } from '@/types/dashboard';
 
 interface Props {

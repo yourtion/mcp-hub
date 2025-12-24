@@ -1,14 +1,14 @@
 <template>
   <t-card title="最近活动" class="activity-card">
     <template #actions>
-      <t-button 
-        theme="default" 
-        size="small" 
+      <t-button
+        theme="default"
+        size="small"
         :loading="loading"
         @click="refreshActivities"
       >
         <template #icon>
-          <t-icon name="refresh" />
+          <RefreshIcon />
         </template>
         刷新
       </t-button>
@@ -21,22 +21,22 @@
 
     <div v-else-if="activities.length > 0" class="activity-content">
       <div class="activity-list">
-        <div 
-          v-for="activity in displayActivities" 
-          :key="activity.id" 
+        <div
+          v-for="activity in displayActivities"
+          :key="activity.id"
           class="activity-item"
           :class="[`activity--${activity.severity}`]"
         >
           <div class="activity-icon">
-            <t-icon :name="getActivityIcon(activity)" size="16px" />
+            <component :is="getActivityIconComponent(activity)" size="16px" />
           </div>
           <div class="activity-info">
             <div class="activity-message">{{ activity.message }}</div>
             <div class="activity-time">{{ formatTime(activity.timestamp) }}</div>
           </div>
           <div class="activity-type">
-            <t-tag 
-              :theme="getActivityTagTheme(activity.severity)" 
+            <t-tag
+              :theme="getActivityTagTheme(activity.severity)"
               size="small"
               variant="light"
             >
@@ -47,9 +47,9 @@
       </div>
 
       <div v-if="activities.length > displayLimit" class="activity-footer">
-        <t-button 
-          theme="default" 
-          variant="text" 
+        <t-button
+          theme="default"
+          variant="text"
           size="small"
           @click="showMore"
         >
@@ -59,14 +59,23 @@
     </div>
 
     <div v-else class="activity-empty">
-      <t-icon name="inbox" size="32px" />
+      <InfoCircleIcon size="32px" />
       <span>暂无活动记录</span>
     </div>
   </t-card>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, markRaw, ref, type Component } from 'vue';
+import {
+  RefreshIcon,
+  LinkIcon,
+  LinkUnlinkIcon,
+  ToolsIcon,
+  CloseCircleIcon,
+  InfoCircleIcon,
+  PoweroffIcon,
+} from 'tdesign-icons-vue-next';
 import type { Activity } from '@/types/dashboard';
 
 interface Props {
@@ -93,16 +102,18 @@ const displayActivities = computed(() => {
   return props.activities.slice(0, displayLimit.value);
 });
 
-// 获取活动图标
-const getActivityIcon = (activity: Activity): string => {
-  const iconMap: Record<string, string> = {
-    server_connected: 'link',
-    server_disconnected: 'link-unlink',
-    tool_executed: 'tools',
-    error: 'close-circle',
-    system_start: 'poweroff',
-  };
-  return iconMap[activity.type] || 'info-circle';
+// 活动图标组件映射
+const activityIconMap: Record<string, Component> = {
+  server_connected: markRaw(LinkIcon),
+  server_disconnected: markRaw(LinkUnlinkIcon),
+  tool_executed: markRaw(ToolsIcon),
+  error: markRaw(CloseCircleIcon),
+  system_start: markRaw(PoweroffIcon),
+};
+
+// 获取活动图标组件
+const getActivityIconComponent = (activity: Activity): Component => {
+  return activityIconMap[activity.type] || activityIconMap.error;
 };
 
 // 获取活动类型文本
@@ -132,7 +143,7 @@ const formatTime = (timestamp: string): string => {
   const date = new Date(timestamp);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
-  
+
   if (diff < 60000) { // 1分钟内
     return '刚刚';
   } else if (diff < 3600000) { // 1小时内

@@ -9,7 +9,7 @@
         @click="handleCategoryClick(category.key)"
       >
         <div class="category-icon">
-          <t-icon :name="category.icon || 'setting'" />
+          <component :is="getCategoryIconComponent(category.icon)" />
         </div>
         <div class="category-content">
           <div class="category-label">{{ category.label }}</div>
@@ -30,7 +30,34 @@
 </template>
 
 <script setup lang="ts">
+import { markRaw, type Component } from 'vue';
+import {
+  SettingIcon,
+  ServerIcon,
+  UsergroupIcon,
+  ApplicationIcon,
+  ToolsIcon,
+  FolderIcon,
+} from 'tdesign-icons-vue-next';
 import type { ConfigCategory, ConfigType } from '@/types/config';
+
+// 图标组件映射
+const categoryIconMap: Record<string, Component> = {
+  setting: markRaw(SettingIcon),
+  server: markRaw(ServerIcon),
+  usergroup: markRaw(UsergroupIcon),
+  logo: markRaw(ApplicationIcon),
+  tool: markRaw(ToolsIcon),
+  tools: markRaw(ToolsIcon),
+  folder: markRaw(FolderIcon),
+  // 添加更多图标映射...
+};
+
+// 获取分类图标组件
+const getCategoryIconComponent = (iconName?: string): Component => {
+  if (!iconName) return categoryIconMap.setting;
+  return categoryIconMap[iconName] || categoryIconMap.setting;
+};
 
 // Props
 interface Props {

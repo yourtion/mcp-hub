@@ -14,18 +14,18 @@
       <div class="header-actions">
         <!-- SSE连接状态 -->
         <div class="sse-status" :class="[`sse-status--${sseConnectionState}`]">
-          <t-icon :name="sseStatusIcon" size="14px" />
+          <component :is="sseStatusIconComponent" size="14px" />
           <span>{{ sseStatusText }}</span>
         </div>
-        
+
         <!-- 刷新按钮 -->
-        <t-button 
-          theme="default" 
+        <t-button
+          theme="default"
           :loading="isRefreshing"
           @click="handleRefresh"
         >
           <template #icon>
-            <t-icon name="refresh" />
+            <RefreshIcon />
           </template>
           刷新数据
         </t-button>
@@ -67,24 +67,24 @@
           <!-- 性能统计图表 -->
           <t-card title="性能统计" class="performance-card">
             <template #actions>
-              <t-button 
-                theme="default" 
-                size="small" 
+              <t-button
+                theme="default"
+                size="small"
                 :loading="loading.performance"
                 @click="fetchPerformanceStats"
               >
                 <template #icon>
-                  <t-icon name="refresh" />
+                  <RefreshIcon />
                 </template>
                 刷新
               </t-button>
             </template>
-            
+
             <div v-if="loading.performance && !performanceStats" class="card-loading">
               <t-loading size="small" />
               <span>加载中...</span>
             </div>
-            
+
             <div v-else-if="performanceStats" class="performance-content">
               <div class="performance-metrics">
                 <div class="metric-item">
@@ -100,13 +100,13 @@
                   <div class="metric-value">{{ (performanceStats.errorRate * 100).toFixed(2) }}%</div>
                 </div>
               </div>
-              
+
               <!-- 热门工具 -->
               <div v-if="performanceStats.topTools.length > 0" class="top-tools">
                 <h4>热门工具</h4>
                 <div class="tools-list">
-                  <div 
-                    v-for="tool in performanceStats.topTools.slice(0, 5)" 
+                  <div
+                    v-for="tool in performanceStats.topTools.slice(0, 5)"
                     :key="tool.name"
                     class="tool-item"
                   >
@@ -119,9 +119,9 @@
                 </div>
               </div>
             </div>
-            
+
             <div v-else class="card-error">
-              <t-icon name="close-circle" size="24px" />
+              <CloseIcon size="24px" />
               <span>无法获取性能数据</span>
             </div>
           </t-card>
@@ -140,46 +140,46 @@
           <!-- 快速操作 -->
           <t-card title="快速操作" class="quick-actions-card">
             <div class="quick-actions">
-              <t-button 
-                theme="primary" 
+              <t-button
+                theme="primary"
                 block
                 @click="navigateTo('/servers')"
               >
                 <template #icon>
-                  <t-icon name="server" />
+                  <ServerIcon />
                 </template>
                 管理服务器
               </t-button>
-              
-              <t-button 
-                theme="default" 
+
+              <t-button
+                theme="default"
                 block
                 @click="navigateTo('/tools')"
               >
                 <template #icon>
-                  <t-icon name="tools" />
+                  <ToolsIcon />
                 </template>
                 查看工具
               </t-button>
-              
-              <t-button 
-                theme="default" 
+
+              <t-button
+                theme="default"
                 block
                 @click="navigateTo('/groups')"
               >
                 <template #icon>
-                  <t-icon name="folder" />
+                  <FolderIcon />
                 </template>
                 管理组
               </t-button>
-              
-              <t-button 
-                theme="default" 
+
+              <t-button
+                theme="default"
                 block
                 @click="navigateTo('/debug')"
               >
                 <template #icon>
-                  <t-icon name="bug" />
+                  <CloseIcon />
                 </template>
                 调试工具
               </t-button>
@@ -192,9 +192,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted, markRaw, type Component } from 'vue';
 import { useRouter } from 'vue-router';
 import { MessagePlugin } from 'tdesign-vue-next';
+import {
+  CheckIcon,
+  CloseIcon,
+  RefreshIcon,
+  ServerIcon,
+  ToolsIcon,
+  FolderIcon,
+  MinusIcon,
+} from 'tdesign-icons-vue-next';
 import { useAuthStore } from '@/stores/auth';
 import { useDashboardStore } from '@/stores/dashboard';
 import StatCard from '@/components/dashboard/StatCard.vue';
@@ -233,13 +242,13 @@ const isRefreshing = computed(() => {
 });
 
 // SSE状态
-const sseStatusIcon = computed(() => {
-  const iconMap: Record<string, string> = {
-    connecting: 'loading',
-    open: 'check-circle',
-    closed: 'close-circle',
+const sseStatusIconComponent = computed(() => {
+  const iconMap: Record<string, Component> = {
+    connecting: markRaw(MinusIcon), // 可以使用旋转动画
+    open: markRaw(CheckIcon),
+    closed: markRaw(CloseIcon),
   };
-  return iconMap[sseConnectionState] || 'close-circle';
+  return iconMap[sseConnectionState] || iconMap.closed;
 });
 
 const sseStatusText = computed(() => {

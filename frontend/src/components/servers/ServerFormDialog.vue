@@ -12,7 +12,7 @@
     <div class="server-form">
       <t-form
         ref="formRef"
-        :model="formData"
+        :data="formData"
         :rules="formRules"
         label-align="top"
         @submit="handleSubmit"

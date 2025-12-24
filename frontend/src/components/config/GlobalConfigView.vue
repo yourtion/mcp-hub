@@ -12,7 +12,7 @@
           <t-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon system">
-                <t-icon name="setting" />
+                <SettingIcon />
               </div>
               <div class="stat-info">
                 <div class="stat-value">{{ systemConfigCount }}</div>
@@ -25,7 +25,7 @@
           <t-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon mcp">
-                <t-icon name="server" />
+                <ServerIcon />
               </div>
               <div class="stat-info">
                 <div class="stat-value">{{ mcpServerCount }}</div>
@@ -38,7 +38,7 @@
           <t-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon groups">
-                <t-icon name="usergroup" />
+                <UsergroupIcon />
               </div>
               <div class="stat-info">
                 <div class="stat-value">{{ groupCount }}</div>
@@ -61,14 +61,14 @@
           @click="handleQuickConfig(item.configType, item.path)"
         >
           <div class="quick-config-icon">
-            <t-icon :name="item.icon" />
+            <component :is="getQuickConfigIconComponent(item.icon)" />
           </div>
           <div class="quick-config-content">
             <div class="quick-config-title">{{ item.title }}</div>
             <div class="quick-config-description">{{ item.description }}</div>
           </div>
           <div class="quick-config-arrow">
-            <t-icon name="chevron-right" />
+            <ChevronRightIcon />
           </div>
         </div>
       </div>
@@ -89,8 +89,35 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, markRaw, type Component } from 'vue';
+import {
+  ChevronRightIcon,
+  ApplicationIcon,
+  SaveIcon,
+  ServerIcon,
+  SettingIcon,
+  ToolsIcon,
+  UsergroupIcon,
+} from 'tdesign-icons-vue-next';
 import type { ConfigData, ConfigType } from '@/types/config';
+
+// 图标组件映射
+const quickConfigIconMap: Record<string, Component> = {
+  setting: markRaw(SettingIcon),
+  server: markRaw(ServerIcon),
+  usergroup: markRaw(UsergroupIcon),
+  save: markRaw(SaveIcon),
+  tool: markRaw(ToolsIcon),
+  tools: markRaw(ToolsIcon),
+  logo: markRaw(ApplicationIcon),
+  // 添加更多图标映射...
+};
+
+// 获取快速配置图标组件
+const getQuickConfigIconComponent = (iconName?: string): Component => {
+  if (!iconName) return markRaw(SettingIcon);
+  return quickConfigIconMap[iconName] || markRaw(SettingIcon);
+};
 
 // Props
 interface Props {

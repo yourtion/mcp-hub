@@ -1,14 +1,14 @@
 <template>
   <t-card title="系统健康状态" class="health-card">
     <template #actions>
-      <t-button 
-        theme="default" 
-        size="small" 
+      <t-button
+        theme="default"
+        size="small"
         :loading="loading"
         @click="refreshHealth"
       >
         <template #icon>
-          <t-icon name="refresh" />
+          <RefreshIcon />
         </template>
         刷新
       </t-button>
@@ -23,7 +23,7 @@
       <!-- 整体状态 -->
       <div class="health-status">
         <div class="status-indicator" :class="[`status--${health.status}`]">
-          <t-icon :name="statusIcon" size="20px" />
+          <component :is="statusIconComponent" size="20px" />
         </div>
         <div class="status-info">
           <div class="status-text">{{ statusText }}</div>
@@ -36,7 +36,7 @@
       <!-- 问题列表 -->
       <div v-if="health.issues.length > 0" class="health-issues">
         <div class="issues-title">
-          <t-icon name="error-circle" size="16px" />
+          <ErrorCircleIcon size="16px" />
           发现 {{ health.issues.length }} 个问题
         </div>
         <ul class="issues-list">
@@ -49,29 +49,35 @@
       <!-- 健康指标 -->
       <div v-else class="health-metrics">
         <div class="metric-item">
-          <t-icon name="check-circle" size="16px" class="metric-icon success" />
+          <CheckCircleIcon size="16px" class="metric-icon success" />
           <span>所有服务运行正常</span>
         </div>
         <div class="metric-item">
-          <t-icon name="check-circle" size="16px" class="metric-icon success" />
+          <CheckCircleIcon size="16px" class="metric-icon success" />
           <span>系统资源充足</span>
         </div>
         <div class="metric-item">
-          <t-icon name="check-circle" size="16px" class="metric-icon success" />
+          <CheckCircleIcon size="16px" class="metric-icon success" />
           <span>网络连接稳定</span>
         </div>
       </div>
     </div>
 
     <div v-else class="health-error">
-      <t-icon name="close-circle" size="24px" />
+      <CloseCircleIcon size="24px" />
       <span>无法获取健康状态</span>
     </div>
   </t-card>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, markRaw, type Component } from 'vue';
+import {
+  CheckCircleIcon,
+  CloseCircleIcon,
+  ErrorCircleIcon,
+  RefreshIcon,
+} from 'tdesign-icons-vue-next';
 import type { SystemHealth } from '@/types/dashboard';
 
 interface Props {
@@ -89,22 +95,23 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 
-// 状态图标
-const statusIcon = computed(() => {
-  if (!props.health) return 'close-circle';
-  
-  const iconMap: Record<string, string> = {
-    healthy: 'check-circle',
-    warning: 'error-circle',
-    error: 'close-circle',
-  };
-  return iconMap[props.health.status] || 'close-circle';
+// 状态图标组件映射
+const statusIconMap: Record<string, Component> = {
+  healthy: markRaw(CheckCircleIcon),
+  warning: markRaw(ErrorCircleIcon),
+  error: markRaw(CloseCircleIcon),
+};
+
+// 状态图标组件
+const statusIconComponent = computed(() => {
+  if (!props.health) return markRaw(CloseCircleIcon);
+  return statusIconMap[props.health.status] || statusIconMap.error;
 });
 
 // 状态文本
 const statusText = computed(() => {
   if (!props.health) return '未知状态';
-  
+
   const textMap: Record<string, string> = {
     healthy: '系统运行正常',
     warning: '系统存在警告',
@@ -118,7 +125,7 @@ const formatTime = (timestamp: string): string => {
   const date = new Date(timestamp);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
-  
+
   if (diff < 60000) { // 1分钟内
     return '刚刚';
   } else if (diff < 3600000) { // 1小时内
