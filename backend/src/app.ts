@@ -8,6 +8,7 @@ import { groupMcpRouter } from './api/mcp/group-router.js';
 import { performanceApi } from './api/performance/index.js';
 import { serversApi } from './api/servers/index.js';
 import { toolsApi } from './api/tools/index.js';
+import { toolsAdminApi } from './api/tools-admin/index.js';
 import { mcp } from './mcp.js';
 import { AuthService } from './services/auth.js';
 import { sse } from './sse.js';
@@ -38,7 +39,7 @@ configApi.use('*', createAuthMiddleware(authService));
 
 app.route('/', mcp);
 app.route('/', sse);
-app.route('/', groupMcpRouter); // 组特定MCP路由
+// 具体的 API 路由放在通配符路由之前，避免被拦截
 app.route('/api', hubApi);
 app.route('/api/auth', createAuthApi(authService));
 app.route('/api/config', configApi);
@@ -46,7 +47,10 @@ app.route('/api/dashboard', dashboardApi);
 app.route('/api/debug', debugApi);
 app.route('/api/servers', serversApi);
 app.route('/api/tools', toolsApi);
+app.route('/api/tools-admin', toolsAdminApi);
 app.route('/api/performance', performanceApi);
+// 通配符路由放在最后
+app.route('/', groupMcpRouter); // 组特定MCP路由
 
 // 导出认证服务供其他模块使用
 export { authService };

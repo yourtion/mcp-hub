@@ -93,7 +93,7 @@ export async function getToolHistory(
   params?: ToolHistoryFilterParams,
 ): Promise<ToolHistoryResponse> {
   const response = await api.get<ApiResponse<ToolHistoryResponse>>(
-    '/tools/history',
+    '/tools-admin/history',
     {
       params,
     },
@@ -120,7 +120,7 @@ export async function getToolStats(
   groupId?: string,
   serverId?: string,
 ): Promise<ToolStats> {
-  const response = await api.get<ApiResponse<ToolStats>>('/tools/stats', {
+  const response = await api.get<ApiResponse<ToolStats>>('/tools-admin/stats', {
     params: { groupId, serverId },
   });
   return handleApiResponse(response);
@@ -133,7 +133,7 @@ export async function getToolMonitoring(
   groupId?: string,
 ): Promise<ToolMonitoring> {
   const response = await api.get<ApiResponse<ToolMonitoring>>(
-    '/tools/monitoring',
+    '/tools-admin/monitoring',
     {
       params: { groupId },
     },
@@ -148,7 +148,7 @@ export async function getToolHealth(
   groupId?: string,
 ): Promise<ToolHealthResponse> {
   const response = await api.get<ApiResponse<ToolHealthResponse>>(
-    '/tools/health',
+    '/tools-admin/health',
     {
       params: { groupId },
     },
@@ -165,7 +165,7 @@ export async function getToolPerformance(
   serverId?: string,
 ): Promise<ToolPerformance> {
   const response = await api.get<ApiResponse<ToolPerformance>>(
-    '/tools/performance',
+    '/tools-admin/performance',
     {
       params: { timeRange, groupId, serverId },
     },
@@ -185,7 +185,7 @@ export async function getToolErrors(params?: {
   severity?: string;
 }): Promise<ToolErrorResponse> {
   const response = await api.get<ApiResponse<ToolErrorResponse>>(
-    '/tools/errors',
+    '/tools-admin/errors',
     {
       params,
     },

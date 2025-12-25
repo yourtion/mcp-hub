@@ -39,14 +39,16 @@ export class ApiToolIntegrationService {
 
       if (configPath) {
         await this.apiServiceManager.initialize(configPath);
+        this.initialized = true;
         logger.info('API工具集成服务初始化完成');
       } else {
         logger.info('未提供API工具配置文件，跳过API工具初始化');
+        // ✅ 修复：没有配置文件时，不标记为已初始化
+        this.initialized = false;
       }
-
-      this.initialized = true;
     } catch (error) {
       logger.error('API工具集成服务初始化失败', error as Error);
+      this.initialized = false;
       throw new Error(`API工具集成服务初始化失败: ${(error as Error).message}`);
     }
   }
@@ -203,10 +205,26 @@ export class ApiToolIntegrationService {
         initialized: true,
       };
     } catch (error) {
-      logger.error('获取API工具统计信息失败', error as Error);
+      // ✅ 改进：提供更详细的错误信息
+      const errorMessage = (error as Error).message;
+      const isNotInitialized = errorMessage.includes('not_initialized') ||
+                               errorMessage.includes('未运行');
+
+      if (isNotInitialized) {
+        logger.warn('API工具服务管理器未初始化，请检查配置文件路径是否正确', {
+          configPath: this.configPath,
+          error: errorMessage,
+        });
+      } else {
+        logger.error('获取API工具统计信息失败', error as Error, {
+          configPath: this.configPath,
+          initialized: this.initialized,
+        });
+      }
+
       return {
         totalApiTools: 0,
-        initialized: true,
+        initialized: !isNotInitialized, // 如果是未初始化错误，返回 false
       };
     }
   }

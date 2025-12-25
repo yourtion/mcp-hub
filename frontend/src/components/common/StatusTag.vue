@@ -20,11 +20,12 @@ import {
 import type { ServerStatus } from '@/types/server';
 
 interface Props {
-  status: ServerStatus;
+  status?: ServerStatus;
   variant?: 'dark' | 'light' | 'outline' | 'light-outline';
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  status: 'disconnected',
   variant: 'light',
 });
 

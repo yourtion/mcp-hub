@@ -266,7 +266,25 @@ groupsApi.get('/', async (c) => {
       totalTools: response.totalTools,
     });
 
-    return c.json(response);
+    // 统一响应格式，添加 success 和 data 包装
+    return c.json({
+      success: true,
+      data: {
+        groups: response.groups,
+        totalGroups: response.totalGroups,
+        healthyGroups: response.healthyGroups,
+        unhealthyGroups: response.totalGroups - response.healthyGroups,
+        totalServers: response.totalServers,
+        connectedServers: response.connectedServers,
+        totalTools: response.totalTools,
+        filteredTools: response.filteredTools,
+        averageHealthScore: response.averageHealthScore,
+        groupsWithValidation: response.groupsWithValidation,
+        groupsWithToolFilter: response.groupsWithToolFilter,
+        summary: response.summary,
+      },
+      timestamp: response.timestamp,
+    });
   } catch (error) {
     logger.error('获取组列表失败', error as Error);
     return c.json(
