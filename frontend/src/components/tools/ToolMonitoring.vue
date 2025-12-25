@@ -1,515 +1,180 @@
 <template>
   <div class="tool-monitoring">
-    <!-- 监控概览 -->
-    <div class="monitoring-overview">
-      <t-row :gutter="16">
-        <t-col :span="6">
-          <t-card size="small" class="overview-card">
-            <div class="overview-item">
-              <div class="overview-icon">
-                <api-icon size="24px" />
-              </div>
-              <div class="overview-content">
-                <div class="overview-value">{{ monitoringData?.overview.totalTools || 0 }}</div>
-                <div class="overview-label">总工具数</div>
-              </div>
-            </div>
-          </t-card>
-        </t-col>
+    <!-- 顶部统计卡片 -->
+    <div class="monitoring-stats">
+      <div class="stat-item">
+        <div class="stat-icon">
+          <api-icon size="20px" />
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ monitoringData?.overview.totalTools || 0 }}</div>
+          <div class="stat-label">总工具数</div>
+        </div>
+      </div>
 
-        <t-col :span="6">
-          <t-card size="small" class="overview-card">
-            <div class="overview-item">
-              <div class="overview-icon success">
-                <check-circle-icon size="24px" />
-              </div>
-              <div class="overview-content">
-                <div class="overview-value text-success">
-                  {{ monitoringData?.overview.availableTools || 0 }}
-                </div>
-                <div class="overview-label">可用工具</div>
-              </div>
-            </div>
-          </t-card>
-        </t-col>
+      <div class="stat-item stat-success">
+        <div class="stat-icon">
+          <check-circle-icon size="20px" />
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ monitoringData?.overview.availableTools || 0 }}</div>
+          <div class="stat-label">可用</div>
+        </div>
+      </div>
 
-        <t-col :span="6">
-          <t-card size="small" class="overview-card">
-            <div class="overview-item">
-              <div class="overview-icon error">
-                <close-circle-icon size="24px" />
-              </div>
-              <div class="overview-content">
-                <div class="overview-value text-error">
-                  {{ monitoringData?.overview.unavailableTools || 0 }}
-                </div>
-                <div class="overview-label">不可用工具</div>
-              </div>
-            </div>
-          </t-card>
-        </t-col>
+      <div class="stat-item stat-error">
+        <div class="stat-icon">
+          <close-circle-icon size="20px" />
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ monitoringData?.overview.unavailableTools || 0 }}</div>
+          <div class="stat-label">不可用</div>
+        </div>
+      </div>
 
-        <t-col :span="6">
-          <t-card size="small" class="overview-card">
-            <div class="overview-item">
-              <div class="overview-icon">
-                <server-icon size="24px" />
-              </div>
-              <div class="overview-content">
-                <div class="overview-value">
-                  {{ monitoringData?.overview.connectedServers || 0 }}/{{ monitoringData?.overview.totalServers || 0 }}
-                </div>
-                <div class="overview-label">连接服务器</div>
-              </div>
-            </div>
-          </t-card>
-        </t-col>
-      </t-row>
+      <div class="stat-item">
+        <div class="stat-icon">
+          <server-icon size="20px" />
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">
+            {{ monitoringData?.overview.connectedServers || 0 }}/{{ monitoringData?.overview.totalServers || 0 }}
+          </div>
+          <div class="stat-label">服务器</div>
+        </div>
+      </div>
     </div>
 
-    <!-- 可用性趋势图 -->
-    <t-card title="可用性趋势" class="availability-chart-card">
-      <template #actions>
-        <t-space>
-          <t-select
-            v-model="timeRange"
-            size="small"
-            @change="handleTimeRangeChange"
-          >
-            <t-option value="1h" label="1小时" />
-            <t-option value="6h" label="6小时" />
-            <t-option value="24h" label="24小时" />
-            <t-option value="7d" label="7天" />
-          </t-select>
-          
-          <t-button
-            variant="text"
-            size="small"
-            @click="refreshAvailabilityData"
-          >
-            刷新
-          </t-button>
-        </t-space>
-      </template>
+    <!-- 主要内容区域：左右两栏布局 -->
+    <div class="monitoring-content">
+      <!-- 左侧：服务器状态 -->
+      <div class="monitoring-main">
+        <t-card title="服务器状态" class="server-status-card" bordered>
+          <template #actions>
+            <t-space size="small">
+              <t-button size="small" variant="text" @click="refreshServerStatus">刷新</t-button>
+            </t-space>
+          </template>
 
-      <div class="availability-chart">
-        <div v-if="availabilityChartData.length > 0" class="chart-container">
-          <!-- 这里可以集成图表库如 ECharts 或 Chart.js -->
-          <div class="chart-placeholder">
-            <div class="chart-info">
-              <div class="chart-title">工具可用性趋势</div>
-              <div class="chart-subtitle">时间范围: {{ timeRange }}</div>
+          <t-loading :loading="loading" size="small">
+            <div v-if="serversList.length > 0" class="server-list">
+              <div
+                v-for="server in serversList"
+                :key="server.id"
+                class="server-item"
+                :class="`server-${server.status}`"
+              >
+                <div class="server-header">
+                  <div class="server-info">
+                    <div class="server-name">{{ server.name }}</div>
+                    <div class="server-meta">
+                      <span>{{ server.statusText }}</span>
+                      <span class="separator">·</span>
+                      <span>{{ server.toolCount }} 个工具</span>
+                    </div>
+                  </div>
+                  <StatusTag :status="server.status" size="small" />
+                </div>
+
+                <div v-if="server.tools.length > 0" class="server-tools">
+                  <div
+                    v-for="tool in server.tools"
+                    :key="tool.name"
+                    class="server-tool-item"
+                    :class="{ 'tool-unavailable': server.status !== 'connected' }"
+                  >
+                    <div class="tool-dot"></div>
+                    <span class="tool-name">{{ tool.name }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            
-            <!-- 简单的可用性指标显示 -->
-            <div class="availability-metrics">
-              <t-row :gutter="16">
-                <t-col :span="8">
-                  <div class="metric-card">
-                    <div class="metric-title">平均可用率</div>
-                    <div class="metric-value">{{ averageAvailability }}%</div>
-                  </div>
-                </t-col>
-                <t-col :span="8">
-                  <div class="metric-card">
-                    <div class="metric-title">最高可用率</div>
-                    <div class="metric-value">{{ maxAvailability }}%</div>
-                  </div>
-                </t-col>
-                <t-col :span="8">
-                  <div class="metric-card">
-                    <div class="metric-title">最低可用率</div>
-                    <div class="metric-value">{{ minAvailability }}%</div>
-                  </div>
-                </t-col>
-              </t-row>
+
+            <div v-else class="empty-state">
+              <t-empty description="暂无服务器数据" size="small" />
+            </div>
+          </t-loading>
+        </t-card>
+      </div>
+
+      <!-- 右侧：性能指标和日志 -->
+      <div class="monitoring-sidebar">
+        <!-- 性能指标 -->
+        <t-card title="性能指标" class="performance-card" bordered>
+          <template #actions>
+            <t-select v-model="performanceTimeRange" size="small" auto-width>
+              <t-option value="1h" label="1小时" />
+              <t-option value="6h" label="6小时" />
+              <t-option value="24h" label="24小时" />
+            </t-select>
+          </template>
+
+          <div v-if="performanceData" class="performance-metrics">
+            <div class="metric-row">
+              <span class="metric-label">执行次数</span>
+              <span class="metric-value">{{ performanceData.overview.totalExecutions }}</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">成功率</span>
+              <span class="metric-value text-success">{{ performanceData.overview.successRate.toFixed(1) }}%</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">平均响应</span>
+              <span class="metric-value">{{ performanceData.overview.averageExecutionTime }}ms</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">错误率</span>
+              <span class="metric-value text-error">{{ (100 - performanceData.overview.successRate).toFixed(1) }}%</span>
             </div>
           </div>
-        </div>
-        
-        <div v-else class="no-chart-data">
-          <t-empty description="暂无可用性数据" />
-        </div>
-      </div>
-    </t-card>
 
-    <!-- 服务器状态监控 -->
-    <t-card title="服务器状态监控" class="server-monitoring-card">
-      <template #actions>
-        <t-space>
-          <t-button
-            variant="text"
-            size="small"
-            @click="refreshServerStatus"
-          >
-            刷新状态
-          </t-button>
-          
-          <t-button
-            variant="text"
-            size="small"
-            @click="showServerDetails = !showServerDetails"
-          >
-            {{ showServerDetails ? '隐藏详情' : '显示详情' }}
-          </t-button>
-        </t-space>
-      </template>
+          <div v-else class="empty-state">
+            <t-empty description="暂无性能数据" size="small" />
+          </div>
+        </t-card>
 
-      <div class="server-monitoring">
-        <t-row :gutter="16">
-          <t-col
-            v-for="(serverData, serverId) in monitoringData?.toolsByServer"
-            :key="serverId"
-            :span="12"
-          >
-            <t-card
-              :title="serverId"
-              size="small"
-              class="server-card"
-              :class="`server-${serverData.serverStatus}`"
+        <!-- 实时日志 -->
+        <t-card title="实时日志" class="logs-card" bordered>
+          <template #actions>
+            <t-space size="small">
+              <t-switch v-model="autoRefresh" size="small" />
+              <t-button size="small" variant="text" @click="clearLogs">清空</t-button>
+            </t-space>
+          </template>
+
+          <div class="logs-list">
+            <div
+              v-for="(log, index) in realtimeLogs.slice(0, 8)"
+              :key="index"
+              class="log-item"
+              :class="`log-${log.level}`"
             >
-              <template #subtitle>
-                <status-tag :status="serverData.serverStatus" />
-              </template>
+              <span class="log-time">{{ formatTimeShort(log.timestamp) }}</span>
+              <span class="log-message">{{ log.message }}</span>
+            </div>
+          </div>
 
-              <template #actions>
-                <t-dropdown :options="getServerActions(serverId)" @click="handleServerAction">
-                  <t-button variant="text" size="small">
-                    操作
-                    <chevron-down-icon />
-                  </t-button>
-                </t-dropdown>
-              </template>
-
-              <div class="server-info">
-                <div class="server-stats">
-                  <t-descriptions :column="2" size="small">
-                    <t-descriptions-item label="工具总数">
-                      {{ serverData.tools.length }}
-                    </t-descriptions-item>
-                    
-                    <t-descriptions-item label="可用工具">
-                      {{ serverData.tools.filter(t => t.status === 'available').length }}
-                    </t-descriptions-item>
-                    
-                    <t-descriptions-item label="连接状态">
-                      <status-tag :status="serverData.serverStatus" />
-                    </t-descriptions-item>
-                    
-                    <t-descriptions-item label="响应时间">
-                      {{ getServerResponseTime(serverId) }}ms
-                    </t-descriptions-item>
-                  </t-descriptions>
-                </div>
-
-                <!-- 工具详情 -->
-                <t-collapse-transition>
-                  <div v-show="showServerDetails" class="server-tools">
-                    <h5>工具列表</h5>
-                    <div class="tools-grid">
-                      <div
-                        v-for="tool in serverData.tools"
-                        :key="tool.name"
-                        class="tool-item"
-                        :class="`tool-${tool.status}`"
-                      >
-                        <div class="tool-name">{{ tool.name }}</div>
-                        <status-tag :status="tool.status" size="small" />
-                      </div>
-                    </div>
-                  </div>
-                </t-collapse-transition>
-              </div>
-            </t-card>
-          </t-col>
-        </t-row>
+          <div v-if="realtimeLogs.length === 0" class="empty-state">
+            <t-empty description="暂无日志" size="small" />
+          </div>
+        </t-card>
       </div>
-    </t-card>
-
-    <!-- 性能指标 -->
-    <t-card title="性能指标" class="performance-metrics-card">
-      <template #actions>
-        <t-space>
-          <t-select
-            v-model="performanceTimeRange"
-            size="small"
-            @change="handlePerformanceTimeRangeChange"
-          >
-            <t-option value="1h" label="1小时" />
-            <t-option value="6h" label="6小时" />
-            <t-option value="24h" label="24小时" />
-            <t-option value="7d" label="7天" />
-          </t-select>
-          
-          <t-button
-            variant="text"
-            size="small"
-            @click="refreshPerformanceData"
-          >
-            刷新
-          </t-button>
-        </t-space>
-      </template>
-
-      <div class="performance-metrics">
-        <t-loading :loading="performanceLoading">
-          <div v-if="performanceData" class="metrics-content">
-            <!-- 性能概览 -->
-            <div class="performance-overview">
-              <t-row :gutter="16">
-                <t-col :span="6">
-                  <div class="performance-card">
-                    <div class="performance-title">总执行次数</div>
-                    <div class="performance-value">
-                      {{ performanceData.overview.totalExecutions }}
-                    </div>
-                  </div>
-                </t-col>
-                
-                <t-col :span="6">
-                  <div class="performance-card">
-                    <div class="performance-title">成功率</div>
-                    <div class="performance-value text-success">
-                      {{ performanceData.overview.successRate.toFixed(1) }}%
-                    </div>
-                  </div>
-                </t-col>
-                
-                <t-col :span="6">
-                  <div class="performance-card">
-                    <div class="performance-title">平均响应时间</div>
-                    <div class="performance-value">
-                      {{ performanceData.overview.averageExecutionTime }}ms
-                    </div>
-                  </div>
-                </t-col>
-                
-                <t-col :span="6">
-                  <div class="performance-card">
-                    <div class="performance-title">错误率</div>
-                    <div class="performance-value text-error">
-                      {{ (100 - performanceData.overview.successRate).toFixed(1) }}%
-                    </div>
-                  </div>
-                </t-col>
-              </t-row>
-            </div>
-
-            <!-- 响应时间分布 -->
-            <div class="response-time-distribution">
-              <h5>响应时间分布</h5>
-              <t-row :gutter="16">
-                <t-col :span="8">
-                  <div class="percentile-card">
-                    <div class="percentile-label">P50</div>
-                    <div class="percentile-value">{{ performanceData.percentiles.p50 }}ms</div>
-                  </div>
-                </t-col>
-                <t-col :span="8">
-                  <div class="percentile-card">
-                    <div class="percentile-label">P95</div>
-                    <div class="percentile-value">{{ performanceData.percentiles.p95 }}ms</div>
-                  </div>
-                </t-col>
-                <t-col :span="8">
-                  <div class="percentile-card">
-                    <div class="percentile-label">P99</div>
-                    <div class="percentile-value">{{ performanceData.percentiles.p99 }}ms</div>
-                  </div>
-                </t-col>
-              </t-row>
-            </div>
-
-            <!-- 时间序列数据 -->
-            <div class="time-series-chart">
-              <h5>性能趋势</h5>
-              <div class="chart-placeholder">
-                <div class="time-series-data">
-                  <t-table
-                    :data="performanceData.timeSeries.slice(0, 10)"
-                    :columns="timeSeriesColumns"
-                    size="small"
-                    stripe
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div v-else class="no-performance-data">
-            <t-empty description="暂无性能数据" />
-          </div>
-        </t-loading>
-      </div>
-    </t-card>
-
-    <!-- 错误监控 -->
-    <t-card title="错误监控" class="error-monitoring-card">
-      <template #actions>
-        <t-space>
-          <t-button
-            variant="text"
-            size="small"
-            @click="refreshErrorData"
-          >
-            刷新
-          </t-button>
-          
-          <t-button
-            variant="text"
-            size="small"
-            @click="showErrorDetails = !showErrorDetails"
-          >
-            {{ showErrorDetails ? '隐藏详情' : '显示详情' }}
-          </t-button>
-        </t-space>
-      </template>
-
-      <div class="error-monitoring">
-        <t-loading :loading="errorLoading">
-          <div v-if="errorData && errorData.errorSummary.length > 0" class="error-content">
-            <!-- 错误概览 -->
-            <div class="error-overview">
-              <t-alert
-                theme="warning"
-                title="错误统计"
-                :close="false"
-              >
-                <div class="error-stats">
-                  <span>总错误数: {{ errorData.errors.length }}</span>
-                  <span>错误类型: {{ errorData.errorSummary.length }}</span>
-                  <span>影响工具: {{ getAffectedToolsCount() }}</span>
-                </div>
-              </t-alert>
-            </div>
-
-            <!-- 错误分类 -->
-            <div class="error-summary">
-              <h5>错误分类</h5>
-              <div class="error-categories">
-                <div
-                  v-for="(summary, index) in errorData.errorSummary"
-                  :key="index"
-                  class="error-category"
-                >
-                  <div class="category-header">
-                    <div class="category-title">{{ summary.errorMessage }}</div>
-                    <t-tag theme="danger" variant="light">
-                      {{ summary.count }} 次
-                    </t-tag>
-                  </div>
-                  
-                  <div class="category-info">
-                    <div class="affected-info">
-                      <span>影响工具: {{ summary.affectedTools.join(', ') }}</span>
-                      <span>影响服务器: {{ summary.affectedServers.join(', ') }}</span>
-                      <span>最近发生: {{ formatTime(summary.lastOccurrence) }}</span>
-                    </div>
-                  </div>
-
-                  <!-- 错误详情 -->
-                  <t-collapse-transition>
-                    <div v-show="showErrorDetails" class="error-examples">
-                      <h6>错误示例</h6>
-                      <div
-                        v-for="(example, exampleIndex) in summary.examples.slice(0, 3)"
-                        :key="exampleIndex"
-                        class="error-example"
-                      >
-                        <div class="example-header">
-                          <span class="example-tool">{{ example.toolName }}</span>
-                          <span class="example-time">{{ formatTime(example.timestamp) }}</span>
-                        </div>
-                        <div class="example-details">
-                          <t-collapse>
-                            <t-collapse-panel header="查看详情" value="details">
-                              <pre>{{ JSON.stringify(example.result, null, 2) }}</pre>
-                            </t-collapse-panel>
-                          </t-collapse>
-                        </div>
-                      </div>
-                    </div>
-                  </t-collapse-transition>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div v-else class="no-error-data">
-            <t-result
-              theme="success"
-              title="无错误记录"
-              description="系统运行正常，暂无错误记录"
-            />
-          </div>
-        </t-loading>
-      </div>
-    </t-card>
-
-    <!-- 实时日志 -->
-    <t-card title="实时日志" class="realtime-logs-card">
-      <template #actions>
-        <t-space>
-          <t-switch
-            v-model="autoRefresh"
-            @change="handleAutoRefreshChange"
-          >
-            <template #label>自动刷新</template>
-          </t-switch>
-          
-          <t-button
-            variant="text"
-            size="small"
-            @click="clearLogs"
-          >
-            清空日志
-          </t-button>
-        </t-space>
-      </template>
-
-      <div class="realtime-logs">
-        <div class="logs-container">
-          <div
-            v-for="(log, index) in realtimeLogs"
-            :key="index"
-            class="log-entry"
-            :class="`log-${log.level}`"
-          >
-            <div class="log-timestamp">{{ formatTime(log.timestamp) }}</div>
-            <div class="log-level">
-              <t-tag
-                :theme="getLogTheme(log.level)"
-                size="small"
-                variant="light"
-              >
-                {{ log.level.toUpperCase() }}
-              </t-tag>
-            </div>
-            <div class="log-message">{{ log.message }}</div>
-          </div>
-        </div>
-        
-        <div v-if="realtimeLogs.length === 0" class="no-logs">
-          <t-empty description="暂无日志记录" />
-        </div>
-      </div>
-    </t-card>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import {
   ApiIcon,
   CheckCircleIcon,
   CloseCircleIcon,
   ServerIcon,
-  ChevronDownIcon,
 } from 'tdesign-icons-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next';
 import { useToolStore } from '@/stores/tool';
 import StatusTag from '@/components/common/StatusTag.vue';
-import type { ToolMonitoring, ToolPerformance, ToolErrorResponse } from '@/types/tool';
+import type { ToolMonitoring, ToolPerformance } from '@/types/tool';
 
 // Store
 const toolStore = useToolStore();
@@ -517,230 +182,127 @@ const toolStore = useToolStore();
 // 响应式数据
 const monitoringData = ref<ToolMonitoring | null>(null);
 const performanceData = ref<ToolPerformance | null>(null);
-const errorData = ref<ToolErrorResponse | null>(null);
-const availabilityChartData = ref<any[]>([]);
 const realtimeLogs = ref<Array<{
   timestamp: string;
   level: 'info' | 'warn' | 'error' | 'debug';
   message: string;
 }>>([]);
 
-const loading = ref(false);
-const performanceLoading = ref(false);
-const errorLoading = ref(false);
-const timeRange = ref('1h');
 const performanceTimeRange = ref('1h');
 const showServerDetails = ref(false);
-const showErrorDetails = ref(false);
 const autoRefresh = ref(true);
+const loading = ref(false);
 
 // 自动刷新定时器
 let refreshTimer: NodeJS.Timeout | null = null;
 
-// 计算属性
-const averageAvailability = computed(() => {
-  if (!availabilityChartData.value.length) return 0;
-  const sum = availabilityChartData.value.reduce((acc, item) => acc + item.availability, 0);
-  return (sum / availabilityChartData.value.length).toFixed(1);
+// 计算属性：处理服务器列表
+const serversList = computed(() => {
+  if (!monitoringData.value?.toolsByServer) {
+    return [];
+  }
+
+  return Object.entries(monitoringData.value.toolsByServer)
+    .map(([serverId, serverData]) => {
+      const toolCount = serverData.tools?.length || 0;
+      const status = serverData.serverStatus || 'disconnected';
+      const statusText = status === 'connected' ? '已连接'
+                   : status === 'connecting' ? '连接中'
+                   : status === 'disconnected' ? '未连接'
+                   : '';
+
+      return {
+        id: serverId,
+        name: serverData.serverId || serverId,
+        status: status,
+        statusText: statusText,
+        toolCount: toolCount,
+        tools: serverData.tools || [],
+      };
+    })
+    .filter(server => server.toolCount > 0 || server.status === 'connected');
 });
 
-const maxAvailability = computed(() => {
-  if (!availabilityChartData.value.length) return 0;
-  return Math.max(...availabilityChartData.value.map(item => item.availability)).toFixed(1);
+// 初始化
+onMounted(async () => {
+  await refreshMonitoringData();
+  await refreshPerformanceData();
+  startAutoRefresh();
 });
 
-const minAvailability = computed(() => {
-  if (!availabilityChartData.value.length) return 0;
-  return Math.min(...availabilityChartData.value.map(item => item.availability)).toFixed(1);
+onUnmounted(() => {
+  stopAutoRefresh();
 });
 
-// 表格列配置
-const timeSeriesColumns = [
-  {
-    colKey: 'timestamp',
-    title: '时间',
-    width: 160,
-    cell: (h: any, { row }: any) => formatTime(row.timestamp),
-  },
-  {
-    colKey: 'executions',
-    title: '执行次数',
-    width: 100,
-  },
-  {
-    colKey: 'errors',
-    title: '错误次数',
-    width: 100,
-  },
-  {
-    colKey: 'averageTime',
-    title: '平均时间(ms)',
-    width: 120,
-  },
-  {
-    colKey: 'errorRate',
-    title: '错误率(%)',
-    width: 100,
-    cell: (h: any, { row }: any) => `${row.errorRate.toFixed(1)}%`,
-  },
-];
-
-// 方法
-const loadMonitoringData = async () => {
+// 刷新监控数据
+const refreshMonitoringData = async () => {
   try {
     loading.value = true;
     const data = await toolStore.fetchMonitoring();
     monitoringData.value = data;
+    console.log('监控数据:', data); // 调试日志
+    addLog('info', '监控数据已刷新');
   } catch (err) {
-    MessagePlugin.error('加载监控数据失败');
+    console.error('获取监控数据失败:', err); // 调试日志
+    addLog('error', '获取监控数据失败');
+    MessagePlugin.error('获取监控数据失败');
   } finally {
     loading.value = false;
   }
 };
 
-const loadPerformanceData = async () => {
+// 刷新性能数据
+const refreshPerformanceData = async () => {
   try {
-    performanceLoading.value = true;
     const data = await toolStore.fetchPerformance(performanceTimeRange.value);
     performanceData.value = data;
   } catch (err) {
-    MessagePlugin.error('加载性能数据失败');
-  } finally {
-    performanceLoading.value = false;
+    addLog('error', '获取性能数据失败');
   }
 };
 
-const loadErrorData = async () => {
-  try {
-    errorLoading.value = true;
-    const data = await toolStore.getToolErrors({
-      limit: 100,
-    });
-    errorData.value = data;
-  } catch (err) {
-    MessagePlugin.error('加载错误数据失败');
-  } finally {
-    errorLoading.value = false;
-  }
-};
-
-const loadAvailabilityData = () => {
-  // 模拟可用性数据
-  const now = Date.now();
-  const interval = timeRange.value === '1h' ? 5 * 60 * 1000 : 
-                   timeRange.value === '6h' ? 30 * 60 * 1000 :
-                   timeRange.value === '24h' ? 2 * 60 * 60 * 1000 :
-                   24 * 60 * 60 * 1000;
-  
-  const points = timeRange.value === '1h' ? 12 : 
-                 timeRange.value === '6h' ? 12 :
-                 timeRange.value === '24h' ? 12 : 7;
-
-  availabilityChartData.value = Array.from({ length: points }, (_, i) => ({
-    timestamp: new Date(now - (points - 1 - i) * interval).toISOString(),
-    availability: 85 + Math.random() * 15, // 85-100% 可用性
-  }));
-};
-
-const getServerActions = (serverId: string) => [
-  { content: '查看详情', value: `detail-${serverId}` },
-  { content: '重启连接', value: `restart-${serverId}` },
-  { content: '查看日志', value: `logs-${serverId}` },
-];
-
-const handleServerAction = (option: any) => {
-  const [action, serverId] = option.value.split('-');
-  
-  switch (action) {
-    case 'detail':
-      // 跳转到服务器详情页
-      MessagePlugin.info(`查看服务器 ${serverId} 详情`);
-      break;
-    case 'restart':
-      // 重启服务器连接
-      MessagePlugin.info(`重启服务器 ${serverId} 连接`);
-      break;
-    case 'logs':
-      // 查看服务器日志
-      MessagePlugin.info(`查看服务器 ${serverId} 日志`);
-      break;
-  }
-};
-
-const getServerResponseTime = (serverId: string): number => {
-  // 模拟服务器响应时间
-  return Math.floor(Math.random() * 200) + 50;
-};
-
-const getAffectedToolsCount = (): number => {
-  if (!errorData.value) return 0;
-  
-  const tools = new Set<string>();
-  errorData.value.errorSummary.forEach(summary => {
-    summary.affectedTools.forEach(tool => tools.add(tool));
-  });
-  
-  return tools.size;
-};
-
-const getLogTheme = (level: string) => {
-  switch (level) {
-    case 'error':
-      return 'danger';
-    case 'warn':
-      return 'warning';
-    case 'info':
-      return 'primary';
-    case 'debug':
-      return 'default';
-    default:
-      return 'default';
-  }
-};
-
-const handleTimeRangeChange = () => {
-  loadAvailabilityData();
-};
-
-const handlePerformanceTimeRangeChange = () => {
-  loadPerformanceData();
-};
-
-const refreshAvailabilityData = () => {
-  loadAvailabilityData();
-  MessagePlugin.success('可用性数据已刷新');
-};
-
-const refreshServerStatus = () => {
-  loadMonitoringData();
+// 刷新服务器状态
+const refreshServerStatus = async () => {
+  await refreshMonitoringData();
   MessagePlugin.success('服务器状态已刷新');
 };
 
-const refreshPerformanceData = () => {
-  loadPerformanceData();
+// 格式化时间（短格式）
+const formatTimeShort = (timestamp: string): string => {
+  const date = new Date(timestamp);
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const seconds = date.getSeconds().toString().padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
 };
 
-const refreshErrorData = () => {
-  loadErrorData();
-};
+// 添加日志
+const addLog = (level: 'info' | 'warn' | 'error' | 'debug', message: string) => {
+  realtimeLogs.value.unshift({
+    timestamp: new Date().toISOString(),
+    level,
+    message,
+  });
 
-const handleAutoRefreshChange = (enabled: boolean) => {
-  if (enabled) {
-    startAutoRefresh();
-  } else {
-    stopAutoRefresh();
+  // 保持最多50条日志
+  if (realtimeLogs.value.length > 50) {
+    realtimeLogs.value = realtimeLogs.value.slice(0, 50);
   }
 };
 
+// 清空日志
+const clearLogs = () => {
+  realtimeLogs.value = [];
+  MessagePlugin.success('日志已清空');
+};
+
+// 自动刷新
 const startAutoRefresh = () => {
-  if (refreshTimer) return;
-  
-  refreshTimer = setInterval(() => {
-    loadMonitoringData();
-    loadPerformanceData();
-    loadErrorData();
-    addRealtimeLog();
-  }, 30000); // 30秒刷新一次
+  if (!autoRefresh.value) return;
+
+  refreshTimer = setInterval(async () => {
+    await refreshMonitoringData();
+  }, 30000); // 每30秒刷新一次
 };
 
 const stopAutoRefresh = () => {
@@ -750,124 +312,377 @@ const stopAutoRefresh = () => {
   }
 };
 
-const addRealtimeLog = () => {
-  const levels = ['info', 'warn', 'error', 'debug'] as const;
-  const messages = [
-    '工具执行成功',
-    '服务器连接正常',
-    '检测到性能异常',
-    '工具执行失败',
-    '服务器重新连接',
-    '缓存已清理',
-  ];
-
-  const log = {
-    timestamp: new Date().toISOString(),
-    level: levels[Math.floor(Math.random() * levels.length)],
-    message: messages[Math.floor(Math.random() * messages.length)],
-  };
-
-  realtimeLogs.value.unshift(log);
-  
-  // 限制日志数量
-  if (realtimeLogs.value.length > 100) {
-    realtimeLogs.value = realtimeLogs.value.slice(0, 100);
-  }
-};
-
-const clearLogs = () => {
-  realtimeLogs.value = [];
-  MessagePlugin.success('日志已清空');
-};
-
-const formatTime = (timestamp: string) => {
-  return new Date(timestamp).toLocaleString('zh-CN');
-};
-
-// 组件挂载时加载数据
-onMounted(async () => {
-  await Promise.all([
-    loadMonitoringData(),
-    loadPerformanceData(),
-    loadErrorData(),
-  ]);
-  
-  loadAvailabilityData();
-  
-  if (autoRefresh.value) {
+// 监听自动刷新开关变化
+const handleAutoRefreshChange = (value: boolean) => {
+  if (value) {
     startAutoRefresh();
+    addLog('info', '自动刷新已开启');
+  } else {
+    stopAutoRefresh();
+    addLog('info', '自动刷新已关闭');
   }
-  
-  // 添加一些初始日志
-  for (let i = 0; i < 5; i++) {
-    addRealtimeLog();
-  }
+};
+
+// 监听性能时间范围变化
+const handlePerformanceTimeRangeChange = async () => {
+  await refreshPerformanceData();
+  addLog('info', `性能时间范围已更新为 ${performanceTimeRange.value}`);
+};
+
+// 监听自动刷新开关变化
+watch(autoRefresh, (newValue) => {
+  handleAutoRefreshChange(newValue);
 });
 
-// 组件卸载时清理定时器
-onUnmounted(() => {
-  stopAutoRefresh();
+// 监听性能时间范围变化
+watch(performanceTimeRange, () => {
+  handlePerformanceTimeRangeChange();
 });
 </script>
 
 <style scoped>
 .tool-monitoring {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   padding: 16px;
+  background: var(--td-bg-color-container);
+  min-height: 100%;
+  border-radius: var(--td-radius-default);
+}
+
+/* 顶部统计卡片 */
+.monitoring-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 16px;
+  background: var(--td-bg-color-page);
+  border-radius: var(--td-radius-large);
+  border: 1px solid var(--td-border-level-1-color);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--td-bg-color-container);
+  border-radius: var(--td-radius-default);
+  transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+  background: var(--td-bg-color-container-hover);
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--td-radius-default);
+  background: var(--td-brand-color-1);
+  color: var(--td-brand-color);
+  flex-shrink: 0;
+}
+
+.stat-item.stat-success .stat-icon {
+  background: var(--td-success-color-1);
+  color: var(--td-success-color);
+}
+
+.stat-item.stat-error .stat-icon {
+  background: var(--td-error-color-1);
+  color: var(--td-error-color);
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--td-text-color-secondary);
+  line-height: 1.2;
+}
+
+/* 主内容区域 */
+.monitoring-content {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 16px;
+  align-items: start;
+}
+
+.monitoring-main {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.monitoring-overview {
-  margin-bottom: 16px;
-}
-
-.overview-card {
-  height: 100px;
-}
-
-.overview-item {
+.monitoring-sidebar {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 服务器状态卡片 */
+.server-status-card {
   height: 100%;
 }
 
-.overview-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: var(--td-bg-color-container-hover);
-}
-
-.overview-icon.success {
-  background: var(--td-success-color-1);
-  color: var(--td-success-color);
-}
-
-.overview-icon.error {
-  background: var(--td-error-color-1);
-  color: var(--td-error-color);
-}
-
-.overview-content {
-  flex: 1;
-}
-
-.overview-value {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.overview-label {
+.action-label {
   font-size: 12px;
   color: var(--td-text-color-secondary);
 }
 
+.server-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.server-item {
+  padding: 12px;
+  background: var(--td-bg-color-container);
+  border: 1px solid var(--td-border-level-1-color);
+  border-radius: var(--td-radius-default);
+  border-left: 3px solid var(--td-brand-color);
+  transition: all 0.2s ease;
+}
+
+.server-item.server-connected {
+  border-left-color: var(--td-success-color);
+}
+
+.server-item.server-disconnected {
+  border-left-color: var(--td-error-color);
+}
+
+.server-item.server-connecting {
+  border-left-color: var(--td-warning-color);
+}
+
+.server-item:hover {
+  background: var(--td-bg-color-container-hover);
+  border-color: var(--td-brand-color);
+}
+
+.server-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.server-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.server-name {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: var(--td-text-color-primary);
+}
+
+.server-meta {
+  font-size: 12px;
+  color: var(--td-text-color-secondary);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.server-meta .separator {
+  opacity: 0.5;
+}
+
+.server-tools {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--td-border-level-1-color);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.server-tool-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--td-radius-small);
+  font-size: 12px;
+  transition: background 0.2s ease;
+}
+
+.server-tool-item:hover {
+  background: var(--td-bg-color-container-hover);
+}
+
+.tool-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--td-success-color);
+  flex-shrink: 0;
+}
+
+.server-tool-item.tool-unavailable .tool-dot {
+  background: var(--td-error-color);
+}
+
+.tool-name {
+  flex: 1;
+  color: var(--td-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 性能指标卡片 */
+.performance-card {
+  margin-bottom: 0;
+}
+
+.performance-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--td-border-level-2-color);
+}
+
+.metric-row:last-child {
+  border-bottom: none;
+}
+
+.metric-label {
+  font-size: 13px;
+  color: var(--td-text-color-secondary);
+}
+
+.metric-value {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--td-text-color-primary);
+}
+
+.metric-value.text-success {
+  color: var(--td-success-color);
+}
+
+.metric-value.text-error {
+  color: var(--td-error-color);
+}
+
+/* 日志卡片 */
+.logs-card {
+  margin-bottom: 0;
+}
+
+.logs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.log-item {
+  display: flex;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--td-radius-small);
+  font-size: 12px;
+  line-height: 1.5;
+  background: var(--td-bg-color-container);
+  transition: background 0.2s ease;
+}
+
+.log-item:hover {
+  background: var(--td-bg-color-container-hover);
+}
+
+.log-item.log-error {
+  background: var(--td-error-color-1);
+}
+
+.log-item.log-warn {
+  background: var(--td-warning-color-1);
+}
+
+.log-time {
+  color: var(--td-text-color-secondary);
+  flex-shrink: 0;
+  font-family: monospace;
+}
+
+.log-message {
+  flex: 1;
+  color: var(--td-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 空状态 */
+.empty-state {
+  padding: 32px 16px;
+  text-align: center;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .monitoring-content {
+    grid-template-columns: 1fr;
+  }
+
+  .monitoring-sidebar {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .tool-monitoring {
+    padding: 12px;
+  }
+
+  .monitoring-stats {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 12px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* 文本颜色 */
 .text-success {
   color: var(--td-success-color);
 }
@@ -876,356 +691,7 @@ onUnmounted(() => {
   color: var(--td-error-color);
 }
 
-.availability-chart-card,
-.server-monitoring-card,
-.performance-metrics-card,
-.error-monitoring-card,
-.realtime-logs-card {
-  margin-bottom: 16px;
-}
-
-.chart-container,
-.chart-placeholder {
-  padding: 16px;
-  min-height: 200px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.chart-info {
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-.chart-title {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
-.chart-subtitle {
-  font-size: 12px;
-  color: var(--td-text-color-secondary);
-}
-
-.availability-metrics {
-  width: 100%;
-}
-
-.metric-card {
-  text-align: center;
-  padding: 16px;
-  background: var(--td-bg-color-container-hover);
-  border-radius: var(--td-radius-default);
-}
-
-.metric-title {
-  font-size: 12px;
-  color: var(--td-text-color-secondary);
-  margin-bottom: 8px;
-}
-
-.metric-value {
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.no-chart-data {
-  padding: 32px;
-  text-align: center;
-}
-
-.server-monitoring {
-  margin-top: 16px;
-}
-
-.server-card {
-  margin-bottom: 16px;
-  border-left-width: 4px;
-  border-left-style: solid;
-}
-
-.server-card.server-connected {
-  border-left-color: var(--td-success-color);
-}
-
-.server-card.server-disconnected {
-  border-left-color: var(--td-error-color);
-}
-
-.server-card.server-connecting {
-  border-left-color: var(--td-warning-color);
-}
-
-.server-info {
-  padding: 8px 0;
-}
-
-.server-stats {
-  margin-bottom: 16px;
-}
-
-.server-tools h5 {
-  margin-bottom: 12px;
-  font-size: 14px;
-}
-
-.tools-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 8px;
-}
-
-.tool-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  border: 1px solid var(--td-border-level-1-color);
-  border-radius: var(--td-radius-small);
-  background: var(--td-bg-color-container-hover);
-}
-
-.tool-item.tool-available {
-  border-left: 3px solid var(--td-success-color);
-}
-
-.tool-item.tool-unavailable {
-  border-left: 3px solid var(--td-error-color);
-}
-
-.tool-name {
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.performance-metrics {
-  margin-top: 16px;
-}
-
-.metrics-content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.performance-overview {
-  margin-bottom: 24px;
-}
-
-.performance-card {
-  text-align: center;
-  padding: 16px;
-  background: var(--td-bg-color-container-hover);
-  border-radius: var(--td-radius-default);
-}
-
-.performance-title {
-  font-size: 12px;
-  color: var(--td-text-color-secondary);
-  margin-bottom: 8px;
-}
-
-.performance-value {
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.response-time-distribution h5,
-.time-series-chart h5 {
-  margin-bottom: 16px;
-  font-size: 14px;
-}
-
-.percentile-card {
-  text-align: center;
-  padding: 12px;
-  background: var(--td-bg-color-container-hover);
-  border-radius: var(--td-radius-default);
-}
-
-.percentile-label {
-  font-size: 12px;
-  color: var(--td-text-color-secondary);
-  margin-bottom: 4px;
-}
-
-.percentile-value {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.time-series-data {
-  width: 100%;
-}
-
-.no-performance-data {
-  padding: 32px;
-  text-align: center;
-}
-
-.error-monitoring {
-  margin-top: 16px;
-}
-
-.error-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.error-overview {
-  margin-bottom: 16px;
-}
-
-.error-stats {
-  display: flex;
-  gap: 24px;
-  font-size: 14px;
-}
-
-.error-summary h5 {
-  margin-bottom: 16px;
-  font-size: 14px;
-}
-
-.error-categories {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.error-category {
-  padding: 16px;
-  border: 1px solid var(--td-border-level-1-color);
-  border-radius: var(--td-radius-default);
-  background: var(--td-bg-color-container-hover);
-}
-
-.category-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.category-title {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.category-info {
-  margin-bottom: 12px;
-}
-
-.affected-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--td-text-color-secondary);
-}
-
-.error-examples h6 {
-  margin-bottom: 12px;
-  font-size: 12px;
-}
-
-.error-example {
-  margin-bottom: 8px;
-  padding: 8px;
-  background: var(--td-bg-color-container);
-  border-radius: var(--td-radius-small);
-}
-
-.example-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.example-tool {
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.example-time {
-  font-size: 11px;
-  color: var(--td-text-color-secondary);
-}
-
-.example-details pre {
-  margin: 0;
-  font-size: 11px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-}
-
-.no-error-data {
-  padding: 32px;
-  text-align: center;
-}
-
-.realtime-logs {
-  margin-top: 16px;
-}
-
-.logs-container {
-  max-height: 400px;
-  overflow-y: auto;
-  border: 1px solid var(--td-border-level-1-color);
-  border-radius: var(--td-radius-default);
-  background: var(--td-bg-color-container);
-}
-
-.log-entry {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--td-border-level-1-color);
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 12px;
-}
-
-.log-entry:last-child {
-  border-bottom: none;
-}
-
-.log-entry.log-error {
-  background: var(--td-error-color-1);
-}
-
-.log-entry.log-warn {
-  background: var(--td-warning-color-1);
-}
-
-.log-timestamp {
-  color: var(--td-text-color-secondary);
-  white-space: nowrap;
-}
-
-.log-level {
-  white-space: nowrap;
-}
-
-.log-message {
-  flex: 1;
-}
-
-.no-logs {
-  padding: 32px;
-  text-align: center;
-}
-
-:deep(.t-descriptions-item__label) {
-  font-size: 12px;
-  color: var(--td-text-color-secondary);
-}
-
-:deep(.t-descriptions-item__content) {
-  font-size: 12px;
+.text-warning {
+  color: var(--td-warning-color);
 }
 </style>

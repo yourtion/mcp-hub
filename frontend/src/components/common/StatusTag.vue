@@ -1,21 +1,21 @@
 <template>
-  <t-tag 
-    :theme="tagTheme" 
+  <t-tag
+    :theme="tagTheme"
     :variant="variant"
-    :icon="icon"
     :class="['status-tag', `status-tag--${status}`]"
   >
+    <component :is="icon" size="14px" />
     {{ text }}
   </t-tag>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { 
-  CheckCircleIcon, 
-  CloseCircleIcon, 
-  LoadingIcon, 
-  ErrorCircleIcon 
+import { computed, markRaw } from 'vue';
+import {
+  CheckCircleIcon,
+  CloseCircleIcon,
+  LoadingIcon,
+  ErrorCircleIcon
 } from 'tdesign-icons-vue-next';
 import type { ServerStatus } from '@/types/server';
 
@@ -34,22 +34,22 @@ const statusConfig = {
   connected: {
     theme: 'success' as const,
     text: '已连接',
-    icon: CheckCircleIcon,
+    icon: markRaw(CheckCircleIcon),
   },
   disconnected: {
     theme: 'default' as const,
     text: '未连接',
-    icon: CloseCircleIcon,
+    icon: markRaw(CloseCircleIcon),
   },
   connecting: {
     theme: 'warning' as const,
     text: '连接中',
-    icon: LoadingIcon,
+    icon: markRaw(LoadingIcon),
   },
   error: {
     theme: 'danger' as const,
     text: '错误',
-    icon: ErrorCircleIcon,
+    icon: markRaw(ErrorCircleIcon),
   },
 };
 

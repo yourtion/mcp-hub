@@ -1,21 +1,21 @@
 <template>
-  <t-tag 
-    :theme="tagTheme" 
+  <t-tag
+    :theme="tagTheme"
     :variant="variant"
-    :icon="icon"
     :class="['group-status-tag', `group-status-tag--${status}`]"
   >
+    <component :is="icon" size="14px" />
     {{ text }}
   </t-tag>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { 
-  CheckCircleFilledIcon, 
-  CloseCircleFilledIcon, 
+import { computed, markRaw } from 'vue';
+import {
+  CheckCircleFilledIcon,
+  CloseCircleFilledIcon,
   InfoCircleFilledIcon,
-  ErrorCircleFilledIcon 
+  ErrorCircleFilledIcon
 } from 'tdesign-icons-vue-next';
 
 interface Props {
@@ -32,17 +32,17 @@ const statusConfig = {
   healthy: {
     theme: 'success' as const,
     text: '健康',
-    icon: CheckCircleFilledIcon,
+    icon: markRaw(CheckCircleFilledIcon),
   },
   partial: {
     theme: 'warning' as const,
     text: '部分健康',
-    icon: InfoCircleFilledIcon,
+    icon: markRaw(InfoCircleFilledIcon),
   },
   unhealthy: {
     theme: 'danger' as const,
     text: '不健康',
-    icon: ErrorCircleFilledIcon,
+    icon: markRaw(ErrorCircleFilledIcon),
   },
 };
 

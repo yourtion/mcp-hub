@@ -285,25 +285,25 @@ const statsCards = computed(() => [
     key: 'total',
     label: '总服务器',
     value: summary.value.total,
-    icon: ServerIcon,
+    icon: markRaw(ServerIcon),
   },
   {
     key: 'connected',
     label: '已连接',
     value: summary.value.connected,
-    icon: CheckCircleIcon,
+    icon: markRaw(CheckCircleIcon),
   },
   {
     key: 'disconnected',
     label: '未连接',
     value: summary.value.disconnected,
-    icon: CloseCircleIcon,
+    icon: markRaw(CloseCircleIcon),
   },
   {
     key: 'error',
     label: '错误',
     value: summary.value.error,
-    icon: ErrorCircleIcon,
+    icon: markRaw(ErrorCircleIcon),
   },
 ]);
 

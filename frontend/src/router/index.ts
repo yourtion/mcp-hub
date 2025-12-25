@@ -42,6 +42,33 @@ const router = createRouter({
       },
     },
     {
+      path: '/tools/:toolName/detail',
+      name: 'ToolDetail',
+      component: () => import('@/views/ToolDetail.vue'),
+      meta: {
+        requiresAuth: true,
+        title: '工具详情',
+      },
+    },
+    {
+      path: '/tools/:toolName/test',
+      name: 'ToolTest',
+      component: () => import('@/views/ToolTest.vue'),
+      meta: {
+        requiresAuth: true,
+        title: '工具测试',
+      },
+    },
+    {
+      path: '/tools/:toolName/execute',
+      name: 'ToolExecute',
+      component: () => import('@/views/ToolExecute.vue'),
+      meta: {
+        requiresAuth: true,
+        title: '工具执行',
+      },
+    },
+    {
       path: '/groups',
       name: 'Groups',
       component: () => import('@/views/Groups.vue'),

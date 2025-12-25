@@ -146,50 +146,76 @@ const refreshHealth = () => {
 <style scoped>
 .health-card {
   height: 100%;
+  border: 1px solid var(--td-border-level-1-color);
+  transition: all 0.3s ease;
+}
+
+.health-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .health-loading {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 32px;
+  gap: 12px;
+  padding: 40px;
   color: var(--td-text-color-secondary);
+  font-size: 15px;
 }
 
 .health-content {
-  padding: 8px 0;
+  padding: 12px 0;
 }
 
 .health-status {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--td-bg-color-container-hover) 0%, var(--td-bg-color-page) 100%);
+  border-radius: 10px;
+  border: 1px solid var(--td-border-level-1-color);
+  transition: all 0.3s ease;
+}
+
+.health-status:hover {
+  border-color: var(--status-color);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 .status-indicator {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.health-status:hover .status-indicator {
+  transform: scale(1.1);
 }
 
 .status--healthy {
-  background-color: rgba(103, 194, 58, 0.1);
+  background: linear-gradient(135deg, rgba(103, 194, 58, 0.15) 0%, rgba(103, 194, 58, 0.08) 100%);
   color: #67c23a;
+  --status-color: #67c23a;
 }
 
 .status--warning {
-  background-color: rgba(255, 159, 64, 0.1);
+  background: linear-gradient(135deg, rgba(255, 159, 64, 0.15) 0%, rgba(255, 159, 64, 0.08) 100%);
   color: #ff9f40;
+  --status-color: #ff9f40;
 }
 
 .status--error {
-  background-color: rgba(245, 108, 108, 0.1);
+  background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.08) 100%);
   color: #f56c6c;
+  --status-color: #f56c6c;
 }
 
 .status-info {
@@ -197,44 +223,73 @@ const refreshHealth = () => {
 }
 
 .status-text {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 600;
   color: var(--td-text-color-primary);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .status-time {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--td-text-color-placeholder);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-time::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--status-color);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
 }
 
 .health-issues {
-  margin-top: 16px;
-  padding: 12px;
-  background-color: rgba(245, 108, 108, 0.05);
-  border-radius: 6px;
-  border-left: 3px solid #f56c6c;
+  margin-top: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(245, 108, 108, 0.08) 0%, rgba(245, 108, 108, 0.03) 100%);
+  border-radius: 10px;
+  border-left: 4px solid #f56c6c;
+  transition: all 0.3s ease;
+}
+
+.health-issues:hover {
+  box-shadow: 0 2px 12px rgba(245, 108, 108, 0.15);
 }
 
 .issues-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
   color: #f56c6c;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .issues-list {
   margin: 0;
-  padding-left: 16px;
+  padding-left: 20px;
 }
 
 .issue-item {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--td-text-color-secondary);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  line-height: 1.6;
 }
 
 .issue-item:last-child {
@@ -244,27 +299,56 @@ const refreshHealth = () => {
 .health-metrics {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--td-bg-color-container-hover) 0%, var(--td-bg-color-page) 100%);
+  border-radius: 10px;
+  border: 1px solid var(--td-border-level-1-color);
 }
 
 .metric-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 14px;
   color: var(--td-text-color-secondary);
+  font-weight: 500;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.metric-item:hover {
+  background-color: var(--td-bg-color-container);
+  transform: translateX(4px);
 }
 
 .metric-icon.success {
   color: #67c23a;
+  flex-shrink: 0;
 }
 
 .health-error {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 32px;
+  gap: 12px;
+  padding: 40px;
   color: var(--td-text-color-placeholder);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .health-status {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .status-indicator {
+    width: 56px;
+    height: 56px;
+  }
 }
 </style>

@@ -1,6 +1,13 @@
 /* 导入主题样式 */
 @import './styles/theme.css';
 
+/* 禁用 TDesign CDN 字体加载（项目已使用 tdesign-icons-vue-next 组件） */
+@font-face {
+  font-family: 'TDesign Icon';
+  src: local('TDesign Icon'), local('TDesign-Icon');
+  font-display: swap;
+}
+
 /* 全局样式 */
 body {
   margin: 0;

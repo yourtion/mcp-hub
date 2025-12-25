@@ -61,6 +61,7 @@ export interface GroupToolInfo {
   description?: string;
   serverId: string;
   inputSchema?: Record<string, unknown>;
+  status?: 'available' | 'unavailable';
 }
 
 /**

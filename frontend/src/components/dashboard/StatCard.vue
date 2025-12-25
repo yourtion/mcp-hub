@@ -89,33 +89,63 @@ const { color, label, trend } = props.data;
 
 <style scoped>
 .stat-card {
-  border: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  border: 1px solid var(--td-border-level-1-color);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--card-gradient-1) 0%, var(--card-gradient-2) 100%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
 }
 
 .stat-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px) scale(1.02);
+  border-color: var(--icon-color);
+}
+
+.stat-card:hover::before {
+  opacity: 0.05;
 }
 
 .stat-card__content {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 8px;
+  gap: 18px;
+  padding: 10px;
+  position: relative;
+  z-index: 1;
 }
 
 .stat-card__icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  background-color: var(--icon-bg-color);
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--icon-bg-color) 0%, var(--icon-bg-color-light, var(--icon-bg-color)) 100%);
   color: var(--icon-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.35s ease;
+  position: relative;
+}
+
+.stat-card:hover .stat-card__icon {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .stat-card__info {
@@ -123,63 +153,115 @@ const { color, label, trend } = props.data;
 }
 
 .stat-card__value {
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 700;
   line-height: 1.2;
   color: var(--td-text-color-primary);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover .stat-card__value {
+  transform: translateX(4px);
 }
 
 .stat-card__label {
   font-size: 14px;
   color: var(--td-text-color-secondary);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-weight: 500;
 }
 
 .stat-card__trend {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background-color: var(--trend-bg-color, transparent);
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover .stat-card__trend {
+  transform: scale(1.05);
 }
 
 /* 颜色主题 */
 .stat-card--blue {
-  --icon-bg-color: rgba(64, 158, 255, 0.1);
   --icon-color: #409eff;
+  --icon-bg-color: rgba(64, 158, 255, 0.12);
+  --icon-bg-color-light: rgba(64, 158, 255, 0.18);
+  --card-gradient-1: rgba(64, 158, 255, 0.1);
+  --card-gradient-2: rgba(64, 158, 255, 0.02);
 }
 
 .stat-card--green {
-  --icon-bg-color: rgba(103, 194, 58, 0.1);
   --icon-color: #67c23a;
+  --icon-bg-color: rgba(103, 194, 58, 0.12);
+  --icon-bg-color-light: rgba(103, 194, 58, 0.18);
+  --card-gradient-1: rgba(103, 194, 58, 0.1);
+  --card-gradient-2: rgba(103, 194, 58, 0.02);
 }
 
 .stat-card--purple {
-  --icon-bg-color: rgba(180, 83, 245, 0.1);
   --icon-color: #b453f5;
+  --icon-bg-color: rgba(180, 83, 245, 0.12);
+  --icon-bg-color-light: rgba(180, 83, 245, 0.18);
+  --card-gradient-1: rgba(180, 83, 245, 0.1);
+  --card-gradient-2: rgba(180, 83, 245, 0.02);
 }
 
 .stat-card--orange {
-  --icon-bg-color: rgba(255, 159, 64, 0.1);
   --icon-color: #ff9f40;
+  --icon-bg-color: rgba(255, 159, 64, 0.12);
+  --icon-bg-color-light: rgba(255, 159, 64, 0.18);
+  --card-gradient-1: rgba(255, 159, 64, 0.1);
+  --card-gradient-2: rgba(255, 159, 64, 0.02);
 }
 
 .stat-card--red {
-  --icon-bg-color: rgba(245, 108, 108, 0.1);
   --icon-color: #f56c6c;
+  --icon-bg-color: rgba(245, 108, 108, 0.12);
+  --icon-bg-color-light: rgba(245, 108, 108, 0.18);
+  --card-gradient-1: rgba(245, 108, 108, 0.1);
+  --card-gradient-2: rgba(245, 108, 108, 0.02);
 }
 
 /* 趋势颜色 */
 .trend--up {
   color: #67c23a;
+  --trend-bg-color: rgba(103, 194, 58, 0.1);
 }
 
 .trend--down {
   color: #f56c6c;
+  --trend-bg-color: rgba(245, 108, 108, 0.1);
 }
 
 .trend--stable {
   color: #909399;
+  --trend-bg-color: rgba(144, 147, 153, 0.1);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .stat-card__content {
+    gap: 14px;
+  }
+
+  .stat-card__icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .stat-card__value {
+    font-size: 24px;
+  }
+
+  .stat-card__label {
+    font-size: 13px;
+  }
 }
 </style>

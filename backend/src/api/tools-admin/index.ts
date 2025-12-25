@@ -176,7 +176,7 @@ toolsAdminApi.get('/monitoring', async (c) => {
     // 获取服务器健康状态
     const serverHealth = service.getServerHealth();
 
-    // 按服务器分组工具并计算状态
+    // 按服务器分组工具
     const toolsByServer = new Map<
       string,
       {
@@ -185,11 +185,9 @@ toolsAdminApi.get('/monitoring', async (c) => {
         tools: Array<{
           name: string;
           description?: string;
-          isAvailable: boolean;
-          lastExecution?: string;
-          executionCount: number;
-          errorCount: number;
-          averageExecutionTime: number;
+          serverId: string;
+          inputSchema: Record<string, unknown>;
+          status: 'available' | 'unavailable';
         }>;
       }
     >();
@@ -205,42 +203,17 @@ toolsAdminApi.get('/monitoring', async (c) => {
       }
     });
 
-    // 计算每个工具的监控信息
+    // 添加工具信息（使用标准 ToolInfo 格式）
     allTools.forEach((tool) => {
       const serverGroup = toolsByServer.get(tool.serverId);
       if (!serverGroup) return;
 
-      // 从执行历史中获取工具统计信息
-      const toolExecutions = executionHistory.filter(
-        (record) =>
-          record.toolName === tool.name && record.serverId === tool.serverId,
-      );
-
-      const executionCount = toolExecutions.length;
-      const errorCount = toolExecutions.filter(
-        (record) => record.isError,
-      ).length;
-      const averageExecutionTime =
-        executionCount > 0
-          ? toolExecutions.reduce(
-              (sum, record) => sum + record.executionTime,
-              0,
-            ) / executionCount
-          : 0;
-
-      const lastExecution =
-        toolExecutions.length > 0
-          ? toolExecutions[0].timestamp // 最新的执行记录
-          : undefined;
-
       serverGroup.tools.push({
         name: tool.name,
         description: tool.description,
-        isAvailable: serverGroup.serverStatus === 'connected',
-        lastExecution,
-        executionCount,
-        errorCount,
-        averageExecutionTime: Math.round(averageExecutionTime),
+        serverId: tool.serverId,
+        inputSchema: tool.inputSchema,
+        status: serverGroup.serverStatus === 'connected' ? 'available' : 'unavailable',
       });
     });
 

@@ -244,7 +244,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted, onUnmounted, markRaw } from 'vue';
 import { MessagePlugin } from 'tdesign-vue-next';
 import { 
   AddIcon, 
@@ -332,25 +332,25 @@ const statsCards = computed(() => [
     key: 'total',
     value: groupStore.summary.totalGroups,
     label: '总组数',
-    icon: UsergroupFilledIcon,
+    icon: markRaw(UsergroupFilledIcon),
   },
   {
     key: 'healthy',
     value: groupStore.summary.healthyGroups,
     label: '健康组',
-    icon: HeartFilledIcon,
+    icon: markRaw(HeartFilledIcon),
   },
   {
     key: 'servers',
     value: groupStore.summary.totalServers,
     label: '服务器',
-    icon: RefreshIcon,
+    icon: markRaw(RefreshIcon),
   },
   {
     key: 'tools',
     value: groupStore.summary.totalTools,
     label: '工具总数',
-    icon: EditIcon,
+    icon: markRaw(EditIcon),
   },
 ]);
 

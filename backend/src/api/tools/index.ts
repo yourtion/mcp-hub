@@ -101,9 +101,20 @@ toolsApi.get('/', async (c) => {
       });
     }
 
+    // 获取服务器健康状态
+    const serverHealth = service.getServerHealth();
+
+    // 为工具添加状态信息
+    const toolsWithStatus = tools.map((tool) => ({
+      ...tool,
+      status: serverHealth.get(tool.serverId) === 'connected'
+        ? 'available' as const
+        : 'unavailable' as const,
+    }));
+
     // 按服务器分组工具
-    const toolsByServer = new Map<string, typeof tools>();
-    tools.forEach((tool) => {
+    const toolsByServer = new Map<string, typeof toolsWithStatus>();
+    toolsWithStatus.forEach((tool) => {
       if (!toolsByServer.has(tool.serverId)) {
         toolsByServer.set(tool.serverId, []);
       }
@@ -113,10 +124,11 @@ toolsApi.get('/', async (c) => {
     return c.json({
       success: true,
       data: {
-        tools: tools.map((tool) => ({
+        tools: toolsWithStatus.map((tool) => ({
           name: tool.name,
           description: tool.description,
           serverId: tool.serverId,
+          status: tool.status,
           inputSchema: tool.inputSchema,
         })),
         toolsByServer: Object.fromEntries(
@@ -125,11 +137,12 @@ toolsApi.get('/', async (c) => {
             serverTools.map((tool) => ({
               name: tool.name,
               description: tool.description,
+              status: tool.status,
               inputSchema: tool.inputSchema,
             })),
           ]),
         ),
-        total: tools.length,
+        total: toolsWithStatus.length,
         groupId,
         serverId: serverId || null,
       },
@@ -170,6 +183,12 @@ toolsApi.get('/server/:serverId', async (c) => {
       );
     }
 
+    // 为工具添加状态信息
+    const toolsWithStatus = tools.map((tool) => ({
+      ...tool,
+      status: serverStatus === 'connected' ? 'available' as const : 'unavailable' as const,
+    }));
+
     logger.info('按服务器获取工具列表', {
       serverId,
       groupId,
@@ -183,9 +202,10 @@ toolsApi.get('/server/:serverId', async (c) => {
         serverId,
         serverStatus,
         groupId,
-        tools: tools.map((tool) => ({
+        tools: toolsWithStatus.map((tool) => ({
           name: tool.name,
           description: tool.description,
+          status: tool.status,
           inputSchema: tool.inputSchema,
         })),
         total: tools.length,
