@@ -104,6 +104,13 @@
           </div>
         </template>
 
+        <!-- 服务器数量列 -->
+        <template #serverCount="{ row }">
+          <div class="server-count">
+            {{ row.connectedServers }}/{{ row.serverCount }}
+          </div>
+        </template>
+
         <!-- 健康状态列 -->
         <template #health="{ row }">
           <GroupStatusTag :status="row.isHealthy ? 'healthy' : 'unhealthy'" />
@@ -349,48 +356,53 @@ const statsCards = computed(() => [
 
 const columns = [
   {
+    colKey: 'name',
     title: '组名称',
-    key: 'name',
     width: 280,
     ellipsis: true,
+    cell: 'name',
   },
   {
+    colKey: 'serverCount',
     title: '服务器',
-    key: 'serverCount',
     width: 120,
     align: 'center',
-    cell: (row: GroupInfo) => `${row.connectedServers}/${row.serverCount}`,
+    cell: 'serverCount',
   },
   {
+    colKey: 'toolCount',
     title: '工具',
-    key: 'toolCount',
     width: 100,
     align: 'center',
   },
   {
+    colKey: 'health',
     title: '健康状态',
-    key: 'health',
     width: 150,
     align: 'center',
+    cell: 'health',
   },
   {
+    colKey: 'validation',
     title: '验证状态',
-    key: 'validation',
     width: 120,
     align: 'center',
+    cell: 'validation',
   },
   {
+    colKey: 'toolFilter',
     title: '工具过滤',
-    key: 'toolFilter',
     width: 120,
     align: 'center',
+    cell: 'toolFilter',
   },
   {
+    colKey: 'operations',
     title: '操作',
-    key: 'operations',
     width: 200,
     align: 'center',
     fixed: 'right',
+    cell: 'operations',
   },
 ];
 

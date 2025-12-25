@@ -142,7 +142,7 @@ export const useToolStore = defineStore('tool', () => {
 
       // 更新按服务器分组的工具
       toolsByServer.value.clear();
-      Object.entries(response.toolsByServer).forEach(
+      Object.entries(response.toolsByServer || {}).forEach(
         ([serverId, serverTools]) => {
           toolsByServer.value.set(serverId, serverTools);
         },

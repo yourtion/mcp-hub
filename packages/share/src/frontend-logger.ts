@@ -82,12 +82,17 @@ export const EnvironmentDetector = {
   isTestEnvironment(): boolean {
     // 在浏览器环境中检查常见的测试环境变量
     try {
-      return (
-        (typeof process !== 'undefined' &&
-          (process.env.NODE_ENV === 'test' || !!process.env.VITEST)) ||
-        (typeof window !== 'undefined' &&
-          (window as any).__vitest_environment__ === true)
-      );
+      // 浏览器环境优先检查
+      if (typeof window !== 'undefined') {
+        return (window as any).__vitest_environment__ === true;
+      }
+
+      // Node.js 环境检查（确保 process 存在且有效）
+      if (typeof process !== 'undefined' && process?.env) {
+        return process.env.NODE_ENV === 'test' || !!process.env.VITEST;
+      }
+
+      return false;
     } catch {
       return false;
     }
@@ -99,14 +104,27 @@ export const EnvironmentDetector = {
   isDebugMode(): boolean {
     // 在浏览器环境中检查调试模式
     try {
-      return (
-        (typeof process !== 'undefined' &&
-          (process.env.VITEST_DEBUG === 'true' ||
-            process.env.DEBUG === 'true')) ||
-        (typeof localStorage !== 'undefined' &&
-          (localStorage.getItem('DEBUG') === 'true' ||
-            localStorage.getItem('VITEST_DEBUG') === 'true'))
-      );
+      // 浏览器环境优先检查
+      if (typeof window !== 'undefined') {
+        return (window as any).__vitest_debug__ === true;
+      }
+
+      // Node.js 环境检查
+      if (typeof process !== 'undefined' && process?.env) {
+        return (
+          process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true'
+        );
+      }
+
+      // localStorage 检查（浏览器环境）
+      if (typeof localStorage !== 'undefined') {
+        return (
+          localStorage.getItem('DEBUG') === 'true' ||
+          localStorage.getItem('VITEST_DEBUG') === 'true'
+        );
+      }
+
+      return false;
     } catch {
       return false;
     }
@@ -118,7 +136,8 @@ export const EnvironmentDetector = {
   getEnvironmentLogLevel(defaultLevel: LogLevel = LogLevel.INFO): LogLevel {
     // 如果设置了 LOG_LEVEL 环境变量，优先使用
     try {
-      if (typeof process !== 'undefined' && process.env.LOG_LEVEL) {
+      // 安全地检查 process.env.LOG_LEVEL
+      if (typeof process !== 'undefined' && process?.env?.LOG_LEVEL) {
         const envLevel =
           LogLevel[
             process.env.LOG_LEVEL.toUpperCase() as keyof typeof LogLevel

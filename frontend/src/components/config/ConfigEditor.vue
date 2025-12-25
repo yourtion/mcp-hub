@@ -167,25 +167,7 @@ const currentConfigType = computed(() => {
   return props.selectedConfigType || 'system';
 });
 
-// 监听配置数据变化
-watch(
-  () => props.configData,
-  (newData) => {
-    if (newData) {
-      updateCurrentConfig();
-    }
-  },
-  { immediate: true, deep: true }
-);
-
-watch(
-  () => props.selectedConfigType,
-  () => {
-    updateCurrentConfig();
-  }
-);
-
-// 方法
+// 方法声明（必须在 watch 之前）
 
 /**
  * 更新当前配置
@@ -206,7 +188,7 @@ const updateCurrentConfig = (): void => {
     default:
       currentConfig.value = {};
   }
-  
+
   hasChanges.value = false;
 };
 
@@ -240,15 +222,33 @@ const getEditorDescription = (): string => {
 
   switch (props.selectedConfigType) {
     case 'system':
-      return '管理服务器、认证、用户等系统基础配置';
+      return '配置系统级别的参数，如端口、日志级别等';
     case 'mcp':
-      return '配置MCP服务器连接和传输参数';
+      return '配置MCP服务器的连接信息和认证';
     case 'groups':
-      return '管理服务器组和工具过滤规则';
+      return '配置工具组的访问控制和过滤规则';
     default:
-      return '';
+      return '配置管理';
   }
 };
+
+// 监听配置数据变化（函数必须在 watch 之前声明）
+watch(
+  () => props.configData,
+  (newData) => {
+    if (newData) {
+      updateCurrentConfig();
+    }
+  },
+  { immediate: true, deep: true }
+);
+
+watch(
+  () => props.selectedConfigType,
+  () => {
+    updateCurrentConfig();
+  }
+);
 
 /**
  * 格式化时间

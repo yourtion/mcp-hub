@@ -251,41 +251,41 @@ const currentConfig = ref<ApiToolConfig | undefined>();
 // 表格列定义
 const columns = [
   {
+    colKey: 'name',
     title: '配置名称',
-    key: 'name',
     width: 200,
   },
   {
+    colKey: 'description',
     title: '描述',
-    key: 'description',
     width: 250,
     ellipsis: true,
   },
   {
+    colKey: 'status',
     title: '状态',
-    key: 'status',
     width: 100,
     cell: 'status',
   },
   {
+    colKey: 'api',
     title: 'API信息',
-    key: 'api',
     cell: 'api',
   },
   {
+    colKey: 'toolsGenerated',
     title: '工具数',
-    key: 'toolsGenerated',
     width: 100,
   },
   {
+    colKey: 'lastUpdated',
     title: '最后更新',
-    key: 'lastUpdated',
     width: 150,
     cell: 'lastUpdated',
   },
   {
+    colKey: 'actions',
     title: '操作',
-    key: 'actions',
     width: 180,
     cell: 'actions',
     align: 'center',

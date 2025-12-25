@@ -52,7 +52,20 @@ const statusConfig = {
   },
 };
 
-const config = computed(() => statusConfig[props.status]);
+const config = computed(() => {
+  // 调试：检查 status 类型
+  if (typeof props.status !== 'string') {
+    console.error('StatusTag: status is not a string', props.status);
+    return statusConfig.disconnected; // 默认返回未连接状态
+  }
+  const config = statusConfig[props.status];
+  if (!config) {
+    console.error('StatusTag: invalid status value', props.status);
+    return statusConfig.disconnected; // 默认返回未连接状态
+  }
+  return config;
+});
+
 const tagTheme = computed(() => config.value.theme);
 const text = computed(() => config.value.text);
 const icon = computed(() => config.value.icon);

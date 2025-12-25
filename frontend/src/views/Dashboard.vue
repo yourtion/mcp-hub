@@ -102,7 +102,7 @@
               </div>
 
               <!-- 热门工具 -->
-              <div v-if="performanceStats.topTools.length > 0" class="top-tools">
+              <div v-if="performanceStats?.topTools && performanceStats.topTools.length > 0" class="top-tools">
                 <h4>热门工具</h4>
                 <div class="tools-list">
                   <div
@@ -194,6 +194,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, markRaw, type Component } from 'vue';
 import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import { MessagePlugin } from 'tdesign-vue-next';
 import {
   CheckIcon,
@@ -216,6 +217,8 @@ const dashboardStore = useDashboardStore();
 
 // 计算属性
 const user = computed(() => authStore.user);
+
+// 使用 storeToRefs 保持响应式
 const {
   stats,
   systemHealth,
@@ -225,11 +228,14 @@ const {
   statCards,
   sseConnectionState,
   lastUpdated: storeLastUpdated,
-} = dashboardStore;
+} = storeToRefs(dashboardStore);
+
+// 方法需要从原 store 解构（不是响应式的）
+const { fetchSystemHealth, fetchPerformanceStats, fetchActivities, refreshAll } = dashboardStore;
 
 // 最后更新时间
 const lastUpdated = computed(() => {
-  const times = Object.values(storeLastUpdated);
+  const times = Object.values(storeLastUpdated.value);
   if (times.length === 0) return null;
   return times.reduce((latest, current) => {
     return new Date(current) > new Date(latest) ? current : latest;
@@ -238,7 +244,7 @@ const lastUpdated = computed(() => {
 
 // 是否正在刷新
 const isRefreshing = computed(() => {
-  return Object.values(loading).some(l => l);
+  return Object.values(loading.value).some(l => l);
 });
 
 // SSE状态
@@ -248,7 +254,7 @@ const sseStatusIconComponent = computed(() => {
     open: markRaw(CheckIcon),
     closed: markRaw(CloseIcon),
   };
-  return iconMap[sseConnectionState] || iconMap.closed;
+  return iconMap[sseConnectionState.value] || iconMap.closed;
 });
 
 const sseStatusText = computed(() => {
@@ -257,7 +263,7 @@ const sseStatusText = computed(() => {
     open: '已连接',
     closed: '未连接',
   };
-  return textMap[sseConnectionState] || '未连接';
+  return textMap[sseConnectionState.value] || '未连接';
 });
 
 // 方法

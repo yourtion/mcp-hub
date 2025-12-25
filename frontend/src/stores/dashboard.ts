@@ -308,10 +308,13 @@ export const useDashboardStore = defineStore('dashboard', () => {
     sseService.onHealthCheck((data) => {
       console.log('收到健康检查事件:', data);
 
-      // 更新健康状态
+      // 更新健康状态 - 创建新对象保持响应式
       if (systemHealth.value) {
-        systemHealth.value.status = data.status;
-        systemHealth.value.lastCheck = new Date().toISOString();
+        systemHealth.value = {
+          ...systemHealth.value,
+          status: data.status,
+          lastCheck: data.lastCheck || new Date().toISOString(),
+        };
       }
     });
   };

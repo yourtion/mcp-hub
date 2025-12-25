@@ -205,7 +205,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, markRaw } from 'vue';
+import { storeToRefs } from 'pinia';
 import { MessagePlugin } from 'tdesign-vue-next';
 import {
   RefreshIcon,
@@ -237,11 +238,17 @@ const emit = defineEmits<{
 
 // 状态管理
 const serverStore = useServerStore();
-const { 
-  serverList, 
-  loading, 
-  error, 
+
+// 使用 storeToRefs 保持响应式状态
+const {
+  serverList,
+  loading,
+  error,
   summary,
+} = storeToRefs(serverStore);
+
+// 方法直接从 store 解构（不需要响应式）
+const {
   fetchServers,
   connectServer,
   disconnectServer,
@@ -334,32 +341,38 @@ const columns: TableColumns = [
     title: '服务器名称',
     width: 200,
     fixed: 'left',
+    cell: 'name',
   },
   {
     colKey: 'type',
     title: '类型',
     width: 100,
+    cell: 'type',
   },
   {
     colKey: 'status',
     title: '状态',
     width: 120,
+    cell: 'status',
   },
   {
     colKey: 'toolCount',
     title: '工具数量',
     width: 100,
+    cell: 'toolCount',
   },
   {
     colKey: 'lastConnected',
     title: '最后连接',
     width: 160,
+    cell: 'lastConnected',
   },
   {
     colKey: 'actions',
     title: '操作',
     width: 150,
     fixed: 'right',
+    cell: 'actions',
   },
 ];
 
@@ -401,19 +414,19 @@ const getConnectionActionTheme = (status: ServerStatus): string => {
 };
 
 const getConnectionActionIcon = (status: ServerStatus) => {
-  return status === 'connected' ? LinkUnlinkIcon : LinkIcon;
+  return markRaw(status === 'connected' ? LinkUnlinkIcon : LinkIcon);
 };
 
 const getDropdownOptions = (server: ServerInfo) => [
   {
     content: '编辑配置',
     value: `edit-${server.id}`,
-    prefixIcon: EditIcon,
+    prefixIcon: markRaw(EditIcon),
   },
   {
     content: '删除服务器',
     value: `delete-${server.id}`,
-    prefixIcon: DeleteIcon,
+    prefixIcon: markRaw(DeleteIcon),
     theme: 'danger',
   },
 ];

@@ -84,6 +84,7 @@ export interface SystemHealth {
   };
   uptime: number;
   timestamp: string;
+  lastCheck?: string;
 }
 
 export interface LogEntry {
@@ -162,6 +163,7 @@ export interface HealthCheckEvent extends SSEEvent {
   data: {
     status: 'healthy' | 'warning' | 'error';
     timestamp: string;
+    lastCheck?: string;
     changes: Array<{
       component: string;
       previousStatus: string;

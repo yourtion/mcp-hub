@@ -258,12 +258,14 @@ export class DashboardService {
         overallStatus = 'warning';
       }
 
+      const now = new Date().toISOString();
       const health: SystemHealth = {
         status: overallStatus,
         issues,
         checks,
         uptime: Math.floor((Date.now() - this.startTime) / 1000),
-        timestamp: new Date().toISOString(),
+        timestamp: now,
+        lastCheck: now,
       };
 
       logger.debug('系统健康检查完成', {
@@ -278,6 +280,7 @@ export class DashboardService {
       logger.error('系统健康检查失败', error as Error);
 
       // 返回错误状态
+      const errorTime = new Date().toISOString();
       return {
         status: 'error',
         issues: [`健康检查失败: ${(error as Error).message}`],
@@ -304,7 +307,8 @@ export class DashboardService {
           },
         },
         uptime: Math.floor((Date.now() - this.startTime) / 1000),
-        timestamp: new Date().toISOString(),
+        timestamp: errorTime,
+        lastCheck: errorTime,
       };
     }
   }
@@ -499,12 +503,25 @@ export class DashboardService {
           100
         : 0;
 
+    // 获取热门工具统计
+    const topTools = Array.from(
+      this.performanceStats.toolExecutions.entries(),
+    )
+      .map(([name, stats]) => ({
+        name,
+        calls: stats.calls,
+        avgTime: stats.calls > 0 ? stats.totalTime / stats.calls : 0,
+      }))
+      .sort((a, b) => b.calls - a.calls)
+      .slice(0, 10);
+
     return {
       totalRequests: this.performanceStats.totalRequests,
       averageResponseTime: Math.round(averageResponseTime * 100) / 100,
       errorRate: Math.round(errorRate * 100) / 100,
       errorCount: this.performanceStats.errorCount,
       toolExecutions: Object.fromEntries(this.performanceStats.toolExecutions),
+      topTools,
     };
   }
 }

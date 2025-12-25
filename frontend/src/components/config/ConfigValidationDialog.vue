@@ -15,10 +15,10 @@
           <div v-if="validationResult" class="validation-result">
             <!-- 验证状态 -->
             <div class="validation-status">
-              <t-result
+              <t-alert
                 :theme="validationResult.valid ? 'success' : 'error'"
                 :title="validationResult.valid ? '配置验证通过' : '配置验证失败'"
-                :description="getValidationDescription()"
+                :message="getValidationDescription()"
               />
             </div>
 
@@ -118,14 +118,14 @@
           <div v-if="testResult" class="test-result">
             <!-- 测试摘要 -->
             <div class="test-summary">
-              <t-result
+              <t-alert
                 :theme="testResult.success ? 'success' : 'error'"
                 :title="testResult.success ? '配置测试通过' : '配置测试失败'"
-                :description="getTestDescription()"
+                :message="getTestDescription()"
               />
-              
+
               <div class="test-stats">
-                <t-space>
+                <t-space size="small">
                   <t-tag theme="success" variant="light">
                     通过: {{ testResult.summary.passed }}
                   </t-tag>

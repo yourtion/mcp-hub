@@ -83,7 +83,8 @@ export interface SystemHealth {
     };
   };
   uptime: number;
-  timestamp: string;
+  timestamp?: string;
+  lastCheck: string;
 }
 
 export interface PerformanceStats {

@@ -277,6 +277,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import {
   SearchIcon,
   ChevronDownIcon,
@@ -292,6 +293,22 @@ const router = useRouter();
 // Store
 const toolStore = useToolStore();
 
+// 使用 storeToRefs 保持响应式状态
+const {
+  toolList,
+  availableTools,
+  unavailableTools,
+  serverList,
+  loading,
+  error,
+} = storeToRefs(toolStore);
+
+// 方法直接从 store 解构（不需要响应式）
+const {
+  fetchTools,
+  clearError,
+} = toolStore;
+
 // 响应式数据
 const searchText = ref('');
 const selectedServerId = ref('');
@@ -306,18 +323,6 @@ const pagination = ref({
   pageSize: 20,
   pageSizeOptions: [10, 20, 50, 100],
 });
-
-// 计算属性
-const { 
-  toolList, 
-  filteredTools, 
-  availableTools, 
-  unavailableTools, 
-  serverList, 
-  loading, 
-  error,
-  clearError 
-} = toolStore;
 
 // 分页后的工具列表（用于卡片视图）
 const paginatedTools = computed(() => {
@@ -462,11 +467,8 @@ watch(
 
 // 组件挂载时加载数据
 onMounted(async () => {
-  try {
-    await toolStore.fetchTools();
-  } catch (err) {
-    MessagePlugin.error('加载工具列表失败');
-  }
+  await toolStore.fetchTools();
+  // error 由 store 自动处理，UI 中显示 error ref
 });
 </script>
 

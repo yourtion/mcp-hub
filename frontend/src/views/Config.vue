@@ -90,11 +90,15 @@
             </t-select>
           </t-col>
           <t-col :span="4">
-            <t-switch
-              v-model="showAdvanced"
-              label="显示高级选项"
-              @change="handleAdvancedToggle"
-            />
+            <div class="advanced-switch">
+              <t-switch
+                v-model="showAdvanced"
+                :custom-value="true"
+                :default-value="false"
+                @change="handleAdvancedToggle"
+              />
+              <span class="switch-label">显示高级选项</span>
+            </div>
           </t-col>
           <t-col :span="6">
             <t-space>
@@ -162,17 +166,17 @@
             
             <!-- 错误状态 -->
             <div v-else-if="configStore.hasError" class="error-container">
-              <t-result
+              <t-alert
                 theme="error"
                 title="加载配置失败"
-                :description="configStore.error"
+                :message="configStore.error"
               >
-                <template #extra>
-                  <t-button theme="primary" @click="handleRefresh">
+                <template #operation>
+                  <t-button theme="primary" size="small" @click="handleRefresh">
                     重新加载
                   </t-button>
                 </template>
-              </t-result>
+              </t-alert>
             </div>
           </t-card>
         </t-col>
@@ -578,8 +582,8 @@ const handleRestoreFromBackup = async (backupId: string, configTypes?: ConfigTyp
 <style scoped>
 .config-page {
   padding: 24px;
-  background-color: #f5f5f5;
-  min-height: 100vh;
+  background-color: var(--td-bg-color-page, #f3f3f3);
+  min-height: calc(100vh - 64px);
 }
 
 .config-header {
@@ -590,22 +594,24 @@ const handleRestoreFromBackup = async (backupId: string, configTypes?: ConfigTyp
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 16px;
 }
 
 .header-left {
   flex: 1;
+  min-width: 0;
 }
 
 .page-title {
   margin: 0 0 8px 0;
   font-size: 24px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--td-text-color-primary, #1f2937);
 }
 
 .page-description {
   margin: 0;
-  color: #6b7280;
+  color: var(--td-text-color-secondary, #6b7280);
   font-size: 14px;
 }
 
@@ -621,14 +627,41 @@ const handleRestoreFromBackup = async (backupId: string, configTypes?: ConfigTyp
   margin-bottom: 24px;
 }
 
+.config-content .t-card {
+  background-color: var(--td-bg-color-container, #ffffff);
+  border: 1px solid var(--td-component-border, #e7e7e7);
+  overflow: visible;
+}
+
 .category-card {
   height: fit-content;
   position: sticky;
   top: 24px;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  background-color: var(--td-bg-color-container, #ffffff);
+  scrollbar-width: thin;
+  scrollbar-color: var(--td-scrollbar-color, #d9d9d9) var(--td-bg-color-container, #ffffff);
+}
+
+.category-card::-webkit-scrollbar {
+  width: 6px;
+}
+
+.category-card::-webkit-scrollbar-track {
+  background: var(--td-bg-color-container, #ffffff);
+}
+
+.category-card::-webkit-scrollbar-thumb {
+  background-color: var(--td-scrollbar-color, #d9d9d9);
+  border-radius: 3px;
 }
 
 .config-editor-card {
-  min-height: 600px;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--td-bg-color-container, #ffffff);
 }
 
 .loading-container,
@@ -637,6 +670,8 @@ const handleRestoreFromBackup = async (backupId: string, configTypes?: ConfigTyp
   justify-content: center;
   align-items: center;
   min-height: 400px;
+  padding: 60px 20px;
+  background-color: var(--td-bg-color-container, #ffffff);
 }
 
 /* 响应式设计 */
@@ -644,24 +679,63 @@ const handleRestoreFromBackup = async (backupId: string, configTypes?: ConfigTyp
   .config-content .t-col:first-child {
     margin-bottom: 24px;
   }
+
+  .category-card {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
 }
 
 @media (max-width: 768px) {
   .config-page {
     padding: 16px;
   }
-  
+
   .header-content {
     flex-direction: column;
     gap: 16px;
   }
-  
+
   .header-right {
     width: 100%;
   }
-  
+
+  .header-right .t-space {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .header-right .t-space .t-button {
+    flex: 1;
+    min-width: 120px;
+  }
+
   .config-filters .t-row .t-col {
     margin-bottom: 16px;
   }
+
+  .config-editor-card {
+    min-height: 400px;
+  }
+
+  .category-card {
+    position: static;
+  }
+}
+
+.advanced-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  background-color: transparent;
+}
+
+.switch-label {
+  font-size: 14px;
+  color: var(--td-text-color-primary, #1f2937);
+  white-space: nowrap;
 }
 </style>
