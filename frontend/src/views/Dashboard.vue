@@ -293,8 +293,8 @@ const navigateTo = (path: string) => {
 };
 
 const handleShowMoreActivities = () => {
-  // 可以导航到专门的活动页面或展开更多内容
-  console.log('显示更多活动');
+  // TODO: 导航到活动详情页面
+  MessagePlugin.info('活动详情页面开发中');
 };
 
 const formatTime = (timestamp: string): string => {

@@ -51,6 +51,44 @@ config.global.stubs = {
     template: '<div class="mock-empty"><slot name="action" /></div>',
     props: ['description'],
   },
+  TSpace: {
+    template: '<div class="mock-space"><slot /></div>',
+  },
+  TPopconfirm: {
+    template: '<div class="mock-popconfirm"><slot /></div>',
+    props: ['content', 'onConfirm'],
+  },
+  TRow: {
+    template: '<div class="mock-row"><slot /></div>',
+    props: ['gutter'],
+  },
+  TCol: {
+    template: '<div class="mock-col"><slot /></div>',
+    props: ['span'],
+  },
+  TDivider: {
+    template: '<div class="mock-divider" />',
+  },
+  TCheckboxGroup: {
+    template: '<div class="mock-checkbox-group"><slot /></div>',
+    props: ['options', 'modelValue'],
+  },
+  TTextarea: {
+    template: '<textarea class="mock-textarea" />',
+    props: ['value', 'readonly', 'rows'],
+  },
+  TSwitch: {
+    template: '<input type="checkbox" class="mock-switch" />',
+    props: ['modelValue', 'disabled'],
+  },
+  TUpload: {
+    template: '<div class="mock-upload"><slot /></div>',
+    props: ['modelValue', 'format', 'max', 'disabled', 'theme', 'accept'],
+  },
+  TRadioGroup: {
+    template: '<div class="mock-radio-group"><slot /></div>',
+    props: ['modelValue', 'variant'],
+  },
 };
 
 // Mock MessagePlugin

@@ -530,7 +530,12 @@ const tableColumns = [
 ];
 
 // 视图选项
-const viewOptions = [
+interface ViewOption {
+  content: string;
+  value: string;
+}
+
+const viewOptions: ViewOption[] = [
   { content: '列表视图', value: 'list' },
   { content: '卡片视图', value: 'card' },
 ];
@@ -575,7 +580,7 @@ const handleResetFilters = () => {
   pagination.value.current = 1;
 };
 
-const handleViewChange = (option: any) => {
+const handleViewChange = (option: ViewOption) => {
   currentView.value = option.value;
 };
 

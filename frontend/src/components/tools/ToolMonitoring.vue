@@ -240,10 +240,9 @@ const refreshMonitoringData = async () => {
     loading.value = true;
     const data = await toolStore.fetchMonitoring();
     monitoringData.value = data;
-    console.log('监控数据:', data); // 调试日志
     addLog('info', '监控数据已刷新');
   } catch (err) {
-    console.error('获取监控数据失败:', err); // 调试日志
+    console.error('获取监控数据失败:', err);
     addLog('error', '获取监控数据失败');
     MessagePlugin.error('获取监控数据失败');
   } finally {

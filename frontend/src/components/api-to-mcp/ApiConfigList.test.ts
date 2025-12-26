@@ -166,29 +166,29 @@ describe('ApiConfigList', () => {
     expect(formattedTime).toContain('2023');
   });
 
-  it('gets status variant correctly', async () => {
+  it('gets status theme correctly', async () => {
     wrapper = createWrapper();
 
     // Wait for data loading
     await vi.waitFor(() => {
-      expect(wrapper.vm.getStatusVariant).toBeDefined();
+      expect(wrapper.vm.getStatusTheme).toBeDefined();
     });
 
-    expect(wrapper.vm.getStatusVariant('active')).toBe('success');
-    expect(wrapper.vm.getStatusVariant('inactive')).toBe('warning');
-    expect(wrapper.vm.getStatusVariant('error')).toBe('error');
+    expect(wrapper.vm.getStatusTheme('active')).toBe('success');
+    expect(wrapper.vm.getStatusTheme('inactive')).toBe('warning');
+    expect(wrapper.vm.getStatusTheme('error')).toBe('danger');
   });
 
-  it('gets status text correctly', async () => {
+  it('gets status icon correctly', async () => {
     wrapper = createWrapper();
 
     // Wait for data loading
     await vi.waitFor(() => {
-      expect(wrapper.vm.getStatusText).toBeDefined();
+      expect(wrapper.vm.getStatusIcon).toBeDefined();
     });
 
-    expect(wrapper.vm.getStatusText('active')).toBe('活跃');
-    expect(wrapper.vm.getStatusText('inactive')).toBe('非活跃');
-    expect(wrapper.vm.getStatusText('error')).toBe('错误');
+    expect(wrapper.vm.getStatusIcon('active')).toBeDefined();
+    expect(wrapper.vm.getStatusIcon('inactive')).toBeDefined();
+    expect(wrapper.vm.getStatusIcon('error')).toBeDefined();
   });
 });

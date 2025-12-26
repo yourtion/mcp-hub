@@ -640,7 +640,7 @@ const handleFormSubmit = async (config: ApiToolConfig) => {
 };
 
 // 导入提交处理
-const handleImportSubmit = async (result: any) => {
+const handleImportSubmit = async (result: { configs: ApiToolConfig[]; message: string }) => {
   try {
     MessagePlugin.success(`成功导入 ${result.configs.length} 个配置`);
     showImportDialog.value = false;
@@ -652,7 +652,7 @@ const handleImportSubmit = async (result: any) => {
 };
 
 // 导出提交处理
-const handleExportSubmit = async (result: any) => {
+const handleExportSubmit = async (result: { data: string; filename: string; message: string }) => {
   try {
     // 创建下载链接
     const blob = new Blob([result.data], { type: 'application/json' });

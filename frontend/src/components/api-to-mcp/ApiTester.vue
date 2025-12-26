@@ -438,7 +438,13 @@ const runApiTest = async () => {
         MessagePlugin.error('请输入JSON数据');
         return;
       }
-      parameters = JSON.parse(jsonInput.value);
+      try {
+        parameters = JSON.parse(jsonInput.value);
+      } catch (error) {
+        MessagePlugin.error('JSON格式错误，请检查输入');
+        console.error('JSON解析失败:', error);
+        return;
+      }
     } else {
       if (testParameters.value.length === 0) {
         MessagePlugin.error('请添加测试参数');
