@@ -504,9 +504,7 @@ export class DashboardService {
         : 0;
 
     // 获取热门工具统计
-    const topTools = Array.from(
-      this.performanceStats.toolExecutions.entries(),
-    )
+    const topTools = Array.from(this.performanceStats.toolExecutions.entries())
       .map(([name, stats]) => ({
         name,
         calls: stats.calls,

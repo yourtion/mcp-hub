@@ -213,7 +213,10 @@ toolsAdminApi.get('/monitoring', async (c) => {
         description: tool.description,
         serverId: tool.serverId,
         inputSchema: tool.inputSchema,
-        status: serverGroup.serverStatus === 'connected' ? 'available' : 'unavailable',
+        status:
+          serverGroup.serverStatus === 'connected'
+            ? 'available'
+            : 'unavailable',
       });
     });
 

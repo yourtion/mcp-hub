@@ -207,8 +207,9 @@ export class ApiToolIntegrationService {
     } catch (error) {
       // ✅ 改进：提供更详细的错误信息
       const errorMessage = (error as Error).message;
-      const isNotInitialized = errorMessage.includes('not_initialized') ||
-                               errorMessage.includes('未运行');
+      const isNotInitialized =
+        errorMessage.includes('not_initialized') ||
+        errorMessage.includes('未运行');
 
       if (isNotInitialized) {
         logger.warn('API工具服务管理器未初始化，请检查配置文件路径是否正确', {

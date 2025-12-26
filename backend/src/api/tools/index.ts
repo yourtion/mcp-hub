@@ -4,7 +4,10 @@ import { McpHubService } from '../../services/mcp_hub_service.js';
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 import type { GroupToolInfo } from '../mcp/group-service.js';
-import { addExecutionRecord, type ToolExecutionRecord } from '../tools-admin/index.js';
+import {
+  addExecutionRecord,
+  type ToolExecutionRecord,
+} from '../tools-admin/index.js';
 
 export const toolsApi = new Hono();
 
@@ -107,9 +110,10 @@ toolsApi.get('/', async (c) => {
     // 为工具添加状态信息
     const toolsWithStatus = tools.map((tool) => ({
       ...tool,
-      status: serverHealth.get(tool.serverId) === 'connected'
-        ? 'available' as const
-        : 'unavailable' as const,
+      status:
+        serverHealth.get(tool.serverId) === 'connected'
+          ? ('available' as const)
+          : ('unavailable' as const),
     }));
 
     // 按服务器分组工具
@@ -186,7 +190,10 @@ toolsApi.get('/server/:serverId', async (c) => {
     // 为工具添加状态信息
     const toolsWithStatus = tools.map((tool) => ({
       ...tool,
-      status: serverStatus === 'connected' ? 'available' as const : 'unavailable' as const,
+      status:
+        serverStatus === 'connected'
+          ? ('available' as const)
+          : ('unavailable' as const),
     }));
 
     logger.info('按服务器获取工具列表', {
@@ -642,4 +649,3 @@ function validateArgumentType(
 
   return { isValid: true };
 }
-

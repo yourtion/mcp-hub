@@ -1,23 +1,27 @@
 <template>
   <div class="api-config-list">
     <div class="page-header">
-      <h1>API配置管理</h1>
+      <div class="header-title">
+        <h1>API配置管理</h1>
+        <p class="header-subtitle">管理和配置 API 到 MCP 工具的转换</p>
+      </div>
       <div class="header-actions">
         <t-space>
           <t-button
             v-if="selectedConfigs.length > 0"
             variant="outline"
+            theme="danger"
             @click="handleBatchDelete"
           >
             <template #icon><delete-icon /></template>
-            批量删除
+            批量删除 ({{ selectedConfigs.length }})
           </t-button>
           <t-button
             variant="outline"
             @click="handleImport"
           >
             <template #icon><upload-icon /></template>
-            导入配置
+            导入
           </t-button>
           <t-button
             v-if="configs.length > 0"
@@ -25,7 +29,7 @@
             @click="handleExport"
           >
             <template #icon><download-icon /></template>
-            导出配置
+            导出
           </t-button>
           <t-button
             theme="primary"
@@ -42,46 +46,59 @@
       <!-- 统计信息 -->
       <t-row :gutter="16" class="stats-section">
         <t-col :span="6">
-          <t-card>
-            <div class="stat-item">
+          <div class="stat-card stat-primary">
+            <div class="stat-icon">
+              <server-icon />
+            </div>
+            <div class="stat-content">
               <div class="stat-value">{{ stats.totalConfigs }}</div>
               <div class="stat-label">总配置数</div>
             </div>
-          </t-card>
+          </div>
         </t-col>
         <t-col :span="6">
-          <t-card>
-            <div class="stat-item">
+          <div class="stat-card stat-success">
+            <div class="stat-icon">
+              <check-circle-icon />
+            </div>
+            <div class="stat-content">
               <div class="stat-value">{{ stats.activeConfigs }}</div>
               <div class="stat-label">活跃配置</div>
             </div>
-          </t-card>
+          </div>
         </t-col>
         <t-col :span="6">
-          <t-card>
-            <div class="stat-item">
-              <div class="stat-value">{{ stats.totalTools }}</div>
-              <div class="stat-label">生成的工具数</div>
+          <div class="stat-card stat-warning">
+            <div class="stat-icon">
+              <tools-icon />
             </div>
-          </t-card>
+            <div class="stat-content">
+              <div class="stat-value">{{ stats.totalTools }}</div>
+              <div class="stat-label">生成的工具</div>
+            </div>
+          </div>
         </t-col>
         <t-col :span="6">
-          <t-card>
-            <div class="stat-item">
-              <div class="stat-value">{{ formatTime(stats.lastUpdated) }}</div>
+          <div class="stat-card stat-info">
+            <div class="stat-icon">
+              <time-icon />
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">{{ formatTimeShort(stats.lastUpdated) }}</div>
               <div class="stat-label">最后更新</div>
             </div>
-          </t-card>
+          </div>
         </t-col>
       </t-row>
 
       <!-- 搜索和过滤 -->
-      <t-card class="filter-section">
-        <t-row :gutter="16">
+      <t-card class="filter-section" bordered>
+        <t-row :gutter="16" align="center">
           <t-col :span="8">
             <t-input
               v-model="searchQuery"
               placeholder="搜索配置名称或描述"
+              clearable
               @change="handleSearch"
             >
               <template #prefix-icon><search-icon /></template>
@@ -90,13 +107,25 @@
           <t-col :span="4">
             <t-select
               v-model="statusFilter"
-              placeholder="状态过滤"
+              placeholder="全部状态"
               clearable
               @change="handleSearch"
             >
-              <t-option value="active">活跃</t-option>
-              <t-option value="inactive">非活跃</t-option>
-              <t-option value="error">错误</t-option>
+              <t-option value="active">
+                <div class="filter-option">
+                  <t-tag variant="success" size="small">活跃</t-tag>
+                </div>
+              </t-option>
+              <t-option value="inactive">
+                <div class="filter-option">
+                  <t-tag variant="warning" size="small">非活跃</t-tag>
+                </div>
+              </t-option>
+              <t-option value="error">
+                <div class="filter-option">
+                  <t-tag variant="error" size="small">错误</t-tag>
+                </div>
+              </t-option>
             </t-select>
           </t-col>
           <t-col :span="4">
@@ -106,44 +135,74 @@
               clearable
               @change="handleSearch"
             >
-              <t-option value="GET">GET</t-option>
-              <t-option value="POST">POST</t-option>
-              <t-option value="PUT">PUT</t-option>
-              <t-option value="DELETE">DELETE</t-option>
+              <t-option value="GET">
+                <t-tag theme="primary" size="small">GET</t-tag>
+              </t-option>
+              <t-option value="POST">
+                <t-tag theme="success" size="small">POST</t-tag>
+              </t-option>
+              <t-option value="PUT">
+                <t-tag theme="warning" size="small">PUT</t-tag>
+              </t-option>
+              <t-option value="DELETE">
+                <t-tag theme="danger" size="small">DELETE</t-tag>
+              </t-option>
             </t-select>
+          </t-col>
+          <t-col :span="4">
+            <t-button
+              variant="outline"
+              block
+              @click="handleRefresh"
+            >
+              <template #icon><refresh-icon /></template>
+              刷新
+            </t-button>
           </t-col>
         </t-row>
       </t-card>
 
       <!-- 配置列表 -->
-      <t-card>
+      <t-card :bordered="false">
         <t-table
           :data="filteredConfigs"
           :columns="columns"
           :loading="loading"
           :selected-row-keys="selectedConfigs"
-          @select-change="handleSelectionChange"
+          :pagination="{ pageSize: 10, total: filteredConfigs.length }"
+          :empty="emptyProps"
           row-key="id"
+          size="large"
+          stripe
+          @select-change="handleSelectionChange"
         >
           <template #status="{ row }">
-            <t-tag :variant="getStatusVariant(row.status)">
+            <t-tag :theme="getStatusTheme(row.status)" variant="light">
+              <template #icon>
+                <component :is="getStatusIcon(row.status)" />
+              </template>
               {{ getStatusText(row.status) }}
             </t-tag>
           </template>
 
           <template #api="{ row }">
             <div class="api-info">
-              <div class="api-method">{{ row.api.method }}</div>
+              <t-tag :theme="getMethodTheme(row.api.method)" size="small" class="api-method">
+                {{ row.api.method }}
+              </t-tag>
               <div class="api-url">{{ row.api.url }}</div>
             </div>
           </template>
 
           <template #lastUpdated="{ row }">
-            {{ formatTime(row.lastUpdated) }}
+            <div class="time-info">
+              <div class="time-relative">{{ formatTimeRelative(row.lastUpdated) }}</div>
+              <div class="time-absolute">{{ formatTime(row.lastUpdated) }}</div>
+            </div>
           </template>
 
           <template #actions="{ row }">
-            <t-space>
+            <t-space :size="4">
               <t-tooltip content="查看详情">
                 <t-button
                   variant="text"
@@ -171,16 +230,18 @@
                   <template #icon><play-icon /></template>
                 </t-button>
               </t-tooltip>
-              <t-tooltip content="删除配置">
+              <t-popconfirm
+                content="确认删除此配置？"
+                @confirm="handleDelete(row)"
+              >
                 <t-button
                   variant="text"
                   size="small"
                   theme="danger"
-                  @click="handleDelete(row)"
                 >
                   <template #icon><delete-icon /></template>
                 </t-button>
-              </t-tooltip>
+              </t-popconfirm>
             </t-space>
           </template>
         </t-table>
@@ -221,6 +282,14 @@ import {
   BrowseIcon,
   EditIcon,
   PlayIcon,
+  ServerIcon,
+  CheckCircleIcon,
+  ToolsIcon,
+  TimeIcon,
+  RefreshIcon,
+  CheckIcon,
+  CloseIcon,
+  ErrorCircleIcon,
 } from 'tdesign-icons-vue-next';
 import { apiToMcpService } from '@/services/api-to-mcp';
 import type { ApiConfigInfo, ApiToolConfig } from '@/types/api-to-mcp';
@@ -248,12 +317,18 @@ const showExportDialog = ref(false);
 
 const currentConfig = ref<ApiToolConfig | undefined>();
 
+// 空状态配置
+const emptyProps = computed(() => ({
+  description: loading.value ? '加载中...' : '暂无配置，点击上方"新建配置"按钮创建',
+}));
+
 // 表格列定义
 const columns = [
   {
     colKey: 'name',
     title: '配置名称',
     width: 200,
+    ellipsis: true,
   },
   {
     colKey: 'description',
@@ -264,23 +339,24 @@ const columns = [
   {
     colKey: 'status',
     title: '状态',
-    width: 100,
+    width: 120,
     cell: 'status',
   },
   {
     colKey: 'api',
-    title: 'API信息',
+    title: 'API端点',
     cell: 'api',
   },
   {
     colKey: 'toolsGenerated',
-    title: '工具数',
-    width: 100,
+    title: '工具',
+    width: 80,
+    align: 'center' as const,
   },
   {
     colKey: 'lastUpdated',
-    title: '最后更新',
-    width: 150,
+    title: '更新时间',
+    width: 160,
     cell: 'lastUpdated',
   },
   {
@@ -288,20 +364,21 @@ const columns = [
     title: '操作',
     width: 180,
     cell: 'actions',
-    align: 'center',
+    align: 'center' as const,
+    fixed: 'right' as const,
   },
 ];
 
 // 过滤后的配置列表
 const filteredConfigs = computed(() => {
   return configs.value.filter((config) => {
-    const matchesSearch = !searchQuery.value || 
+    const matchesSearch = !searchQuery.value ||
       config.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       config.description.toLowerCase().includes(searchQuery.value.toLowerCase());
-    
+
     const matchesStatus = !statusFilter.value || config.status === statusFilter.value;
     const matchesMethod = !methodFilter.value || config.api.method === methodFilter.value;
-    
+
     return matchesSearch && matchesStatus && matchesMethod;
   });
 });
@@ -312,7 +389,7 @@ const loadConfigs = async () => {
     loading.value = true;
     const response = await apiToMcpService.getConfigs();
     configs.value = response.configs;
-    
+
     // 加载统计信息
     loadStats();
   } catch (error) {
@@ -321,6 +398,12 @@ const loadConfigs = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+// 刷新配置列表
+const handleRefresh = async () => {
+  await loadConfigs();
+  MessagePlugin.success('刷新成功');
 };
 
 // 加载统计信息
@@ -333,15 +416,45 @@ const loadStats = async () => {
   }
 };
 
-// 获取状态变体
-const getStatusVariant = (status: string) => {
+// 获取状态主题
+const getStatusTheme = (status: string) => {
   switch (status) {
     case 'active':
       return 'success';
     case 'inactive':
       return 'warning';
     case 'error':
-      return 'error';
+      return 'danger';
+    default:
+      return 'default';
+  }
+};
+
+// 获取状态图标
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case 'active':
+      return CheckIcon;
+    case 'inactive':
+      return CloseIcon;
+    case 'error':
+      return ErrorCircleIcon;
+    default:
+      return CheckIcon;
+  }
+};
+
+// 获取方法主题
+const getMethodTheme = (method: string) => {
+  switch (method) {
+    case 'GET':
+      return 'primary';
+    case 'POST':
+      return 'success';
+    case 'PUT':
+      return 'warning';
+    case 'DELETE':
+      return 'danger';
     default:
       return 'default';
   }
@@ -365,6 +478,36 @@ const getStatusText = (status: string) => {
 const formatTime = (time: string) => {
   if (!time) return '-';
   return new Date(time).toLocaleString('zh-CN');
+};
+
+// 格式化短时间（仅日期）
+const formatTimeShort = (time: string) => {
+  if (!time) return '-';
+  const date = new Date(time);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return '今天';
+  if (diffDays === 1) return '昨天';
+  if (diffDays < 7) return `${diffDays} 天前`;
+  return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+};
+
+// 格式化相对时间
+const formatTimeRelative = (time: string) => {
+  if (!time) return '-';
+  const date = new Date(time);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return '刚刚';
+  if (diffMins < 60) return `${diffMins} 分钟前`;
+  if (diffHours < 24) return `${diffHours} 小时前`;
+  if (diffDays < 7) return `${diffDays} 天前`;
+  return formatTime(time);
 };
 
 // 搜索处理
@@ -536,42 +679,103 @@ onMounted(() => {
 
 <style scoped>
 .api-config-list {
-  padding: 20px;
+  padding: 24px;
+  background: var(--td-bg-color-container);
+  min-height: 100vh;
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+  align-items: flex-start;
+  margin-bottom: 32px;
 }
 
-.page-header h1 {
-  margin: 0;
-  font-size: 24px;
+.header-title h1 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
   font-weight: 600;
   color: var(--td-text-color-primary);
+  line-height: 1.2;
+}
+
+.header-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--td-text-color-secondary);
+  line-height: 1.5;
 }
 
 .content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
+/* 统计卡片样式 */
 .stats-section {
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
-.stat-item {
-  text-align: center;
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 8px;
+  background: var(--td-bg-color-container);
+  border: 1px solid var(--td-component-border);
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 24px;
+}
+
+.stat-primary .stat-icon {
+  background: var(--td-brand-color-1);
+  color: var(--td-brand-color);
+}
+
+.stat-success .stat-icon {
+  background: var(--td-success-color-1);
+  color: var(--td-success-color);
+}
+
+.stat-warning .stat-icon {
+  background: var(--td-warning-color-1);
+  color: var(--td-warning-color);
+}
+
+.stat-info .stat-icon {
+  background: var(--td-brand-color-1);
+  color: var(--td-brand-color);
+}
+
+.stat-content {
+  flex: 1;
 }
 
 .stat-value {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 600;
-  color: var(--td-brand-color);
-  margin-bottom: 8px;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, var(--td-brand-color) 0%, var(--td-brand-color-7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .stat-label {
@@ -579,31 +783,73 @@ onMounted(() => {
   color: var(--td-text-color-secondary);
 }
 
+/* 过滤区域样式 */
 .filter-section {
-  margin-bottom: 16px;
+  border-radius: 8px;
 }
 
+.filter-option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* 表格样式 */
 .api-info {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
 }
 
 .api-method {
   font-weight: 600;
-  color: var(--td-brand-color);
-  font-size: 12px;
-  padding: 2px 6px;
-  background: var(--td-brand-color-1);
-  border-radius: 4px;
-  display: inline-block;
-  width: fit-content;
+  flex-shrink: 0;
 }
 
 .api-url {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--td-text-color-secondary);
-  font-family: monospace;
-  word-break: break-all;
+  font-family: 'Monaco', 'Menlo', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
+}
+
+.time-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.time-relative {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--td-text-color-primary);
+}
+
+.time-absolute {
+  font-size: 12px;
+  color: var(--td-text-color-placeholder);
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .api-config-list {
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .header-actions :deep(.t-space) {
+    flex-wrap: wrap;
+  }
 }
 </style>
