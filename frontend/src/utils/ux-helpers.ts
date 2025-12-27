@@ -29,14 +29,17 @@ export async function confirm(options: ConfirmOptions): Promise<boolean> {
       theme: options.theme || 'default',
       onConfirm: () => {
         dialog.hide();
+        dialog.destroy();
         resolve(true);
       },
       onCancel: () => {
         dialog.hide();
+        dialog.destroy();
         resolve(false);
       },
       onClose: () => {
         dialog.hide();
+        dialog.destroy();
         resolve(false);
       },
     });
@@ -368,7 +371,7 @@ export const storage = {
     }
   },
 
-  set(key: string, value: any): boolean {
+  set<T>(key: string, value: T): boolean {
     try {
       localStorage.setItem(key, JSON.stringify(value));
       return true;
@@ -413,7 +416,7 @@ export const sessionStorage = {
     }
   },
 
-  set(key: string, value: any): boolean {
+  set<T>(key: string, value: T): boolean {
     try {
       window.sessionStorage.setItem(key, JSON.stringify(value));
       return true;

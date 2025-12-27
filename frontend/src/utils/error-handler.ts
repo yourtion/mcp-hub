@@ -20,6 +20,13 @@ export interface UserFriendlyError {
   severity: 'error' | 'warning' | 'info';
 }
 
+interface ErrorResponseData {
+  error?: string;
+  message?: string;
+  code?: string;
+  details?: unknown;
+}
+
 /**
  * 错误代码映射到用户友好的消息
  */
@@ -134,7 +141,7 @@ export class ErrorHandler {
     }
 
     const status = error.response.status;
-    const data = error.response.data as any;
+    const data = error.response.data as ErrorResponseData;
 
     // 根据HTTP状态码处理
     switch (status) {

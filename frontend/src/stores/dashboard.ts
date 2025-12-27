@@ -3,7 +3,7 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { dashboardService } from '@/services/dashboard';
-import { sseService } from '@/services/sse';
+import { sseService, type SSEEventType } from '@/services/sse';
 import type {
   Activity,
   DashboardStats,
@@ -207,10 +207,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
   };
 
   // SSE连接管理
-  const connectSSE = async (subscriptions: string[] = []) => {
+  const connectSSE = async (subscriptions: SSEEventType[] = []) => {
     try {
       sseConnectionState.value = 'connecting';
-      await sseService.connect(subscriptions as any);
+      await sseService.connect(subscriptions);
       sseConnected.value = true;
       sseConnectionState.value = 'open';
 

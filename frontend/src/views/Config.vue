@@ -460,10 +460,20 @@ const handleSaveConfig = async (): Promise<void> => {
           description: '通过Web界面更新配置',
         });
         MessagePlugin.success('配置保存成功');
-        confirmDialog.destroy();
       } catch (error) {
         MessagePlugin.error('配置保存失败');
+      } finally {
+        confirmDialog.hide();
+        confirmDialog.destroy();
       }
+    },
+    onCancel: () => {
+      confirmDialog.hide();
+      confirmDialog.destroy();
+    },
+    onClose: () => {
+      confirmDialog.hide();
+      confirmDialog.destroy();
     },
   });
 };
@@ -569,11 +579,21 @@ const handleRestoreFromBackup = async (backupId: string, configTypes?: ConfigTyp
       try {
         await configStore.restoreFromBackup(backupId, configTypes);
         MessagePlugin.success('配置恢复成功');
-        confirmDialog.destroy();
         backupDialogVisible.value = false;
       } catch (error) {
         MessagePlugin.error('配置恢复失败');
+      } finally {
+        confirmDialog.hide();
+        confirmDialog.destroy();
       }
+    },
+    onCancel: () => {
+      confirmDialog.hide();
+      confirmDialog.destroy();
+    },
+    onClose: () => {
+      confirmDialog.hide();
+      confirmDialog.destroy();
     },
   });
 };
