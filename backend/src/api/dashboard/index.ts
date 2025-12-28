@@ -602,6 +602,194 @@ dashboardApi.get('/health-detailed', async (c) => {
   }
 });
 
+// GET /api/dashboard/memory - 获取当前内存使用情况
+dashboardApi.get('/memory', async (c) => {
+  try {
+    // 动态导入 memory-monitor
+    const { memoryMonitor } = await import('../../utils/memory-monitor.js');
+
+    const currentMemory = memoryMonitor.getCurrentMemory();
+
+    logger.debug('获取当前内存使用情况', {
+      heapUsed: currentMemory.heapUsed,
+      rss: currentMemory.rss,
+    });
+
+    return c.json({
+      success: true,
+      data: {
+        memory: {
+          rss: Math.round(currentMemory.rss / 1024 / 1024), // MB
+          heapTotal: Math.round(currentMemory.heapTotal / 1024 / 1024),
+          heapUsed: Math.round(currentMemory.heapUsed / 1024 / 1024),
+          external: Math.round(currentMemory.external / 1024 / 1024),
+          arrayBuffers: Math.round(currentMemory.arrayBuffers / 1024 / 1024),
+          heapUsageRatio:
+            currentMemory.heapTotal > 0
+              ? (
+                  (currentMemory.heapUsed / currentMemory.heapTotal) *
+                  100
+                ).toFixed(1)
+              : '0.0',
+        },
+        timestamp: new Date(currentMemory.timestamp).toISOString(),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return c.json(handleApiError(error as Error), { status: 500 });
+  }
+});
+
+// GET /api/dashboard/memory/trend - 获取内存趋势分析
+dashboardApi.get('/memory/trend', async (c) => {
+  try {
+    // 动态导入 memory-monitor
+    const { memoryMonitor } = await import('../../utils/memory-monitor.js');
+
+    // 获取时间范围参数（默认 1 分钟）
+    const durationMs = c.req.query('duration')
+      ? parseInt(c.req.query('duration') || '60000')
+      : 60000;
+
+    const trend = memoryMonitor.analyzeTrend(durationMs);
+
+    if (!trend) {
+      return c.json({
+        success: true,
+        data: {
+          message: '内存趋势数据不足，请稍后再试',
+          trend: null,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    logger.debug('获取内存趋势', {
+      duration: durationMs,
+      growthRate: trend.growthRate,
+      trend: trend.trend,
+    });
+
+    return c.json({
+      success: true,
+      data: {
+        trend: {
+          duration: trend.duration,
+          growthRate: Math.round((trend.growthRate / 1024 / 1024) * 100) / 100, // MB/min
+          totalGrowth:
+            Math.round((trend.totalGrowth / 1024 / 1024) * 100) / 100, // MB
+          direction: trend.trend,
+          snapshotCount: trend.snapshots.length,
+        },
+        timestamp: new Date().toISOString(),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return c.json(handleApiError(error as Error), { status: 500 });
+  }
+});
+
+// GET /api/dashboard/resources - 获取资源使用统计
+dashboardApi.get('/resources', async (c) => {
+  try {
+    // 动态导入 resource-monitor
+    const { resourceMonitor } = await import('../../utils/resource-monitor.js');
+
+    const stats = resourceMonitor.getStats();
+
+    logger.debug('获取资源使用统计', {
+      activeTimers: stats.current.activeTimers,
+      activeHandles: stats.current.activeHandles,
+    });
+
+    return c.json({
+      success: true,
+      data: {
+        resources: {
+          activeTimers: stats.current.activeTimers,
+          activeHandles: stats.current.activeHandles,
+          fileDescriptors: stats.current.fileDescriptors,
+          heapUsed: Math.round(stats.current.heapUsed / 1024 / 1024), // MB
+          trend: stats.trend,
+          snapshotCount: stats.snapshotCount,
+        },
+        timestamp: new Date(stats.current.timestamp).toISOString(),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return c.json(handleApiError(error as Error), { status: 500 });
+  }
+});
+
+// POST /api/dashboard/memory/snapshot - 手动触发内存快照
+dashboardApi.post('/memory/snapshot', async (c) => {
+  try {
+    // 动态导入 memory-monitor
+    const { memoryMonitor } = await import('../../utils/memory-monitor.js');
+
+    const snapshot = memoryMonitor.takeSnapshot();
+
+    logger.info('手动触发内存快照', {
+      heapUsed: snapshot.heapUsed,
+      rss: snapshot.rss,
+    });
+
+    return c.json({
+      success: true,
+      data: {
+        snapshot: {
+          timestamp: new Date(snapshot.timestamp).toISOString(),
+          rss: Math.round(snapshot.rss / 1024 / 1024),
+          heapTotal: Math.round(snapshot.heapTotal / 1024 / 1024),
+          heapUsed: Math.round(snapshot.heapUsed / 1024 / 1024),
+          external: Math.round(snapshot.external / 1024 / 1024),
+        },
+        message: '内存快照已记录',
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return c.json(handleApiError(error as Error), { status: 500 });
+  }
+});
+
+// POST /api/dashboard/memory/gc - 手动触发垃圾回收
+dashboardApi.post('/memory/gc', async (c) => {
+  try {
+    // 动态导入 memory-monitor
+    const { memoryMonitor } = await import('../../utils/memory-monitor.js');
+
+    const triggered = memoryMonitor.forceGC();
+
+    if (triggered) {
+      logger.info('手动触发垃圾回收成功');
+      return c.json({
+        success: true,
+        data: {
+          message: '垃圾回收已触发',
+          note: '需要使用 --expose-gc 标志启动进程才能使用此功能',
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      logger.warn('垃圾回收不可用');
+      return c.json({
+        success: false,
+        data: {
+          message: '垃圾回收不可用',
+          note: '需要使用 --expose-gc 标志启动进程才能使用此功能',
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+  } catch (error) {
+    return c.json(handleApiError(error as Error), { status: 500 });
+  }
+});
+
 /**
  * 关闭仪表板服务
  */

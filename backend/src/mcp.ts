@@ -3,13 +3,13 @@ import {
   performanceMonitor,
   performanceOptimizer,
 } from '@mcp-core/mcp-hub-core';
+import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { toFetchResponse, toReqRes } from 'fetch-to-node';
 import { Hono } from 'hono';
 import { initializeMcpService, mcpServer } from './services/mcp_service.js';
 import { toMcpServerConfig } from './types/config-helpers.js';
 import type { Tool } from './types/mcp-hub.js';
-import type { McpConfig, GroupConfig } from '@mcp-core/mcp-hub-share';
 import { getAllConfig } from './utils/config.js';
 import { logger } from './utils/logger.js';
 

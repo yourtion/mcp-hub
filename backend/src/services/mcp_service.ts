@@ -9,11 +9,11 @@ const pkg = JSON.parse(
   readFileSync(join(process.cwd(), 'package.json'), 'utf-8'),
 );
 
-import type { McpConfig, GroupConfig } from '@mcp-core/mcp-hub-share';
+import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share';
 import { toMcpServerConfig } from '../types/config-helpers.js';
 import {
-  normalizeMcpContent,
   type McpContentItem,
+  normalizeMcpContent,
 } from '../types/mcp-content.js';
 import { getAllConfig } from '../utils/config.js';
 import { logger } from '../utils/logger.js';

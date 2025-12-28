@@ -79,6 +79,7 @@ export class McpHubService implements IMcpHubService {
 
   // Lifecycle management properties
   private healthCheckInterval?: NodeJS.Timeout;
+  private healthCheckTimers: Array<NodeJS.Timeout | NodeJS.Immediate> = []; // 追踪所有定时器
   private readonly HEALTH_CHECK_INTERVAL_MS = 30000; // 30 seconds
   private shutdownInProgress = false;
   private initializationTime?: Date;
@@ -421,6 +422,10 @@ export class McpHubService implements IMcpHubService {
       // Stop health monitoring first
       logger.debug('Stopping health monitoring');
       this.stopHealthMonitoring();
+
+      // Clear message tracking to free memory
+      logger.debug('Clearing message tracking');
+      this.mcpMessages = [];
 
       // Graceful shutdown with timeout
       const shutdownPromise = this.performGracefulShutdown();
@@ -1060,10 +1065,14 @@ export class McpHubService implements IMcpHubService {
       return;
     }
 
+    // 防御性清理：确保之前没有遗留定时器
+    this.stopHealthMonitoring();
+
     logger.info('Starting service health monitoring', {
       intervalMs: this.HEALTH_CHECK_INTERVAL_MS,
     });
 
+    // 创建主健康检查定时器
     this.healthCheckInterval = setInterval(async () => {
       try {
         await this.performHealthCheck();
@@ -1072,24 +1081,60 @@ export class McpHubService implements IMcpHubService {
       }
     }, this.HEALTH_CHECK_INTERVAL_MS);
 
-    // Perform initial health check
-    setImmediate(async () => {
+    // 追踪主定时器
+    this.healthCheckTimers.push(this.healthCheckInterval);
+
+    // 执行初始健康检查并追踪
+    const initialCheck = setImmediate(async () => {
       try {
         await this.performHealthCheck();
       } catch (error) {
         logger.error('Initial health check failed', error as Error);
       }
     });
+
+    // 追踪 setImmediate 定时器
+    this.healthCheckTimers.push(initialCheck);
+
+    logger.debug('Health monitoring timers registered', {
+      timerCount: this.healthCheckTimers.length,
+    });
   }
 
   /**
-   * Stop health monitoring
+   * Stop health monitoring（清理所有定时器）
    */
   private stopHealthMonitoring(): void {
-    if (this.healthCheckInterval) {
-      clearInterval(this.healthCheckInterval);
-      this.healthCheckInterval = undefined;
-      logger.info('Health monitoring stopped');
+    let clearedCount = 0;
+
+    // 清理所有追踪的定时器
+    this.healthCheckTimers.forEach((timer) => {
+      try {
+        // 使用类型守卫来判断是 Timeout 还是 Immediate
+        if ('_onTimeout' in timer) {
+          // 这是一个 Timeout 对象
+          clearInterval(timer as NodeJS.Timeout);
+        } else if ('_onImmediate' in timer) {
+          // 这是一个 Immediate 对象
+          clearImmediate(timer as NodeJS.Immediate);
+        }
+        clearedCount++;
+      } catch (error) {
+        logger.error('清理定时器失败', error as Error, {
+          timerType:
+            timer === this.healthCheckInterval ? 'interval' : 'immediate',
+        });
+      }
+    });
+
+    // 清空定时器数组
+    this.healthCheckTimers = [];
+    this.healthCheckInterval = undefined;
+
+    if (clearedCount > 0) {
+      logger.info('Health monitoring stopped', {
+        clearedTimers: clearedCount,
+      });
     }
   }
 

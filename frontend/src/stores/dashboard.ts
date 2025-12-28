@@ -3,7 +3,7 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { dashboardService } from '@/services/dashboard';
-import { sseService, type SSEEventType } from '@/services/sse';
+import { type SSEEventType, sseService } from '@/services/sse';
 import type {
   Activity,
   DashboardStats,

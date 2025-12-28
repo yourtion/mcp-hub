@@ -310,17 +310,56 @@ export class ServerManager implements IServerManager {
   async shutdown(): Promise<void> {
     logger.info('Shutting down ServerManager');
 
+    const SHUTDOWN_TIMEOUT = 5000; // 5 秒超时
+
     const shutdownPromises = Array.from(this.servers.values()).map(
       async (server) => {
         try {
           if (server.status === ServerStatus.CONNECTED) {
-            await server.client.close();
+            // 使用 Promise.race 添加超时保护
+            await Promise.race([
+              server.client.close(),
+              new Promise<void>((_, reject) =>
+                setTimeout(
+                  () => reject(new Error('关闭超时')),
+                  SHUTDOWN_TIMEOUT,
+                ),
+              ),
+            ]);
             logger.logServerConnection(server.id, 'disconnected');
           }
         } catch (error) {
           logger.error('Error during server shutdown', error as Error, {
             serverId: server.id,
           });
+
+          // 强制清理：如果是 stdio transport，尝试杀死进程
+          const errorMessage = (error as Error).message;
+          if (errorMessage === '关闭超时' || errorMessage.includes('timeout')) {
+            logger.warn('服务器关闭超时，尝试强制终止进程', {
+              serverId: server.id,
+            });
+
+            // 尝试访问并杀死子进程
+            try {
+              const transport = (server.client as any).transport;
+              if (transport?.process) {
+                transport.process.kill('SIGKILL');
+                logger.warn('已强制杀死服务器进程', {
+                  serverId: server.id,
+                  pid: transport.process.pid,
+                });
+              } else {
+                logger.warn('无法访问服务器进程，可能已经终止', {
+                  serverId: server.id,
+                });
+              }
+            } catch (killError) {
+              logger.error('强制终止进程失败', killError as Error, {
+                serverId: server.id,
+              });
+            }
+          }
         }
       },
     );

@@ -154,11 +154,34 @@ export class CliMcpServer {
   }
 
   /**
-   * 关闭服务器
+   * 关闭服务器（带超时保护）
    */
   async shutdown(): Promise<void> {
     this.logger.info('开始关闭CLI MCP服务器');
 
+    const SHUTDOWN_TIMEOUT = 5000; // 5 秒超时
+
+    try {
+      await Promise.race([
+        this.performShutdown(),
+        new Promise<void>((_, reject) =>
+          setTimeout(() => reject(new Error('关闭超时')), SHUTDOWN_TIMEOUT),
+        ),
+      ]);
+
+      this.logger.info('CLI MCP服务器关闭完成');
+    } catch (error) {
+      this.logger.error('关闭失败或超时，强制清理资源', error as Error);
+      // 至少清理引用，防止内存泄漏
+      await this.cleanup();
+      throw error;
+    }
+  }
+
+  /**
+   * 执行实际的关闭逻辑
+   */
+  private async performShutdown(): Promise<void> {
     try {
       // 关闭MCP服务器（会自动关闭传输层）
       if (this.server) {
@@ -172,8 +195,6 @@ export class CliMcpServer {
       }
 
       await this.cleanup();
-
-      this.logger.info('CLI MCP服务器关闭完成');
     } catch (error) {
       this.logger.error('CLI MCP服务器关闭时出错', error as Error);
       throw error;
@@ -219,14 +240,46 @@ export class CliMcpServer {
   }
 
   /**
-   * 清理资源
+   * 清理资源（显式清理所有引用）
    */
   private async cleanup(): Promise<void> {
-    this.server = null;
-    this.protocolHandler = null;
-    this.config = null;
-    this.isInitialized = false;
-    this.isStarted = false;
+    try {
+      // 1. 显式清理 transport 引用
+      if (this.transport) {
+        // StdioServerTransport 可能没有 close() 方法
+        // 但我们可以确保置空引用
+        this.transport = null;
+      }
+
+      // 2. 清理 protocol handler 引用
+      // （McpProtocolHandler 没有 cleanup 方法，只需置空引用）
+      this.protocolHandler = null;
+
+      // 3. 清理 server 引用
+      this.server = null;
+
+      // 4. 清理 config 引用
+      this.config = null;
+
+      // 5. 重置状态标志
+      this.isInitialized = false;
+      this.isStarted = false;
+
+      // 6. 提示 GC（如果在开发环境且启用了 --expose-gc）
+      if (global.gc) {
+        try {
+          global.gc();
+          this.logger.debug('已触发垃圾回收');
+        } catch (error) {
+          // GC 调用失败不影响其他清理逻辑
+          this.logger.debug('垃圾回收调用失败（可能未启用 --expose-gc）');
+        }
+      }
+
+      this.logger.debug('资源清理完成');
+    } catch (error) {
+      this.logger.error('清理资源时出错', error as Error);
+    }
   }
 
   /**
