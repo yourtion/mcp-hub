@@ -5,6 +5,7 @@
 import type { Context, Next } from 'hono';
 import type { AuthService } from '../services/auth.js';
 import type { AuthContext } from '../types/auth.js';
+import { logger } from '../utils/logger.js';
 
 // 扩展Hono的Context类型以包含认证信息
 declare module 'hono' {
@@ -219,7 +220,7 @@ export function requestLogMiddleware() {
     const start = Date.now();
     const method = c.req.method;
     const path = c.req.path;
-    const _userAgent = c.req.header('User-Agent') || 'Unknown';
+    const userAgent = c.req.header('User-Agent') || 'Unknown';
     const ip =
       c.req.header('X-Forwarded-For') || c.req.header('X-Real-IP') || 'Unknown';
 
@@ -234,18 +235,20 @@ export function requestLogMiddleware() {
       // 忽略错误
     }
 
-    console.log(
-      `[${new Date().toISOString()}] ${method} ${path} - ${username} (${ip})`,
-    );
-
     await next();
 
     const duration = Date.now() - start;
     const status = c.res.status;
 
-    console.log(
-      `[${new Date().toISOString()}] ${method} ${path} - ${status} (${duration}ms) - ${username}`,
-    );
+    logger.info('Request completed', {
+      method,
+      path,
+      status,
+      duration,
+      username,
+      ip,
+      userAgent,
+    });
   };
 }
 
@@ -257,7 +260,10 @@ export function errorHandlerMiddleware() {
     try {
       await next();
     } catch (error) {
-      console.error('Unhandled error:', error);
+      logger.error('Unhandled error', error as Error, {
+        path: c.req.path,
+        method: c.req.method,
+      });
 
       const errorMessage =
         error instanceof Error ? error.message : 'Internal server error';

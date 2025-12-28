@@ -12,6 +12,7 @@ import { toolsApi } from './api/tools/index.js';
 import { toolsAdminApi } from './api/tools-admin/index.js';
 import { mcp } from './mcp.js';
 import { createAuthMiddleware } from './middleware/auth.js';
+import { secureHeadersMiddleware } from './middleware/security.js';
 import { ApiToMcpWebService } from './services/api-to-mcp-web-service.js';
 import { AuthService } from './services/auth.js';
 import { sse } from './sse.js';
@@ -27,6 +28,9 @@ const apiToMcpWebService = new ApiToMcpWebService();
 
 export const app = new Hono();
 
+// 安全头中间件（在所有路由之前）
+app.use('*', secureHeadersMiddleware());
+
 // 性能监控中间件（在所有路由之前）
 app.use('*', createPerformanceMiddleware());
 
@@ -36,7 +40,7 @@ app.use('*', async (_c, next) => {
   try {
     await authService.initialize();
   } catch (error) {
-    console.error('Failed to initialize auth service:', error);
+    logger.error('Failed to initialize auth service', error as Error);
   }
   await next();
 });

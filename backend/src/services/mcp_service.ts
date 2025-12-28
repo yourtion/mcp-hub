@@ -9,8 +9,15 @@ const pkg = JSON.parse(
   readFileSync(join(process.cwd(), 'package.json'), 'utf-8'),
 );
 
+import type { McpConfig, GroupConfig } from '@mcp-core/mcp-hub-share';
+import { toMcpServerConfig } from '../types/config-helpers.js';
+import {
+  normalizeMcpContent,
+  type McpContentItem,
+} from '../types/mcp-content.js';
 import { getAllConfig } from '../utils/config.js';
 import { logger } from '../utils/logger.js';
+import { convertToZodSchema } from '../utils/zod-schema-converter.js';
 import { McpHubService } from './mcp_hub_service.js';
 
 // Create the MCP server instance
@@ -39,16 +46,16 @@ export async function initializeMcpService(): Promise<void> {
     // Create and initialize core service manager
     coreServiceManager = new McpServiceManager();
     // 转换配置格式以匹配核心包期望的格式
-    const coreConfig = {
-      servers: config.mcps.mcpServers as Record<string, any>,
-      groups: config.groups as Record<string, any>,
-    };
+    const coreConfig = toMcpServerConfig({
+      mcps: config.mcps as unknown as McpConfig,
+      groups: config.groups as unknown as GroupConfig,
+    });
     await coreServiceManager.initializeFromConfig(coreConfig);
 
     // Create and initialize hub service (for backward compatibility)
     hubService = new McpHubService(
-      config.mcps.mcpServers as Record<string, any>,
-      config.groups as any,
+      config.mcps.mcpServers as never,
+      config.groups as never,
     );
 
     await hubService.initialize();
@@ -168,11 +175,12 @@ async function registerHubTools(): Promise<void> {
   );
 
   // Execute tool with group context
+  // @ts-expect-error - MCP SDK type incompatibility with custom content types
   mcpServer.tool(
     'execute_tool',
     {
       toolName: z.string().describe('Name of the tool to execute'),
-      args: z.record(z.any()).describe('Arguments to pass to the tool'),
+      args: z.record(z.unknown()).describe('Arguments to pass to the tool'),
       groupId: z
         .string()
         .optional()
@@ -196,26 +204,17 @@ async function registerHubTools(): Promise<void> {
                 text: `Tool execution failed: ${JSON.stringify(result.content, null, 2)}`,
               },
             ],
-          };
+          } as unknown as { content: McpContentItem[] };
         }
 
         // Ensure content has proper typing
-        const typedContent = result.content.map((item: any) => {
-          if (typeof item === 'object' && item !== null) {
-            return {
-              type: item.type || ('text' as const),
-              ...item,
-            };
-          }
-          return {
-            type: 'text' as const,
-            text: String(item),
-          };
-        });
+        const typedContent = result.content.map((item) =>
+          normalizeMcpContent(item),
+        );
 
         return {
           content: typedContent,
-        };
+        } as unknown as { content: McpContentItem[] };
       } catch (error) {
         logger.error('Error executing tool', error as Error);
         return {
@@ -225,7 +224,7 @@ async function registerHubTools(): Promise<void> {
               text: `Error executing tool '${toolName}': ${(error as Error).message}`,
             },
           ],
-        };
+        } as unknown as { content: McpContentItem[] };
       }
     },
   );
@@ -294,6 +293,7 @@ async function registerDynamicTools(): Promise<void> {
           // Convert the tool's input schema to Zod schema
           const zodSchema = convertToZodSchema(tool.inputSchema);
 
+          // @ts-expect-error - MCP SDK type incompatibility with custom content types
           mcpServer.tool(toolName, zodSchema, async (args) => {
             try {
               if (!hubService) {
@@ -314,26 +314,17 @@ async function registerDynamicTools(): Promise<void> {
                       text: `Tool execution failed: ${JSON.stringify(result.content, null, 2)}`,
                     },
                   ],
-                };
+                } as unknown as { content: McpContentItem[] };
               }
 
               // Ensure content has proper typing
-              const typedContent = result.content.map((item: any) => {
-                if (typeof item === 'object' && item !== null) {
-                  return {
-                    type: item.type || ('text' as const),
-                    ...item,
-                  };
-                }
-                return {
-                  type: 'text' as const,
-                  text: String(item),
-                };
-              });
+              const typedContent = result.content.map((item) =>
+                normalizeMcpContent(item),
+              );
 
               return {
                 content: typedContent,
-              };
+              } as unknown as { content: McpContentItem[] };
             } catch (error) {
               logger.error(
                 `Error executing dynamic tool ${toolName}`,
@@ -346,7 +337,7 @@ async function registerDynamicTools(): Promise<void> {
                     text: `Error executing tool: ${(error as Error).message}`,
                   },
                 ],
-              };
+              } as unknown as { content: McpContentItem[] };
             }
           });
         }
@@ -366,67 +357,6 @@ async function registerDynamicTools(): Promise<void> {
     logger.error('Failed to register dynamic tools', error as Error);
     // Don't throw here, allow service to continue with hub tools only
   }
-}
-
-/**
- * Convert JSON schema to Zod schema (simplified conversion)
- */
-function convertToZodSchema(inputSchema: any): Record<string, any> {
-  if (!inputSchema || !inputSchema.properties) {
-    return {};
-  }
-
-  const zodSchema: Record<string, any> = {};
-
-  for (const [propName, propDef] of Object.entries(inputSchema.properties)) {
-    const prop = propDef as any;
-
-    // Basic type conversion
-    switch (prop.type) {
-      case 'string':
-        zodSchema[propName] = z.string();
-        if (prop.description) {
-          zodSchema[propName] = zodSchema[propName].describe(prop.description);
-        }
-        break;
-      case 'number':
-        zodSchema[propName] = z.number();
-        if (prop.description) {
-          zodSchema[propName] = zodSchema[propName].describe(prop.description);
-        }
-        break;
-      case 'boolean':
-        zodSchema[propName] = z.boolean();
-        if (prop.description) {
-          zodSchema[propName] = zodSchema[propName].describe(prop.description);
-        }
-        break;
-      case 'object':
-        zodSchema[propName] = z.record(z.any());
-        if (prop.description) {
-          zodSchema[propName] = zodSchema[propName].describe(prop.description);
-        }
-        break;
-      case 'array':
-        zodSchema[propName] = z.array(z.any());
-        if (prop.description) {
-          zodSchema[propName] = zodSchema[propName].describe(prop.description);
-        }
-        break;
-      default:
-        zodSchema[propName] = z.any();
-        if (prop.description) {
-          zodSchema[propName] = zodSchema[propName].describe(prop.description);
-        }
-    }
-
-    // Handle optional properties
-    if (!inputSchema.required || !inputSchema.required.includes(propName)) {
-      zodSchema[propName] = zodSchema[propName].optional();
-    }
-  }
-
-  return zodSchema;
 }
 
 /**

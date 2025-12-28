@@ -7,6 +7,9 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { toFetchResponse, toReqRes } from 'fetch-to-node';
 import { Hono } from 'hono';
 import { initializeMcpService, mcpServer } from './services/mcp_service.js';
+import { toMcpServerConfig } from './types/config-helpers.js';
+import type { Tool } from './types/mcp-hub.js';
+import type { McpConfig, GroupConfig } from '@mcp-core/mcp-hub-share';
 import { getAllConfig } from './utils/config.js';
 import { logger } from './utils/logger.js';
 
@@ -33,10 +36,10 @@ async function ensureMcpServiceInitialized(): Promise<void> {
     if (!coreServiceManager) {
       const config = await getAllConfig();
       coreServiceManager = new McpServiceManager();
-      const coreConfig = {
-        servers: config.mcps.mcpServers as Record<string, any>,
-        groups: config.groups as Record<string, any>,
-      };
+      const coreConfig = toMcpServerConfig({
+        mcps: config.mcps as McpConfig,
+        groups: config.groups as GroupConfig,
+      });
       await coreServiceManager.initializeFromConfig(coreConfig);
     }
 
@@ -65,7 +68,9 @@ mcp.post('/mcp', async (c) => {
       });
 
     // Added for extra debuggability
-    transport.onerror = console.error.bind(console);
+    transport.onerror = (error) => {
+      logger.error('Transport error', error as Error);
+    };
 
     // Use the enhanced MCP server with all registered tools
     await mcpServer.connect(transport);
@@ -218,11 +223,12 @@ mcp.get('/mcp/tools', async (c) => {
         acc[serverId].push({
           name: tool.name,
           description: tool.description,
-          parameters: tool.parameters,
+          inputSchema: (tool as unknown as Tool).inputSchema,
+          serverId: tool.serverId || 'unknown',
         });
         return acc;
       },
-      {} as Record<string, any[]>,
+      {} as Record<string, Tool[]>,
     );
 
     const response = {
