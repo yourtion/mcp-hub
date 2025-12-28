@@ -4,7 +4,6 @@
  * MCP Hub CLI 可执行文件入口点
  */
 
-const path = require('path');
+// 使用 import 运行 ES Module
+import('../dist/cli.js');
 
-// 导入编译后的主入口文件
-require(path.join(__dirname, '..', 'dist', 'cli.js'));

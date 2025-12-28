@@ -97,6 +97,38 @@ node dist/cli.js
 ./bin/mcp-hub.js
 ```
 
+#### Quick Configuration Initialization
+
+MCP Hub CLI provides quick configuration initialization to help you get started quickly:
+
+```bash
+# View all available commands
+mcp-hub --help
+
+# Initialize default configuration (includes common server examples)
+mcp-hub --init
+
+# Initialize all configurations (includes group configuration)
+mcp-hub --init-all
+
+# List all available server presets
+mcp-hub --list-presets
+
+# Overwrite existing configuration files
+mcp-hub --init-all --overwrite
+```
+
+The default configuration includes these commonly used MCP servers:
+- **fetch**: Web fetching and HTTP requests
+- **time**: Time and date functionality
+- **sequential-thinking**: Sequential thinking capabilities
+
+More available server presets:
+- **filesystem**: File system operations
+- **memory**: Persistent memory storage
+- **brave-search**: Brave search engine
+- **github**: GitHub repository management
+
 The CLI server communicates via stdin/stdout using the MCP protocol, perfect for integration with MCP clients like Claude Desktop.
 
 ### 3. Frontend Interface (Optional)

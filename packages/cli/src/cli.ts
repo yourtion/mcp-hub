@@ -22,6 +22,10 @@ interface CliOptions {
   templateType: ConfigTemplateType;
   validateConfig: boolean;
   listTemplates: boolean;
+  listPresets: boolean;
+  init: boolean;
+  initAll: boolean;
+  overwrite: boolean;
 }
 
 /**
@@ -37,6 +41,10 @@ function parseArgs(args: string[]): CliOptions {
     templateType: 'basic',
     validateConfig: false,
     listTemplates: false,
+    listPresets: false,
+    init: false,
+    initAll: false,
+    overwrite: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -87,6 +95,18 @@ function parseArgs(args: string[]): CliOptions {
       case '--list-templates':
         options.listTemplates = true;
         break;
+      case '--list-presets':
+        options.listPresets = true;
+        break;
+      case '--init':
+        options.init = true;
+        break;
+      case '--init-all':
+        options.initAll = true;
+        break;
+      case '--overwrite':
+        options.overwrite = true;
+        break;
       default:
         // 如果不是选项，则作为配置文件路径
         if (
@@ -121,6 +141,10 @@ MCP Hub CLI - 聚合多个MCP服务的命令行界面
   --template <type>       指定配置模板类型 (basic, advanced, development, production)
   --validate              验证配置文件
   --list-templates        列出所有可用的配置模板
+  --list-presets          列出所有可用的服务器预设
+  --init                  快速初始化配置文件（包含常用服务器示例）
+  --init-all              初始化所有配置文件（包含组配置）
+  --overwrite             覆盖已存在的配置文件
 
 示例:
   mcp-hub                                    # 使用默认配置文件
@@ -130,6 +154,9 @@ MCP Hub CLI - 聚合多个MCP服务的命令行界面
   mcp-hub --generate-config --template advanced  # 生成高级配置模板
   mcp-hub --validate -c config.json          # 验证配置文件
   mcp-hub --list-templates                   # 列出所有模板类型
+  mcp-hub --list-presets                     # 列出所有可用的服务器预设
+  mcp-hub --init                             # 快速初始化配置文件
+  mcp-hub --init-all --overwrite             # 初始化所有配置并覆盖已存在文件
 
 配置文件格式:
   {
@@ -218,6 +245,87 @@ async function listTemplates(): Promise<void> {
 }
 
 /**
+ * 初始化配置文件
+ */
+async function initConfig(
+  includeGroups: boolean,
+  overwrite: boolean,
+  configDir: string,
+): Promise<void> {
+  const { DefaultConfigGenerator } = await import('@mcp-core/mcp-hub-core');
+
+  console.log('正在初始化配置文件...');
+  console.log(`配置目录: ${configDir}`);
+
+  const generator = new DefaultConfigGenerator({
+    includeExamples: true,
+    includeGroups,
+    configDir,
+    overwrite,
+  });
+
+  const result = await generator.initConfigFiles();
+
+  console.log('\n初始化结果:');
+
+  if (result.createdFiles.length > 0) {
+    console.log('✅ 已创建配置文件:');
+    for (const file of result.createdFiles) {
+      console.log(`  - ${file}`);
+    }
+  }
+
+  if (result.skippedFiles.length > 0) {
+    console.log('⏭️  已跳过（文件已存在）:');
+    for (const file of result.skippedFiles) {
+      console.log(`  - ${file}`);
+    }
+  }
+
+  if (result.errors.length > 0) {
+    console.log('❌ 错误:');
+    for (const error of result.errors) {
+      console.log(`  - ${error}`);
+    }
+    process.exit(1);
+  }
+
+  if (result.createdFiles.length > 0) {
+    console.log('\n📝 下一步:');
+    console.log('  1. 根据需要修改配置文件');
+    console.log('  2. 运行: mcp-hub');
+    console.log(
+      '\n💡 提示: 使用 mcp-hub --list-presets 查看所有可用的服务器预设',
+    );
+  }
+}
+
+/**
+ * 列出所有可用的服务器预设
+ */
+async function listServerPresets(): Promise<void> {
+  const { DefaultConfigGenerator } = await import('@mcp-core/mcp-hub-core');
+
+  const generator = new DefaultConfigGenerator();
+  const presets = generator.getAvailableServerPresets();
+
+  console.log('可用的 MCP 服务器预设:');
+  console.log('');
+
+  for (const preset of presets) {
+    console.log(`  ${preset.id.padEnd(20)} - ${preset.name}`);
+    console.log(`                      ${preset.description}`);
+  }
+
+  console.log('');
+  console.log('使用方法:');
+  console.log(
+    '  mcp-hub --init          # 初始化默认配置（包含 fetch, time, sequential-thinking）',
+  );
+  console.log('  mcp-hub --init-all      # 初始化所有配置（包含组配置）');
+}
+
+/**
  * 设置日志级别
  */
 function setupLogging(verbose: boolean): void {
@@ -296,6 +404,11 @@ async function main() {
       return;
     }
 
+    if (options.listPresets) {
+      await listServerPresets();
+      return;
+    }
+
     if (options.generateConfig) {
       await generateConfig(options.templateType);
       return;
@@ -303,6 +416,12 @@ async function main() {
 
     if (options.validateConfig) {
       await validateConfig(options.configPath);
+      return;
+    }
+
+    if (options.init || options.initAll) {
+      const configDir = process.cwd();
+      await initConfig(options.initAll, options.overwrite, configDir);
       return;
     }
 

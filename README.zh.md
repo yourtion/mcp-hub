@@ -92,6 +92,38 @@ node dist/cli.js
 ./bin/mcp-hub.js
 ```
 
+#### 快速初始化配置
+
+MCP Hub CLI 提供了快速配置初始化功能，帮助您快速开始使用：
+
+```bash
+# 查看所有可用的命令
+mcp-hub --help
+
+# 初始化默认配置（包含常用服务器示例）
+mcp-hub --init
+
+# 初始化所有配置（包含组配置）
+mcp-hub --init-all
+
+# 查看所有可用的服务器预设
+mcp-hub --list-presets
+
+# 覆盖已存在的配置文件
+mcp-hub --init-all --overwrite
+```
+
+默认配置包含以下常用 MCP 服务器：
+- **fetch**: 网页获取和 HTTP 请求
+- **time**: 时间和日期功能
+- **sequential-thinking**: 序列化思考能力
+
+更多可用服务器预设：
+- **filesystem**: 文件系统操作
+- **memory**: 持久化记忆存储
+- **brave-search**: Brave 搜索引擎
+- **github**: GitHub 仓库管理
+
 CLI 服务器通过 stdin/stdout 使用 MCP 协议进行通信，非常适合与 Claude Desktop 等 MCP 客户端集成。
 
 ### 3. 前端界面（可选）

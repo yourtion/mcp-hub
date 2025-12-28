@@ -60,7 +60,8 @@ export class SSEEventManager {
       logger.warn('SSE连接数接近上限', {
         currentClients: this.clients.size,
         maxClients: this.MAX_CLIENTS,
-        usagePercent: ((this.clients.size / this.MAX_CLIENTS) * 100).toFixed(1) + '%',
+        usagePercent:
+          ((this.clients.size / this.MAX_CLIENTS) * 100).toFixed(1) + '%',
       });
     }
 
