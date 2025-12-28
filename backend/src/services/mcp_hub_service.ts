@@ -1485,9 +1485,9 @@ export class McpHubService implements IMcpHubService {
     // Add to the beginning of the array
     this.mcpMessages.unshift(message);
 
-    // Keep only the last 1000 messages to prevent memory issues
-    if (this.mcpMessages.length > 1000) {
-      this.mcpMessages = this.mcpMessages.slice(0, 1000);
+    // Keep only the last 500 messages to prevent memory issues
+    if (this.mcpMessages.length > 500) {
+      this.mcpMessages = this.mcpMessages.slice(0, 500);
     }
 
     logger.debug('MCP message tracked', {

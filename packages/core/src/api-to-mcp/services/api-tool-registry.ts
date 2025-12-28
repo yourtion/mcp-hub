@@ -59,6 +59,9 @@ export interface ToolRegistryStats {
  * 负责管理动态生成的MCP工具的注册、更新和查询
  */
 export class ApiToolRegistry {
+  /** 最大工具数量限制 */
+  private readonly MAX_TOOLS = 1000;
+
   /** 工具存储映射 */
   private tools = new Map<string, McpTool>();
 
@@ -99,10 +102,42 @@ export class ApiToolRegistry {
       // 检查是否已存在
       const isUpdate = this.tools.has(tool.name);
 
+      // 检查大小限制（仅对新注册）
+      if (!isUpdate && this.tools.size >= this.MAX_TOOLS) {
+        logger.warn('工具注册失败：已达到最大工具数量限制', {
+          context: {
+            toolId: tool.name,
+            currentSize: this.tools.size,
+            maxSize: this.MAX_TOOLS,
+          },
+        });
+        return {
+          valid: false,
+          errors: [
+            {
+              path: 'tool',
+              message: `已达到最大工具数量限制 (${this.MAX_TOOLS})`,
+              code: 'MAX_TOOLS_EXCEEDED',
+            },
+          ],
+        };
+      }
+
       // 存储工具和配置
       this.tools.set(tool.name, tool);
       this.toolConfigs.set(tool.name, config);
       this.lastUpdated = new Date();
+
+      // 检查是否接近限制
+      if (this.tools.size > this.MAX_TOOLS * 0.9) {
+        logger.warn('API工具注册表接近大小限制', {
+          context: {
+            currentSize: this.tools.size,
+            maxSize: this.MAX_TOOLS,
+            usagePercent: ((this.tools.size / this.MAX_TOOLS) * 100).toFixed(1) + '%',
+          },
+        });
+      }
 
       // 触发事件
       this.emitEvent({

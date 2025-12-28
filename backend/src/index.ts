@@ -216,6 +216,12 @@ async function gracefulShutdown(signal: string) {
     signal,
   });
 
+  // 立即移除所有进程监听器，防止重复触发
+  process.removeAllListeners('SIGTERM');
+  process.removeAllListeners('SIGINT');
+  process.removeAllListeners('uncaughtException');
+  process.removeAllListeners('unhandledRejection');
+
   try {
     // 设置关闭超时
     const shutdownTimeout = setTimeout(() => {

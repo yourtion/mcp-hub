@@ -8,6 +8,7 @@ import type {
 import { logger } from '../utils/logger.js';
 
 export class GroupManager implements IGroupManager {
+  private readonly MAX_GROUPS = 100; // 组数量限制
   private groups: Map<string, Group> = new Map();
   private serverManager: ServerManager;
 
@@ -45,6 +46,11 @@ export class GroupManager implements IGroupManager {
     logger.debug('Loading group', { groupName, groupData });
 
     try {
+      // 检查组数量限制
+      if (!this.groups.has(groupName) && this.groups.size >= this.MAX_GROUPS) {
+        throw new Error(`已达到最大组数量限制 (${this.MAX_GROUPS})`);
+      }
+
       // Validate group configuration structure
       this.validateGroupConfig(groupName, groupData);
 

@@ -744,11 +744,15 @@ export class ConfigService implements IConfigService {
             systemConfig.server.host,
             () => {
               server.close();
+              // 清理错误监听器
+              server.removeAllListeners('error');
               resolve();
             },
           );
 
           server.on('error', (error: NodeJS.ErrnoException) => {
+            // 清理错误监听器
+            server.removeAllListeners('error');
             if (error.code === 'EADDRINUSE') {
               reject(new Error(`端口 ${systemConfig.server.port} 已被占用`));
             } else {
@@ -845,11 +849,17 @@ export class ConfigService implements IConfigService {
           await new Promise<void>((resolve, reject) => {
             const timeout = setTimeout(() => {
               child.kill();
+              // 清理监听器
+              child.removeAllListeners('close');
+              child.removeAllListeners('error');
               reject(new Error('命令执行超时'));
             }, 5000);
 
             child.on('close', (code) => {
               clearTimeout(timeout);
+              // 清理监听器
+              child.removeAllListeners('close');
+              child.removeAllListeners('error');
               if (code === 0 || code === null) {
                 resolve();
               } else {
@@ -859,6 +869,9 @@ export class ConfigService implements IConfigService {
 
             child.on('error', (error) => {
               clearTimeout(timeout);
+              // 清理监听器
+              child.removeAllListeners('close');
+              child.removeAllListeners('error');
               reject(error);
             });
           });

@@ -24,6 +24,7 @@ interface SSEClient {
  * SSE事件管理器 - 管理实时事件推送
  */
 export class SSEEventManager {
+  private readonly MAX_CLIENTS = 1000; // 最大SSE连接数
   private clients = new Map<string, SSEClient>();
   private eventHistory: SSEEvent[] = [];
   private readonly MAX_HISTORY = 100; // 最大历史事件数
@@ -43,7 +44,25 @@ export class SSEEventManager {
     response: Response;
     clientId: string;
   } {
+    // 检查连接数限制
+    if (this.clients.size >= this.MAX_CLIENTS) {
+      logger.warn('SSE连接数已达上限，拒绝新连接', {
+        currentClients: this.clients.size,
+        maxClients: this.MAX_CLIENTS,
+      });
+      throw new Error(`已达到最大SSE连接数限制 (${this.MAX_CLIENTS})`);
+    }
+
     const clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // 检查是否接近限制
+    if (this.clients.size > this.MAX_CLIENTS * 0.9) {
+      logger.warn('SSE连接数接近上限', {
+        currentClients: this.clients.size,
+        maxClients: this.MAX_CLIENTS,
+        usagePercent: ((this.clients.size / this.MAX_CLIENTS) * 100).toFixed(1) + '%',
+      });
+    }
 
     logger.info('创建SSE连接', {
       clientId,
