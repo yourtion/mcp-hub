@@ -1,0 +1,104 @@
+/**
+ * 设计令牌统一导出
+ * 导入所有设计令牌，并转换为 CSS 变量供 JavaScript 使用
+ */
+
+// 导入所有令牌
+@import './color';
+@import './spacing';
+@import './typography';
+@import './border';
+@import './shadow';
+@import './radius';
+@import './transition';
+@import './z-index';
+
+// 导出为 CSS 变量（供 JavaScript 使用）
+:root {
+  // 间距令牌
+  --spacing-xs: @spacing-xs;
+  --spacing-sm: @spacing-sm;
+  --spacing-md: @spacing-md;
+  --spacing-lg: @spacing-lg;
+  --spacing-xl: @spacing-xl;
+  --spacing-xxl: @spacing-xxl;
+  --spacing-xxxl: @spacing-xxxl;
+
+  // 组件间距
+  --page-padding: @page-padding;
+  --page-gap: @page-gap;
+  --card-padding: @card-padding;
+  --card-gap: @card-gap;
+  --form-section-gap: @form-section-gap;
+  --form-item-gap: @form-item-gap;
+
+  // 字体大小
+  --font-size-xs: @font-size-xs;
+  --font-size-sm: @font-size-sm;
+  --font-size-base: @font-size-base;
+  --font-size-md: @font-size-md;
+  --font-size-lg: @font-size-lg;
+  --font-size-xl: @font-size-xl;
+  --font-size-xxl: @font-size-xxl;
+  --font-size-xxxl: @font-size-xxxl;
+  --font-size-display: @font-size-display;
+
+  // 字重
+  --font-weight-normal: @font-weight-normal;
+  --font-weight-medium: @font-weight-medium;
+  --font-weight-semibold: @font-weight-semibold;
+  --font-weight-bold: @font-weight-bold;
+
+  // 行高
+  --line-height-tight: @line-height-tight;
+  --line-height-normal: @line-height-normal;
+  --line-height-relaxed: @line-height-relaxed;
+
+  // 圆角
+  --radius-xs: @radius-xs;
+  --radius-sm: @radius-sm;
+  --radius-md: @radius-md;
+  --radius-lg: @radius-lg;
+  --radius-xl: @radius-xl;
+  --radius-full: @radius-full;
+  --radius-circle: @radius-circle;
+
+  // 过渡动画
+  --duration-fast: @duration-fast;
+  --duration-normal: @duration-normal;
+  --duration-slow: @duration-slow;
+
+  --easing-ease: @easing-ease;
+  --easing-ease-in: @easing-ease-in;
+  --easing-ease-out: @easing-ease-out;
+  --easing-ease-in-out: @easing-ease-in-out;
+  --easing-cubic: @easing-cubic;
+
+  // 层级
+  --z-dropdown: @z-dropdown;
+  --z-sticky: @z-sticky;
+  --z-fixed: @z-fixed;
+  --z-modal-backdrop: @z-modal-backdrop;
+  --z-modal: @z-modal;
+  --z-popover: @z-popover;
+  --z-tooltip: @z-tooltip;
+  --z-notification: @z-notification;
+
+  // 组件特定变量
+  --page-header-padding: var(--spacing-xxl) var(--spacing-xxl);
+  --page-header-gap: var(--spacing-lg);
+  --page-header-title-size: var(--font-size-display);
+  --page-header-description-size: var(--font-size-md);
+
+  --stat-card-icon-size: 56px;
+  --stat-card-icon-bg-radius: var(--radius-md);
+  --stat-card-value-size: var(--font-size-xxxl);
+  --stat-card-label-size: var(--font-size-base);
+
+  --form-section-padding: var(--spacing-xl) 0;
+  --form-section-title-size: var(--font-size-lg);
+  --form-section-title-margin: var(--spacing-md) 0 var(--spacing-lg);
+
+  --table-header-gap: var(--spacing-md);
+  --table-actions-gap: var(--spacing-sm);
+}

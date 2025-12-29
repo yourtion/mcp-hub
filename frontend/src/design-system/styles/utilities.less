@@ -1,0 +1,118 @@
+/**
+ * 工具类
+ * 提供常用的工具类，快速应用样式
+ */
+
+// 布局工具类
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.inline-flex { display: inline-flex; }
+
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.items-stretch { align-items: stretch; }
+
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-start { justify-content: flex-start; }
+.justify-end { justify-content: flex-end; }
+
+.gap-xs { gap: var(--spacing-xs); }
+.gap-sm { gap: var(--spacing-sm); }
+.gap-md { gap: var(--spacing-md); }
+.gap-lg { gap: var(--spacing-lg); }
+.gap-xl { gap: var(--spacing-xl); }
+.gap-xxl { gap: var(--spacing-xxl); }
+
+// Grid
+.grid { display: grid; }
+.grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+// 间距工具类
+.p-xs { padding: var(--spacing-xs); }
+.p-sm { padding: var(--spacing-sm); }
+.p-md { padding: var(--spacing-md); }
+.p-lg { padding: var(--spacing-lg); }
+.p-xl { padding: var(--spacing-xl); }
+.p-xxl { padding: var(--spacing-xxl); }
+
+.m-xs { margin: var(--spacing-xs); }
+.m-sm { margin: var(--spacing-sm); }
+.m-md { margin: var(--spacing-md); }
+.m-lg { margin: var(--spacing-lg); }
+.m-xl { margin: var(--spacing-xl); }
+.m-xxl { margin: var(--spacing-xxl); }
+
+// 文本工具类
+.text-primary { color: var(--td-text-color-primary); }
+.text-secondary { color: var(--td-text-color-secondary); }
+.text-placeholder { color: var(--td-text-color-placeholder); }
+.text-disabled { color: var(--td-text-color-disabled); }
+.text-anti { color: var(--td-text-color-anti); }
+
+.text-success { color: var(--td-success-color); }
+.text-warning { color: var(--td-warning-color); }
+.text-error { color: var(--td-error-color); }
+.text-info { color: var(--td-info-color); }
+
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+.font-normal { font-weight: var(--font-weight-normal); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-bold { font-weight: var(--font-weight-bold); }
+
+// 显示工具类
+.block { display: block; }
+.inline-block { display: inline-block; }
+.hidden { display: none; }
+.invisible { visibility: hidden; }
+
+// 定位工具类
+.relative { position: relative; }
+.absolute { position: absolute; }
+.fixed { position: fixed; }
+.sticky { position: sticky; }
+
+// 尺寸工具类
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+
+// 溢出工具类
+.overflow-hidden { overflow: hidden; }
+.overflow-auto { overflow: auto; }
+.overflow-scroll { overflow: scroll; }
+
+// 圆角工具类
+.rounded-none { border-radius: 0; }
+.rounded-sm { border-radius: var(--radius-xs); }
+.rounded { border-radius: var(--radius-sm); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.rounded-xl { border-radius: var(--radius-xl); }
+.rounded-full { border-radius: var(--radius-full); }
+
+// 阴影工具类
+.shadow-none { box-shadow: none; }
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+
+// 响应式工具类
+@media (max-width: 768px) {
+  .hide-mobile { display: none !important; }
+}
+
+@media (min-width: 769px) and (max-width: 1200px) {
+  .hide-tablet { display: none !important; }
+}
+
+@media (min-width: 1201px) {
+  .hide-desktop { display: none !important; }
+}

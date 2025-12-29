@@ -1,9 +1,10 @@
 import path from 'node:path';
 import { defineConfig } from '@rsbuild/core';
+import { pluginLess } from '@rsbuild/plugin-less';
 import { pluginVue } from '@rsbuild/plugin-vue';
 
 export default defineConfig({
-  plugins: [pluginVue()],
+  plugins: [pluginVue(), pluginLess()],
   source: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
