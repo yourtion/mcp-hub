@@ -1,44 +1,30 @@
 <template>
   <div class="dashboard-container">
     <!-- 页面头部 -->
-    <div class="dashboard-header">
-      <div class="header-left">
-        <h1>系统概览</h1>
-        <div class="header-subtitle">
-          <span>欢迎使用 MCP Hub 管理系统</span>
-          <div v-if="lastUpdated" class="last-updated">
-            最后更新: {{ formatTime(lastUpdated) }}
-          </div>
-        </div>
-      </div>
-      <div class="header-actions">
+    <PageHeader
+      title="系统概览"
+      description="欢迎使用 MCP Hub 管理系统"
+      :meta="lastUpdated ? `最后更新: ${formatTime(lastUpdated)}` : undefined"
+      :actions="[
+        { text: '刷新数据', icon: RefreshIcon, loading: isRefreshing, onClick: handleRefresh }
+      ]"
+    >
+      <template #extra>
         <!-- SSE连接状态 -->
         <div class="sse-status" :class="[`sse-status--${sseConnectionState}`]">
           <component :is="sseStatusIconComponent" size="14px" />
           <span>{{ sseStatusText }}</span>
         </div>
 
-        <!-- 刷新按钮 -->
-        <t-button
-          theme="default"
-          :loading="isRefreshing"
-          @click="handleRefresh"
-        >
-          <template #icon>
-            <RefreshIcon />
-          </template>
-          刷新数据
-        </t-button>
-        
         <!-- 用户信息 -->
         <div class="user-info">
           <span>{{ user?.username }}</span>
-          <t-button theme="default" @click="handleLogout">
+          <t-button theme="default" size="small" @click="handleLogout">
             退出登录
           </t-button>
         </div>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
     
     <!-- 仪表板内容 -->
     <div class="dashboard-content">
@@ -207,7 +193,8 @@ import {
 } from 'tdesign-icons-vue-next';
 import { useAuthStore } from '@/stores/auth';
 import { useDashboardStore } from '@/stores/dashboard';
-import StatCard from '@/components/dashboard/StatCard.vue';
+import PageHeader from '@/design-system/components/layout/PageHeader.vue';
+import StatCard from '@/design-system/components/data-display/StatCard.vue';
 import SystemHealthCard from '@/components/dashboard/SystemHealthCard.vue';
 import RecentActivityCard from '@/components/dashboard/RecentActivityCard.vue';
 
@@ -327,84 +314,62 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="less" scoped>
+@import '../design-system/styles/mixins.less';
+
 .dashboard-container {
-  padding: 24px;
+  padding: var(--page-padding);
   min-height: 100vh;
   background: linear-gradient(135deg, var(--td-bg-color-page) 0%, rgba(64, 158, 255, 0.03) 100%);
 }
 
-.dashboard-header {
+// SSE 状态样式
+.sse-status {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 32px;
-  padding: 24px 28px;
-  background: var(--td-bg-color-container);
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  border: 1px solid var(--td-border-level-1-color);
-  transition: all 0.3s ease;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  transition: all var(--duration-normal) var(--easing-ease);
+  backdrop-filter: blur(10px);
 }
 
-.dashboard-header:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+.sse-status--connecting {
+  background: linear-gradient(135deg, rgba(255, 159, 64, 0.15) 0%, rgba(255, 159, 64, 0.08) 100%);
+  color: #ff9f40;
+  border: 1px solid rgba(255, 159, 64, 0.2);
 }
 
-.header-left h1 {
-  margin: 0 0 12px 0;
-  font-size: 28px;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--td-text-color-primary) 0%, #409eff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.sse-status--open {
+  background: linear-gradient(135deg, rgba(103, 194, 58, 0.15) 0%, rgba(103, 194, 58, 0.08) 100%);
+  color: #67c23a;
+  border: 1px solid rgba(103, 194, 58, 0.2);
 }
 
-.header-subtitle {
+.sse-status--closed {
+  background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.08) 100%);
+  color: #f56c6c;
+  border: 1px solid rgba(245, 108, 108, 0.2);
+}
+
+// 用户信息样式
+.user-info {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.header-subtitle > span {
+  align-items: center;
+  gap: 16px;
+  font-size: var(--font-size-base);
   color: var(--td-text-color-secondary);
-  font-size: 15px;
-  font-weight: 400;
+  padding: 8px 16px;
+  background-color: var(--td-bg-color-container-hover);
+  border-radius: var(--radius-md);
+  transition: all var(--duration-normal) var(--easing-ease);
 }
 
-.last-updated {
-  font-size: 13px;
-  color: var(--td-text-color-placeholder);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.last-updated::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #67c23a;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(1.2);
-  }
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 20px;
+.user-info:hover {
+  background-color: var(--td-bg-color-container);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .sse-status {

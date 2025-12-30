@@ -1,95 +1,39 @@
 <template>
   <div class="api-config-list">
-    <div class="page-header">
-      <div class="header-title">
-        <h1>API配置管理</h1>
-        <p class="header-subtitle">管理和配置 API 到 MCP 工具的转换</p>
-      </div>
-      <div class="header-actions">
-        <t-space>
-          <t-button
-            v-if="selectedConfigs.length > 0"
-            variant="outline"
-            theme="danger"
-            @click="handleBatchDelete"
-          >
-            <template #icon><delete-icon /></template>
-            批量删除 ({{ selectedConfigs.length }})
-          </t-button>
-          <t-button
-            variant="outline"
-            @click="handleImport"
-          >
-            <template #icon><upload-icon /></template>
-            导入
-          </t-button>
-          <t-button
-            v-if="configs.length > 0"
-            variant="outline"
-            @click="handleExport"
-          >
-            <template #icon><download-icon /></template>
-            导出
-          </t-button>
-          <t-button
-            theme="primary"
-            @click="handleCreate"
-          >
-            <template #icon><add-icon /></template>
-            新建配置
-          </t-button>
-        </t-space>
-      </div>
-    </div>
+    <PageHeader
+      title="API配置管理"
+      description="管理和配置 API 到 MCP 工具的转换"
+      :actions="headerActions"
+    />
 
     <div class="content">
       <!-- 统计信息 -->
-      <t-row :gutter="16" class="stats-section">
-        <t-col :span="6">
-          <div class="stat-card stat-primary">
-            <div class="stat-icon">
-              <server-icon />
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ stats.totalConfigs }}</div>
-              <div class="stat-label">总配置数</div>
-            </div>
-          </div>
-        </t-col>
-        <t-col :span="6">
-          <div class="stat-card stat-success">
-            <div class="stat-icon">
-              <check-circle-icon />
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ stats.activeConfigs }}</div>
-              <div class="stat-label">活跃配置</div>
-            </div>
-          </div>
-        </t-col>
-        <t-col :span="6">
-          <div class="stat-card stat-warning">
-            <div class="stat-icon">
-              <tools-icon />
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ stats.totalTools }}</div>
-              <div class="stat-label">生成的工具</div>
-            </div>
-          </div>
-        </t-col>
-        <t-col :span="6">
-          <div class="stat-card stat-info">
-            <div class="stat-icon">
-              <time-icon />
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ formatTimeShort(stats.lastUpdated) }}</div>
-              <div class="stat-label">最后更新</div>
-            </div>
-          </div>
-        </t-col>
-      </t-row>
+      <div class="stats-section">
+        <StatCard
+          :value="stats.totalConfigs"
+          label="总配置数"
+          icon="server"
+          theme="blue"
+        />
+        <StatCard
+          :value="stats.activeConfigs"
+          label="活跃配置"
+          icon="success"
+          theme="green"
+        />
+        <StatCard
+          :value="stats.totalTools"
+          label="生成的工具"
+          icon="tools"
+          theme="orange"
+        />
+        <StatCard
+          :value="formatTimeShort(stats.lastUpdated)"
+          label="最后更新"
+          icon="server"
+          theme="purple"
+        />
+      </div>
 
       <!-- 搜索和过滤 -->
       <t-card class="filter-section" bordered>
@@ -291,6 +235,8 @@ import {
   CloseIcon,
   ErrorCircleIcon,
 } from 'tdesign-icons-vue-next';
+import PageHeader from '@/design-system/components/layout/PageHeader.vue';
+import StatCard from '@/design-system/components/data-display/StatCard.vue';
 import { apiToMcpService } from '@/services/api-to-mcp';
 import type { ApiConfigInfo, ApiToolConfig } from '@/types/api-to-mcp';
 import ApiConfigFormDialog from './ApiConfigFormDialog.vue';
@@ -316,6 +262,39 @@ const showImportDialog = ref(false);
 const showExportDialog = ref(false);
 
 const currentConfig = ref<ApiToolConfig | undefined>();
+
+// 头部操作按钮
+const headerActions = computed(() => [
+  {
+    text: '批量删除',
+    theme: 'danger',
+    variant: 'outline',
+    icon: DeleteIcon,
+    onClick: handleBatchDelete,
+    show: selectedConfigs.value.length > 0,
+  },
+  {
+    text: '导入',
+    theme: 'default',
+    variant: 'outline',
+    icon: UploadIcon,
+    onClick: handleImport,
+  },
+  {
+    text: '导出',
+    theme: 'default',
+    variant: 'outline',
+    icon: DownloadIcon,
+    onClick: handleExport,
+    show: configs.value.length > 0,
+  },
+  {
+    text: '新建配置',
+    theme: 'primary',
+    icon: AddIcon,
+    onClick: handleCreate,
+  },
+].filter(action => action.show !== false));
 
 // 空状态配置
 const emptyProps = computed(() => ({
@@ -677,33 +656,13 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="less" scoped>
+@import '../../design-system/styles/mixins.less';
+
 .api-config-list {
   padding: 24px;
   background: var(--td-bg-color-container);
   min-height: 100vh;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 32px;
-}
-
-.header-title h1 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--td-text-color-primary);
-  line-height: 1.2;
-}
-
-.header-subtitle {
-  margin: 0;
-  font-size: 14px;
-  color: var(--td-text-color-secondary);
-  line-height: 1.5;
 }
 
 .content {
@@ -714,78 +673,15 @@ onMounted(() => {
 
 /* 统计卡片样式 */
 .stats-section {
-  margin-bottom: 8px;
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
-  border-radius: 8px;
-  background: var(--td-bg-color-container);
-  border: 1px solid var(--td-component-border);
-  transition: all 0.2s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  font-size: 24px;
-}
-
-.stat-primary .stat-icon {
-  background: var(--td-brand-color-1);
-  color: var(--td-brand-color);
-}
-
-.stat-success .stat-icon {
-  background: var(--td-success-color-1);
-  color: var(--td-success-color);
-}
-
-.stat-warning .stat-icon {
-  background: var(--td-warning-color-1);
-  color: var(--td-warning-color);
-}
-
-.stat-info .stat-icon {
-  background: var(--td-brand-color-1);
-  color: var(--td-brand-color);
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 32px;
-  font-weight: 600;
-  line-height: 1.2;
-  margin-bottom: 4px;
-  background: linear-gradient(135deg, var(--td-brand-color) 0%, var(--td-brand-color-7) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: var(--td-text-color-secondary);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
 }
 
 /* 过滤区域样式 */
 .filter-section {
-  border-radius: 8px;
+  border-radius: var(--td-radius-default);
 }
 
 .filter-option {
@@ -837,19 +733,6 @@ onMounted(() => {
 @media (max-width: 1200px) {
   .api-config-list {
     padding: 16px;
-  }
-
-  .page-header {
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .header-actions {
-    width: 100%;
-  }
-
-  .header-actions :deep(.t-space) {
-    flex-wrap: wrap;
   }
 }
 </style>

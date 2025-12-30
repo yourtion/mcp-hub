@@ -4,10 +4,10 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router';
 import { setupGlobalErrorHandler } from './utils/error-handler';
-import './index.css';
 
-// 引入TDesign样式
-import 'tdesign-vue-next/es/style/index.css';
+// 引入扩展主题系统（包含 TDesign 样式）
+import './styles/theme-extended.less';
+import './index.css';
 
 const app = createApp(App);
 

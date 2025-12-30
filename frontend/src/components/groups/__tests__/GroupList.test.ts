@@ -65,7 +65,7 @@ describe('GroupList', () => {
     const wrapper = mount(GroupList);
 
     expect(wrapper.find('.group-list').exists()).toBe(true);
-    expect(wrapper.find('.group-list__header').exists()).toBe(true);
+    expect(wrapper.find('.ds-page-header').exists()).toBe(true);
     expect(wrapper.find('.group-list__stats').exists()).toBe(true);
     expect(wrapper.find('.group-list__table-card').exists()).toBe(true);
   });
@@ -73,20 +73,20 @@ describe('GroupList', () => {
   it('应该显示正确的页面标题', () => {
     const wrapper = mount(GroupList);
 
-    const title = wrapper.find('.group-list__title h2');
+    const title = wrapper.find('.ds-page-header__title');
     expect(title.text()).toBe('组管理');
 
-    const description = wrapper.find('.group-list__description');
+    const description = wrapper.find('.ds-page-header__description');
     expect(description.text()).toBe('管理MCP服务器组，配置工具过滤和验证密钥');
   });
 
   it('应该显示统计卡片', () => {
     const wrapper = mount(GroupList);
 
-    const statCards = wrapper.findAll('.stat-card');
+    const statCards = wrapper.findAll('.ds-stat-card');
     expect(statCards).toHaveLength(4);
 
-    const statValues = wrapper.findAll('.stat-card__value');
+    const statValues = wrapper.findAll('.ds-stat-card__value');
     expect(statValues[0].text()).toBe('1'); // 总组数
     expect(statValues[1].text()).toBe('1'); // 健康组
     expect(statValues[2].text()).toBe('2'); // 服务器

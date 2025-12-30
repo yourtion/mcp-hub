@@ -1,55 +1,25 @@
 <template>
   <div class="group-list">
     <!-- 页面头部 -->
-    <div class="group-list__header">
-      <div class="group-list__title">
-        <h2>组管理</h2>
-        <p class="group-list__description">
-          管理MCP服务器组，配置工具过滤和验证密钥
-        </p>
-      </div>
-      <div class="group-list__actions">
-        <t-button 
-          theme="default" 
-          variant="outline"
-          :loading="loading"
-          @click="handleRefresh"
-        >
-          <template #icon>
-            <RefreshIcon />
-          </template>
-          刷新
-        </t-button>
-        <t-button 
-          theme="primary"
-          @click="handleAddGroup"
-        >
-          <template #icon>
-            <AddIcon />
-          </template>
-          添加组
-        </t-button>
-      </div>
-    </div>
+    <PageHeader
+      title="组管理"
+      description="管理MCP服务器组，配置工具过滤和验证密钥"
+      :actions="[
+        { text: '刷新', theme: 'default', variant: 'outline', icon: RefreshIcon, loading, onClick: handleRefresh },
+        { text: '添加组', theme: 'primary', icon: AddIcon, onClick: handleAddGroup }
+      ]"
+    />
 
     <!-- 统计卡片 -->
     <div class="group-list__stats">
-      <t-card 
-        v-for="stat in statsCards" 
+      <StatCard
+        v-for="stat in statsCards"
         :key="stat.key"
-        :class="['stat-card', `stat-card--${stat.key}`]"
-        hover
-      >
-        <div class="stat-card__content">
-          <div class="stat-card__icon">
-            <component :is="stat.icon" />
-          </div>
-          <div class="stat-card__info">
-            <div class="stat-card__value">{{ stat.value }}</div>
-            <div class="stat-card__label">{{ stat.label }}</div>
-          </div>
-        </div>
-      </t-card>
+        :value="stat.value"
+        :label="stat.label"
+        :icon="stat.icon"
+        :theme="stat.theme"
+      />
     </div>
 
     <!-- 组表格 -->
@@ -244,20 +214,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, markRaw } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { MessagePlugin } from 'tdesign-vue-next';
-import { 
-  AddIcon, 
-  RefreshIcon, 
-  SearchIcon, 
+import {
+  AddIcon,
+  RefreshIcon,
+  SearchIcon,
   InfoCircleIcon,
   EditIcon,
   UsergroupFilledIcon,
   KeyIcon,
   MoreIcon,
   DeleteIcon,
-  HeartFilledIcon
+  HeartFilledIcon,
 } from 'tdesign-icons-vue-next';
+import PageHeader from '@/design-system/components/layout/PageHeader.vue';
+import StatCard from '@/design-system/components/data-display/StatCard.vue';
+import FilterBar from '@/design-system/components/layout/FilterBar.vue';
 import GroupStatusTag from '@/components/common/GroupStatusTag.vue';
 import { useGroupStore } from '@/stores/group';
 import type { GroupInfo } from '@/types/group';
@@ -332,25 +305,29 @@ const statsCards = computed(() => [
     key: 'total',
     value: groupStore.summary.totalGroups,
     label: '总组数',
-    icon: markRaw(UsergroupFilledIcon),
+    icon: 'folder',
+    theme: 'blue' as const,
   },
   {
     key: 'healthy',
     value: groupStore.summary.healthyGroups,
     label: '健康组',
-    icon: markRaw(HeartFilledIcon),
+    icon: 'success',
+    theme: 'green' as const,
   },
   {
     key: 'servers',
     value: groupStore.summary.totalServers,
     label: '服务器',
-    icon: markRaw(RefreshIcon),
+    icon: 'server',
+    theme: 'purple' as const,
   },
   {
     key: 'tools',
     value: groupStore.summary.totalTools,
     label: '工具总数',
-    icon: markRaw(EditIcon),
+    icon: 'tool',
+    theme: 'orange' as const,
   },
 ]);
 
@@ -500,77 +477,21 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="less" scoped>
+@import '../../design-system/styles/mixins.less';
+
 .group-list {
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.group-list__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-}
-
-.group-list__title h2 {
-  margin: 0 0 8px 0;
-  font-size: 24px;
-  font-weight: 500;
-}
-
-.group-list__description {
-  margin: 0;
-  color: var(--td-text-color-secondary);
-  font-size: 14px;
-}
-
-.group-list__actions {
-  display: flex;
-  gap: 8px;
+  gap: var(--spacing-lg);
 }
 
 .group-list__stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.stat-card {
-  transition: all 0.3s ease;
-}
-
-.stat-card__content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.stat-card__icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--td-bg-color-container);
-  border-radius: var(--td-radius-default);
-  color: var(--td-brand-color);
-}
-
-.stat-card__value {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--td-text-color-primary);
-  line-height: 1;
-}
-
-.stat-card__label {
-  font-size: 12px;
-  color: var(--td-text-color-secondary);
-  margin-top: 4px;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
 }
 
 .group-list__table-card {

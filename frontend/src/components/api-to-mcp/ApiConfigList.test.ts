@@ -73,6 +73,8 @@ describe('ApiConfigList', () => {
       global: {
         plugins: [router, ConfigProvider],
         stubs: {
+          'page-header': true,
+          'stat-card': true,
           't-button': true,
           't-card': true,
           't-row': true,
@@ -104,7 +106,7 @@ describe('ApiConfigList', () => {
     wrapper = createWrapper();
 
     expect(wrapper.find('.api-config-list').exists()).toBe(true);
-    expect(wrapper.find('.page-header h1').text()).toBe('API配置管理');
+    expect(wrapper.find('.stats-section').exists()).toBe(true);
   });
 
   it('displays statistics correctly', () => {

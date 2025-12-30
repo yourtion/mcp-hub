@@ -1,90 +1,57 @@
 <template>
   <div class="tool-list">
     <!-- 页面头部 -->
-    <div class="page-header-section">
-      <div class="header-title">
-        <h1 class="page-title">工具列表</h1>
-        <p class="page-description">浏览和管理所有可用的 MCP 工具</p>
-      </div>
-      <div class="header-actions">
-        <t-space>
-          <t-button
-            variant="outline"
-            :loading="loading"
-            @click="handleRefresh"
-          >
+    <PageHeader
+      title="工具列表"
+      description="浏览和管理所有可用的 MCP 工具"
+      :actions="[
+        { text: '刷新', theme: 'default', variant: 'outline', loading, onClick: handleRefresh }
+      ]"
+    >
+      <template #extra>
+        <t-dropdown
+          :options="viewOptions"
+          @click="handleViewChange"
+        >
+          <t-button variant="outline">
             <template #icon>
-              <t-icon name="refresh" />
+              <t-icon :name="currentView === 'list' ? 'view-list' : 'view-module'" />
             </template>
-            刷新
+            {{ currentView === 'list' ? '列表视图' : '卡片视图' }}
+            <template #suffix>
+              <chevron-down-icon />
+            </template>
           </t-button>
-
-          <t-dropdown
-            :options="viewOptions"
-            @click="handleViewChange"
-          >
-            <t-button variant="outline">
-              <template #icon>
-                <t-icon :name="currentView === 'list' ? 'view-list' : 'view-module'" />
-              </template>
-              {{ currentView === 'list' ? '列表视图' : '卡片视图' }}
-              <template #suffix>
-                <chevron-down-icon />
-              </template>
-            </t-button>
-          </t-dropdown>
-        </t-space>
-      </div>
-    </div>
+        </t-dropdown>
+      </template>
+    </PageHeader>
 
     <!-- 工具统计卡片 -->
     <div class="stats-section">
-      <t-row :gutter="12">
-        <t-col :span="6">
-          <div class="stat-card stat-primary">
-            <div class="stat-icon">
-              <t-icon name="layers" size="28px" />
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ toolList.length }}</div>
-              <div class="stat-label">总工具数</div>
-            </div>
-          </div>
-        </t-col>
-        <t-col :span="6">
-          <div class="stat-card stat-success">
-            <div class="stat-icon">
-              <t-icon name="check-circle" size="28px" />
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ availableTools.length }}</div>
-              <div class="stat-label">可用工具</div>
-            </div>
-          </div>
-        </t-col>
-        <t-col :span="6">
-          <div class="stat-card stat-warning">
-            <div class="stat-icon">
-              <t-icon name="close-circle" size="28px" />
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ unavailableTools.length }}</div>
-              <div class="stat-label">不可用工具</div>
-            </div>
-          </div>
-        </t-col>
-        <t-col :span="6">
-          <div class="stat-card stat-info">
-            <div class="stat-icon">
-              <t-icon name="server" size="28px" />
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ serverList.length }}</div>
-              <div class="stat-label">服务器数</div>
-            </div>
-          </div>
-        </t-col>
-      </t-row>
+      <StatCard
+        :value="toolList.length"
+        label="总工具数"
+        icon="tools"
+        theme="blue"
+      />
+      <StatCard
+        :value="availableTools.length"
+        label="可用工具"
+        icon="success"
+        theme="green"
+      />
+      <StatCard
+        :value="unavailableTools.length"
+        label="不可用工具"
+        icon="error-circle"
+        theme="orange"
+      />
+      <StatCard
+        :value="serverList.length"
+        label="服务器数"
+        icon="server"
+        theme="purple"
+      />
     </div>
 
     <!-- 工具过滤和搜索栏 -->
@@ -401,6 +368,8 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { ChevronDownIcon } from 'tdesign-icons-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next';
+import PageHeader from '@/design-system/components/layout/PageHeader.vue';
+import StatCard from '@/design-system/components/data-display/StatCard.vue';
 import { useToolStore } from '@/stores/tool';
 import StatusTag from '@/components/common/StatusTag.vue';
 import type { ToolInfo } from '@/types/tool';
@@ -623,118 +592,20 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
+<style lang="less" scoped>
+@import '../../design-system/styles/mixins.less';
+
 .tool-list {
   padding: 0;
   background-color: var(--td-bg-color-page);
 }
 
-/* 页面头部 */
-.page-header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding: 16px 20px;
-  background: var(--td-bg-color-container);
-  border-radius: var(--td-radius-default);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.header-title {
-  flex: 1;
-}
-
-.page-title {
-  margin: 0 0 4px 0;
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--td-text-color-primary);
-  line-height: 1.2;
-}
-
-.page-description {
-  margin: 0;
-  font-size: 13px;
-  color: var(--td-text-color-secondary);
-  line-height: 1.4;
-}
-
-.header-actions {
-  flex-shrink: 0;
-}
-
 /* 统计卡片区域 */
 .stats-section {
-  margin-bottom: 16px;
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  padding: 14px 16px;
-  background: var(--td-bg-color-container);
-  border-radius: var(--td-radius-default);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-  height: 100%;
-}
-
-.stat-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.stat-icon {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--td-radius-default);
-  margin-right: 10px;
-}
-
-.stat-primary .stat-icon {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.stat-success .stat-icon {
-  background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-  color: white;
-}
-
-.stat-warning .stat-icon {
-  background: linear-gradient(135deg, #ffa69e 0%, #fdfbfb 100%);
-  color: white;
-}
-
-.stat-info .stat-icon {
-  background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
-  color: white;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1.2;
-  margin-bottom: 2px;
-  background: linear-gradient(135deg, var(--td-text-color-primary) 0%, var(--td-text-color-secondary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: var(--td-text-color-secondary);
-  font-weight: 500;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
 }
 
 /* 过滤区域 */
@@ -952,18 +823,6 @@ onMounted(async () => {
 
 /* 响应式设计 */
 @media (max-width: 1200px) {
-  .page-header-section {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-  }
-
-  .header-actions {
-    width: 100%;
-    display: flex;
-    justify-content: flex-end;
-  }
-
   .stats-section :deep(.t-col) {
     margin-bottom: 0;
   }
@@ -972,19 +831,6 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .tool-list {
     padding: 0;
-  }
-
-  .page-header-section {
-    padding: 12px 16px;
-    margin-bottom: 12px;
-  }
-
-  .page-title {
-    font-size: 20px;
-  }
-
-  .page-description {
-    font-size: 12px;
   }
 
   /* 统计卡片在移动端保持四个一行 */
@@ -1001,28 +847,6 @@ onMounted(async () => {
     padding-left: 6px;
     padding-right: 6px;
     margin-bottom: 0;
-  }
-
-  .stat-card {
-    padding: 8px 10px;
-  }
-
-  .stat-icon {
-    width: 32px;
-    height: 32px;
-    margin-right: 8px;
-  }
-
-  .stat-icon :deep(.t-icon) {
-    font-size: 20px !important;
-  }
-
-  .stat-value {
-    font-size: 18px;
-  }
-
-  .stat-label {
-    font-size: 11px;
   }
 
   .filter-section {

@@ -1,55 +1,25 @@
 <template>
   <div class="server-list">
     <!-- 页面头部 -->
-    <div class="server-list__header">
-      <div class="server-list__title">
-        <h2>MCP服务器管理</h2>
-        <p class="server-list__description">
-          管理和监控MCP服务器的连接状态，查看可用工具
-        </p>
-      </div>
-      <div class="server-list__actions">
-        <t-button 
-          theme="default" 
-          variant="outline"
-          :loading="loading"
-          @click="handleRefresh"
-        >
-          <template #icon>
-            <RefreshIcon />
-          </template>
-          刷新
-        </t-button>
-        <t-button 
-          theme="primary"
-          @click="handleAddServer"
-        >
-          <template #icon>
-            <AddIcon />
-          </template>
-          添加服务器
-        </t-button>
-      </div>
-    </div>
+    <PageHeader
+      title="MCP服务器管理"
+      description="管理和监控MCP服务器的连接状态，查看可用工具"
+      :actions="[
+        { text: '刷新', theme: 'default', variant: 'outline', icon: RefreshIcon, loading, onClick: handleRefresh },
+        { text: '添加服务器', theme: 'primary', icon: AddIcon, onClick: handleAddServer }
+      ]"
+    />
 
     <!-- 统计卡片 -->
     <div class="server-list__stats">
-      <t-card 
-        v-for="stat in statsCards" 
+      <StatCard
+        v-for="stat in statsCards"
         :key="stat.key"
-        :class="['stat-card', `stat-card--${stat.key}`]"
-        hover
-      >
-        <div class="stat-card__content">
-          <div class="stat-card__icon">
-            <component :is="stat.icon" />
-          </div>
-          <div class="stat-card__info">
-            <div class="stat-card__value">{{ stat.value }}</div>
-            <div class="stat-card__label">{{ stat.label }}</div>
-          </div>
-        </div>
-      </t-card>
+        :value="stat.value"
+        :label="stat.label"
+        :icon="stat.icon"
+        :theme="stat.theme"
+      />
     </div>
 
     <!-- 服务器表格 -->
@@ -225,6 +195,8 @@ import {
   DeleteIcon,
 } from 'tdesign-icons-vue-next';
 import { useServerStore } from '@/stores/server';
+import PageHeader from '@/design-system/components/layout/PageHeader.vue';
+import StatCard from '@/design-system/components/data-display/StatCard.vue';
 import StatusTag from '@/components/common/StatusTag.vue';
 import ServerDetail from './ServerDetail.vue';
 import type { ServerInfo, ServerStatus, ServerType } from '@/types/server';
@@ -285,25 +257,29 @@ const statsCards = computed(() => [
     key: 'total',
     label: '总服务器',
     value: summary.value.total,
-    icon: markRaw(ServerIcon),
+    icon: 'server',
+    theme: 'blue' as const,
   },
   {
     key: 'connected',
     label: '已连接',
     value: summary.value.connected,
-    icon: markRaw(CheckCircleIcon),
+    icon: 'check-circle',
+    theme: 'green' as const,
   },
   {
     key: 'disconnected',
     label: '未连接',
     value: summary.value.disconnected,
-    icon: markRaw(CloseCircleIcon),
+    icon: 'close-circle',
+    theme: 'orange' as const,
   },
   {
     key: 'error',
     label: '错误',
     value: summary.value.error,
-    icon: markRaw(ErrorCircleIcon),
+    icon: 'error-circle',
+    theme: 'red' as const,
   },
 ]);
 
@@ -544,100 +520,20 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="less" scoped>
+@import '../../design-system/styles/mixins.less';
+
 .server-list {
-  padding: 24px;
+  padding: var(--page-padding);
   background-color: var(--td-bg-color-page);
   min-height: 100vh;
-}
-
-.server-list__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-}
-
-.server-list__title h2 {
-  margin: 0 0 8px 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--td-text-color-primary);
-}
-
-.server-list__description {
-  margin: 0;
-  color: var(--td-text-color-secondary);
-  font-size: 14px;
-}
-
-.server-list__actions {
-  display: flex;
-  gap: 12px;
 }
 
 .server-list__stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  border: none;
-}
-
-.stat-card__content {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.stat-card__icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
-
-.stat-card--total .stat-card__icon {
-  background-color: var(--td-brand-color-1);
-  color: var(--td-brand-color);
-}
-
-.stat-card--connected .stat-card__icon {
-  background-color: var(--td-success-color-1);
-  color: var(--td-success-color);
-}
-
-.stat-card--disconnected .stat-card__icon {
-  background-color: var(--td-gray-color-1);
-  color: var(--td-gray-color-6);
-}
-
-.stat-card--error .stat-card__icon {
-  background-color: var(--td-error-color-1);
-  color: var(--td-error-color);
-}
-
-.stat-card__info {
-  flex: 1;
-}
-
-.stat-card__value {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--td-text-color-primary);
-  line-height: 1;
-  margin-bottom: 4px;
-}
-
-.stat-card__label {
-  font-size: 14px;
-  color: var(--td-text-color-secondary);
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xxl);
 }
 
 .server-list__table-card {
