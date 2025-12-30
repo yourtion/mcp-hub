@@ -1,17 +1,14 @@
 <template>
-  <div class="server-list">
-    <!-- 页面头部 -->
-    <PageHeader
-      title="MCP服务器管理"
-      description="管理和监控MCP服务器的连接状态，查看可用工具"
-      :actions="[
-        { text: '刷新', theme: 'default', variant: 'outline', icon: RefreshIcon, loading, onClick: handleRefresh },
-        { text: '添加服务器', theme: 'primary', icon: AddIcon, onClick: handleAddServer }
-      ]"
-    />
-
+  <ContentLayout
+    title="MCP服务器管理"
+    description="管理和监控MCP服务器的连接状态，查看可用工具"
+    :actions="[
+      { text: '刷新', theme: 'default', variant: 'outline', icon: RefreshIcon, loading, onClick: handleRefresh },
+      { text: '添加服务器', theme: 'primary', icon: AddIcon, onClick: handleAddServer }
+    ]"
+  >
     <!-- 统计卡片 -->
-    <div class="server-list__stats">
+    <div class="stats-row">
       <StatCard
         v-for="stat in statsCards"
         :key="stat.key"
@@ -22,124 +19,62 @@
       />
     </div>
 
-    <!-- 服务器表格 -->
-    <t-card class="server-list__table-card">
-      <template #header>
-        <div class="table-header">
-          <h3>服务器列表</h3>
-          <div class="table-header__actions">
-            <t-input
-              v-model="searchKeyword"
-              placeholder="搜索服务器..."
-              clearable
-              class="search-input"
-            >
-              <template #prefix-icon>
-                <SearchIcon />
-              </template>
-            </t-input>
-            <t-select
-              v-model="statusFilter"
-              placeholder="状态筛选"
-              clearable
-              class="status-filter"
-            >
-              <t-option value="connected" label="已连接" />
-              <t-option value="disconnected" label="未连接" />
-              <t-option value="connecting" label="连接中" />
-              <t-option value="error" label="错误" />
-            </t-select>
-          </div>
+    <!-- 数据表格 -->
+    <DataTable
+      :data="tableData"
+      :columns="tableColumns"
+      :loading="loading"
+      :pagination="paginationConfig"
+      :searchable="true"
+      :search-placeholder="'搜索服务器...'"
+      :selectable="false"
+      @search="handleSearch"
+      @page-change="handlePageChange"
+      @page-size-change="handlePageSizeChange"
+    >
+      <!-- 服务器名称 -->
+      <template #name="{ row }">
+        <div class="server-name">
+          <div class="server-name__main">{{ row.name }}</div>
+          <div class="server-name__id">{{ row.id }}</div>
         </div>
       </template>
 
-      <t-table
-        :data="filteredServers"
-        :columns="columns"
-        :loading="loading"
-        :pagination="pagination"
-        row-key="id"
-        stripe
-        hover
-        @page-change="handlePageChange"
-        @page-size-change="handlePageSizeChange"
-      >
-        <!-- 服务器名称列 -->
-        <template #name="{ row }">
-          <div class="server-name">
-            <div class="server-name__main">{{ row.name }}</div>
-            <div class="server-name__id">{{ row.id }}</div>
-          </div>
-        </template>
+      <!-- 类型 -->
+      <template #type="{ row }">
+        <t-tag variant="light">{{ getTypeLabel(row.type) }}</t-tag>
+      </template>
 
-        <!-- 类型列 -->
-        <template #type="{ row }">
-          <t-tag variant="light">{{ getTypeLabel(row.type) }}</t-tag>
-        </template>
+      <!-- 状态 -->
+      <template #status="{ row }">
+        <StatusIndicator :status="row.status" mode="tag" />
+      </template>
 
-        <!-- 状态列 -->
-        <template #status="{ row }">
-          <StatusTag :status="row.status" />
-        </template>
+      <!-- 工具数量 -->
+      <template #toolCount="{ row }">
+        <div class="tool-count">
+          <ToolsIcon class="tool-count__icon" />
+          <span>{{ row.toolCount }}</span>
+        </div>
+      </template>
 
-        <!-- 工具数量列 -->
-        <template #toolCount="{ row }">
-          <div class="tool-count">
-            <ToolsIcon class="tool-count__icon" />
-            <span>{{ row.toolCount }}</span>
-          </div>
-        </template>
+      <!-- 最后连接 -->
+      <template #lastConnected="{ row }">
+        <div class="last-connected">
+          {{ formatLastConnected(row.lastConnected) }}
+        </div>
+      </template>
 
-        <!-- 最后连接时间列 -->
-        <template #lastConnected="{ row }">
-          <div class="last-connected">
-            {{ formatLastConnected(row.lastConnected) }}
-          </div>
-        </template>
-
-        <!-- 操作列 -->
-        <template #actions="{ row }">
-          <div class="server-actions">
-            <t-tooltip content="查看详情">
-              <t-button
-                theme="default"
-                variant="text"
-                size="small"
-                @click="handleViewServer(row)"
-              >
-                <BrowseIcon />
-              </t-button>
-            </t-tooltip>
-
-            <t-tooltip :content="getConnectionActionTooltip(row.status)">
-              <t-button
-                :theme="getConnectionActionTheme(row.status)"
-                variant="text"
-                size="small"
-                :loading="row.status === 'connecting'"
-                :disabled="row.status === 'connecting'"
-                @click="handleToggleConnection(row)"
-              >
-                <component :is="getConnectionActionIcon(row.status)" />
-              </t-button>
-            </t-tooltip>
-
-            <t-dropdown
-              :options="getDropdownOptions(row)"
-              @click="handleDropdownAction"
-            >
-              <t-button
-                theme="default"
-                variant="text"
-                size="small"
-              >
-                <MoreIcon />
-              </t-button>
-            </t-dropdown>
-          </div>
-        </template>
-      </t-table>
-    </t-card>
+      <!-- 操作 -->
+      <template #actions="{ row }">
+        <ActionGroup
+          :actions="getServerActions(row)"
+          :size="'small'"
+          layout="horizontal"
+          @action-click="handleActionClick(row, $event)"
+        />
+      </template>
+    </DataTable>
 
     <!-- 服务器详情抽屉 -->
     <t-drawer
@@ -157,12 +92,14 @@
     </t-drawer>
 
     <!-- 删除确认对话框 -->
-    <t-dialog
+    <ConfirmDialog
       v-model:visible="deleteDialogVisible"
-      header="确认删除"
-      :confirm-btn="{ content: '删除', theme: 'danger', loading: deleteLoading }"
+      title="确认删除"
+      type="danger"
+      :confirm-text="'删除'"
+      :cancel-text="'取消'"
+      :async-confirm="true"
       @confirm="handleConfirmDelete"
-      @cancel="deleteDialogVisible = false"
     >
       <p>
         确定要删除服务器 <strong>{{ serverToDelete?.name }}</strong> 吗？
@@ -170,8 +107,8 @@
       <p class="delete-warning">
         此操作不可撤销，删除后该服务器的所有配置将丢失。
       </p>
-    </t-dialog>
-  </div>
+    </ConfirmDialog>
+  </ContentLayout>
 </template>
 
 <script setup lang="ts">
@@ -181,26 +118,19 @@ import { MessagePlugin } from 'tdesign-vue-next';
 import {
   RefreshIcon,
   AddIcon,
-  SearchIcon,
   BrowseIcon,
   LinkIcon,
   LinkUnlinkIcon,
-  MoreIcon,
   ToolsIcon,
-  ServerIcon,
-  CheckCircleIcon,
-  CloseCircleIcon,
-  ErrorCircleIcon,
   EditIcon,
   DeleteIcon,
 } from 'tdesign-icons-vue-next';
 import { useServerStore } from '@/stores/server';
-import PageHeader from '@/design-system/components/layout/PageHeader.vue';
-import StatCard from '@/design-system/components/data-display/StatCard.vue';
-import StatusTag from '@/components/common/StatusTag.vue';
+import { ContentLayout, StatCard, DataTable, StatusIndicator, ConfirmDialog } from '@/design-system';
+import type { Action } from '@/design-system';
 import ServerDetail from './ServerDetail.vue';
 import type { ServerInfo, ServerStatus, ServerType } from '@/types/server';
-import type { TableColumns, PaginationProps } from 'tdesign-vue-next';
+import type { DataTableColumn, DataTablePagination } from '@/design-system';
 
 // 组件事件
 const emit = defineEmits<{
@@ -231,15 +161,13 @@ const {
 
 // 本地状态
 const searchKeyword = ref('');
-const statusFilter = ref<ServerStatus | ''>('');
 const detailDrawerVisible = ref(false);
 const selectedServer = ref<ServerInfo | null>(null);
 const deleteDialogVisible = ref(false);
 const serverToDelete = ref<ServerInfo | null>(null);
-const deleteLoading = ref(false);
 
 // 分页配置
-const pagination = ref<PaginationProps>({
+const paginationConfig = ref<DataTablePagination>({
   current: 1,
   pageSize: 10,
   total: 0,
@@ -283,72 +211,61 @@ const statsCards = computed(() => [
   },
 ]);
 
-// 过滤后的服务器列表
-const filteredServers = computed(() => {
+// 表格数据（已过滤和分页）
+const tableData = computed(() => {
   let filtered = serverList.value;
 
   // 关键词搜索
   if (searchKeyword.value) {
     const keyword = searchKeyword.value.toLowerCase();
-    filtered = filtered.filter(server => 
+    filtered = filtered.filter(server =>
       server.name.toLowerCase().includes(keyword) ||
       server.id.toLowerCase().includes(keyword)
     );
   }
 
-  // 状态筛选
-  if (statusFilter.value) {
-    filtered = filtered.filter(server => server.status === statusFilter.value);
-  }
-
   // 更新分页总数
-  pagination.value.total = filtered.length;
+  paginationConfig.value.total = filtered.length;
 
   // 分页
-  const start = (pagination.value.current - 1) * pagination.value.pageSize;
-  const end = start + pagination.value.pageSize;
+  const start = (paginationConfig.value.current - 1) * paginationConfig.value.pageSize;
+  const end = start + paginationConfig.value.pageSize;
   return filtered.slice(start, end);
 });
 
 // 表格列配置
-const columns: TableColumns = [
+const tableColumns: DataTableColumn[] = [
   {
-    colKey: 'name',
+    key: 'name',
     title: '服务器名称',
     width: 200,
     fixed: 'left',
-    cell: 'name',
   },
   {
-    colKey: 'type',
+    key: 'type',
     title: '类型',
     width: 100,
-    cell: 'type',
   },
   {
-    colKey: 'status',
+    key: 'status',
     title: '状态',
     width: 120,
-    cell: 'status',
   },
   {
-    colKey: 'toolCount',
+    key: 'toolCount',
     title: '工具数量',
     width: 100,
-    cell: 'toolCount',
   },
   {
-    colKey: 'lastConnected',
+    key: 'lastConnected',
     title: '最后连接',
     width: 160,
-    cell: 'lastConnected',
   },
   {
-    colKey: 'actions',
+    key: 'actions',
     title: '操作',
     width: 150,
     fixed: 'right',
-    cell: 'actions',
   },
 ];
 
@@ -364,15 +281,15 @@ const getTypeLabel = (type: ServerType): string => {
 
 const formatLastConnected = (lastConnected?: string): string => {
   if (!lastConnected) return '从未连接';
-  
+
   const date = new Date(lastConnected);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
-  
+
   if (diff < 60000) return '刚刚';
   if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
-  
+
   return date.toLocaleDateString('zh-CN', {
     month: 'short',
     day: 'numeric',
@@ -381,33 +298,61 @@ const formatLastConnected = (lastConnected?: string): string => {
   });
 };
 
-const getConnectionActionTooltip = (status: ServerStatus): string => {
-  return status === 'connected' ? '断开连接' : '连接服务器';
-};
+const getServerActions = (server: ServerInfo): Action[] => {
+  const actions: Action[] = [
+    {
+      key: 'view',
+      text: '查看',
+      icon: BrowseIcon,
+      theme: 'default',
+      variant: 'text',
+      priority: 'secondary',
+      onClick: () => handleViewServer(server),
+    },
+    {
+      key: 'connect',
+      text: server.status === 'connected' ? '断开' : '连接',
+      icon: server.status === 'connected' ? LinkUnlinkIcon : LinkIcon,
+      theme: server.status === 'connected' ? 'danger' : 'success',
+      variant: 'text',
+      priority: 'secondary',
+      loading: server.status === 'connecting',
+      disabled: server.status === 'connecting',
+      onClick: () => handleToggleConnection(server),
+    },
+    {
+      key: 'edit',
+      text: '编辑',
+      icon: EditIcon,
+      theme: 'default',
+      variant: 'text',
+      priority: 'secondary',
+      onClick: () => emit('editServer', server),
+    },
+    {
+      key: 'delete',
+      text: '删除',
+      icon: DeleteIcon,
+      theme: 'danger',
+      variant: 'text',
+      priority: 'danger',
+      confirm: {
+        type: 'danger',
+        content: '确定要删除此服务器吗？',
+      },
+      onClick: () => handleDeleteServer(server),
+    },
+  ];
 
-const getConnectionActionTheme = (status: ServerStatus): string => {
-  return status === 'connected' ? 'danger' : 'success';
+  return actions;
 };
-
-const getConnectionActionIcon = (status: ServerStatus) => {
-  return markRaw(status === 'connected' ? LinkUnlinkIcon : LinkIcon);
-};
-
-const getDropdownOptions = (server: ServerInfo) => [
-  {
-    content: '编辑配置',
-    value: `edit-${server.id}`,
-    prefixIcon: markRaw(EditIcon),
-  },
-  {
-    content: '删除服务器',
-    value: `delete-${server.id}`,
-    prefixIcon: markRaw(DeleteIcon),
-    theme: 'danger',
-  },
-];
 
 // 事件处理
+const handleSearch = (keyword: string) => {
+  searchKeyword.value = keyword;
+  paginationConfig.value.current = 1;
+};
+
 const handleRefresh = async () => {
   try {
     await fetchServers();
@@ -452,53 +397,43 @@ const handleToggleConnection = async (server: ServerInfo) => {
   }
 };
 
-const handleDropdownAction = ({ value }: { value: string }) => {
-  const [action, serverId] = value.split('-');
-  const server = serverList.value.find(s => s.id === serverId);
-  
-  if (!server) return;
-  
-  switch (action) {
-    case 'edit':
-      emit('editServer', server);
-      break;
-    case 'delete':
-      serverToDelete.value = server;
-      deleteDialogVisible.value = true;
-      break;
-  }
+const handleDeleteServer = (server: ServerInfo) => {
+  serverToDelete.value = server;
+  deleteDialogVisible.value = true;
+};
+
+const handleActionClick = (server: ServerInfo, action: Action) => {
+  // Action 的 onClick 已经在 getServerActions 中定义
+  // 这里可以添加额外的处理逻辑
 };
 
 const handleConfirmDelete = async () => {
   if (!serverToDelete.value) return;
-  
+
   try {
-    deleteLoading.value = true;
     await deleteServer(serverToDelete.value.id);
     MessagePlugin.success(`服务器 ${serverToDelete.value.name} 删除成功`);
     deleteDialogVisible.value = false;
     serverToDelete.value = null;
   } catch (err) {
     MessagePlugin.error(err instanceof Error ? err.message : '删除失败');
-  } finally {
-    deleteLoading.value = false;
   }
 };
 
 const handlePageChange = (current: number) => {
-  pagination.value.current = current;
+  paginationConfig.value.current = current;
 };
 
 const handlePageSizeChange = (pageSize: number) => {
-  pagination.value.pageSize = pageSize;
-  pagination.value.current = 1;
+  paginationConfig.value.pageSize = pageSize;
+  paginationConfig.value.current = 1;
 };
 
 // 生命周期
 onMounted(async () => {
   // 初始加载
   await fetchServers();
-  
+
   // 设置定时刷新
   refreshTimer = setInterval(() => {
     // 静默刷新服务器状态
@@ -506,7 +441,7 @@ onMounted(async () => {
       refreshServerStatus(server.id);
     });
   }, 30000); // 30秒刷新一次
-  
+
   // 清除错误
   if (error.value) {
     clearError();
@@ -522,48 +457,13 @@ onUnmounted(() => {
 
 <style lang="less" scoped>
 @import '../../design-system/styles/mixins.less';
+@import '../../design-system/tokens/spacing.less';
 
-.server-list {
-  padding: var(--page-padding);
-  background-color: var(--td-bg-color-page);
-  min-height: 100vh;
-}
-
-.server-list__stats {
+.stats-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-xxl);
-}
-
-.server-list__table-card {
-  border: none;
-}
-
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.table-header h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.table-header__actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.search-input {
-  width: 240px;
-}
-
-.status-filter {
-  width: 120px;
+  gap: @spacing-lg;
+  margin-bottom: @spacing-xxl;
 }
 
 .server-name__main {
@@ -593,11 +493,6 @@ onUnmounted(() => {
   color: var(--td-text-color-secondary);
 }
 
-.server-actions {
-  display: flex;
-  gap: 4px;
-}
-
 .delete-warning {
   color: var(--td-warning-color);
   font-size: 13px;
@@ -605,39 +500,10 @@ onUnmounted(() => {
   margin-bottom: 0;
 }
 
+// 响应式
 @media (max-width: 768px) {
-  .server-list {
-    padding: 16px;
-  }
-  
-  .server-list__header {
-    flex-direction: column;
-    gap: 16px;
-    align-items: stretch;
-  }
-  
-  .server-list__actions {
-    justify-content: flex-end;
-  }
-  
-  .server-list__stats {
+  .stats-row {
     grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .table-header {
-    flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
-  }
-  
-  .table-header__actions {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .search-input,
-  .status-filter {
-    width: 100%;
   }
 }
 </style>

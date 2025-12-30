@@ -1,187 +1,318 @@
 <template>
   <div class="config-page">
     <!-- 页面头部 -->
-    <div class="config-header">
-      <div class="header-content">
-        <div class="header-left">
-          <h1 class="page-title">系统配置</h1>
-          <p class="page-description">管理系统配置、查看历史记录和创建备份</p>
-        </div>
-        <div class="header-right">
-          <t-space>
-            <t-button
-              theme="default"
-              variant="outline"
-              :loading="configStore.isLoading"
-              @click="handleRefresh"
-            >
-              <template #icon>
-                <RefreshIcon />
-              </template>
-              刷新
-            </t-button>
-            <t-button
-              theme="primary"
-              variant="outline"
-              @click="handleCreateBackup"
-            >
-              <template #icon>
-                <BackupIcon />
-              </template>
-              创建备份
-            </t-button>
-            <t-button
-              theme="success"
-              :disabled="!configStore.isFormDirty"
-              :loading="configStore.isLoading"
-              @click="handleSaveConfig"
-            >
-              <template #icon>
-                <CheckIcon />
-              </template>
-              保存配置
-            </t-button>
-          </t-space>
-        </div>
-      </div>
-    </div>
+    <ContentLayout
+      title="系统配置"
+      description="管理系统配置、查看历史记录和创建备份"
+      :actions="headerActions"
+    >
+      <template #extra>
+        <t-space>
+          <t-button
+            theme="default"
+            variant="text"
+            @click="handleViewHistory"
+          >
+            <template #icon>
+              <TimeIcon />
+            </template>
+            查看历史
+          </t-button>
+          <t-button
+            theme="default"
+            variant="text"
+            @click="handleManageBackups"
+          >
+            <template #icon>
+              <FolderIcon />
+            </template>
+            管理备份
+          </t-button>
+        </t-space>
+      </template>
 
-    <!-- 搜索和过滤器 -->
-    <div class="config-filters">
-      <t-card>
-        <t-row :gutter="16">
-          <t-col :span="6">
-            <t-input
-              v-model="searchKeyword"
-              placeholder="搜索配置项..."
-              clearable
-              @change="handleSearch"
-            >
-              <template #prefix-icon>
-                <t-icon name="search" />
-              </template>
-            </t-input>
-          </t-col>
-          <t-col :span="4">
-            <t-select
-              v-model="selectedConfigType"
-              placeholder="配置类型"
-              clearable
-              @change="handleConfigTypeChange"
-            >
-              <t-option value="system" label="系统配置" />
-              <t-option value="mcp" label="MCP配置" />
-              <t-option value="groups" label="组配置" />
-            </t-select>
-          </t-col>
-          <t-col :span="4">
-            <t-select
-              v-model="selectedCategory"
-              placeholder="配置分类"
-              clearable
-              @change="handleCategoryChange"
-            >
-              <t-option
-                v-for="category in configCategories"
-                :key="category.key"
-                :value="category.key"
-                :label="category.label"
-              />
-            </t-select>
-          </t-col>
-          <t-col :span="4">
-            <div class="advanced-switch">
-              <t-switch
-                v-model="showAdvanced"
-                :custom-value="true"
-                :default-value="false"
-                @change="handleAdvancedToggle"
-              />
-              <span class="switch-label">显示高级选项</span>
-            </div>
-          </t-col>
-          <t-col :span="6">
-            <t-space>
-              <t-button
-                theme="default"
-                variant="text"
-                @click="handleViewHistory"
-              >
-                <template #icon>
-                  <t-icon name="time" />
-                </template>
-                查看历史
-              </t-button>
-              <t-button
-                theme="default"
-                variant="text"
-                @click="handleManageBackups"
-              >
-                <template #icon>
-                  <t-icon name="folder" />
-                </template>
-                管理备份
-              </t-button>
-            </t-space>
-          </t-col>
-        </t-row>
-      </t-card>
-    </div>
-
-    <!-- 主要内容区域 -->
-    <div class="config-content">
-      <t-row :gutter="24">
-        <!-- 左侧配置分类导航 -->
-        <t-col :span="6">
-          <t-card title="配置分类" class="category-card">
-            <config-category-nav
-              :categories="configCategories"
-              :selected-category="selectedCategory"
-              @category-select="handleCategorySelect"
-            />
-          </t-card>
-        </t-col>
-
-        <!-- 右侧配置编辑区域 -->
-        <t-col :span="18">
-          <t-card class="config-editor-card">
-            <!-- 配置编辑器 -->
-            <config-editor
-              v-if="configStore.hasConfigData"
-              :config-data="configStore.configData"
-              :selected-config-type="selectedConfigType"
-              :selected-category="selectedCategory"
-              :search-keyword="searchKeyword"
-              :show-advanced="showAdvanced"
-              @config-change="handleConfigChange"
-              @validate="handleValidateConfig"
-              @test="handleTestConfig"
-              @preview="handlePreviewConfig"
-            />
-            
-            <!-- 加载状态 -->
-            <div v-else-if="configStore.isLoading" class="loading-container">
-              <t-loading size="large" text="加载配置中..." />
-            </div>
-            
-            <!-- 错误状态 -->
-            <div v-else-if="configStore.hasError" class="error-container">
-              <t-alert
-                theme="error"
-                title="加载配置失败"
-                :message="configStore.error"
-              >
-                <template #operation>
-                  <t-button theme="primary" size="small" @click="handleRefresh">
-                    重新加载
+      <!-- Tab 导航 -->
+      <t-tabs
+        v-model="activeTab"
+        :size="'large'"
+        @change="handleTabChange"
+      >
+        <!-- 系统配置 Tab -->
+        <t-tab-panel value="system" label="系统配置">
+          <div class="tab-content">
+            <!-- 筛选栏 -->
+            <t-card bordered class="filter-card">
+              <t-row :gutter="16" align="middle">
+                <t-col :flex="'auto'">
+                  <t-input
+                    v-model="searchKeyword"
+                    placeholder="搜索配置项..."
+                    clearable
+                    size="large"
+                    @change="handleSearch"
+                  >
+                    <template #prefix-icon>
+                      <SearchIcon />
+                    </template>
+                  </t-input>
+                </t-col>
+                <t-col :span="3">
+                  <t-select
+                    v-model="selectedCategory"
+                    placeholder="配置分类"
+                    clearable
+                    size="large"
+                    @change="handleCategoryChange"
+                  >
+                    <t-option
+                      v-for="category in systemCategories"
+                      :key="category.key"
+                      :value="category.key"
+                      :label="category.label"
+                    />
+                  </t-select>
+                </t-col>
+                <t-col :span="2">
+                  <div class="advanced-switch-wrapper">
+                    <t-switch
+                      v-model="showAdvanced"
+                      :custom-value="true"
+                      :default-value="false"
+                      size="large"
+                      @change="handleAdvancedToggle"
+                    />
+                    <span class="switch-label">高级</span>
+                  </div>
+                </t-col>
+                <t-col :flex="'150px'">
+                  <t-button
+                    block
+                    variant="dashed"
+                    size="large"
+                    @click="handleResetFilters"
+                  >
+                    <template #icon>
+                      <RefreshIcon />
+                    </template>
+                    重置
                   </t-button>
-                </template>
-              </t-alert>
-            </div>
-          </t-card>
-        </t-col>
-      </t-row>
-    </div>
+                </t-col>
+              </t-row>
+            </t-card>
+
+            <!-- 配置编辑器 -->
+            <t-card bordered class="config-editor-card">
+              <div v-if="configStore.isLoading" class="loading-container">
+                <t-loading size="large" text="加载配置中..." />
+              </div>
+              <div v-else-if="configStore.hasError" class="error-container">
+                <t-alert
+                  theme="error"
+                  title="加载配置失败"
+                  :message="configStore.error"
+                >
+                  <template #operation>
+                    <t-button theme="primary" size="small" @click="handleRefresh">
+                      重新加载
+                    </t-button>
+                  </template>
+                </t-alert>
+              </div>
+              <system-config-editor
+                v-else-if="configStore.hasConfigData"
+                :config="configStore.configData.system"
+                :selected-category="selectedCategory"
+                :search-keyword="searchKeyword"
+                :show-advanced="showAdvanced"
+                @change="handleConfigChange"
+              />
+            </t-card>
+          </div>
+        </t-tab-panel>
+
+        <!-- MCP配置 Tab -->
+        <t-tab-panel value="mcp" label="MCP配置">
+          <div class="tab-content">
+            <t-card bordered class="filter-card">
+              <t-row :gutter="16" align="middle">
+                <t-col :flex="'auto'">
+                  <t-input
+                    v-model="searchKeyword"
+                    placeholder="搜索配置项..."
+                    clearable
+                    size="large"
+                    @change="handleSearch"
+                  >
+                    <template #prefix-icon>
+                      <SearchIcon />
+                    </template>
+                  </t-input>
+                </t-col>
+                <t-col :span="3">
+                  <t-select
+                    v-model="selectedCategory"
+                    placeholder="配置分类"
+                    clearable
+                    size="large"
+                    @change="handleCategoryChange"
+                  >
+                    <t-option
+                      v-for="category in mcpCategories"
+                      :key="category.key"
+                      :value="category.key"
+                      :label="category.label"
+                    />
+                  </t-select>
+                </t-col>
+                <t-col :span="2">
+                  <div class="advanced-switch-wrapper">
+                    <t-switch
+                      v-model="showAdvanced"
+                      :custom-value="true"
+                      :default-value="false"
+                      size="large"
+                      @change="handleAdvancedToggle"
+                    />
+                    <span class="switch-label">高级</span>
+                  </div>
+                </t-col>
+                <t-col :flex="'150px'">
+                  <t-button
+                    block
+                    variant="dashed"
+                    size="large"
+                    @click="handleResetFilters"
+                  >
+                    <template #icon>
+                      <RefreshIcon />
+                    </template>
+                    重置
+                  </t-button>
+                </t-col>
+              </t-row>
+            </t-card>
+
+            <t-card bordered class="config-editor-card">
+              <div v-if="configStore.isLoading" class="loading-container">
+                <t-loading size="large" text="加载配置中..." />
+              </div>
+              <div v-else-if="configStore.hasError" class="error-container">
+                <t-alert
+                  theme="error"
+                  title="加载配置失败"
+                  :message="configStore.error"
+                >
+                  <template #operation>
+                    <t-button theme="primary" size="small" @click="handleRefresh">
+                      重新加载
+                    </t-button>
+                  </template>
+                </t-alert>
+              </div>
+              <mcp-config-editor
+                v-else-if="configStore.hasConfigData"
+                :config="configStore.configData.mcp"
+                :selected-category="selectedCategory"
+                :search-keyword="searchKeyword"
+                :show-advanced="showAdvanced"
+                @change="handleConfigChange"
+              />
+            </t-card>
+          </div>
+        </t-tab-panel>
+
+        <!-- 组配置 Tab -->
+        <t-tab-panel value="groups" label="组配置">
+          <div class="tab-content">
+            <t-card bordered class="filter-card">
+              <t-row :gutter="16" align="middle">
+                <t-col :flex="'auto'">
+                  <t-input
+                    v-model="searchKeyword"
+                    placeholder="搜索配置项..."
+                    clearable
+                    size="large"
+                    @change="handleSearch"
+                  >
+                    <template #prefix-icon>
+                      <SearchIcon />
+                    </template>
+                  </t-input>
+                </t-col>
+                <t-col :span="3">
+                  <t-select
+                    v-model="selectedCategory"
+                    placeholder="配置分类"
+                    clearable
+                    size="large"
+                    @change="handleCategoryChange"
+                  >
+                    <t-option
+                      v-for="category in groupCategories"
+                      :key="category.key"
+                      :value="category.key"
+                      :label="category.label"
+                    />
+                  </t-select>
+                </t-col>
+                <t-col :span="2">
+                  <div class="advanced-switch-wrapper">
+                    <t-switch
+                      v-model="showAdvanced"
+                      :custom-value="true"
+                      :default-value="false"
+                      size="large"
+                      @change="handleAdvancedToggle"
+                    />
+                    <span class="switch-label">高级</span>
+                  </div>
+                </t-col>
+                <t-col :flex="'150px'">
+                  <t-button
+                    block
+                    variant="dashed"
+                    size="large"
+                    @click="handleResetFilters"
+                  >
+                    <template #icon>
+                      <RefreshIcon />
+                    </template>
+                    重置
+                  </t-button>
+                </t-col>
+              </t-row>
+            </t-card>
+
+            <t-card bordered class="config-editor-card">
+              <div v-if="configStore.isLoading" class="loading-container">
+                <t-loading size="large" text="加载配置中..." />
+              </div>
+              <div v-else-if="configStore.hasError" class="error-container">
+                <t-alert
+                  theme="error"
+                  title="加载配置失败"
+                  :message="configStore.error"
+                >
+                  <template #operation>
+                    <t-button theme="primary" size="small" @click="handleRefresh">
+                      重新加载
+                    </t-button>
+                  </template>
+                </t-alert>
+              </div>
+              <group-config-editor
+                v-else-if="configStore.hasConfigData"
+                :config="configStore.configData.groups"
+                :selected-category="selectedCategory"
+                :search-keyword="searchKeyword"
+                :show-advanced="showAdvanced"
+                @change="handleConfigChange"
+              />
+            </t-card>
+          </div>
+        </t-tab-panel>
+      </t-tabs>
+    </ContentLayout>
 
     <!-- 配置验证结果对话框 -->
     <config-validation-dialog
@@ -218,19 +349,52 @@
       v-model:visible="createBackupDialogVisible"
       @create="handleConfirmCreateBackup"
     />
+
+    <!-- 保存配置确认对话框 -->
+    <ConfirmDialog
+      v-model:visible="saveConfirmDialogVisible"
+      title="确认保存配置"
+      :confirm-text="'确认保存'"
+      :cancel-text="'取消'"
+      type="warning"
+      @confirm="handleConfirmSave"
+    >
+      <p>确定要保存当前配置更改吗？此操作可能会影响系统运行。</p>
+    </ConfirmDialog>
+
+    <!-- 恢复备份确认对话框 -->
+    <ConfirmDialog
+      v-model:visible="restoreConfirmDialogVisible"
+      title="确认恢复配置"
+      :confirm-text="'确认恢复'"
+      :cancel-text="'取消'"
+      type="warning"
+      @confirm="handleConfirmRestore"
+    >
+      <p>确定要从备份恢复配置吗？当前配置将被覆盖。</p>
+    </ConfirmDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next';
-import { BackupIcon, CheckIcon, RefreshIcon } from 'tdesign-icons-vue-next';
+import { MessagePlugin } from 'tdesign-vue-next';
+import {
+  BackupIcon,
+  CheckIcon,
+  RefreshIcon,
+  SearchIcon,
+  TimeIcon,
+  FolderIcon,
+} from 'tdesign-icons-vue-next';
+import { ContentLayout, ConfirmDialog } from '@/design-system';
 import { useConfigStore } from '@/stores/config';
 import type { ConfigType, ConfigFormData } from '@/types/config';
 
 // 导入子组件
-import ConfigCategoryNav from '@/components/config/ConfigCategoryNav.vue';
-import ConfigEditor from '@/components/config/ConfigEditor.vue';
+import SystemConfigEditor from '@/components/config/SystemConfigEditor.vue';
+import McpConfigEditor from '@/components/config/McpConfigEditor.vue';
+import GroupConfigEditor from '@/components/config/GroupConfigEditor.vue';
 import ConfigValidationDialog from '@/components/config/ConfigValidationDialog.vue';
 import ConfigHistoryDialog from '@/components/config/ConfigHistoryDialog.vue';
 import ConfigBackupDialog from '@/components/config/ConfigBackupDialog.vue';
@@ -240,9 +404,9 @@ import ConfigCreateBackupDialog from '@/components/config/ConfigCreateBackupDial
 const configStore = useConfigStore();
 
 // 响应式数据
+const activeTab = ref<ConfigType>('system');
 const searchKeyword = ref('');
-const selectedConfigType = ref<ConfigType | undefined>(undefined);
-const selectedCategory = ref<string | undefined>(undefined);
+const selectedCategory = ref<string>('');
 const showAdvanced = ref(false);
 
 // 对话框状态
@@ -250,64 +414,58 @@ const validationDialogVisible = ref(false);
 const historyDialogVisible = ref(false);
 const backupDialogVisible = ref(false);
 const createBackupDialogVisible = ref(false);
+const saveConfirmDialogVisible = ref(false);
+const restoreConfirmDialogVisible = ref(false);
 
-// 配置分类定义
-const configCategories = computed(() => [
+// 临时存储恢复备份的参数
+const pendingRestoreBackup = ref<{ backupId: string; configTypes?: ConfigType[] } | null>(null);
+
+// 配置分类选项
+const systemCategories = [
+  { key: '', label: '全部配置' },
+  { key: 'server', label: '服务器配置' },
+  { key: 'auth', label: '认证配置' },
+  { key: 'logging', label: '日志配置' },
+];
+
+const mcpCategories = [
+  { key: '', label: '全部配置' },
+  { key: 'servers', label: 'MCP服务器' },
+  { key: 'timeout', label: '超时配置' },
+];
+
+const groupCategories = [
+  { key: '', label: '全部配置' },
+  { key: 'basic', label: '基础信息' },
+  { key: 'servers', label: '服务器管理' },
+];
+
+// 头部操作按钮
+const headerActions = computed(() => [
   {
-    key: 'server',
-    label: '服务器配置',
-    description: '端口、主机等服务器基础配置',
-    icon: 'server',
-    configType: 'system' as ConfigType,
-    path: 'server',
+    text: '刷新',
+    theme: 'default' as const,
+    variant: 'outline' as const,
+    icon: RefreshIcon,
+    loading: configStore.isLoading,
+    onClick: handleRefresh,
   },
   {
-    key: 'auth',
-    label: '认证配置',
-    description: 'JWT、用户认证相关配置',
-    icon: 'lock-on',
-    configType: 'system' as ConfigType,
-    path: 'auth',
+    text: '创建备份',
+    theme: 'primary' as const,
+    variant: 'outline' as const,
+    icon: BackupIcon,
+    onClick: handleCreateBackup,
   },
   {
-    key: 'users',
-    label: '用户管理',
-    description: '系统用户配置和权限管理',
-    icon: 'user',
-    configType: 'system' as ConfigType,
-    path: 'users',
-  },
-  {
-    key: 'ui',
-    label: '界面配置',
-    description: '主题、功能开关等界面配置',
-    icon: 'view-module',
-    configType: 'system' as ConfigType,
-    path: 'ui',
-  },
-  {
-    key: 'monitoring',
-    label: '监控配置',
-    description: '日志、指标等监控相关配置',
-    icon: 'chart',
-    configType: 'system' as ConfigType,
-    path: 'monitoring',
-  },
-  {
-    key: 'mcp-servers',
-    label: 'MCP服务器',
-    description: 'MCP服务器连接和传输配置',
-    icon: 'server',
-    configType: 'mcp' as ConfigType,
-    path: 'mcpServers',
-  },
-  {
-    key: 'groups',
-    label: '组管理',
-    description: '服务器组和工具过滤配置',
-    icon: 'usergroup',
-    configType: 'groups' as ConfigType,
-    path: '',
+    text: '保存配置',
+    theme: 'success' as const,
+    disabled: !configStore.isFormDirty,
+    loading: configStore.isLoading,
+    icon: CheckIcon,
+    onClick: () => {
+      saveConfirmDialogVisible.value = true;
+    },
   },
 ]);
 
@@ -331,19 +489,21 @@ const handleRefresh = async (): Promise<void> => {
 };
 
 /**
+ * Tab 切换
+ */
+const handleTabChange = (value: string): void => {
+  activeTab.value = value as ConfigType;
+  // 重置筛选
+  searchKeyword.value = '';
+  selectedCategory.value = '';
+  showAdvanced.value = false;
+};
+
+/**
  * 搜索配置项
  */
 const handleSearch = (): void => {
   configStore.setSearchFilter({ keyword: searchKeyword.value });
-};
-
-/**
- * 配置类型变更
- */
-const handleConfigTypeChange = (): void => {
-  configStore.setSearchFilter({ configType: selectedConfigType.value });
-  // 清除分类选择，因为不同配置类型的分类不同
-  selectedCategory.value = undefined;
 };
 
 /**
@@ -361,15 +521,17 @@ const handleAdvancedToggle = (): void => {
 };
 
 /**
- * 分类选择
+ * 重置筛选
  */
-const handleCategorySelect = (categoryKey: string): void => {
-  selectedCategory.value = categoryKey;
-  const category = configCategories.value.find(c => c.key === categoryKey);
-  if (category) {
-    selectedConfigType.value = category.configType;
-  }
-  handleCategoryChange();
+const handleResetFilters = (): void => {
+  searchKeyword.value = '';
+  selectedCategory.value = '';
+  showAdvanced.value = false;
+  configStore.setSearchFilter({
+    keyword: '',
+    category: '',
+    showAdvanced: false,
+  });
 };
 
 /**
@@ -442,40 +604,22 @@ const handlePreviewConfig = async (configType: ConfigType, config: Record<string
 };
 
 /**
- * 保存配置
+ * 确认保存配置
  */
-const handleSaveConfig = async (): Promise<void> => {
+const handleConfirmSave = async (): Promise<void> => {
   if (!configStore.formData) return;
 
-  const confirmDialog = DialogPlugin.confirm({
-    header: '确认保存配置',
-    body: '确定要保存当前配置更改吗？此操作可能会影响系统运行。',
-    confirmBtn: '确认保存',
-    cancelBtn: '取消',
-    onConfirm: async () => {
-      try {
-        await configStore.updateConfig({
-          configType: configStore.formData!.configType,
-          config: configStore.formData!.config,
-          description: '通过Web界面更新配置',
-        });
-        MessagePlugin.success('配置保存成功');
-      } catch (error) {
-        MessagePlugin.error('配置保存失败');
-      } finally {
-        confirmDialog.hide();
-        confirmDialog.destroy();
-      }
-    },
-    onCancel: () => {
-      confirmDialog.hide();
-      confirmDialog.destroy();
-    },
-    onClose: () => {
-      confirmDialog.hide();
-      confirmDialog.destroy();
-    },
-  });
+  try {
+    await configStore.updateConfig({
+      configType: configStore.formData.configType,
+      config: configStore.formData.config,
+      description: '通过Web界面更新配置',
+    });
+    MessagePlugin.success('配置保存成功');
+    saveConfirmDialogVisible.value = false;
+  } catch (error) {
+    MessagePlugin.error('配置保存失败');
+  }
 };
 
 /**
@@ -490,7 +634,7 @@ const handleValidationConfirm = (): void => {
  */
 const handleViewHistory = async (): Promise<void> => {
   try {
-    await configStore.fetchConfigHistory(50, 0, selectedConfigType.value);
+    await configStore.fetchConfigHistory(50, 0, activeTab.value);
     historyDialogVisible.value = true;
   } catch (error) {
     MessagePlugin.error('获取配置历史失败');
@@ -502,7 +646,7 @@ const handleViewHistory = async (): Promise<void> => {
  */
 const handleLoadMoreHistory = async (offset: number): Promise<void> => {
   try {
-    await configStore.fetchConfigHistory(50, offset, selectedConfigType.value);
+    await configStore.fetchConfigHistory(50, offset, activeTab.value);
   } catch (error) {
     MessagePlugin.error('加载历史记录失败');
   }
@@ -569,119 +713,66 @@ const handleConfirmCreateBackup = async (description: string, includeTypes: Conf
 /**
  * 从备份恢复
  */
-const handleRestoreFromBackup = async (backupId: string, configTypes?: ConfigType[]): Promise<void> => {
-  const confirmDialog = DialogPlugin.confirm({
-    header: '确认恢复配置',
-    body: '确定要从备份恢复配置吗？当前配置将被覆盖。',
-    confirmBtn: '确认恢复',
-    cancelBtn: '取消',
-    onConfirm: async () => {
-      try {
-        await configStore.restoreFromBackup(backupId, configTypes);
-        MessagePlugin.success('配置恢复成功');
-        backupDialogVisible.value = false;
-      } catch (error) {
-        MessagePlugin.error('配置恢复失败');
-      } finally {
-        confirmDialog.hide();
-        confirmDialog.destroy();
-      }
-    },
-    onCancel: () => {
-      confirmDialog.hide();
-      confirmDialog.destroy();
-    },
-    onClose: () => {
-      confirmDialog.hide();
-      confirmDialog.destroy();
-    },
-  });
+const handleRestoreFromBackup = (backupId: string, configTypes?: ConfigType[]): void => {
+  // 存储参数，等待用户确认
+  pendingRestoreBackup.value = { backupId, configTypes };
+  restoreConfirmDialogVisible.value = true;
+};
+
+/**
+ * 确认恢复备份
+ */
+const handleConfirmRestore = async (): Promise<void> => {
+  if (!pendingRestoreBackup.value) return;
+
+  const { backupId, configTypes } = pendingRestoreBackup.value;
+  try {
+    await configStore.restoreFromBackup(backupId, configTypes);
+    MessagePlugin.success('配置恢复成功');
+    backupDialogVisible.value = false;
+    restoreConfirmDialogVisible.value = false;
+    pendingRestoreBackup.value = null;
+  } catch (error) {
+    MessagePlugin.error('配置恢复失败');
+  }
 };
 </script>
 
-<style scoped>
+<style lang="less" scoped>
+@import '../design-system/styles/mixins.less';
+@import '../design-system/tokens/spacing.less';
+@import '../design-system/tokens/typography.less';
+
 .config-page {
-  padding: 24px;
-  background-color: var(--td-bg-color-page, #f3f3f3);
-  min-height: calc(100vh - 64px);
+  height: 100%;
 }
 
-.config-header {
-  margin-bottom: 24px;
-}
-
-.header-content {
+.tab-content {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
+  flex-direction: column;
+  gap: @spacing-xl;
 }
 
-.header-left {
-  flex: 1;
-  min-width: 0;
+.filter-card {
+  margin-bottom: 0;
 }
 
-.page-title {
-  margin: 0 0 8px 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--td-text-color-primary, #1f2937);
+.advanced-switch-wrapper {
+  display: flex;
+  align-items: center;
+  gap: @spacing-sm;
+  height: 32px;
+  padding: 0 @spacing-md;
 }
 
-.page-description {
-  margin: 0;
-  color: var(--td-text-color-secondary, #6b7280);
-  font-size: 14px;
-}
-
-.header-right {
-  flex-shrink: 0;
-}
-
-.config-filters {
-  margin-bottom: 24px;
-}
-
-.config-content {
-  margin-bottom: 24px;
-}
-
-.config-content .t-card {
-  background-color: var(--td-bg-color-container, #ffffff);
-  border: 1px solid var(--td-component-border, #e7e7e7);
-  overflow: visible;
-}
-
-.category-card {
-  height: fit-content;
-  position: sticky;
-  top: 24px;
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
-  background-color: var(--td-bg-color-container, #ffffff);
-  scrollbar-width: thin;
-  scrollbar-color: var(--td-scrollbar-color, #d9d9d9) var(--td-bg-color-container, #ffffff);
-}
-
-.category-card::-webkit-scrollbar {
-  width: 6px;
-}
-
-.category-card::-webkit-scrollbar-track {
-  background: var(--td-bg-color-container, #ffffff);
-}
-
-.category-card::-webkit-scrollbar-thumb {
-  background-color: var(--td-scrollbar-color, #d9d9d9);
-  border-radius: 3px;
+.switch-label {
+  font-size: @font-size-base;
+  color: var(--td-text-color-primary);
+  white-space: nowrap;
 }
 
 .config-editor-card {
   min-height: 500px;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--td-bg-color-container, #ffffff);
 }
 
 .loading-container,
@@ -691,71 +782,38 @@ const handleRestoreFromBackup = async (backupId: string, configTypes?: ConfigTyp
   align-items: center;
   min-height: 400px;
   padding: 60px 20px;
-  background-color: var(--td-bg-color-container, #ffffff);
+}
+
+// Tab 样式优化
+:deep(.t-tabs) {
+  .t-tabs__nav {
+    margin-bottom: @spacing-lg;
+  }
+
+  .t-tabs__nav-item {
+    font-size: @font-size-lg;
+    font-weight: @font-weight-medium;
+  }
+
+  .t-tabs__panel {
+    padding: 0;
+  }
 }
 
 /* 响应式设计 */
-@media (max-width: 1200px) {
-  .config-content .t-col:first-child {
-    margin-bottom: 24px;
-  }
-
-  .category-card {
-    position: static;
-    max-height: none;
-    overflow-y: visible;
-  }
-}
-
 @media (max-width: 768px) {
-  .config-page {
-    padding: 16px;
-  }
-
-  .header-content {
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .header-right {
-    width: 100%;
-  }
-
-  .header-right .t-space {
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-  }
-
-  .header-right .t-space .t-button {
-    flex: 1;
-    min-width: 120px;
-  }
-
-  .config-filters .t-row .t-col {
-    margin-bottom: 16px;
+  .filter-card .t-row .t-col {
+    margin-bottom: @spacing-md;
   }
 
   .config-editor-card {
     min-height: 400px;
   }
 
-  .category-card {
-    position: static;
+  :deep(.t-tabs) {
+    .t-tabs__nav-item {
+      font-size: @font-size-base;
+    }
   }
-}
-
-.advanced-switch {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 32px;
-  background-color: transparent;
-}
-
-.switch-label {
-  font-size: 14px;
-  color: var(--td-text-color-primary, #1f2937);
-  white-space: nowrap;
 }
 </style>

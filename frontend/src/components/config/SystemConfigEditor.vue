@@ -1,7 +1,7 @@
 <template>
   <div class="system-config-editor">
     <!-- 服务器配置 -->
-    <config-section
+    <ds-config-section
       v-if="shouldShowSection('server')"
       title="服务器配置"
       description="配置Web服务器的基本参数"
@@ -31,17 +31,17 @@
           </t-col>
         </t-row>
       </t-form>
-    </config-section>
+    </ds-config-section>
 
     <!-- 认证配置 -->
-    <config-section
+    <ds-config-section
       v-if="shouldShowSection('auth')"
       title="认证配置"
       description="配置JWT认证和安全参数"
       icon="lock-on"
     >
       <!-- JWT配置 -->
-      <config-subsection title="JWT配置">
+      <ds-config-subsection title="JWT配置">
         <t-form :data="localConfig.auth.jwt" layout="vertical">
           <t-row :gutter="16">
             <t-col :span="8">
@@ -86,10 +86,10 @@
             </t-col>
           </t-row>
         </t-form>
-      </config-subsection>
+      </ds-config-subsection>
 
       <!-- 安全配置 -->
-      <config-subsection title="安全配置">
+      <ds-config-subsection title="安全配置">
         <t-form :data="localConfig.auth.security" layout="vertical">
           <t-row :gutter="16">
             <t-col :span="6">
@@ -132,11 +132,11 @@
             </t-col>
           </t-row>
         </t-form>
-      </config-subsection>
-    </config-section>
+      </ds-config-subsection>
+    </ds-config-section>
 
     <!-- 用户管理 -->
-    <config-section
+    <ds-config-section
       v-if="shouldShowSection('users')"
       title="用户管理"
       description="管理系统用户和权限"
@@ -146,10 +146,10 @@
         :users="localConfig.users"
         @change="handleUsersChange"
       />
-    </config-section>
+    </ds-config-section>
 
     <!-- 界面配置 -->
-    <config-section
+    <ds-config-section
       v-if="shouldShowSection('ui')"
       title="界面配置"
       description="配置用户界面和功能开关"
@@ -182,7 +182,7 @@
         </t-row>
 
         <!-- 功能开关 -->
-        <config-subsection title="功能开关">
+        <ds-config-subsection title="功能开关">
           <t-row :gutter="16">
             <t-col :span="8">
               <t-form-item label="API到MCP功能" name="features.apiToMcp">
@@ -218,12 +218,12 @@
               </t-form-item>
             </t-col>
           </t-row>
-        </config-subsection>
+        </ds-config-subsection>
       </t-form>
-    </config-section>
+    </ds-config-section>
 
     <!-- 监控配置 -->
-    <config-section
+    <ds-config-section
       v-if="shouldShowSection('monitoring')"
       title="监控配置"
       description="配置系统监控和日志参数"
@@ -265,7 +265,7 @@
           </t-col>
         </t-row>
       </t-form>
-    </config-section>
+    </ds-config-section>
   </div>
 </template>
 
@@ -273,9 +273,11 @@
 import { ref, watch } from 'vue';
 import type { SystemConfig, UserConfig } from '@/types/config';
 
+// 导入设计系统组件
+import DsConfigSection from '@/design-system/components/form/ConfigSection.vue';
+import DsConfigSubsection from '@/design-system/components/form/ConfigSubsection.vue';
+
 // 导入子组件
-import ConfigSection from './ConfigSection.vue';
-import ConfigSubsection from './ConfigSubsection.vue';
 import UserConfigManager from './UserConfigManager.vue';
 
 // Props
@@ -356,17 +358,20 @@ const handleUsersChange = (users: Record<string, UserConfig>): void => {
 };
 </script>
 
-<style scoped>
+<style lang="less" scoped>
+@import '../../design-system/styles/mixins.less';
+@import '../../design-system/tokens/spacing.less';
+
 .system-config-editor {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: @spacing-lg;
 }
 
-/* 响应式设计 */
+// 响应式
 @media (max-width: 768px) {
   .system-config-editor {
-    gap: 16px;
+    gap: @spacing-md;
   }
 }
 </style>

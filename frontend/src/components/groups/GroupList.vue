@@ -1,17 +1,14 @@
 <template>
-  <div class="group-list">
-    <!-- 页面头部 -->
-    <PageHeader
-      title="组管理"
-      description="管理MCP服务器组，配置工具过滤和验证密钥"
-      :actions="[
-        { text: '刷新', theme: 'default', variant: 'outline', icon: RefreshIcon, loading, onClick: handleRefresh },
-        { text: '添加组', theme: 'primary', icon: AddIcon, onClick: handleAddGroup }
-      ]"
-    />
-
+  <ContentLayout
+    title="组管理"
+    description="管理MCP服务器组，配置工具过滤和验证密钥"
+    :actions="[
+      { text: '刷新', theme: 'default', variant: 'outline', icon: RefreshIcon, loading, onClick: handleRefresh },
+      { text: '添加组', theme: 'primary', icon: AddIcon, onClick: handleAddGroup }
+    ]"
+  >
     <!-- 统计卡片 -->
-    <div class="group-list__stats">
+    <div class="stats-row">
       <StatCard
         v-for="stat in statsCards"
         :key="stat.key"
@@ -22,67 +19,47 @@
       />
     </div>
 
-    <!-- 组表格 -->
-    <t-card class="group-list__table-card">
-      <template #header>
-        <div class="table-header">
-          <h3>组列表</h3>
-          <div class="table-header__actions">
-            <t-input
-              v-model="searchKeyword"
-              placeholder="搜索组..."
-              clearable
-              class="search-input"
-            >
-              <template #prefix-icon>
-                <SearchIcon />
-              </template>
-            </t-input>
-            <t-select
-              v-model="statusFilter"
-              placeholder="健康状态筛选"
-              clearable
-              class="status-filter"
-            >
-              <t-option value="healthy" label="健康" />
-              <t-option value="partial" label="部分健康" />
-              <t-option value="unhealthy" label="不健康" />
-            </t-select>
+    <!-- 数据表格 -->
+    <DataTable
+      :data="tableData"
+      :columns="tableColumns"
+      :loading="loading"
+      :pagination="paginationConfig"
+      :searchable="true"
+      :search-placeholder="'搜索组...'"
+      :selectable="false"
+      @search="handleSearch"
+      @page-change="handlePageChange"
+      @page-size-change="handlePageSizeChange"
+    >
+      <!-- 组名称 -->
+      <template #name="{ row }">
+        <div class="group-name">
+          <div class="group-name__main">{{ row.name }}</div>
+          <div class="group-name__id">ID: {{ row.id }}</div>
+          <div v-if="row.description" class="group-name__description">
+            {{ row.description }}
           </div>
         </div>
       </template>
 
-      <t-table
-        :data="filteredGroups"
-        :columns="columns"
-        :loading="loading"
-        :pagination="pagination"
-        row-key="id"
-        stripe
-        hover
-        @page-change="handlePageChange"
-        @page-size-change="handlePageSizeChange"
-      >
-        <!-- 组名称列 -->
-        <template #name="{ row }">
-          <div class="group-name">
-            <div class="group-name__main">{{ row.name }}</div>
-            <div class="group-name__id">ID: {{ row.id }}</div>
-            <div v-if="row.description" class="group-name__description">
-              {{ row.description }}
-            </div>
-          </div>
-        </template>
+      <!-- 服务器数量 -->
+      <template #serverCount="{ row }">
+        <div class="server-count">
+          {{ row.connectedServers }}/{{ row.serverCount }}
+        </div>
+      </template>
 
-        <!-- 服务器数量列 -->
-        <template #serverCount="{ row }">
-          <div class="server-count">
-            {{ row.connectedServers }}/{{ row.serverCount }}
-          </div>
-        </template>
+      <!-- 工具数量 -->
+      <template #toolCount="{ row }">
+        <div class="tool-count-badge">
+          {{ row.toolCount }}
+        </div>
+      </template>
 
-        <!-- 健康状态列 -->
-        <template #health="{ row }">
+      <!-- 健康状态 -->
+      <template #health="{ row }">
+        <div class="health-status">
           <GroupStatusTag :status="row.isHealthy ? 'healthy' : 'unhealthy'" />
           <div class="health-score">
             <t-progress
@@ -93,124 +70,67 @@
             />
             <span class="health-score__text">{{ row.healthScore }}%</span>
           </div>
-        </template>
+        </div>
+      </template>
 
-        <!-- 验证状态列 -->
-        <template #validation="{ row }">
-          <div class="validation-status">
-            <t-tag
-              :theme="row.validation.enabled ? 'success' : 'default'"
-              variant="light"
-              size="small"
-            >
-              {{ row.validation.enabled ? '已启用' : '未启用' }}
-            </t-tag>
-            <t-tag
-              v-if="row.validation.hasKey"
-              theme="primary"
-              variant="light"
-              size="small"
-            >
-              有密钥
-            </t-tag>
-          </div>
-        </template>
+      <!-- 验证状态 -->
+      <template #validation="{ row }">
+        <div class="validation-status">
+          <t-tag
+            :theme="row.validation.enabled ? 'success' : 'default'"
+            variant="light"
+            size="small"
+          >
+            {{ row.validation.enabled ? '已启用' : '未启用' }}
+          </t-tag>
+          <t-tag
+            v-if="row.validation.hasKey"
+            theme="primary"
+            variant="light"
+            size="small"
+          >
+            有密钥
+          </t-tag>
+        </div>
+      </template>
 
-        <!-- 工具过滤列 -->
-        <template #toolFilter="{ row }">
-          <div class="tool-filter-status">
-            <t-tag
-              :theme="row.toolFilterMode === 'whitelist' ? 'primary' : 'default'"
-              variant="light"
-              size="small"
-            >
-              {{ row.toolFilterMode === 'whitelist' ? '白名单' : '无过滤' }}
-            </t-tag>
-            <div v-if="row.toolFilterMode === 'whitelist'" class="tool-count">
-              {{ row.filteredToolCount }}/{{ row.toolCount }}
-            </div>
+      <!-- 工具过滤 -->
+      <template #toolFilter="{ row }">
+        <div class="tool-filter-status">
+          <t-tag
+            :theme="row.toolFilterMode === 'whitelist' ? 'primary' : 'default'"
+            variant="light"
+            size="small"
+          >
+            {{ row.toolFilterMode === 'whitelist' ? '白名单' : '无过滤' }}
+          </t-tag>
+          <div v-if="row.toolFilterMode === 'whitelist'" class="tool-count">
+            {{ row.filteredToolCount }}/{{ row.toolCount }}
           </div>
-        </template>
+        </div>
+      </template>
 
-        <!-- 操作列 -->
-        <template #operations="{ row }">
-          <div class="group-operations">
-            <t-tooltip content="查看详情">
-              <t-button
-                theme="default"
-                variant="text"
-                size="small"
-                @click="handleViewDetail(row)"
-              >
-                <template #icon>
-                  <InfoCircleIcon />
-                </template>
-              </t-button>
-            </t-tooltip>
-            <t-tooltip content="编辑组">
-              <t-button
-                theme="default"
-                variant="text"
-                size="small"
-                @click="handleEditGroup(row)"
-              >
-                <template #icon>
-                  <EditIcon />
-                </template>
-              </t-button>
-            </t-tooltip>
-            <t-tooltip content="管理成员">
-              <t-button
-                theme="default"
-                variant="text"
-                size="small"
-                @click="handleManageMembers(row)"
-              >
-                <template #icon>
-                  <UsergroupFilledIcon />
-                </template>
-              </t-button>
-            </t-tooltip>
-            <t-tooltip content="验证密钥">
-              <t-button
-                theme="default"
-                variant="text"
-                size="small"
-                @click="handleManageValidation(row)"
-              >
-                <template #icon>
-                  <KeyIcon />
-                </template>
-              </t-button>
-            </t-tooltip>
-            <t-dropdown :options="getDropdownOptions(row)" trigger="click">
-              <t-button
-                theme="default"
-                variant="text"
-                size="small"
-              >
-                <template #icon>
-                  <MoreIcon />
-                </template>
-              </t-button>
-            </t-dropdown>
-          </div>
-        </template>
-      </t-table>
-    </t-card>
+      <!-- 操作 -->
+      <template #operations="{ row }">
+        <ActionGroup
+          :actions="getGroupActions(row)"
+          :size="'small'"
+          layout="horizontal"
+          @action-click="handleActionClick(row, $event)"
+        />
+      </template>
+    </DataTable>
 
     <!-- 空状态 -->
-    <t-empty v-if="!loading && filteredGroups.length === 0" description="暂无组数据">
-      <template #action>
-        <t-button theme="primary" @click="handleAddGroup">
-          <template #icon>
-            <AddIcon />
-          </template>
-          创建第一个组
-        </t-button>
-      </template>
-    </t-empty>
-  </div>
+    <EmptyPage
+      v-if="!loading && tableData.length === 0 && !searchKeyword"
+      type="no-data"
+      description="暂无组数据"
+      :actions="[
+        { text: '创建第一个组', theme: 'primary', icon: AddIcon, onClick: handleAddGroup }
+      ]"
+    />
+  </ContentLayout>
 </template>
 
 <script setup lang="ts">
@@ -219,21 +139,18 @@ import { MessagePlugin } from 'tdesign-vue-next';
 import {
   AddIcon,
   RefreshIcon,
-  SearchIcon,
   InfoCircleIcon,
   EditIcon,
   UsergroupFilledIcon,
   KeyIcon,
-  MoreIcon,
-  DeleteIcon,
   HeartFilledIcon,
 } from 'tdesign-icons-vue-next';
-import PageHeader from '@/design-system/components/layout/PageHeader.vue';
-import StatCard from '@/design-system/components/data-display/StatCard.vue';
-import FilterBar from '@/design-system/components/layout/FilterBar.vue';
+import { ContentLayout, StatCard, DataTable, EmptyPage } from '@/design-system';
+import type { Action } from '@/design-system';
 import GroupStatusTag from '@/components/common/GroupStatusTag.vue';
 import { useGroupStore } from '@/stores/group';
 import type { GroupInfo } from '@/types/group';
+import type { DataTableColumn, DataTablePagination } from '@/design-system';
 
 // 定义事件
 const emit = defineEmits<{
@@ -247,59 +164,42 @@ const emit = defineEmits<{
 // 状态
 const groupStore = useGroupStore();
 const loading = computed(() => groupStore.loading);
-const error = computed(() => groupStore.error);
 const searchKeyword = ref('');
-const statusFilter = ref('');
-const currentPage = ref(1);
-const pageSize = ref(10);
 
-// 计算属性
-const filteredGroups = computed(() => {
+// 分页配置
+const paginationConfig = ref<DataTablePagination>({
+  current: 1,
+  pageSize: 10,
+  total: 0,
+  showJumper: true,
+  showSizer: true,
+  pageSizeOptions: [10, 20, 50, 100],
+});
+
+// 表格数据（已过滤和分页）
+const tableData = computed(() => {
   let groups = groupStore.groupList;
 
   // 搜索过滤
   if (searchKeyword.value) {
-    groups = groups.filter(group => 
-      group.name.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
-      group.id.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
-      (group.description && group.description.toLowerCase().includes(searchKeyword.value.toLowerCase()))
+    const keyword = searchKeyword.value.toLowerCase();
+    groups = groups.filter(group =>
+      group.name.toLowerCase().includes(keyword) ||
+      group.id.toLowerCase().includes(keyword) ||
+      (group.description && group.description.toLowerCase().includes(keyword))
     );
   }
 
-  // 状态过滤
-  if (statusFilter.value) {
-    groups = groups.filter(group => {
-      switch (statusFilter.value) {
-        case 'healthy':
-          return group.isHealthy;
-        case 'partial':
-          return !group.isHealthy && group.healthScore > 0;
-        case 'unhealthy':
-          return !group.isHealthy && group.healthScore === 0;
-        default:
-          return true;
-      }
-    });
-  }
+  // 更新分页总数
+  paginationConfig.value.total = groups.length;
 
-  return groups;
+  // 分页
+  const start = (paginationConfig.value.current - 1) * paginationConfig.value.pageSize;
+  const end = start + paginationConfig.value.pageSize;
+  return groups.slice(start, end);
 });
 
-const paginatedGroups = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return filteredGroups.value.slice(start, end);
-});
-
-const pagination = computed(() => ({
-  current: currentPage.value,
-  pageSize: pageSize.value,
-  total: filteredGroups.value.length,
-  showJumper: true,
-  showSizeChanger: true,
-  pageSizeOptions: [10, 20, 50, 100],
-}));
-
+// 统计卡片
 const statsCards = computed(() => [
   {
     key: 'total',
@@ -331,59 +231,59 @@ const statsCards = computed(() => [
   },
 ]);
 
-const columns = [
+// 表格列配置
+const tableColumns: DataTableColumn[] = [
   {
-    colKey: 'name',
+    key: 'name',
     title: '组名称',
     width: 280,
-    ellipsis: true,
-    cell: 'name',
+    fixed: 'left',
   },
   {
-    colKey: 'serverCount',
+    key: 'serverCount',
     title: '服务器',
     width: 120,
-    align: 'center',
-    cell: 'serverCount',
+    align: 'center' as const,
   },
   {
-    colKey: 'toolCount',
+    key: 'toolCount',
     title: '工具',
     width: 100,
-    align: 'center',
+    align: 'center' as const,
   },
   {
-    colKey: 'health',
+    key: 'health',
     title: '健康状态',
     width: 150,
-    align: 'center',
-    cell: 'health',
+    align: 'center' as const,
   },
   {
-    colKey: 'validation',
+    key: 'validation',
     title: '验证状态',
     width: 120,
-    align: 'center',
-    cell: 'validation',
+    align: 'center' as const,
   },
   {
-    colKey: 'toolFilter',
+    key: 'toolFilter',
     title: '工具过滤',
     width: 120,
-    align: 'center',
-    cell: 'toolFilter',
+    align: 'center' as const,
   },
   {
-    colKey: 'operations',
+    key: 'operations',
     title: '操作',
     width: 200,
-    align: 'center',
+    align: 'center' as const,
     fixed: 'right',
-    cell: 'operations',
   },
 ];
 
 // 方法定义
+const handleSearch = (keyword: string) => {
+  searchKeyword.value = keyword;
+  paginationConfig.value.current = 1;
+};
+
 const handleRefresh = () => {
   groupStore.fetchGroups();
 };
@@ -408,33 +308,68 @@ const handleViewDetail = (group: GroupInfo) => {
   emit('view-detail', group);
 };
 
-const handlePageChange = (page: number) => {
-  currentPage.value = page;
+const handlePageChange = (current: number) => {
+  paginationConfig.value.current = current;
 };
 
-const handlePageSizeChange = (size: number) => {
-  pageSize.value = size;
-  currentPage.value = 1;
+const handlePageSizeChange = (pageSize: number) => {
+  paginationConfig.value.pageSize = pageSize;
+  paginationConfig.value.current = 1;
 };
 
-const getDropdownOptions = (group: GroupInfo) => [
-  {
-    content: '查看健康检查',
-    value: 'health',
-    onClick: () => handleHealthCheck(group),
-  },
-  {
-    content: '查看工具列表',
-    value: 'tools',
-    onClick: () => handleViewTools(group),
-  },
-  {
-    content: '删除组',
-    value: 'delete',
-    theme: 'error',
-    onClick: () => handleDeleteGroup(group),
-  },
-];
+const getGroupActions = (group: GroupInfo): Action[] => {
+  return [
+    {
+      key: 'detail',
+      text: '详情',
+      icon: InfoCircleIcon,
+      theme: 'default',
+      variant: 'text',
+      priority: 'secondary',
+      onClick: () => handleViewDetail(group),
+    },
+    {
+      key: 'edit',
+      text: '编辑',
+      icon: EditIcon,
+      theme: 'default',
+      variant: 'text',
+      priority: 'secondary',
+      onClick: () => handleEditGroup(group),
+    },
+    {
+      key: 'members',
+      text: '成员',
+      icon: UsergroupFilledIcon,
+      theme: 'default',
+      variant: 'text',
+      priority: 'secondary',
+      onClick: () => handleManageMembers(group),
+    },
+    {
+      key: 'validation',
+      text: '密钥',
+      icon: KeyIcon,
+      theme: 'default',
+      variant: 'text',
+      priority: 'secondary',
+      onClick: () => handleManageValidation(group),
+    },
+    {
+      key: 'health',
+      text: '健康',
+      icon: HeartFilledIcon,
+      theme: 'success',
+      variant: 'text',
+      priority: 'secondary',
+      onClick: () => handleHealthCheck(group),
+    },
+  ];
+};
+
+const handleActionClick = (group: GroupInfo, action: Action) => {
+  // Action 的 onClick 已经在 getGroupActions 中定义
+};
 
 const handleHealthCheck = async (group: GroupInfo) => {
   try {
@@ -442,28 +377,6 @@ const handleHealthCheck = async (group: GroupInfo) => {
     MessagePlugin.success(`组 "${group.name}" 健康状态: ${health.healthy ? '健康' : '不健康'}`);
   } catch (error) {
     MessagePlugin.error(`获取组健康状态失败: ${error}`);
-  }
-};
-
-const handleViewTools = async (group: GroupInfo) => {
-  try {
-    const tools = await groupStore.getGroupTools(group.id);
-    MessagePlugin.success(`组 "${group.name}" 包含 ${tools.totalTools} 个工具`);
-  } catch (error) {
-    MessagePlugin.error(`获取组工具列表失败: ${error}`);
-  }
-};
-
-const handleDeleteGroup = async (group: GroupInfo) => {
-  if (!confirm(`确定要删除组 "${group.name}" 吗？此操作不可撤销。`)) {
-    return;
-  }
-
-  try {
-    await groupStore.deleteGroup(group.id);
-    MessagePlugin.success(`组 "${group.name}" 删除成功`);
-  } catch (error) {
-    MessagePlugin.error(`删除组失败: ${error}`);
   }
 };
 
@@ -479,43 +392,13 @@ onUnmounted(() => {
 
 <style lang="less" scoped>
 @import '../../design-system/styles/mixins.less';
+@import '../../design-system/tokens/spacing.less';
 
-.group-list {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-}
-
-.group-list__stats {
+.stats-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
-}
-
-.group-list__table-card {
-  flex: 1;
-  overflow: hidden;
-}
-
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.table-header__actions {
-  display: flex;
-  gap: 12px;
-}
-
-.search-input {
-  width: 200px;
-}
-
-.status-filter {
-  width: 150px;
+  gap: @spacing-lg;
+  margin-bottom: @spacing-xxl;
 }
 
 .group-name {
@@ -538,11 +421,29 @@ onUnmounted(() => {
   margin-top: 4px;
 }
 
+.server-count {
+  text-align: center;
+  font-weight: 500;
+  color: var(--td-text-color-primary);
+}
+
+.tool-count-badge {
+  text-align: center;
+  font-weight: 500;
+  color: var(--td-text-color-primary);
+}
+
+.health-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
 .health-score {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
 }
 
 .health-score__text {
@@ -555,6 +456,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  align-items: center;
 }
 
 .tool-filter-status {
@@ -569,9 +471,10 @@ onUnmounted(() => {
   color: var(--td-text-color-secondary);
 }
 
-.group-operations {
-  display: flex;
-  gap: 4px;
-  justify-content: center;
+// 响应式
+@media (max-width: 768px) {
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>

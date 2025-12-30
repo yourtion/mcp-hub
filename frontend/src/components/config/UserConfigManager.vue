@@ -10,7 +10,7 @@
           @click="handleAddUser"
         >
           <template #icon>
-            <t-icon name="add" />
+            <AddIcon />
           </template>
           添加用户
         </t-button>
@@ -25,7 +25,7 @@
           @click="handleSelectUser(userId)"
         >
           <div class="user-avatar">
-            <t-icon name="user" />
+            <UserIcon size="16px" />
           </div>
           <div class="user-info">
             <div class="user-name">{{ user.username }}</div>
@@ -49,7 +49,9 @@
               size="small"
               @click.stop="handleEditUser(userId)"
             >
-              <t-icon name="edit" />
+              <template #icon>
+                <EditIcon />
+              </template>
             </t-button>
             <t-button
               theme="danger"
@@ -57,14 +59,16 @@
               size="small"
               @click.stop="handleDeleteUser(userId)"
             >
-              <t-icon name="delete" />
+              <template #icon>
+                <DeleteIcon />
+              </template>
             </t-button>
           </div>
         </div>
 
         <!-- 空状态 -->
         <div v-if="Object.keys(localUsers).length === 0" class="empty-state">
-          <t-icon name="user" size="48px" />
+          <UserIcon size="48px" />
           <p>暂无用户</p>
           <t-button theme="primary" @click="handleAddUser">
             添加第一个用户
@@ -186,6 +190,12 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { MessagePlugin } from 'tdesign-vue-next';
+import {
+  UserIcon,
+  AddIcon,
+  EditIcon,
+  DeleteIcon,
+} from 'tdesign-icons-vue-next';
 import type { UserConfig } from '@/types/config';
 
 // Props
@@ -344,20 +354,20 @@ const handleConfirmDelete = (): void => {
     const userId = Object.keys(localUsers.value).find(
       id => localUsers.value[id] === userToDelete.value
     );
-    
+
     if (userId) {
       delete localUsers.value[userId];
-      
+
       // 如果删除的是当前选中的用户，清除选择
       if (selectedUserId.value === userId) {
         selectedUserId.value = null;
       }
-      
+
       handleChange();
       MessagePlugin.success('用户删除成功');
     }
   }
-  
+
   deleteDialogVisible.value = false;
   userToDelete.value = null;
 };
@@ -377,7 +387,7 @@ const handleSaveUser = (): void => {
       MessagePlugin.error('用户ID已存在');
       return;
     }
-    
+
     // 更新用户ID
     delete localUsers.value[selectedUserId.value!];
     localUsers.value[selectedUser.value.id] = selectedUser.value;
@@ -399,11 +409,11 @@ const handleSaveUser = (): void => {
  */
 const handleResetPassword = (): void => {
   if (!selectedUser.value) return;
-  
+
   const newPassword = Math.random().toString(36).slice(-8);
   selectedUser.value.password = newPassword;
   selectedUser.value.passwordHash = `hash_${newPassword}`;
-  
+
   MessagePlugin.success(`密码已重置为: ${newPassword}`);
   handleChange();
 };
@@ -423,31 +433,39 @@ const handleChange = (): void => {
 };
 </script>
 
-<style scoped>
+<style lang="less" scoped>
+@import '../../design-system/styles/mixins.less';
+@import '../../design-system/tokens/spacing.less';
+@import '../../design-system/tokens/typography.less';
+@import '../../design-system/tokens/color.less';
+@import '../../design-system/tokens/border.less';
+@import '../../design-system/tokens/radius.less';
+@import '../../design-system/tokens/transition.less';
+
 .user-config-manager {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: @spacing-xl;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: @spacing-md;
 }
 
 .section-title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
+  font-size: @font-size-md;
+  font-weight: @font-weight-semibold;
+  color: var(--td-text-color-primary);
 }
 
 .user-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: @spacing-sm;
   max-height: 300px;
   overflow-y: auto;
 }
@@ -455,22 +473,24 @@ const handleChange = (): void => {
 .user-item {
   display: flex;
   align-items: center;
-  padding: 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  padding: @spacing-md;
+  border: 1px solid var(--td-border-level-1-color);
+  border-radius: var(--td-radius-default);
   cursor: pointer;
-  transition: all 0.2s ease;
-  background-color: #ffffff;
+  transition: all var(--td-duration-normal) var(--td-easing-ease);
+  background: var(--td-bg-color-container);
+  box-shadow: var(--td-shadow-1);
 }
 
 .user-item:hover {
-  border-color: #3b82f6;
-  background-color: #f8fafc;
+  border-color: var(--td-brand-color);
+  background: var(--td-bg-color-container-hover);
+  box-shadow: var(--td-shadow-2);
 }
 
 .user-item.active {
-  border-color: #3b82f6;
-  background-color: #eff6ff;
+  border-color: var(--td-brand-color);
+  background: var(--td-brand-color-light);
 }
 
 .user-avatar {
@@ -479,10 +499,10 @@ const handleChange = (): void => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background-color: #f3f4f6;
-  color: #6b7280;
-  margin-right: 12px;
+  border-radius: var(--td-radius-circle);
+  background: var(--td-bg-color-secondarycontainer);
+  color: var(--td-text-color-secondary);
+  margin-right: @spacing-md;
   flex-shrink: 0;
 }
 
@@ -492,26 +512,26 @@ const handleChange = (): void => {
 }
 
 .user-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #1f2937;
-  margin-bottom: 4px;
+  font-size: @font-size-md;
+  font-weight: @font-weight-medium;
+  color: var(--td-text-color-primary);
+  margin-bottom: @spacing-xs;
 }
 
 .user-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: @spacing-sm;
 }
 
 .user-groups {
-  font-size: 12px;
-  color: #6b7280;
+  font-size: @font-size-sm;
+  color: var(--td-text-color-secondary);
 }
 
 .user-actions {
   display: flex;
-  gap: 4px;
+  gap: @spacing-xs;
   flex-shrink: 0;
 }
 
@@ -520,95 +540,52 @@ const handleChange = (): void => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px 24px;
+  padding: @spacing-xxxl @spacing-xl;
   text-align: center;
-  color: #6b7280;
+  color: var(--td-text-color-secondary);
 }
 
 .empty-state p {
-  margin: 16px 0 24px 0;
-  font-size: 14px;
+  margin: @spacing-lg 0 @spacing-xl 0;
+  font-size: @font-size-md;
 }
 
 .user-detail-section {
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 20px;
-  background-color: #f9fafb;
+  border: 1px solid var(--td-border-level-1-color);
+  border-radius: var(--td-radius-default);
+  padding: @spacing-xxl;
+  background: var(--td-bg-color-container-hover);
+  box-shadow: var(--td-shadow-1);
 }
 
-/* 响应式设计 */
+// 响应式
 @media (max-width: 768px) {
   .user-config-manager {
-    gap: 16px;
+    gap: @spacing-lg;
   }
-  
+
   .section-header {
     flex-direction: column;
-    gap: 12px;
+    gap: @spacing-sm;
     align-items: stretch;
   }
-  
+
   .user-item {
-    padding: 10px;
+    padding: @spacing-sm;
   }
-  
+
   .user-avatar {
     width: 28px;
     height: 28px;
-    margin-right: 8px;
+    margin-right: @spacing-sm;
   }
-  
-  .user-name {
-    font-size: 13px;
-  }
-  
-  .user-detail-section {
-    padding: 16px;
-  }
-}
 
-/* 暗色主题支持 */
-@media (prefers-color-scheme: dark) {
-  .section-title {
-    color: #e5e7eb;
-  }
-  
-  .user-item {
-    border-color: #374151;
-    background-color: #1f2937;
-  }
-  
-  .user-item:hover {
-    border-color: #60a5fa;
-    background-color: #111827;
-  }
-  
-  .user-item.active {
-    border-color: #60a5fa;
-    background-color: #1e3a8a;
-  }
-  
-  .user-avatar {
-    background-color: #374151;
-    color: #9ca3af;
-  }
-  
   .user-name {
-    color: #f9fafb;
+    font-size: @font-size-base;
   }
-  
-  .user-groups {
-    color: #9ca3af;
-  }
-  
+
   .user-detail-section {
-    border-color: #374151;
-    background-color: #111827;
-  }
-  
-  .empty-state {
-    color: #9ca3af;
+    padding: @spacing-lg;
   }
 }
 </style>

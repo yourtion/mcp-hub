@@ -1,13 +1,14 @@
 <template>
   <div class="tool-list">
     <!-- 页面头部 -->
-    <PageHeader
+    <ContentLayout
       title="工具列表"
       description="浏览和管理所有可用的 MCP 工具"
       :actions="[
-        { text: '刷新', theme: 'default', variant: 'outline', loading, onClick: handleRefresh }
+        { text: '刷新', theme: 'default', variant: 'outline', icon: RefreshIcon, loading, onClick: handleRefresh }
       ]"
     >
+      <!-- 视图切换器 -->
       <template #extra>
         <t-dropdown
           :options="viewOptions"
@@ -24,39 +25,21 @@
           </t-button>
         </t-dropdown>
       </template>
-    </PageHeader>
 
-    <!-- 工具统计卡片 -->
-    <div class="stats-section">
-      <StatCard
-        :value="toolList.length"
-        label="总工具数"
-        icon="tools"
-        theme="blue"
-      />
-      <StatCard
-        :value="availableTools.length"
-        label="可用工具"
-        icon="success"
-        theme="green"
-      />
-      <StatCard
-        :value="unavailableTools.length"
-        label="不可用工具"
-        icon="error-circle"
-        theme="orange"
-      />
-      <StatCard
-        :value="serverList.length"
-        label="服务器数"
-        icon="server"
-        theme="purple"
-      />
-    </div>
+      <!-- 工具统计卡片 -->
+      <div class="stats-row">
+        <StatCard
+          v-for="stat in statsCards"
+          :key="stat.key"
+          :value="stat.value"
+          :label="stat.label"
+          :icon="stat.icon"
+          :theme="stat.theme"
+        />
+      </div>
 
-    <!-- 工具过滤和搜索栏 -->
-    <div class="filter-section">
-      <t-card bordered>
+      <!-- 工具过滤和搜索栏 -->
+      <t-card bordered class="filter-card">
         <t-row :gutter="16" align="middle">
           <t-col :flex="'auto'">
             <t-input
@@ -67,7 +50,7 @@
               @change="handleSearch"
             >
               <template #prefix-icon>
-                <t-icon name="search" />
+                <SearchIcon />
               </template>
             </t-input>
           </t-col>
@@ -87,9 +70,6 @@
                 :value="serverId"
                 :label="serverId"
               >
-                <template #prefix-icon>
-                  <t-icon name="server" />
-                </template>
                 {{ serverId }}
               </t-option>
             </t-select>
@@ -102,24 +82,9 @@
               size="large"
               @change="handleStatusFilter"
             >
-              <t-option value="all">
-                <template #prefix-icon>
-                  <t-icon name="layers" />
-                </template>
-                全部状态
-              </t-option>
-              <t-option value="available">
-                <template #prefix-icon>
-                  <t-icon name="check-circle" />
-                </template>
-                可用
-              </t-option>
-              <t-option value="unavailable">
-                <template #prefix-icon>
-                  <t-icon name="close-circle" />
-                </template>
-                不可用
-              </t-option>
+              <t-option value="all">全部状态</t-option>
+              <t-option value="available">可用</t-option>
+              <t-option value="unavailable">不可用</t-option>
             </t-select>
           </t-col>
 
@@ -143,7 +108,7 @@
               @click="toggleSortOrder"
             >
               <template #icon>
-                <t-icon :name="sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'" />
+                <component :is="sortOrder === 'asc' ? ArrowUpIcon : ArrowDownIcon" />
               </template>
             </t-button>
           </t-col>
@@ -155,210 +120,163 @@
               @click="handleResetFilters"
             >
               <template #icon>
-                <t-icon name="refresh" />
+                <RefreshIcon />
               </template>
               重置筛选
             </t-button>
           </t-col>
         </t-row>
       </t-card>
-    </div>
 
-    <!-- 工具列表内容 -->
-    <div class="content-section">
-      <t-loading :loading="loading" size="large">
-        <!-- 空状态 -->
-        <div v-if="filteredTools.length === 0 && !loading" class="empty-state">
-          <t-icon name="info-circle" size="64px" />
-          <p class="empty-text">暂无符合条件的工具</p>
-          <t-button theme="primary" variant="outline" @click="handleResetFilters">
-            重置筛选条件
-          </t-button>
-        </div>
+      <!-- 列表视图 -->
+      <div v-if="currentView === 'list'" class="list-view">
+        <DataTable
+          :data="tableData"
+          :columns="tableColumns"
+          :loading="loading"
+          :pagination="paginationConfig"
+          :searchable="false"
+          :selectable="false"
+          @page-change="handlePageChange"
+          @page-size-change="handlePageSizeChange"
+        >
+          <!-- 工具名称 -->
+          <template #name="{ row }">
+            <div class="tool-name">
+              <CodeIcon class="tool-name__icon" />
+              <span class="tool-name__text">{{ row.name }}</span>
+            </div>
+          </template>
 
-        <!-- 列表视图 -->
-        <div v-else-if="currentView === 'list'" class="table-view">
-          <t-table
-            :data="filteredTools"
-            :columns="tableColumns"
-            :pagination="pagination"
-            row-key="name"
-            stripe
-            hover
-            size="large"
-            @page-change="handlePageChange"
-            @page-size-change="handlePageSizeChange"
-          >
-            <template #name="{ row }">
-              <div class="tool-name-cell">
-                <t-icon name="code" size="20px" />
-                <span class="tool-name">{{ row.name }}</span>
-              </div>
-            </template>
+          <!-- 描述 -->
+          <template #description="{ row }">
+            <div class="tool-description">
+              {{ row.description || '暂无描述' }}
+            </div>
+          </template>
 
-            <template #description="{ row }">
-              <div class="tool-description-cell">
-                {{ row.description || '暂无描述' }}
-              </div>
-            </template>
+          <!-- 服务器 -->
+          <template #serverId="{ row }">
+            <t-tag theme="primary" variant="light" size="medium">
+              {{ row.serverId }}
+            </t-tag>
+          </template>
 
-            <template #serverId="{ row }">
-              <t-tag theme="primary" variant="light" size="medium">
-                <template #icon>
-                  <t-icon name="server" />
-                </template>
-                {{ row.serverId }}
-              </t-tag>
-            </template>
+          <!-- 状态 -->
+          <template #status="{ row }">
+            <StatusIndicator :status="row.status" mode="tag" />
+          </template>
 
-            <template #status="{ row }">
-              <status-tag :status="row.status" />
-            </template>
-
-            <template #actions="{ row }">
-              <t-space break-line>
-                <t-button
-                  size="small"
-                  theme="primary"
-                  variant="text"
-                  @click="handleViewDetail(row)"
-                >
-                  <template #icon>
-                    <t-icon name="zoom-in" />
-                  </template>
-                  详情
-                </t-button>
-
-                <t-button
-                  size="small"
-                  theme="success"
-                  variant="text"
-                  :disabled="row.status !== 'available'"
-                  @click="handleTestTool(row)"
-                >
-                  <template #icon>
-                    <t-icon name="play-circle" />
-                  </template>
-                  测试
-                </t-button>
-
-                <t-button
-                  size="small"
-                  theme="default"
-                  variant="text"
-                  :disabled="row.status !== 'available'"
-                  @click="handleExecuteTool(row)"
-                >
-                  <template #icon>
-                    <t-icon name="play-circle-filled" />
-                  </template>
-                  执行
-                </t-button>
-              </t-space>
-            </template>
-          </t-table>
-        </div>
-
-        <!-- 卡片视图 -->
-        <div v-else class="card-view">
-          <t-row :gutter="16">
-            <t-col
-              v-for="tool in paginatedTools"
-              :key="tool.name"
-              :span="8"
-              class="tool-card-col"
-            >
-              <t-card
-                :bordered="true"
-                :hover="true"
-                class="tool-card-modern"
-                @click="handleViewDetail(tool)"
-              >
-                <template #header>
-                  <div class="card-header">
-                    <div class="tool-icon">
-                      <t-icon name="code" size="28px" />
-                    </div>
-                    <div class="tool-info">
-                      <div class="tool-title">{{ tool.name }}</div>
-                      <div class="tool-server">
-                        <t-icon name="server" size="14px" />
-                        {{ tool.serverId }}
-                      </div>
-                    </div>
-                    <status-tag :status="tool.status" size="small" />
-                  </div>
-                </template>
-
-                <div class="card-body">
-                  <p class="tool-description">
-                    {{ tool.description || '暂无描述信息' }}
-                  </p>
-                </div>
-
-                <template #footer>
-                  <div class="card-footer">
-                    <t-space size="small">
-                      <t-button
-                        size="small"
-                        theme="primary"
-                        variant="outline"
-                        :disabled="tool.status !== 'available'"
-                        @click.stop="handleTestTool(tool)"
-                      >
-                        <template #icon>
-                          <t-icon name="play-circle" />
-                        </template>
-                        测试
-                      </t-button>
-
-                      <t-button
-                        size="small"
-                        theme="success"
-                        variant="outline"
-                        :disabled="tool.status !== 'available'"
-                        @click.stop="handleExecuteTool(tool)"
-                      >
-                        <template #icon>
-                          <t-icon name="play-circle-filled" />
-                        </template>
-                        执行
-                      </t-button>
-                    </t-space>
-                  </div>
-                </template>
-              </t-card>
-            </t-col>
-          </t-row>
-
-          <!-- 卡片视图分页 -->
-          <div v-if="filteredTools.length > pagination.pageSize" class="card-pagination-wrapper">
-            <t-pagination
-              v-model="pagination.current"
-              :total="filteredTools.length"
-              :page-size="pagination.pageSize"
-              :page-size-options="pagination.pageSizeOptions"
-              size="large"
-              show-page-number
-              show-page-size
-              show-previous
-              show-next
-              @change="handlePageChange"
-              @page-size-change="handlePageSizeChange"
+          <!-- 操作 -->
+          <template #actions="{ row }">
+            <ActionGroup
+              :actions="getToolActions(row)"
+              :size="'small'"
+              layout="horizontal"
+              @action-click="() => {}"
             />
-          </div>
-        </div>
-      </t-loading>
-    </div>
+          </template>
+        </DataTable>
+      </div>
 
-    <!-- 错误提示 -->
-    <t-message
-      v-if="error"
-      theme="error"
-      :content="error"
-      :duration="5000"
-      @close="clearError"
-    />
+      <!-- 卡片视图 -->
+      <div v-else class="card-view">
+        <t-row :gutter="16">
+          <t-col
+            v-for="tool in paginatedTools"
+            :key="tool.name"
+            :span="8"
+            class="tool-card-col"
+          >
+            <t-card
+              :bordered="true"
+              :hover="true"
+              class="tool-card"
+              @click="handleViewDetail(tool)"
+            >
+              <template #header>
+                <div class="card-header">
+                  <div class="tool-icon">
+                    <CodeIcon size="20px" />
+                  </div>
+                  <div class="tool-info">
+                    <div class="tool-title">{{ tool.name }}</div>
+                    <div class="tool-server">
+                      <ServerIcon size="14px" />
+                      {{ tool.serverId }}
+                    </div>
+                  </div>
+                  <StatusIndicator :status="tool.status" mode="tag" size="small" />
+                </div>
+              </template>
+
+              <div class="card-body">
+                <p class="tool-description">
+                  {{ tool.description || '暂无描述信息' }}
+                </p>
+              </div>
+
+              <template #footer>
+                <div class="card-footer">
+                  <t-space size="small">
+                    <t-button
+                      size="small"
+                      theme="primary"
+                      variant="outline"
+                      :disabled="tool.status !== 'available'"
+                      @click.stop="handleTestTool(tool)"
+                    >
+                      <template #icon>
+                        <PlayIcon />
+                      </template>
+                      测试
+                    </t-button>
+
+                    <t-button
+                      size="small"
+                      theme="success"
+                      variant="outline"
+                      :disabled="tool.status !== 'available'"
+                      @click.stop="handleExecuteTool(tool)"
+                    >
+                      <template #icon>
+                        <PlayCircleIcon />
+                      </template>
+                      执行
+                    </t-button>
+                  </t-space>
+                </div>
+              </template>
+            </t-card>
+          </t-col>
+        </t-row>
+
+        <!-- 卡片视图分页 -->
+        <div v-if="filteredTools.length > paginationConfig.pageSize" class="card-pagination">
+          <t-pagination
+            v-model="paginationConfig.current"
+            :total="filteredTools.length"
+            :page-size="paginationConfig.pageSize"
+            :page-size-options="paginationConfig.pageSizeOptions"
+            size="large"
+            show-page-number
+            show-page-size
+            @change="handlePageChange"
+            @page-size-change="handlePageSizeChange"
+          />
+        </div>
+      </div>
+
+      <!-- 空状态 -->
+      <EmptyPage
+        v-if="!loading && filteredTools.length === 0"
+        type="no-result"
+        description="暂无符合条件的工具"
+        :actions="[
+          { text: '重置筛选条件', theme: 'primary', onClick: handleResetFilters }
+        ]"
+      />
+    </ContentLayout>
   </div>
 </template>
 
@@ -366,13 +284,24 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { ChevronDownIcon } from 'tdesign-icons-vue-next';
+import {
+  ChevronDownIcon,
+  SearchIcon,
+  RefreshIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  CodeIcon,
+  ServerIcon,
+  PlayIcon,
+  PlayCircleIcon,
+  BrowseIcon,
+} from 'tdesign-icons-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next';
-import PageHeader from '@/design-system/components/layout/PageHeader.vue';
-import StatCard from '@/design-system/components/data-display/StatCard.vue';
+import { ContentLayout, StatCard, DataTable, ActionGroup, StatusIndicator, EmptyPage } from '@/design-system';
+import type { Action } from '@/design-system';
 import { useToolStore } from '@/stores/tool';
-import StatusTag from '@/components/common/StatusTag.vue';
 import type { ToolInfo } from '@/types/tool';
+import type { DataTableColumn, DataTablePagination } from '@/design-system';
 
 // 路由
 const router = useRouter();
@@ -387,13 +316,11 @@ const {
   unavailableTools,
   serverList,
   loading,
-  error,
 } = storeToRefs(toolStore);
 
 // 方法直接从 store 解构（不需要响应式）
 const {
-  fetchTools,
-  clearError,
+  refresh,
 } = toolStore;
 
 // 响应式数据
@@ -405,11 +332,46 @@ const sortOrder = ref<'asc' | 'desc'>('asc');
 const currentView = ref<'list' | 'card'>('list');
 
 // 分页配置
-const pagination = ref({
+const paginationConfig = ref<DataTablePagination>({
   current: 1,
   pageSize: 20,
+  total: 0,
+  showJumper: true,
+  showSizer: true,
   pageSizeOptions: [10, 20, 50, 100],
 });
+
+// 统计卡片
+const statsCards = computed(() => [
+  {
+    key: 'total',
+    value: toolList.value.length,
+    label: '总工具数',
+    icon: 'tool',
+    theme: 'blue' as const,
+  },
+  {
+    key: 'available',
+    value: availableTools.value.length,
+    label: '可用工具',
+    icon: 'check-circle',
+    theme: 'green' as const,
+  },
+  {
+    key: 'unavailable',
+    value: unavailableTools.value.length,
+    label: '不可用工具',
+    icon: 'error-circle',
+    theme: 'orange' as const,
+  },
+  {
+    key: 'servers',
+    value: serverList.value.length,
+    label: '服务器数',
+    icon: 'server',
+    theme: 'purple' as const,
+  },
+]);
 
 // 过滤后的工具列表
 const filteredTools = computed(() => {
@@ -459,42 +421,50 @@ const filteredTools = computed(() => {
   return tools;
 });
 
+// 表格数据（分页后）
+const tableData = computed(() => {
+  const start = (paginationConfig.value.current - 1) * paginationConfig.value.pageSize;
+  const end = start + paginationConfig.value.pageSize;
+  paginationConfig.value.total = filteredTools.value.length;
+  return filteredTools.value.slice(start, end);
+});
+
 // 分页后的工具列表（用于卡片视图）
 const paginatedTools = computed(() => {
-  const start = (pagination.value.current - 1) * pagination.value.pageSize;
-  const end = start + pagination.value.pageSize;
+  const start = (paginationConfig.value.current - 1) * paginationConfig.value.pageSize;
+  const end = start + paginationConfig.value.pageSize;
   return filteredTools.value.slice(start, end);
 });
 
 // 表格列配置
-const tableColumns = [
+const tableColumns: DataTableColumn[] = [
   {
-    colKey: 'name',
+    key: 'name',
     title: '工具名称',
     width: 200,
-    ellipsis: true,
+    fixed: 'left',
   },
   {
-    colKey: 'description',
+    key: 'description',
     title: '描述',
-    ellipsis: true,
   },
   {
-    colKey: 'serverId',
+    key: 'serverId',
     title: '所属服务器',
     width: 150,
   },
   {
-    colKey: 'status',
+    key: 'status',
     title: '状态',
     width: 100,
-    cell: 'status',
+    align: 'center' as const,
   },
   {
-    colKey: 'actions',
+    key: 'actions',
     title: '操作',
     width: 200,
-    cell: 'actions',
+    align: 'center' as const,
+    fixed: 'right',
   },
 ];
 
@@ -509,31 +479,64 @@ const viewOptions: ViewOption[] = [
   { content: '卡片视图', value: 'card' },
 ];
 
+// 获取工具操作
+const getToolActions = (tool: ToolInfo): Action[] => [
+  {
+    key: 'detail',
+    text: '详情',
+    icon: BrowseIcon,
+    theme: 'default',
+    variant: 'text',
+    priority: 'secondary',
+    onClick: () => handleViewDetail(tool),
+  },
+  {
+    key: 'test',
+    text: '测试',
+    icon: PlayIcon,
+    theme: 'success',
+    variant: 'text',
+    priority: 'secondary',
+    disabled: tool.status !== 'available',
+    onClick: () => handleTestTool(tool),
+  },
+  {
+    key: 'execute',
+    text: '执行',
+    icon: PlayCircleIcon,
+    theme: 'default',
+    variant: 'text',
+    priority: 'secondary',
+    disabled: tool.status !== 'available',
+    onClick: () => handleExecuteTool(tool),
+  },
+];
+
 // 事件处理
 const handleSearch = () => {
-  pagination.value.current = 1;
+  paginationConfig.value.current = 1;
 };
 
 const handleServerFilter = () => {
-  pagination.value.current = 1;
+  paginationConfig.value.current = 1;
 };
 
 const handleStatusFilter = () => {
-  pagination.value.current = 1;
+  paginationConfig.value.current = 1;
 };
 
 const handleSortChange = () => {
-  pagination.value.current = 1;
+  paginationConfig.value.current = 1;
 };
 
 const toggleSortOrder = () => {
   sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
-  pagination.value.current = 1;
+  paginationConfig.value.current = 1;
 };
 
 const handleRefresh = async () => {
   try {
-    await toolStore.refresh();
+    await refresh();
     MessagePlugin.success('刷新成功');
   } catch (err) {
     MessagePlugin.error('刷新失败');
@@ -546,7 +549,7 @@ const handleResetFilters = () => {
   selectedStatus.value = 'all';
   sortBy.value = 'name';
   sortOrder.value = 'asc';
-  pagination.value.current = 1;
+  paginationConfig.value.current = 1;
 };
 
 const handleViewChange = (option: ViewOption) => {
@@ -554,12 +557,12 @@ const handleViewChange = (option: ViewOption) => {
 };
 
 const handlePageChange = (page: number) => {
-  pagination.value.current = page;
+  paginationConfig.value.current = page;
 };
 
 const handlePageSizeChange = (size: number) => {
-  pagination.value.pageSize = size;
-  pagination.value.current = 1;
+  paginationConfig.value.pageSize = size;
+  paginationConfig.value.current = 1;
 };
 
 const handleViewDetail = (tool: ToolInfo) => {
@@ -594,32 +597,17 @@ onMounted(async () => {
 
 <style lang="less" scoped>
 @import '../../design-system/styles/mixins.less';
+@import '../../design-system/tokens/spacing.less';
 
-.tool-list {
-  padding: 0;
-  background-color: var(--td-bg-color-page);
-}
-
-/* 统计卡片区域 */
-.stats-section {
+.stats-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
+  gap: @spacing-lg;
+  margin-bottom: @spacing-xl;
 }
 
-/* 过滤区域 */
-.filter-section {
-  margin-bottom: 16px;
-}
-
-.filter-section .t-card {
-  border-radius: var(--td-radius-default);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.filter-section .t-card .t-card__body {
-  padding: 16px;
+.filter-card {
+  margin-bottom: @spacing-xl;
 }
 
 .filter-actions {
@@ -627,76 +615,27 @@ onMounted(async () => {
   justify-content: flex-end;
 }
 
-/* 内容区域 */
-.content-section {
+.list-view {
   min-height: 400px;
-  background: var(--td-bg-color-container);
-  border-radius: var(--td-radius-default);
-  padding: 16px 20px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-/* 空状态 */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  color: var(--td-text-color-secondary);
-}
-
-.empty-state .t-icon {
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
-.empty-text {
-  font-size: 14px;
-  margin-bottom: 16px;
-}
-
-/* 表格视图 */
-.table-view {
-  min-height: 300px;
-}
-
-.table-view :deep(.t-table) {
-  font-size: 14px;
-}
-
-.table-view :deep(.t-table__thead th) {
-  padding: 12px 16px;
-  font-size: 13px;
-  height: 48px;
-}
-
-.table-view :deep(.t-table__tbody td) {
-  padding: 10px 16px;
-  height: 56px;
-}
-
-.table-view :deep(.t-table__tr) {
-  font-size: 14px;
-}
-
-.tool-name-cell {
+.tool-name {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.tool-name-cell .t-icon {
+.tool-name__icon {
   color: var(--td-brand-color);
 }
 
-.tool-name {
+.tool-name__text {
   font-weight: 600;
   color: var(--td-text-color-primary);
   font-size: 14px;
 }
 
-.tool-description-cell {
+.tool-description {
   color: var(--td-text-color-secondary);
   font-size: 13px;
   line-height: 1.4;
@@ -708,16 +647,15 @@ onMounted(async () => {
   -webkit-box-orient: vertical;
 }
 
-/* 卡片视图 */
 .card-view {
-  min-height: 300px;
+  min-height: 400px;
 }
 
 .tool-card-col {
   margin-bottom: 12px;
 }
 
-.tool-card-modern {
+.tool-card {
   height: 100%;
   border-radius: var(--td-radius-default);
   transition: all 0.3s ease;
@@ -725,22 +663,10 @@ onMounted(async () => {
   border: 1px solid var(--td-component-border);
 }
 
-.tool-card-modern:hover {
+.tool-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   border-color: var(--td-brand-color-light);
-}
-
-.tool-card-modern :deep(.t-card__header) {
-  padding: 12px 16px;
-}
-
-.tool-card-modern :deep(.t-card__body) {
-  padding: 0 16px 12px;
-}
-
-.tool-card-modern :deep(.t-card__footer) {
-  padding: 10px 16px;
 }
 
 .card-header {
@@ -784,10 +710,6 @@ onMounted(async () => {
   color: var(--td-text-color-secondary);
 }
 
-.tool-server .t-icon {
-  color: var(--td-brand-color);
-}
-
 .card-body {
   padding: 10px 0;
 }
@@ -813,7 +735,7 @@ onMounted(async () => {
   border-top: 1px solid var(--td-component-border);
 }
 
-.card-pagination-wrapper {
+.card-pagination {
   display: flex;
   justify-content: center;
   margin-top: 20px;
@@ -821,74 +743,24 @@ onMounted(async () => {
   border-top: 1px solid var(--td-component-border);
 }
 
-/* 响应式设计 */
-@media (max-width: 1200px) {
-  .stats-section :deep(.t-col) {
-    margin-bottom: 0;
-  }
-}
-
+// 响应式
 @media (max-width: 768px) {
-  .tool-list {
-    padding: 0;
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  /* 统计卡片在移动端保持四个一行 */
-  .stats-section {
-    margin-bottom: 12px;
-  }
-
-  .stats-section :deep(.t-row) {
-    margin-left: -6px;
-    margin-right: -6px;
-  }
-
-  .stats-section :deep(.t-col) {
-    padding-left: 6px;
-    padding-right: 6px;
-    margin-bottom: 0;
-  }
-
-  .filter-section {
-    margin-bottom: 12px;
-  }
-
-  .filter-section .t-card .t-card__body {
-    padding: 12px;
-  }
-
-  .content-section {
-    padding: 12px 16px;
-  }
-
-  .table-view :deep(.t-table__thead th) {
-    padding: 10px 12px;
-    font-size: 12px;
-    height: 44px;
-  }
-
-  .table-view :deep(.t-table__tbody td) {
-    padding: 8px 12px;
-    height: 52px;
-  }
-
-  .tool-name {
+  .tool-name__text {
     font-size: 13px;
   }
 
-  .tool-description-cell {
+  .tool-description {
     font-size: 12px;
     max-width: 250px;
   }
 
-  .tool-card-modern:hover {
+  .tool-card:hover {
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  }
-
-  .card-pagination-wrapper {
-    margin-top: 16px;
-    padding-top: 12px;
   }
 }
 </style>

@@ -73,30 +73,9 @@ describe('ApiConfigList', () => {
       global: {
         plugins: [router, ConfigProvider],
         stubs: {
-          'page-header': true,
-          'stat-card': true,
-          't-button': true,
-          't-card': true,
-          't-row': true,
-          't-col': true,
-          't-table': true,
-          't-tag': true,
-          't-space': true,
-          't-input': true,
-          't-select': true,
-          't-dialog': true,
-          't-tooltip': true,
           'api-config-form-dialog': true,
           'api-import-dialog': true,
           'api-export-dialog': true,
-          'delete-icon': true,
-          'upload-icon': true,
-          'download-icon': true,
-          'add-icon': true,
-          'search-icon': true,
-          'browse-icon': true,
-          'edit-icon': true,
-          'play-icon': true,
         },
       },
     });
@@ -105,38 +84,38 @@ describe('ApiConfigList', () => {
   it('renders correctly', () => {
     wrapper = createWrapper();
 
-    expect(wrapper.find('.api-config-list').exists()).toBe(true);
-    expect(wrapper.find('.stats-section').exists()).toBe(true);
+    expect(wrapper.find('.ds-content-layout').exists()).toBe(true);
+    expect(wrapper.find('.stats-row').exists()).toBe(true);
   });
 
   it('displays statistics correctly', () => {
     wrapper = createWrapper();
-    expect(wrapper.find('.api-config-list').exists()).toBe(true);
+    expect(wrapper.find('.ds-content-layout').exists()).toBe(true);
   });
 
   it('displays config list correctly', () => {
     wrapper = createWrapper();
-    expect(wrapper.find('.api-config-list').exists()).toBe(true);
+    expect(wrapper.find('.ds-content-layout').exists()).toBe(true);
   });
 
   it('filters configs by search query', () => {
     wrapper = createWrapper();
-    expect(wrapper.find('.api-config-list').exists()).toBe(true);
+    expect(wrapper.find('.ds-content-layout').exists()).toBe(true);
   });
 
   it('filters configs by status', () => {
     wrapper = createWrapper();
-    expect(wrapper.find('.api-config-list').exists()).toBe(true);
+    expect(wrapper.find('.ds-content-layout').exists()).toBe(true);
   });
 
   it('handles config deletion', () => {
     wrapper = createWrapper();
-    expect(wrapper.find('.api-config-list').exists()).toBe(true);
+    expect(wrapper.find('.ds-content-layout').exists()).toBe(true);
   });
 
   it('handles batch deletion', () => {
     wrapper = createWrapper();
-    expect(wrapper.find('.api-config-list').exists()).toBe(true);
+    expect(wrapper.find('.ds-content-layout').exists()).toBe(true);
   });
 
   it('handles API errors gracefully', async () => {
@@ -153,7 +132,7 @@ describe('ApiConfigList', () => {
     });
 
     // Should still render UI
-    expect(wrapper.find('.api-config-list').exists()).toBe(true);
+    expect(wrapper.find('.ds-content-layout').exists()).toBe(true);
   });
 
   it('formats time correctly', async () => {
@@ -168,29 +147,17 @@ describe('ApiConfigList', () => {
     expect(formattedTime).toContain('2023');
   });
 
-  it('gets status theme correctly', async () => {
+  it('gets method theme correctly', async () => {
     wrapper = createWrapper();
 
     // Wait for data loading
     await vi.waitFor(() => {
-      expect(wrapper.vm.getStatusTheme).toBeDefined();
+      expect(wrapper.vm.getMethodTheme).toBeDefined();
     });
 
-    expect(wrapper.vm.getStatusTheme('active')).toBe('success');
-    expect(wrapper.vm.getStatusTheme('inactive')).toBe('warning');
-    expect(wrapper.vm.getStatusTheme('error')).toBe('danger');
-  });
-
-  it('gets status icon correctly', async () => {
-    wrapper = createWrapper();
-
-    // Wait for data loading
-    await vi.waitFor(() => {
-      expect(wrapper.vm.getStatusIcon).toBeDefined();
-    });
-
-    expect(wrapper.vm.getStatusIcon('active')).toBeDefined();
-    expect(wrapper.vm.getStatusIcon('inactive')).toBeDefined();
-    expect(wrapper.vm.getStatusIcon('error')).toBeDefined();
+    expect(wrapper.vm.getMethodTheme('GET')).toBe('primary');
+    expect(wrapper.vm.getMethodTheme('POST')).toBe('success');
+    expect(wrapper.vm.getMethodTheme('PUT')).toBe('warning');
+    expect(wrapper.vm.getMethodTheme('DELETE')).toBe('danger');
   });
 });

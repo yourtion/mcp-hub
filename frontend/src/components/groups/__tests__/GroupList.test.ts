@@ -64,10 +64,10 @@ describe('GroupList', () => {
   it('应该正确渲染组件', () => {
     const wrapper = mount(GroupList);
 
-    expect(wrapper.find('.group-list').exists()).toBe(true);
+    expect(wrapper.find('.ds-content-layout').exists()).toBe(true);
     expect(wrapper.find('.ds-page-header').exists()).toBe(true);
-    expect(wrapper.find('.group-list__stats').exists()).toBe(true);
-    expect(wrapper.find('.group-list__table-card').exists()).toBe(true);
+    expect(wrapper.find('.stats-row').exists()).toBe(true);
+    expect(wrapper.find('.ds-data-table').exists()).toBe(true);
   });
 
   it('应该显示正确的页面标题', () => {
@@ -96,10 +96,10 @@ describe('GroupList', () => {
   it('应该有正确的表格列配置', () => {
     const wrapper = mount(GroupList);
 
-    const columns = wrapper.vm.columns;
+    const columns = wrapper.vm.tableColumns;
     expect(columns).toHaveLength(7);
 
-    const columnKeys = columns.map((col) => col.colKey);
+    const columnKeys = columns.map((col: any) => col.key);
     expect(columnKeys).toContain('name');
     expect(columnKeys).toContain('health');
     expect(columnKeys).toContain('operations');

@@ -1,196 +1,145 @@
 <template>
-  <div class="api-config-list">
-    <PageHeader
-      title="API配置管理"
-      description="管理和配置 API 到 MCP 工具的转换"
-      :actions="headerActions"
-    />
-
-    <div class="content">
-      <!-- 统计信息 -->
-      <div class="stats-section">
-        <StatCard
-          :value="stats.totalConfigs"
-          label="总配置数"
-          icon="server"
-          theme="blue"
-        />
-        <StatCard
-          :value="stats.activeConfigs"
-          label="活跃配置"
-          icon="success"
-          theme="green"
-        />
-        <StatCard
-          :value="stats.totalTools"
-          label="生成的工具"
-          icon="tools"
-          theme="orange"
-        />
-        <StatCard
-          :value="formatTimeShort(stats.lastUpdated)"
-          label="最后更新"
-          icon="server"
-          theme="purple"
-        />
-      </div>
-
-      <!-- 搜索和过滤 -->
-      <t-card class="filter-section" bordered>
-        <t-row :gutter="16" align="center">
-          <t-col :span="8">
-            <t-input
-              v-model="searchQuery"
-              placeholder="搜索配置名称或描述"
-              clearable
-              @change="handleSearch"
-            >
-              <template #prefix-icon><search-icon /></template>
-            </t-input>
-          </t-col>
-          <t-col :span="4">
-            <t-select
-              v-model="statusFilter"
-              placeholder="全部状态"
-              clearable
-              @change="handleSearch"
-            >
-              <t-option value="active">
-                <div class="filter-option">
-                  <t-tag variant="success" size="small">活跃</t-tag>
-                </div>
-              </t-option>
-              <t-option value="inactive">
-                <div class="filter-option">
-                  <t-tag variant="warning" size="small">非活跃</t-tag>
-                </div>
-              </t-option>
-              <t-option value="error">
-                <div class="filter-option">
-                  <t-tag variant="error" size="small">错误</t-tag>
-                </div>
-              </t-option>
-            </t-select>
-          </t-col>
-          <t-col :span="4">
-            <t-select
-              v-model="methodFilter"
-              placeholder="HTTP方法"
-              clearable
-              @change="handleSearch"
-            >
-              <t-option value="GET">
-                <t-tag theme="primary" size="small">GET</t-tag>
-              </t-option>
-              <t-option value="POST">
-                <t-tag theme="success" size="small">POST</t-tag>
-              </t-option>
-              <t-option value="PUT">
-                <t-tag theme="warning" size="small">PUT</t-tag>
-              </t-option>
-              <t-option value="DELETE">
-                <t-tag theme="danger" size="small">DELETE</t-tag>
-              </t-option>
-            </t-select>
-          </t-col>
-          <t-col :span="4">
-            <t-button
-              variant="outline"
-              block
-              @click="handleRefresh"
-            >
-              <template #icon><refresh-icon /></template>
-              刷新
-            </t-button>
-          </t-col>
-        </t-row>
-      </t-card>
-
-      <!-- 配置列表 -->
-      <t-card :bordered="false">
-        <t-table
-          :data="filteredConfigs"
-          :columns="columns"
-          :loading="loading"
-          :selected-row-keys="selectedConfigs"
-          :pagination="{ pageSize: 10, total: filteredConfigs.length }"
-          :empty="emptyProps"
-          row-key="id"
-          size="large"
-          stripe
-          @select-change="handleSelectionChange"
-        >
-          <template #status="{ row }">
-            <t-tag :theme="getStatusTheme(row.status)" variant="light">
-              <template #icon>
-                <component :is="getStatusIcon(row.status)" />
-              </template>
-              {{ getStatusText(row.status) }}
-            </t-tag>
-          </template>
-
-          <template #api="{ row }">
-            <div class="api-info">
-              <t-tag :theme="getMethodTheme(row.api.method)" size="small" class="api-method">
-                {{ row.api.method }}
-              </t-tag>
-              <div class="api-url">{{ row.api.url }}</div>
-            </div>
-          </template>
-
-          <template #lastUpdated="{ row }">
-            <div class="time-info">
-              <div class="time-relative">{{ formatTimeRelative(row.lastUpdated) }}</div>
-              <div class="time-absolute">{{ formatTime(row.lastUpdated) }}</div>
-            </div>
-          </template>
-
-          <template #actions="{ row }">
-            <t-space :size="4">
-              <t-tooltip content="查看详情">
-                <t-button
-                  variant="text"
-                  size="small"
-                  @click="handleView(row)"
-                >
-                  <template #icon><browse-icon /></template>
-                </t-button>
-              </t-tooltip>
-              <t-tooltip content="编辑配置">
-                <t-button
-                  variant="text"
-                  size="small"
-                  @click="handleEdit(row)"
-                >
-                  <template #icon><edit-icon /></template>
-                </t-button>
-              </t-tooltip>
-              <t-tooltip content="测试配置">
-                <t-button
-                  variant="text"
-                  size="small"
-                  @click="handleTest(row)"
-                >
-                  <template #icon><play-icon /></template>
-                </t-button>
-              </t-tooltip>
-              <t-popconfirm
-                content="确认删除此配置？"
-                @confirm="handleDelete(row)"
-              >
-                <t-button
-                  variant="text"
-                  size="small"
-                  theme="danger"
-                >
-                  <template #icon><delete-icon /></template>
-                </t-button>
-              </t-popconfirm>
-            </t-space>
-          </template>
-        </t-table>
-      </t-card>
+  <ContentLayout
+    title="API配置管理"
+    description="管理和配置 API 到 MCP 工具的转换"
+    :actions="headerActions"
+  >
+    <!-- 统计卡片 -->
+    <div class="stats-row">
+      <StatCard
+        v-for="stat in statsCards"
+        :key="stat.key"
+        :value="stat.value"
+        :label="stat.label"
+        :icon="stat.icon"
+        :theme="stat.theme"
+      />
     </div>
+
+    <!-- 搜索和过滤 -->
+    <t-card class="filter-card" bordered>
+      <t-row :gutter="16" align="center">
+        <t-col :span="8">
+          <t-input
+            v-model="searchQuery"
+            placeholder="搜索配置名称或描述"
+            clearable
+            @change="handleSearch"
+          >
+            <template #prefix-icon><SearchIcon /></template>
+          </t-input>
+        </t-col>
+        <t-col :span="4">
+          <t-select
+            v-model="statusFilter"
+            placeholder="全部状态"
+            clearable
+            @change="handleSearch"
+          >
+            <t-option value="active">
+              <div class="filter-option">
+                <t-tag variant="success" size="small">活跃</t-tag>
+              </div>
+            </t-option>
+            <t-option value="inactive">
+              <div class="filter-option">
+                <t-tag variant="warning" size="small">非活跃</t-tag>
+              </div>
+            </t-option>
+            <t-option value="error">
+              <div class="filter-option">
+                <t-tag variant="error" size="small">错误</t-tag>
+              </div>
+            </t-option>
+          </t-select>
+        </t-col>
+        <t-col :span="4">
+          <t-select
+            v-model="methodFilter"
+            placeholder="HTTP方法"
+            clearable
+            @change="handleSearch"
+          >
+            <t-option value="GET">
+              <t-tag theme="primary" size="small">GET</t-tag>
+            </t-option>
+            <t-option value="POST">
+              <t-tag theme="success" size="small">POST</t-tag>
+            </t-option>
+            <t-option value="PUT">
+              <t-tag theme="warning" size="small">PUT</t-tag>
+            </t-option>
+            <t-option value="DELETE">
+              <t-tag theme="danger" size="small">DELETE</t-tag>
+            </t-option>
+          </t-select>
+        </t-col>
+        <t-col :span="4">
+          <t-button
+            variant="outline"
+            block
+            @click="handleRefresh"
+          >
+            <template #icon><RefreshIcon /></template>
+            刷新
+          </t-button>
+        </t-col>
+      </t-row>
+    </t-card>
+
+    <!-- 配置列表 -->
+    <DataTable
+      :data="tableData"
+      :columns="tableColumns"
+      :loading="loading"
+      :pagination="paginationConfig"
+      :selectable="true"
+      :selected-row-keys="selectedConfigs"
+      @search="handleSearch"
+      @page-change="handlePageChange"
+      @page-size-change="handlePageSizeChange"
+      @select-change="handleSelectionChange"
+    >
+      <!-- 状态 -->
+      <template #status="{ row }">
+        <StatusIndicator :status="row.status" mode="tag" />
+      </template>
+
+      <!-- API端点 -->
+      <template #api="{ row }">
+        <div class="api-info">
+          <t-tag :theme="getMethodTheme(row.api.method)" size="small" class="api-method">
+            {{ row.api.method }}
+          </t-tag>
+          <div class="api-url">{{ row.api.url }}</div>
+        </div>
+      </template>
+
+      <!-- 更新时间 -->
+      <template #lastUpdated="{ row }">
+        <div class="time-info">
+          <div class="time-relative">{{ formatTimeRelative(row.lastUpdated) }}</div>
+          <div class="time-absolute">{{ formatTime(row.lastUpdated) }}</div>
+        </div>
+      </template>
+
+      <!-- 操作 -->
+      <template #actions="{ row }">
+        <ActionGroup
+          :actions="getConfigActions(row)"
+          :size="'small'"
+          layout="horizontal"
+          @action-click="() => {}"
+        />
+      </template>
+    </DataTable>
+
+    <!-- 空状态 -->
+    <EmptyPage
+      v-if="!loading && configs.length === 0"
+      type="no-data"
+      description="暂无配置，点击上方新建配置按钮创建"
+    />
 
     <!-- 配置表单对话框 -->
     <api-config-form-dialog
@@ -211,7 +160,20 @@
       :configs="configs"
       @submit="handleExportSubmit"
     />
-  </div>
+
+    <!-- 删除确认对话框 -->
+    <ConfirmDialog
+      v-model:visible="deleteDialogVisible"
+      :title="deleteDialogTitle"
+      :confirm-text="'删除'"
+      :cancel-text="'取消'"
+      type="danger"
+      :async-confirm="true"
+      @confirm="handleConfirmDelete"
+    >
+      <p>{{ deleteDialogMessage }}</p>
+    </ConfirmDialog>
+  </ContentLayout>
 </template>
 
 <script setup lang="ts">
@@ -226,17 +188,11 @@ import {
   BrowseIcon,
   EditIcon,
   PlayIcon,
-  ServerIcon,
-  CheckCircleIcon,
-  ToolsIcon,
-  TimeIcon,
   RefreshIcon,
-  CheckIcon,
-  CloseIcon,
-  ErrorCircleIcon,
 } from 'tdesign-icons-vue-next';
-import PageHeader from '@/design-system/components/layout/PageHeader.vue';
-import StatCard from '@/design-system/components/data-display/StatCard.vue';
+import { ContentLayout, StatCard, DataTable, ActionGroup, StatusIndicator, EmptyPage, ConfirmDialog } from '@/design-system';
+import type { Action } from '@/design-system';
+import type { DataTableColumn, DataTablePagination } from '@/design-system';
 import { apiToMcpService } from '@/services/api-to-mcp';
 import type { ApiConfigInfo, ApiToolConfig } from '@/types/api-to-mcp';
 import ApiConfigFormDialog from './ApiConfigFormDialog.vue';
@@ -260,93 +216,85 @@ const stats = reactive({
 const showFormDialog = ref(false);
 const showImportDialog = ref(false);
 const showExportDialog = ref(false);
+const deleteDialogVisible = ref(false);
+const configToDelete = ref<ApiConfigInfo | null>(null);
 
 const currentConfig = ref<ApiToolConfig | undefined>();
+
+// 分页配置
+const paginationConfig = ref<DataTablePagination>({
+  current: 1,
+  pageSize: 10,
+  total: 0,
+  showJumper: true,
+  showSizer: true,
+  pageSizeOptions: [10, 20, 50, 100],
+});
+
+// 统计卡片
+const statsCards = computed(() => [
+  {
+    key: 'total',
+    value: stats.totalConfigs,
+    label: '总配置数',
+    icon: 'server',
+    theme: 'blue' as const,
+  },
+  {
+    key: 'active',
+    value: stats.activeConfigs,
+    label: '活跃配置',
+    icon: 'success',
+    theme: 'green' as const,
+  },
+  {
+    key: 'tools',
+    value: stats.totalTools,
+    label: '生成的工具',
+    icon: 'tools',
+    theme: 'orange' as const,
+  },
+  {
+    key: 'updated',
+    value: formatTimeShort(stats.lastUpdated),
+    label: '最后更新',
+    icon: 'server',
+    theme: 'purple' as const,
+  },
+]);
 
 // 头部操作按钮
 const headerActions = computed(() => [
   {
     text: '批量删除',
-    theme: 'danger',
-    variant: 'outline',
+    theme: 'danger' as const,
+    variant: 'outline' as const,
     icon: DeleteIcon,
     onClick: handleBatchDelete,
     show: selectedConfigs.value.length > 0,
   },
   {
     text: '导入',
-    theme: 'default',
-    variant: 'outline',
+    theme: 'default' as const,
+    variant: 'outline' as const,
     icon: UploadIcon,
     onClick: handleImport,
   },
   {
     text: '导出',
-    theme: 'default',
-    variant: 'outline',
+    theme: 'default' as const,
+    variant: 'outline' as const,
     icon: DownloadIcon,
     onClick: handleExport,
     show: configs.value.length > 0,
   },
   {
     text: '新建配置',
-    theme: 'primary',
+    theme: 'primary' as const,
     icon: AddIcon,
     onClick: handleCreate,
   },
-].filter(action => action.show !== false));
-
-// 空状态配置
-const emptyProps = computed(() => ({
-  description: loading.value ? '加载中...' : '暂无配置，点击上方"新建配置"按钮创建',
-}));
-
-// 表格列定义
-const columns = [
-  {
-    colKey: 'name',
-    title: '配置名称',
-    width: 200,
-    ellipsis: true,
-  },
-  {
-    colKey: 'description',
-    title: '描述',
-    width: 250,
-    ellipsis: true,
-  },
-  {
-    colKey: 'status',
-    title: '状态',
-    width: 120,
-    cell: 'status',
-  },
-  {
-    colKey: 'api',
-    title: 'API端点',
-    cell: 'api',
-  },
-  {
-    colKey: 'toolsGenerated',
-    title: '工具',
-    width: 80,
-    align: 'center' as const,
-  },
-  {
-    colKey: 'lastUpdated',
-    title: '更新时间',
-    width: 160,
-    cell: 'lastUpdated',
-  },
-  {
-    colKey: 'actions',
-    title: '操作',
-    width: 180,
-    cell: 'actions',
-    align: 'center' as const,
-    fixed: 'right' as const,
-  },
-];
+].filter((action) => action.show !== false) as Action[]);
 
 // 过滤后的配置列表
 const filteredConfigs = computed(() => {
@@ -362,66 +310,112 @@ const filteredConfigs = computed(() => {
   });
 });
 
-// 加载配置列表
-const loadConfigs = async () => {
-  try {
-    loading.value = true;
-    const response = await apiToMcpService.getConfigs();
-    configs.value = response.configs;
+// 表格数据（分页后）
+const tableData = computed(() => {
+  const start = (paginationConfig.value.current - 1) * paginationConfig.value.pageSize;
+  const end = start + paginationConfig.value.pageSize;
+  paginationConfig.value.total = filteredConfigs.value.length;
+  return filteredConfigs.value.slice(start, end);
+});
 
-    // 加载统计信息
-    loadStats();
-  } catch (error) {
-    MessagePlugin.error('加载配置列表失败');
-    console.error('加载配置列表失败:', error);
-  } finally {
-    loading.value = false;
+// 表格列配置
+const tableColumns: DataTableColumn[] = [
+  {
+    key: 'name',
+    title: '配置名称',
+    width: 200,
+    fixed: 'left',
+  },
+  {
+    key: 'description',
+    title: '描述',
+    width: 250,
+  },
+  {
+    key: 'status',
+    title: '状态',
+    width: 120,
+    align: 'center' as const,
+  },
+  {
+    key: 'api',
+    title: 'API端点',
+  },
+  {
+    key: 'toolsGenerated',
+    title: '工具',
+    width: 80,
+    align: 'center' as const,
+  },
+  {
+    key: 'lastUpdated',
+    title: '更新时间',
+    width: 160,
+  },
+  {
+    key: 'actions',
+    title: '操作',
+    width: 180,
+    align: 'center' as const,
+    fixed: 'right',
+  },
+];
+
+// 删除对话框标题
+const deleteDialogTitle = computed(() => {
+  if (!configToDelete.value) return '确认删除';
+  return configToDelete.value === selectedConfigs.value ? '确认批量删除' : '确认删除';
+});
+
+// 删除对话框消息
+const deleteDialogMessage = computed(() => {
+  if (selectedConfigs.value.length > 0) {
+    return `确定要删除选中的 ${selectedConfigs.value.length} 个配置吗？此操作不可撤销。`;
   }
-};
-
-// 刷新配置列表
-const handleRefresh = async () => {
-  await loadConfigs();
-  MessagePlugin.success('刷新成功');
-};
-
-// 加载统计信息
-const loadStats = async () => {
-  try {
-    const response = await apiToMcpService.getConfigStats();
-    Object.assign(stats, response);
-  } catch (error) {
-    console.error('加载统计信息失败:', error);
+  if (configToDelete.value) {
+    return `确定要删除配置 "${configToDelete.value.name}" 吗？此操作不可撤销。`;
   }
-};
+  return '';
+});
 
-// 获取状态主题
-const getStatusTheme = (status: string) => {
-  switch (status) {
-    case 'active':
-      return 'success';
-    case 'inactive':
-      return 'warning';
-    case 'error':
-      return 'danger';
-    default:
-      return 'default';
-  }
-};
-
-// 获取状态图标
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'active':
-      return CheckIcon;
-    case 'inactive':
-      return CloseIcon;
-    case 'error':
-      return ErrorCircleIcon;
-    default:
-      return CheckIcon;
-  }
-};
+// 获取配置操作
+const getConfigActions = (config: ApiConfigInfo): Action[] => [
+  {
+    key: 'view',
+    text: '查看',
+    icon: BrowseIcon,
+    theme: 'default',
+    variant: 'text',
+    priority: 'secondary',
+    onClick: () => handleView(config),
+  },
+  {
+    key: 'edit',
+    text: '编辑',
+    icon: EditIcon,
+    theme: 'default',
+    variant: 'text',
+    priority: 'secondary',
+    onClick: () => handleEdit(config),
+  },
+  {
+    key: 'test',
+    text: '测试',
+    icon: PlayIcon,
+    theme: 'default',
+    variant: 'text',
+    priority: 'secondary',
+    onClick: () => handleTest(config),
+  },
+  {
+    key: 'delete',
+    text: '删除',
+    theme: 'danger',
+    variant: 'text',
+    priority: 'danger',
+    onClick: () => handleDeleteClick(config),
+  },
+];
 
 // 获取方法主题
 const getMethodTheme = (method: string) => {
@@ -436,20 +430,6 @@ const getMethodTheme = (method: string) => {
       return 'danger';
     default:
       return 'default';
-  }
-};
-
-// 获取状态文本
-const getStatusText = (status: string) => {
-  switch (status) {
-    case 'active':
-      return '活跃';
-    case 'inactive':
-      return '非活跃';
-    case 'error':
-      return '错误';
-    default:
-      return '未知';
   }
 };
 
@@ -491,12 +471,56 @@ const formatTimeRelative = (time: string) => {
 
 // 搜索处理
 const handleSearch = () => {
-  // 搜索逻辑在computed属性中处理
+  paginationConfig.value.current = 1;
+};
+
+// 分页变更处理
+const handlePageChange = (page: number) => {
+  paginationConfig.value.current = page;
+};
+
+// 分页大小变更处理
+const handlePageSizeChange = (pageSize: number) => {
+  paginationConfig.value.pageSize = pageSize;
+  paginationConfig.value.current = 1;
 };
 
 // 选择变更处理
 const handleSelectionChange = (selectedKeys: string[]) => {
   selectedConfigs.value = selectedKeys;
+};
+
+// 加载配置列表
+const loadConfigs = async () => {
+  try {
+    loading.value = true;
+    const response = await apiToMcpService.getConfigs();
+    configs.value = response.configs;
+
+    // 加载统计信息
+    loadStats();
+  } catch (error) {
+    MessagePlugin.error('加载配置列表失败');
+    console.error('加载配置列表失败:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 刷新配置列表
+const handleRefresh = async () => {
+  await loadConfigs();
+  MessagePlugin.success('刷新成功');
+};
+
+// 加载统计信息
+const loadStats = async () => {
+  try {
+    const response = await apiToMcpService.getConfigStats();
+    Object.assign(stats, response);
+  } catch (error) {
+    console.error('加载统计信息失败:', error);
+  }
 };
 
 // 创建配置
@@ -531,61 +555,49 @@ const handleEdit = async (config: ApiConfigInfo) => {
 
 // 测试配置
 const handleTest = (config: ApiConfigInfo) => {
-  // 导航到测试页面
-  // router.push(`/api-to-mcp/test/${config.id}`);
   MessagePlugin.info('测试功能开发中...');
 };
 
-// 删除配置
-const handleDelete = async (config: ApiConfigInfo) => {
-  try {
-    const confirmDelete = await MessagePlugin.confirm({
-      header: '确认删除',
-      body: `确定要删除配置 "${config.name}" 吗？此操作不可撤销。`,
-      confirmBtn: '删除',
-      cancelBtn: '取消',
-      theme: 'warning',
-    });
-
-    if (confirmDelete) {
-      await apiToMcpService.deleteConfig(config.id);
-      MessagePlugin.success('配置删除成功');
-      await loadConfigs();
-    }
-  } catch (error) {
-    MessagePlugin.error('删除配置失败');
-    console.error('删除配置失败:', error);
-  }
+// 删除配置点击
+const handleDeleteClick = (config: ApiConfigInfo) => {
+  configToDelete.value = config;
+  deleteDialogVisible.value = true;
 };
 
-// 批量删除
-const handleBatchDelete = async () => {
-  if (selectedConfigs.value.length === 0) {
-    MessagePlugin.warning('请先选择要删除的配置');
-    return;
-  }
-
-  try {
-    const confirmDelete = await MessagePlugin.confirm({
-      header: '确认批量删除',
-      body: `确定要删除选中的 ${selectedConfigs.value.length} 个配置吗？此操作不可撤销。`,
-      confirmBtn: '删除',
-      cancelBtn: '取消',
-      theme: 'warning',
-    });
-
-    if (confirmDelete) {
+// 确认删除
+const handleConfirmDelete = async () => {
+  if (selectedConfigs.value.length > 0) {
+    // 批量删除
+    try {
       for (const configId of selectedConfigs.value) {
         await apiToMcpService.deleteConfig(configId);
       }
       MessagePlugin.success('批量删除成功');
       selectedConfigs.value = [];
+      deleteDialogVisible.value = false;
       await loadConfigs();
+    } catch (error) {
+      MessagePlugin.error('批量删除失败');
+      console.error('批量删除失败:', error);
     }
-  } catch (error) {
-    MessagePlugin.error('批量删除失败');
-    console.error('批量删除失败:', error);
+  } else if (configToDelete.value) {
+    // 单个删除
+    try {
+      await apiToMcpService.deleteConfig(configToDelete.value.id);
+      MessagePlugin.success('配置删除成功');
+      deleteDialogVisible.value = false;
+      configToDelete.value = null;
+      await loadConfigs();
+    } catch (error) {
+      MessagePlugin.error('删除配置失败');
+      console.error('删除配置失败:', error);
+    }
   }
+};
+
+// 批量删除
+const handleBatchDelete = () => {
+  deleteDialogVisible.value = true;
 };
 
 // 导入配置
@@ -641,7 +653,7 @@ const handleExportSubmit = async (result: { data: string; filename: string; mess
     link.download = result.filename;
     link.click();
     URL.revokeObjectURL(url);
-    
+
     MessagePlugin.success('导出成功');
     showExportDialog.value = false;
   } catch (error) {
@@ -658,30 +670,17 @@ onMounted(() => {
 
 <style lang="less" scoped>
 @import '../../design-system/styles/mixins.less';
+@import '../../design-system/tokens/spacing.less';
 
-.api-config-list {
-  padding: 24px;
-  background: var(--td-bg-color-container);
-  min-height: 100vh;
-}
-
-.content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* 统计卡片样式 */
-.stats-section {
+.stats-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-sm);
+  gap: @spacing-lg;
+  margin-bottom: @spacing-xl;
 }
 
-/* 过滤区域样式 */
-.filter-section {
-  border-radius: var(--td-radius-default);
+.filter-card {
+  margin-bottom: @spacing-xl;
 }
 
 .filter-option {
@@ -690,7 +689,6 @@ onMounted(() => {
   width: 100%;
 }
 
-/* 表格样式 */
 .api-info {
   display: flex;
   align-items: center;
@@ -729,10 +727,10 @@ onMounted(() => {
   color: var(--td-text-color-placeholder);
 }
 
-/* 响应式设计 */
-@media (max-width: 1200px) {
-  .api-config-list {
-    padding: 16px;
+// 响应式
+@media (max-width: 768px) {
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

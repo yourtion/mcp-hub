@@ -1,6 +1,6 @@
 <template>
   <div class="mcp-config-editor">
-    <config-section
+    <ds-config-section
       title="MCP服务器配置"
       description="配置MCP服务器连接和传输参数"
       icon="server"
@@ -19,10 +19,12 @@
               size="small"
               @click="handleDeleteServer(serverId)"
             >
-              <t-icon name="delete" />
+              <template #icon>
+                <DeleteIcon />
+              </template>
             </t-button>
           </div>
-          
+
           <t-form :data="server" layout="vertical">
             <t-row :gutter="16">
               <t-col :span="12">
@@ -44,7 +46,7 @@
                 </t-form-item>
               </t-col>
             </t-row>
-            
+
             <!-- 参数配置 -->
             <t-form-item label="启动参数" name="args">
               <t-tag-input
@@ -53,7 +55,7 @@
                 @change="handleChange"
               />
             </t-form-item>
-            
+
             <!-- 环境变量配置 -->
             <t-form-item label="环境变量" name="env">
               <div class="env-vars">
@@ -78,7 +80,9 @@
                     size="small"
                     @click="handleDeleteEnvVar(serverId, key)"
                   >
-                    <t-icon name="delete" />
+                    <template #icon>
+                      <DeleteIcon />
+                    </template>
                   </t-button>
                 </div>
                 <t-button
@@ -88,7 +92,7 @@
                   @click="handleAddEnvVar(serverId)"
                 >
                   <template #icon>
-                    <t-icon name="add" />
+                    <AddIcon />
                   </template>
                   添加环境变量
                 </t-button>
@@ -96,7 +100,7 @@
             </t-form-item>
           </t-form>
         </div>
-        
+
         <!-- 添加服务器按钮 -->
         <t-button
           theme="primary"
@@ -104,20 +108,23 @@
           @click="handleAddServer"
         >
           <template #icon>
-            <t-icon name="add" />
+            <AddIcon />
           </template>
           添加MCP服务器
         </t-button>
       </div>
-    </config-section>
+    </ds-config-section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { MessagePlugin } from 'tdesign-vue-next';
+import { DeleteIcon, AddIcon } from 'tdesign-icons-vue-next';
 import type { McpConfig } from '@/types/config';
-import ConfigSection from './ConfigSection.vue';
+
+// 导入设计系统组件
+import DsConfigSection from '@/design-system/components/form/ConfigSection.vue';
 
 // Props
 interface Props {
@@ -190,49 +197,87 @@ const handleDeleteEnvVar = (serverId: string, key: string): void => {
 };
 </script>
 
-<style scoped>
+<style lang="less" scoped>
+@import '../../design-system/styles/mixins.less';
+@import '../../design-system/tokens/spacing.less';
+@import '../../design-system/tokens/typography.less';
+@import '../../design-system/tokens/color.less';
+@import '../../design-system/tokens/border.less';
+@import '../../design-system/tokens/radius.less';
+
 .mcp-config-editor {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: @spacing-xl;
 }
 
 .server-list {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: @spacing-xl;
 }
 
 .server-item {
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 16px;
-  background-color: #f9fafb;
+  border: 1px solid var(--td-border-level-1-color);
+  border-radius: var(--td-radius-default);
+  padding: @spacing-lg;
+  background: var(--td-bg-color-container-hover);
+  box-shadow: var(--td-shadow-1);
+  transition: box-shadow var(--td-duration-normal) var(--td-easing-ease);
+
+  &:hover {
+    box-shadow: var(--td-shadow-2);
+  }
 }
 
 .server-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: @spacing-md;
 }
 
 .server-name {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
+  font-size: @font-size-md;
+  font-weight: @font-weight-semibold;
+  color: var(--td-text-color-primary);
 }
 
 .env-vars {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: @spacing-sm;
 }
 
 .env-var-item {
   display: flex;
-  gap: 8px;
+  gap: @spacing-sm;
   align-items: center;
+}
+
+// 响应式
+@media (max-width: 768px) {
+  .mcp-config-editor {
+    gap: @spacing-lg;
+  }
+
+  .server-list {
+    gap: @spacing-lg;
+  }
+
+  .server-item {
+    padding: @spacing-md;
+  }
+
+  .env-var-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: @spacing-xs;
+  }
+
+  .env-var-item .t-button {
+    align-self: flex-end;
+  }
 }
 </style>
