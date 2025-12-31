@@ -1,0 +1,120 @@
+/**
+ * 断点系统令牌
+ * 定义响应式设计的标准断点
+ */
+
+// 断点定义
+@breakpoint-xs: 480px;   // 超小屏幕（手机竖屏）
+@breakpoint-sm: 768px;   // 小屏幕（平板竖屏）
+@breakpoint-md: 1024px;  // 中等屏幕（平板横屏、小笔记本）
+@breakpoint-lg: 1280px;  // 大屏幕（桌面）
+@breakpoint-xl: 1536px;  // 超大屏幕（大桌面）
+
+// Mixins - 媒体查询辅助工具
+.breakpoint-xs(@rules) {
+  @media (max-width: @breakpoint-xs) {
+    @rules();
+  }
+}
+
+.breakpoint-sm(@rules) {
+  @media (max-width: @breakpoint-sm) {
+    @rules();
+  }
+}
+
+.breakpoint-md(@rules) {
+  @media (max-width: @breakpoint-md) {
+    @rules();
+  }
+}
+
+.breakpoint-lg(@rules) {
+  @media (max-width: @breakpoint-lg) {
+    @rules();
+  }
+}
+
+.breakpoint-xl(@rules) {
+  @media (max-width: @breakpoint-xl) {
+    @rules();
+  }
+}
+
+// 最小宽度断点
+.breakpoint-min-sm(@rules) {
+  @media (min-width: (@breakpoint-xs + 1)) {
+    @rules();
+  }
+}
+
+.breakpoint-min-md(@rules) {
+  @media (min-width: (@breakpoint-sm + 1)) {
+    @rules();
+  }
+}
+
+.breakpoint-min-lg(@rules) {
+  @media (min-width: (@breakpoint-md + 1)) {
+    @rules();
+  }
+}
+
+.breakpoint-min-xl(@rules) {
+  @media (min-width: (@breakpoint-lg + 1)) {
+    @rules();
+  }
+}
+
+// 范围断点
+.breakpoint-between(@min, @max, @rules) {
+  @media (min-width: @min) and (max-width: @max) {
+    @rules();
+  }
+}
+
+// 设备类型断点
+.mobile-only(@rules) {
+  @media (max-width: @breakpoint-sm) {
+    @rules();
+  }
+}
+
+.tablet-only(@rules) {
+  @media (min-width: (@breakpoint-sm + 1)) and (max-width: @breakpoint-md) {
+    @rules();
+  }
+}
+
+.desktop-only(@rules) {
+  @media (min-width: (@breakpoint-md + 1)) {
+    @rules();
+  }
+}
+
+// 触摸设备
+.touch-device(@rules) {
+  @media (hover: none) and (pointer: coarse) {
+    @rules();
+  }
+}
+
+// 高分辨率屏幕
+.hidpi(@rules) {
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    @rules();
+  }
+}
+
+// 打印样式
+.print-only(@rules) {
+  @media print {
+    @rules();
+  }
+}
+
+.screen-only(@rules) {
+  @media screen {
+    @rules();
+  }
+}

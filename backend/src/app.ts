@@ -4,6 +4,7 @@ import { createAuthApi } from './api/auth/index.js';
 import { configApi } from './api/config/index.js';
 import { dashboardApi } from './api/dashboard/index.js';
 import { debugApi } from './api/debug/index.js';
+import { groupsApi } from './api/groups/index.js';
 import { hubApi } from './api/hub.js';
 import { groupMcpRouter } from './api/mcp/group-router.js';
 import { performanceApi } from './api/performance/index.js';
@@ -74,6 +75,7 @@ app.route('/', mcp);
 app.route('/', sse);
 // 具体的 API 路由放在通配符路由之前，避免被拦截
 app.route('/api', hubApi);
+app.route('/api/groups', groupsApi);
 app.route('/api/auth', createAuthApi(authService));
 app.route('/api/config', configApi);
 app.route('/api/dashboard', dashboardApi);

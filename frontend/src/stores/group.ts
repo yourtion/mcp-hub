@@ -21,6 +21,7 @@ export const useGroupStore = defineStore('group', () => {
   const summary = ref({
     totalGroups: 0,
     healthyGroups: 0,
+    unhealthyGroups: 0,
     totalServers: 0,
     connectedServers: 0,
     totalTools: 0,
@@ -65,6 +66,7 @@ export const useGroupStore = defineStore('group', () => {
       summary.value = {
         totalGroups: response.totalGroups,
         healthyGroups: response.healthyGroups,
+        unhealthyGroups: response.unhealthyGroups ?? (response.totalGroups - response.healthyGroups),
         totalServers: response.totalServers,
         connectedServers: response.connectedServers,
         totalTools: response.totalTools,

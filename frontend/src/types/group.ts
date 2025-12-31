@@ -60,6 +60,7 @@ export interface GroupListResponse {
   groups: GroupInfo[];
   totalGroups: number;
   healthyGroups: number;
+  unhealthyGroups: number;
   totalServers: number;
   connectedServers: number;
   totalTools: number;

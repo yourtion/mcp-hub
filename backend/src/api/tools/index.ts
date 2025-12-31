@@ -106,6 +106,9 @@ toolsApi.get('/', async (c) => {
 
     // 获取服务器健康状态
     const serverHealth = service.getServerHealth();
+    logger.info('服务器健康状态', {
+      serverHealth: Object.fromEntries(serverHealth),
+    });
 
     // 为工具添加状态信息
     const toolsWithStatus = tools.map((tool) => ({
@@ -115,6 +118,11 @@ toolsApi.get('/', async (c) => {
           ? ('available' as const)
           : ('unavailable' as const),
     }));
+
+    logger.info('工具状态信息', {
+      toolCount: toolsWithStatus.length,
+      firstTool: toolsWithStatus[0],
+    });
 
     // 按服务器分组工具
     const toolsByServer = new Map<string, typeof toolsWithStatus>();
@@ -141,7 +149,7 @@ toolsApi.get('/', async (c) => {
             serverTools.map((tool) => ({
               name: tool.name,
               description: tool.description,
-              status: tool.status,
+              status: tool.status ?? 'unavailable',
               inputSchema: tool.inputSchema,
             })),
           ]),
