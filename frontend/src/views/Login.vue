@@ -146,40 +146,44 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
+<style lang="less" scoped>
+@import '../design-system/styles/mixins.less';
+@import '../design-system/tokens/spacing.less';
+@import '../design-system/tokens/typography.less';
+
 .login-container {
   display: flex;
   min-height: 100vh;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
+  padding: @spacing-xl;
 }
 
 .login-card {
   width: 100%;
   max-width: 400px;
   padding: 40px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  background: var(--td-bg-color-container);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: @spacing-xxxl;
 }
 
 .login-title {
-  font-size: 28px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 8px 0;
+  font-size: @font-size-xxxl;
+  font-weight: @font-weight-semibold;
+  color: var(--td-text-color-primary);
+  margin: 0 0 @spacing-sm 0;
 }
 
 .login-subtitle {
-  font-size: 16px;
-  color: #6b7280;
+  font-size: @font-size-lg;
+  color: var(--td-text-color-secondary);
   margin: 0;
 }
 
@@ -188,7 +192,7 @@ onMounted(async () => {
 }
 
 .form-item {
-  margin-bottom: 24px;
+  margin-bottom: @spacing-xxl;
 }
 
 .form-item:last-child {
@@ -196,21 +200,21 @@ onMounted(async () => {
 }
 
 .error-alert {
-  margin-top: 16px;
+  margin-top: @spacing-lg;
 }
 
 /* 响应式设计 */
 @media (max-width: 480px) {
   .login-container {
-    padding: 16px;
+    padding: @spacing-md;
   }
-  
+
   .login-card {
-    padding: 24px;
+    padding: @spacing-xxl;
   }
-  
+
   .login-title {
-    font-size: 24px;
+    font-size: @font-size-xxl;
   }
 }
 </style>

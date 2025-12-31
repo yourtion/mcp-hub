@@ -116,6 +116,19 @@ const defaultConfig: Record<string, StatusConfig> = {
     icon: markRaw(CloseCircleIcon),
     color: '#909399',
   },
+  // 工具状态
+  available: {
+    text: '可用',
+    theme: 'success',
+    icon: markRaw(CheckCircleIcon),
+    color: '#00a870',
+  },
+  unavailable: {
+    text: '不可用',
+    theme: 'danger',
+    icon: markRaw(CloseCircleIcon),
+    color: '#e34d59',
+  },
 };
 
 const config = computed(() => {

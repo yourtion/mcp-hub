@@ -321,39 +321,39 @@ const tableData = computed(() => {
 // 表格列配置
 const tableColumns: DataTableColumn[] = [
   {
-    key: 'name',
+    colKey: 'name',
     title: '配置名称',
     width: 200,
     fixed: 'left',
   },
   {
-    key: 'description',
+    colKey: 'description',
     title: '描述',
     width: 250,
   },
   {
-    key: 'status',
+    colKey: 'status',
     title: '状态',
     width: 120,
     align: 'center' as const,
   },
   {
-    key: 'api',
+    colKey: 'api',
     title: 'API端点',
   },
   {
-    key: 'toolsGenerated',
+    colKey: 'toolsGenerated',
     title: '工具',
     width: 80,
     align: 'center' as const,
   },
   {
-    key: 'lastUpdated',
+    colKey: 'lastUpdated',
     title: '更新时间',
     width: 160,
   },
   {
-    key: 'actions',
+    colKey: 'actions',
     title: '操作',
     width: 180,
     align: 'center' as const,

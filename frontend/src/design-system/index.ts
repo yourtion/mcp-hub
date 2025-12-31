@@ -33,6 +33,11 @@ export type {
 } from './components/data-display/StatCard.vue';
 // 数据展示组件
 export { default as StatCard } from './components/data-display/StatCard.vue';
+export type {
+  TimelineItem,
+  TimelineProps,
+} from './components/data-display/Timeline.vue';
+export { default as Timeline } from './components/data-display/Timeline.vue';
 export type { ConfirmDialogProps } from './components/feedback/ConfirmDialog.vue';
 export { default as ConfirmDialog } from './components/feedback/ConfirmDialog.vue';
 export type {

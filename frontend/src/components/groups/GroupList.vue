@@ -212,7 +212,7 @@ const statsCards = computed(() => [
     key: 'healthy',
     value: groupStore.summary.healthyGroups,
     label: '健康组',
-    icon: 'success',
+    icon: 'check-circle',
     theme: 'green' as const,
   },
   {
@@ -234,43 +234,43 @@ const statsCards = computed(() => [
 // 表格列配置
 const tableColumns: DataTableColumn[] = [
   {
-    key: 'name',
+    colKey: 'name',
     title: '组名称',
     width: 280,
     fixed: 'left',
   },
   {
-    key: 'serverCount',
+    colKey: 'serverCount',
     title: '服务器',
     width: 120,
     align: 'center' as const,
   },
   {
-    key: 'toolCount',
+    colKey: 'toolCount',
     title: '工具',
     width: 100,
     align: 'center' as const,
   },
   {
-    key: 'health',
+    colKey: 'health',
     title: '健康状态',
     width: 150,
     align: 'center' as const,
   },
   {
-    key: 'validation',
+    colKey: 'validation',
     title: '验证状态',
     width: 120,
     align: 'center' as const,
   },
   {
-    key: 'toolFilter',
+    colKey: 'toolFilter',
     title: '工具过滤',
     width: 120,
     align: 'center' as const,
   },
   {
-    key: 'operations',
+    colKey: 'operations',
     title: '操作',
     width: 200,
     align: 'center' as const,

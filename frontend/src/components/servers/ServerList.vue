@@ -236,33 +236,33 @@ const tableData = computed(() => {
 // 表格列配置
 const tableColumns: DataTableColumn[] = [
   {
-    key: 'name',
+    colKey: 'name',
     title: '服务器名称',
     width: 200,
     fixed: 'left',
   },
   {
-    key: 'type',
+    colKey: 'type',
     title: '类型',
     width: 100,
   },
   {
-    key: 'status',
+    colKey: 'status',
     title: '状态',
     width: 120,
   },
   {
-    key: 'toolCount',
+    colKey: 'toolCount',
     title: '工具数量',
     width: 100,
   },
   {
-    key: 'lastConnected',
+    colKey: 'lastConnected',
     title: '最后连接',
     width: 160,
   },
   {
-    key: 'actions',
+    colKey: 'actions',
     title: '操作',
     width: 150,
     fixed: 'right',

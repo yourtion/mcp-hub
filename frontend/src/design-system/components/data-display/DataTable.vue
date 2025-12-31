@@ -89,9 +89,9 @@
       @select-change="handleSelectionChange"
       @filter-change="handleFilterChange"
     >
-      <!-- 自定义列插槽 -->
+      <!-- 自定义列插槽 - 支持所有列 -->
       <template
-        v-for="col in customColumns"
+        v-for="col in props.columns"
         #[col.colKey]="slotProps"
         :key="col.colKey"
       >
@@ -99,6 +99,7 @@
           :name="col.colKey"
           v-bind="slotProps"
         >
+          <!-- 如果插槽有内容，使用 render 函数或默认值 -->
           <component
             :is="col.render"
             v-if="col.render"

@@ -99,7 +99,7 @@ describe('GroupList', () => {
     const columns = wrapper.vm.tableColumns;
     expect(columns).toHaveLength(7);
 
-    const columnKeys = columns.map((col: any) => col.key);
+    const columnKeys = columns.map((col: any) => col.colKey);
     expect(columnKeys).toContain('name');
     expect(columnKeys).toContain('health');
     expect(columnKeys).toContain('operations');

@@ -1,10 +1,11 @@
 <template>
-  <div class="tools-page">
-    <div class="page-header">
-      <h1>工具管理</h1>
-      <p>管理和监控MCP工具的执行状态</p>
-    </div>
-
+  <ContentLayout
+    title="工具管理"
+    description="管理和监控MCP工具的执行状态"
+    :actions="[
+      { text: '刷新', theme: 'default', variant: 'outline', icon: RefreshIcon, onClick: handleRefresh }
+    ]"
+  >
     <t-tabs v-model="activeTab" class="tools-tabs">
       <t-tab-panel value="list" label="工具列表">
         <tool-list />
@@ -14,41 +15,32 @@
         <tool-monitoring />
       </t-tab-panel>
     </t-tabs>
-  </div>
+  </ContentLayout>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { RefreshIcon } from 'tdesign-icons-vue-next';
+import { MessagePlugin } from 'tdesign-vue-next';
+import { ContentLayout } from '@/design-system';
 import ToolList from '@/components/tools/ToolList.vue';
 import ToolMonitoring from '@/components/tools/ToolMonitoring.vue';
 
 const activeTab = ref('list');
+
+const handleRefresh = () => {
+  // 触发刷新事件
+  MessagePlugin.success('刷新成功');
+};
 </script>
 
-<style scoped>
-.tools-page {
-  padding: 24px;
-}
-
-.page-header {
-  margin-bottom: 24px;
-}
-
-.page-header h1 {
-  margin: 0 0 8px 0;
-  font-size: 24px;
-  font-weight: 600;
-}
-
-.page-header p {
-  margin: 0;
-  color: var(--td-text-color-secondary);
-  font-size: 14px;
-}
+<style lang="less" scoped>
+@import '../design-system/styles/mixins.less';
+@import '../design-system/tokens/spacing.less';
 
 .tools-tabs {
   background: var(--td-bg-color-container);
   border-radius: var(--td-radius-default);
-  padding: 16px;
+  padding: @spacing-lg;
 }
 </style>

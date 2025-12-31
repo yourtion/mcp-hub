@@ -439,28 +439,28 @@ const paginatedTools = computed(() => {
 // 表格列配置
 const tableColumns: DataTableColumn[] = [
   {
-    key: 'name',
+    colKey: 'name',
     title: '工具名称',
     width: 200,
     fixed: 'left',
   },
   {
-    key: 'description',
+    colKey: 'description',
     title: '描述',
   },
   {
-    key: 'serverId',
+    colKey: 'serverId',
     title: '所属服务器',
     width: 150,
   },
   {
-    key: 'status',
+    colKey: 'status',
     title: '状态',
     width: 100,
     align: 'center' as const,
   },
   {
-    key: 'actions',
+    colKey: 'actions',
     title: '操作',
     width: 200,
     align: 'center' as const,
