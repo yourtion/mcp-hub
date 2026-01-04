@@ -70,7 +70,7 @@ pnpm build
 cd backend && pnpm start
 ```
 
-The API server will be available at `http://localhost:3000` with the following endpoints:
+The API server will be available at `http://localhost:8181` with the following endpoints:
 
 - `/mcp` - Global MCP endpoint (legacy, for management)
 - `/:group/mcp` - Group-specific MCP endpoints
@@ -143,7 +143,7 @@ pnpm dev:fe
 pnpm build:fe
 ```
 
-The frontend will be available at `http://localhost:8080` (development) or served through the backend in production.
+The frontend will be available at `http://localhost:8180` (development) or served through the backend in production.
 
 #### Web Interface Features
 
@@ -231,17 +231,17 @@ The frontend uses JWT-based authentication. To configure authentication:
 1. **Start the Backend**:
    ```bash
    pnpm dev:api
-   # Backend runs on http://localhost:3000
+   # Backend runs on http://localhost:8181
    ```
 
 2. **Start the Frontend** (Development):
    ```bash
    pnpm dev:fe
-   # Frontend runs on http://localhost:8080
+   # Frontend runs on http://localhost:8180
    ```
 
 3. **Login**:
-   - Navigate to `http://localhost:8080`
+   - Navigate to `http://localhost:8180`
    - Enter credentials (default: admin/admin)
    - You'll be redirected to the dashboard
 
@@ -312,10 +312,10 @@ Access tools through group-specific endpoints:
 
 ```bash
 # List tools for development group
-curl http://localhost:3000/development/mcp/list_tools
+curl http://localhost:8181/development/mcp/list_tools
 
 # Call a tool in the research group
-curl -X POST http://localhost:3000/research/mcp/call_tool \
+curl -X POST http://localhost:8181/research/mcp/call_tool \
   -H "Content-Type: application/json" \
   -d '{
     "name": "search",

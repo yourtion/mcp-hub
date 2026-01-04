@@ -31,7 +31,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
   describe('多服务器工具聚合', () => {
     it('应该能够聚合来自多个MCP服务器的工具', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -78,7 +78,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
 
     it('应该能够正确路由工具调用到对应的后端服务器', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -138,7 +138,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
 
     it('应该能够处理后端服务器的不同响应格式', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -208,7 +208,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
   describe('服务器状态管理', () => {
     it('应该能够处理后端服务器的连接状态变化', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -251,7 +251,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
 
     it('应该能够处理部分后端服务器不可用的情况', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -312,7 +312,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
   describe('工具命名空间和冲突处理', () => {
     it('应该能够处理来自不同服务器的同名工具', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -381,7 +381,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
 
     it('应该能够提供工具的来源信息', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -434,7 +434,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
   describe('性能和扩展性', () => {
     it('应该能够高效处理大量工具的聚合', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -495,7 +495,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
 
     it('应该能够处理并发的工具调用', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {

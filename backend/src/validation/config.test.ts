@@ -35,7 +35,7 @@ describe('配置验证工具', () => {
         mcpServers: {
           'sse-server': {
             type: 'sse',
-            url: 'http://localhost:3000/sse',
+            url: 'http://localhost:8181/sse',
             headers: { Authorization: 'Bearer token' },
             enabled: true,
           },

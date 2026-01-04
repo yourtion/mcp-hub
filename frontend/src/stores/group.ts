@@ -66,7 +66,9 @@ export const useGroupStore = defineStore('group', () => {
       summary.value = {
         totalGroups: response.totalGroups,
         healthyGroups: response.healthyGroups,
-        unhealthyGroups: response.unhealthyGroups ?? (response.totalGroups - response.healthyGroups),
+        unhealthyGroups:
+          response.unhealthyGroups ??
+          response.totalGroups - response.healthyGroups,
         totalServers: response.totalServers,
         connectedServers: response.connectedServers,
         totalTools: response.totalTools,

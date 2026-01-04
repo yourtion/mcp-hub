@@ -179,7 +179,7 @@ cd backend
 pnpm dev
 ```
 
-后端将在 `http://localhost:3000` 运行。
+后端将在 `http://localhost:8181` 运行。
 
 **前端开发**:
 ```bash
@@ -191,7 +191,7 @@ cd frontend
 pnpm dev
 ```
 
-前端将在 `http://localhost:8080` 运行。
+前端将在 `http://localhost:8180` 运行。
 
 **同时启动前后端**:
 ```bash

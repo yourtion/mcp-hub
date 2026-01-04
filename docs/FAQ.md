@@ -323,8 +323,8 @@ http://your-domain.com/:groupId/mcp
 ```
 
 例如：
-- `development` 组: `http://localhost:3000/development/mcp`
-- `production` 组: `http://localhost:3000/production/mcp`
+- `development` 组: `http://localhost:8181/development/mcp`
+- `production` 组: `http://localhost:8181/production/mcp`
 
 ### Q: 如何限制组可用的工具？
 
@@ -345,7 +345,7 @@ http://your-domain.com/:groupId/mcp
 1. 为组设置验证密钥
 2. 客户端访问组端点时需要提供密钥：
    ```bash
-   curl -X POST http://localhost:3000/development/mcp/call_tool \
+   curl -X POST http://localhost:8181/development/mcp/call_tool \
      -H "X-Validation-Key: your-key" \
      -H "Content-Type: application/json" \
      -d '{"name": "read_file", "arguments": {"path": "/file.txt"}}'
@@ -582,7 +582,7 @@ http://your-domain.com/:groupId/mcp
 
 1. **后端是否运行**:
    ```bash
-   curl http://localhost:3000/health
+   curl http://localhost:8181/health
    ```
 
 2. **CORS 配置**:

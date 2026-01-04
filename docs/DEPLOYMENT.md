@@ -313,7 +313,7 @@ services:
     networks:
       - mcp-hub-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8181/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -650,7 +650,7 @@ sudo nano /etc/logrotate.d/mcp-hub
 scrape_configs:
   - job_name: 'mcp-hub'
     static_configs:
-      - targets: ['localhost:3000']
+      - targets: ['localhost:8181']
     metrics_path: '/api/metrics'
 ```
 

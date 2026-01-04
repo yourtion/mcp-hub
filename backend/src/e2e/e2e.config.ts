@@ -132,13 +132,13 @@ export interface TestEnvironment {
 export const testEnvironments: Record<string, TestEnvironment> = {
   local: {
     name: 'Local Development',
-    baseUrl: 'http://localhost:3000',
+    baseUrl: 'http://localhost:8181',
     timeout: 10000,
     retries: 3,
   },
   ci: {
     name: 'CI Environment',
-    baseUrl: 'http://localhost:3000',
+    baseUrl: 'http://localhost:8181',
     timeout: 30000,
     retries: 5,
   },

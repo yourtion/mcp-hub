@@ -11,10 +11,10 @@ services:
       target: base
     container_name: mcp-hub-api-dev
     ports:
-      - "3000:3000"
+      - "8181:8181"
     environment:
       - NODE_ENV=development
-      - PORT=3000
+      - PORT=8181
     volumes:
       # 挂载源代码用于热重载
       - ./packages/share:/app/packages/share
@@ -35,9 +35,9 @@ services:
       target: base
     container_name: mcp-hub-web-dev
     ports:
-      - "8080:8080"
+      - "8180:8180"
     environment:
-      - VITE_API_BASE_URL=http://localhost:3000
+      - VITE_API_BASE_URL=http://localhost:8181
     volumes:
       # 挂载源代码用于热重载
       - ./frontend:/app/frontend

@@ -10,10 +10,10 @@ services:
       dockerfile: backend/Dockerfile
     container_name: mcp-hub-api
     ports:
-      - "3000:3000"
+      - "8181:8181"
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=8181
     volumes:
       # 挂载配置文件
       - ./backend/config:/app/backend/config:ro
@@ -21,7 +21,7 @@ services:
       - ./logs:/app/logs
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8181/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -36,11 +36,11 @@ services:
       dockerfile: frontend/Dockerfile
     container_name: mcp-hub-web
     ports:
-      - "8080:80"
+      - "8180:80"
     depends_on:
       - mcp-hub-api
     environment:
-      - VITE_API_BASE_URL=http://mcp-hub-api:3000
+      - VITE_API_BASE_URL=http://mcp-hub-api:8181
     restart: unless-stopped
     networks:
       - mcp-hub-network

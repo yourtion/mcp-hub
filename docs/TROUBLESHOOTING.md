@@ -10,13 +10,13 @@
 
 ```bash
 # 检查 API 服务器健康状态
-curl http://localhost:3000/health
+curl http://localhost:8181/health
 
 # 检查所有组的状态
-curl http://localhost:3000/api/groups
+curl http://localhost:8181/api/groups
 
 # 检查系统指标
-curl http://localhost:3000/api/system/metrics
+curl http://localhost:8181/api/system/metrics
 ```
 
 ### 日志检查
@@ -207,10 +207,10 @@ GET /development/mcp/list_tools -> 404 Not Found
 cat backend/config/group.json | jq '.groups.development'
 
 # 2. 检查组是否启用
-curl http://localhost:3000/api/groups/development
+curl http://localhost:8181/api/groups/development
 
 # 3. 检查路由注册
-curl http://localhost:3000/api/groups
+curl http://localhost:8181/api/groups
 ```
 
 **解决方案**:
@@ -319,10 +319,10 @@ mcp-hub --config mcp_service.json --validate
 **诊断步骤**:
 ```bash
 # 检查系统指标
-curl http://localhost:3000/api/system/metrics
+curl http://localhost:8181/api/system/metrics
 
 # 检查组统计
-curl http://localhost:3000/api/groups/development/stats
+curl http://localhost:8181/api/groups/development/stats
 
 # 监控资源使用
 top -p $(pgrep -f mcp-hub)
@@ -439,7 +439,7 @@ docker-compose ps
 docker network ls
 
 # 使用服务名而不是 localhost
-# 错误: http://localhost:3000
+# 错误: http://localhost:8181
 # 正确: http://mcp-hub-api:3000
 
 # 检查端口映射
@@ -525,10 +525,10 @@ pnpm inspector
 
 ```bash
 # 使用 curl 测试 API
-curl -v http://localhost:3000/health
+curl -v http://localhost:8181/health
 
 # 使用 tcpdump 监控网络流量
-sudo tcpdump -i lo port 3000
+sudo tcpdump -i lo port 6001
 
 # 使用 netstat 检查端口
 netstat -tlnp | grep 3000
@@ -560,7 +560,7 @@ node --version
 pnpm --version
 
 # MCP Hub 版本
-curl http://localhost:3000/api/system/info
+curl http://localhost:8181/api/system/info
 
 # 配置文件（移除敏感信息）
 cat backend/config/mcp_service.json | jq 'del(.servers[].env)'
@@ -621,7 +621,7 @@ free -h
 
 ```bash
 # 设置健康检查
-curl -f http://localhost:3000/health || echo "Service down!"
+curl -f http://localhost:8181/health || echo "Service down!"
 
 # 监控日志错误
 tail -f logs/mcp-hub.log | grep ERROR

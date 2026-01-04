@@ -33,7 +33,7 @@ describe('服务初始化集成测试', () => {
         },
         'sse-server': {
           type: 'sse',
-          url: 'http://localhost:3001/sse',
+          url: 'http://localhost:8181/sse',
           headers: {
             Authorization: 'Bearer test-token',
             'Content-Type': 'application/json',
@@ -260,7 +260,7 @@ describe('服务初始化集成测试', () => {
       mcpServers: {
         'server-a': { type: 'stdio', command: 'node', args: ['a.js'] },
         'server-b': { type: 'stdio', command: 'node', args: ['b.js'] },
-        'server-c': { type: 'sse', url: 'http://localhost:3001/c' },
+        'server-c': { type: 'sse', url: 'http://localhost:8181/c' },
         'server-d': { type: 'sse', url: 'http://localhost:3002/d' },
       },
     };

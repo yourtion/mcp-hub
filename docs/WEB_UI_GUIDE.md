@@ -24,17 +24,17 @@
    cd backend
    pnpm dev
    ```
-   后端将在 `http://localhost:3000` 运行。
+   后端将在 `http://localhost:8181` 运行。
 
 2. **启动前端界面**:
    ```bash
    cd frontend
    pnpm dev
    ```
-   前端将在 `http://localhost:8080` 运行。
+   前端将在 `http://localhost:8180` 运行。
 
 3. **访问界面**:
-   在浏览器中打开 `http://localhost:8080`
+   在浏览器中打开 `http://localhost:8180`
 
 ### 首次登录
 
@@ -310,12 +310,12 @@
 每个组都有专用的 MCP 端点：
 
 ```
-http://localhost:3000/:groupId/mcp
+http://localhost:8181/:groupId/mcp
 ```
 
 例如，`development` 组的端点：
 ```
-http://localhost:3000/development/mcp
+http://localhost:8181/development/mcp
 ```
 
 ### 验证密钥
@@ -323,7 +323,7 @@ http://localhost:3000/development/mcp
 如果组设置了验证密钥，访问时需要提供：
 
 ```bash
-curl -X POST http://localhost:3000/development/mcp/call_tool \
+curl -X POST http://localhost:8181/development/mcp/call_tool \
   -H "X-Validation-Key: your-validation-key" \
   -H "Content-Type: application/json" \
   -d '{"name": "read_file", "arguments": {"path": "/file.txt"}}'

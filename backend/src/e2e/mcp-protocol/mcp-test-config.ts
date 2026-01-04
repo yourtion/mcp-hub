@@ -21,7 +21,7 @@ export interface McpTestConfig {
 
 export const defaultMcpTestConfig: McpTestConfig = {
   serverPort: 3000,
-  baseUrl: 'http://localhost:3000',
+  baseUrl: 'http://localhost:6001',
   sseEndpoint: '/sse',
   timeout: 30000,
   retries: 3,

@@ -69,7 +69,7 @@ pnpm build
 cd backend && pnpm start
 ```
 
-API 服务器将在 `http://localhost:3000` 可用，提供以下端点：
+API 服务器将在 `http://localhost:8181` 可用，提供以下端点：
 
 - `/mcp` - 全局 MCP 端点（遗留，用于管理）
 - `/:group/mcp` - 组特定的 MCP 端点
@@ -138,7 +138,7 @@ pnpm dev:fe
 pnpm build:fe
 ```
 
-前端界面将在 `http://localhost:8080`（开发模式）可用，或在生产环境中通过后端服务提供。
+前端界面将在 `http://localhost:8180`（开发模式）可用，或在生产环境中通过后端服务提供。
 
 #### Web 界面功能
 
@@ -226,17 +226,17 @@ pnpm build:fe
 1. **启动后端**:
    ```bash
    pnpm dev:api
-   # 后端运行在 http://localhost:3000
+   # 后端运行在 http://localhost:8181
    ```
 
 2. **启动前端**（开发模式）:
    ```bash
    pnpm dev:fe
-   # 前端运行在 http://localhost:8080
+   # 前端运行在 http://localhost:8180
    ```
 
 3. **登录**:
-   - 导航到 `http://localhost:8080`
+   - 导航到 `http://localhost:8180`
    - 输入凭据（默认: admin/admin）
    - 您将被重定向到仪表板
 
@@ -307,10 +307,10 @@ pnpm build:fe
 
 ```bash
 # 列出开发组的工具
-curl http://localhost:3000/development/mcp/list_tools
+curl http://localhost:8181/development/mcp/list_tools
 
 # 在研究组中调用工具
-curl -X POST http://localhost:3000/research/mcp/call_tool \
+curl -X POST http://localhost:8181/research/mcp/call_tool \
   -H "Content-Type: application/json" \
   -d '{
     "name": "search",

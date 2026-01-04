@@ -119,7 +119,7 @@ GET    /api/groups/:group/health # 检查组健康状态
 
 ```bash
 # 获取开发组的所有工具
-curl http://localhost:3000/development/mcp/list_tools
+curl http://localhost:8181/development/mcp/list_tools
 
 # 响应示例
 {
@@ -158,7 +158,7 @@ curl http://localhost:3000/development/mcp/list_tools
 
 ```bash
 # 在开发组中调用文件读取工具
-curl -X POST http://localhost:3000/development/mcp/call_tool \
+curl -X POST http://localhost:8181/development/mcp/call_tool \
   -H "Content-Type: application/json" \
   -d '{
     "name": "read_file",
@@ -184,7 +184,7 @@ curl -X POST http://localhost:3000/development/mcp/call_tool \
 
 ```bash
 # 使用验证密钥访问
-curl -X POST http://localhost:3000/admin/mcp/call_tool \
+curl -X POST http://localhost:8181/admin/mcp/call_tool \
   -H "Content-Type: application/json" \
   -H "X-Validation-Key: admin-secret-key-789" \
   -d '{
@@ -198,7 +198,7 @@ curl -X POST http://localhost:3000/admin/mcp/call_tool \
 ### 列出所有组
 
 ```bash
-curl http://localhost:3000/api/groups
+curl http://localhost:8181/api/groups
 
 # 响应
 {
@@ -226,7 +226,7 @@ curl http://localhost:3000/api/groups
 ### 获取组详细信息
 
 ```bash
-curl http://localhost:3000/api/groups/development
+curl http://localhost:8181/api/groups/development
 
 # 响应
 {
@@ -248,7 +248,7 @@ curl http://localhost:3000/api/groups/development
 ### 检查组健康状态
 
 ```bash
-curl http://localhost:3000/api/groups/development/health
+curl http://localhost:8181/api/groups/development/health
 
 # 响应
 {
@@ -279,7 +279,7 @@ curl http://localhost:3000/api/groups/development/health
 #### 组不存在
 
 ```bash
-curl http://localhost:3000/nonexistent/mcp/list_tools
+curl http://localhost:8181/nonexistent/mcp/list_tools
 
 # 响应 (404)
 {
@@ -335,7 +335,7 @@ curl http://localhost:3000/nonexistent/mcp/list_tools
 
 ```bash
 # 更新组的允许工具列表
-curl -X PATCH http://localhost:3000/api/groups/development \
+curl -X PATCH http://localhost:8181/api/groups/development \
   -H "Content-Type: application/json" \
   -H "X-Admin-Key: admin-secret" \
   -d '{
@@ -365,7 +365,7 @@ curl -X PATCH http://localhost:3000/api/groups/development \
 
 ```bash
 # 使用别名调用工具
-curl -X POST http://localhost:3000/development/mcp/call_tool \
+curl -X POST http://localhost:8181/development/mcp/call_tool \
   -H "Content-Type: application/json" \
   -d '{
     "name": "read",
@@ -404,7 +404,7 @@ curl -X POST http://localhost:3000/development/mcp/call_tool \
 
 ```bash
 # 获取组使用统计
-curl http://localhost:3000/api/groups/development/stats
+curl http://localhost:8181/api/groups/development/stats
 
 # 响应
 {
@@ -428,7 +428,7 @@ curl http://localhost:3000/api/groups/development/stats
 
 ```bash
 # 获取组活动日志
-curl http://localhost:3000/api/groups/development/logs?limit=10
+curl http://localhost:8181/api/groups/development/logs?limit=10
 
 # 响应
 {
@@ -489,16 +489,16 @@ curl http://localhost:3000/api/groups/development/logs?limit=10
 
 ```bash
 # 开发组 - 代码相关工具
-curl http://localhost:3000/development/mcp/list_tools
-curl -X POST http://localhost:3000/development/mcp/call_tool \
+curl http://localhost:8181/development/mcp/list_tools
+curl -X POST http://localhost:8181/development/mcp/call_tool \
   -d '{"name": "read_file", "arguments": {"path": "/src/main.ts"}}'
 
 # 测试组 - 测试相关工具  
-curl http://localhost:3000/testing/mcp/call_tool \
+curl http://localhost:8181/testing/mcp/call_tool \
   -d '{"name": "run_tests", "arguments": {"suite": "unit"}}'
 
 # 部署组 - 部署相关工具
-curl http://localhost:3000/deployment/mcp/call_tool \
+curl http://localhost:8181/deployment/mcp/call_tool \
   -H "X-Validation-Key: deploy-key" \
   -d '{"name": "deploy", "arguments": {"environment": "staging"}}'
 ```
@@ -507,11 +507,11 @@ curl http://localhost:3000/deployment/mcp/call_tool \
 
 ```bash
 # 文献研究组
-curl -X POST http://localhost:3000/research/mcp/call_tool \
+curl -X POST http://localhost:8181/research/mcp/call_tool \
   -d '{"name": "search_papers", "arguments": {"query": "machine learning"}}'
 
 # 数据分析组
-curl -X POST http://localhost:3000/analysis/mcp/call_tool \
+curl -X POST http://localhost:8181/analysis/mcp/call_tool \
   -d '{"name": "analyze_data", "arguments": {"dataset": "experiment_results.csv"}}'
 ```
 

@@ -4,7 +4,7 @@
 
 ## 基础信息
 
-- **基础 URL**: `http://localhost:3000`
+- **基础 URL**: `http://localhost:8181`
 - **API 版本**: v1
 - **内容类型**: `application/json`
 - **字符编码**: UTF-8
@@ -1420,7 +1420,7 @@ X-RateLimit-Reset: 1642248000
 ### 实时日志流
 
 ```javascript
-const ws = new WebSocket('ws://localhost:3000/api/groups/development/logs/stream');
+const ws = new WebSocket('ws://localhost:8181/api/groups/development/logs/stream');
 
 ws.onmessage = function(event) {
   const log = JSON.parse(event.data);
@@ -1431,7 +1431,7 @@ ws.onmessage = function(event) {
 ### 实时指标流
 
 ```javascript
-const ws = new WebSocket('ws://localhost:3000/api/system/metrics/stream');
+const ws = new WebSocket('ws://localhost:8181/api/system/metrics/stream');
 
 ws.onmessage = function(event) {
   const metrics = JSON.parse(event.data);
@@ -1450,7 +1450,7 @@ npm install @mcp-core/mcp-hub-client
 ```typescript
 import { McpHubClient } from '@mcp-core/mcp-hub-client';
 
-const client = new McpHubClient('http://localhost:3000');
+const client = new McpHubClient('http://localhost:8181');
 
 // 列出工具
 const tools = await client.listTools('development');
@@ -1470,7 +1470,7 @@ pip install mcp-hub-client
 ```python
 from mcp_hub_client import McpHubClient
 
-client = McpHubClient('http://localhost:3000')
+client = McpHubClient('http://localhost:8181')
 
 # 列出工具
 tools = client.list_tools('development')
@@ -1487,10 +1487,10 @@ result = client.call_tool('development', 'read_file', {
 
 ```bash
 # 列出所有工具
-curl http://localhost:3000/mcp/list_tools
+curl http://localhost:8181/mcp/list_tools
 
 # 调用文件读取工具
-curl -X POST http://localhost:3000/mcp/call_tool \
+curl -X POST http://localhost:8181/mcp/call_tool \
   -H "Content-Type: application/json" \
   -d '{
     "name": "read_file",
@@ -1504,10 +1504,10 @@ curl -X POST http://localhost:3000/mcp/call_tool \
 
 ```bash
 # 列出开发组的工具
-curl http://localhost:3000/development/mcp/list_tools
+curl http://localhost:8181/development/mcp/list_tools
 
 # 在研究组中搜索
-curl -X POST http://localhost:3000/research/mcp/call_tool \
+curl -X POST http://localhost:8181/research/mcp/call_tool \
   -H "Content-Type: application/json" \
   -d '{
     "name": "search",
@@ -1521,13 +1521,13 @@ curl -X POST http://localhost:3000/research/mcp/call_tool \
 
 ```bash
 # 检查系统健康
-curl http://localhost:3000/health
+curl http://localhost:8181/health
 
 # 获取组统计
-curl http://localhost:3000/api/groups/development/stats
+curl http://localhost:8181/api/groups/development/stats
 
 # 查看组日志
-curl "http://localhost:3000/api/groups/development/logs?limit=10&level=error"
+curl "http://localhost:8181/api/groups/development/logs?limit=10&level=error"
 ```
 
 ## 相关文档

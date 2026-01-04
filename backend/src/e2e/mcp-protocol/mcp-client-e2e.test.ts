@@ -53,7 +53,7 @@ describe('MCP协议客户端端到端测试', () => {
     it('应该能够通过SSE建立MCP连接', async () => {
       // 创建SSE传输
       transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       mcpClient = new Client(
         {
@@ -78,7 +78,7 @@ describe('MCP协议客户端端到端测试', () => {
       if (!mcpClient) {
         // 如果前面的连接测试失败，创建新的连接
         transport = new SSEClientTransport(
-          new URL('http://localhost:3000/mcp/sse'),
+          new URL('http://localhost:8181/mcp/sse'),
         );
         mcpClient = new Client(
           {
@@ -113,7 +113,7 @@ describe('MCP协议客户端端到端测试', () => {
     it('应该能够调用工具', async () => {
       if (!mcpClient) {
         transport = new SSEClientTransport(
-          new URL('http://localhost:3000/mcp/sse'),
+          new URL('http://localhost:8181/mcp/sse'),
         );
         mcpClient = new Client(
           {
@@ -159,7 +159,7 @@ describe('MCP协议客户端端到端测试', () => {
     it('应该能够处理MCP协议错误', async () => {
       if (!mcpClient) {
         transport = new SSEClientTransport(
-          new URL('http://localhost:3000/mcp/sse'),
+          new URL('http://localhost:8181/mcp/sse'),
         );
         mcpClient = new Client(
           {
@@ -196,7 +196,7 @@ describe('MCP协议客户端端到端测试', () => {
     it('应该支持标准的MCP初始化握手', async () => {
       // 创建新的客户端进行初始化测试
       const testTransport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const testClient = new Client(
         {
@@ -231,7 +231,7 @@ describe('MCP协议客户端端到端测试', () => {
     it('应该正确处理MCP协议版本协商', async () => {
       // 测试协议版本兼容性
       const testTransport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const testClient = new Client(
         {
@@ -258,7 +258,7 @@ describe('MCP协议客户端端到端测试', () => {
 
     it('应该支持MCP协议的能力声明', async () => {
       const testTransport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const testClient = new Client(
         {
@@ -309,7 +309,7 @@ describe('MCP协议客户端端到端测试', () => {
   describe('MCP Hub特定功能测试', () => {
     it('应该能够访问聚合的多个服务器的工具', async () => {
       const testTransport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const testClient = new Client(
         {
@@ -348,7 +348,7 @@ describe('MCP协议客户端端到端测试', () => {
 
     it('应该能够处理工具调用的路由和转发', async () => {
       const testTransport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const testClient = new Client(
         {
@@ -402,7 +402,7 @@ describe('MCP协议客户端端到端测试', () => {
         // 创建多个并发客户端
         for (let i = 0; i < clientCount; i++) {
           const transport = new SSEClientTransport(
-            new URL('http://localhost:3000/mcp/sse'),
+            new URL('http://localhost:8181/mcp/sse'),
           );
           const client = new Client(
             {
@@ -443,7 +443,7 @@ describe('MCP协议客户端端到端测试', () => {
   describe('错误处理和恢复测试', () => {
     it('应该能够处理连接中断和重连', async () => {
       const testTransport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const testClient = new Client(
         {
@@ -474,7 +474,7 @@ describe('MCP协议客户端端到端测试', () => {
 
         // 重新连接
         const newTransport = new SSEClientTransport(
-          new URL('http://localhost:3000/mcp/sse'),
+          new URL('http://localhost:8181/mcp/sse'),
         );
         const newClient = new Client(
           {
@@ -511,7 +511,7 @@ describe('MCP协议客户端端到端测试', () => {
 
     it('应该能够处理无效的MCP请求', async () => {
       const testTransport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const testClient = new Client(
         {
