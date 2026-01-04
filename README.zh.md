@@ -393,12 +393,13 @@ pnpm test:mcp         # MCP 协议测试
 ### 开发与部署
 - [开发指南](docs/DEVELOPMENT.md) - 开发环境搭建和贡献指南
 - [发布流程](#发布流程) - 使用 Changesets 进行版本管理和发布
+- [NPM Trusted Publishers 配置](docs/NPM_TRUSTED_PUBLISHERS.md) - 安全的包发布配置
 - [部署指南](docs/DEPLOYMENT.md) - 生产环境部署说明
 - [故障排除](docs/TROUBLESHOOTING.md) - 常见问题和解决方案
 
 ### 发布流程
 
-MCP Hub 使用 [Changesets](https://github.com/changesets/changesets) 进行版本管理和发布。
+MCP Hub 使用 [Changesets](https://github.com/changesets/changesets) 进行版本管理和发布，并使用 [NPM Trusted Publishers](docs/NPM_TRUSTED_PUBLISHERS.md) 进行安全的包发布。
 
 #### 日常开发流程
 

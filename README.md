@@ -398,12 +398,13 @@ pnpm test:mcp         # MCP protocol tests
 ### Development & Deployment
 - [Development Guide](docs/DEVELOPMENT.md) - Development environment setup and contribution guide
 - [Release Process](#release-process) - Version management and publishing with Changesets
+- [NPM Trusted Publishers](docs/NPM_TRUSTED_PUBLISHERS.md) - Secure package publishing setup
 - [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment instructions
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ### Release Process
 
-MCP Hub uses [Changesets](https://github.com/changesets/changesets) for version management and publishing.
+MCP Hub uses [Changesets](https://github.com/changesets/changesets) for version management and publishing, with [NPM Trusted Publishers](docs/NPM_TRUSTED_PUBLISHERS.md) for secure package publishing.
 
 #### Daily Development Workflow
 

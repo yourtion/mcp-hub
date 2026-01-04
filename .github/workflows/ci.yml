@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
 env:
   NODE_VERSION: '18'
   PNPM_VERSION: '8'
@@ -253,7 +258,6 @@ jobs:
           title: 'chore: release packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # GitHub Release 创建
   github-release:
