@@ -178,7 +178,7 @@ describe('服务初始化测试', () => {
           },
           'sse-server': {
             type: 'sse',
-            url: 'http://localhost:3001/sse',
+            url: 'http://localhost:8181/sse',
             headers: { Authorization: 'Bearer token' },
             enabled: false,
           },

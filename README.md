@@ -70,7 +70,7 @@ pnpm build
 cd backend && pnpm start
 ```
 
-The API server will be available at `http://localhost:3000` with the following endpoints:
+The API server will be available at `http://localhost:8181` with the following endpoints:
 
 - `/mcp` - Global MCP endpoint (legacy, for management)
 - `/:group/mcp` - Group-specific MCP endpoints
@@ -143,7 +143,7 @@ pnpm dev:fe
 pnpm build:fe
 ```
 
-The frontend will be available at `http://localhost:8080` (development) or served through the backend in production.
+The frontend will be available at `http://localhost:8180` (development) or served through the backend in production.
 
 #### Web Interface Features
 
@@ -231,17 +231,17 @@ The frontend uses JWT-based authentication. To configure authentication:
 1. **Start the Backend**:
    ```bash
    pnpm dev:api
-   # Backend runs on http://localhost:3000
+   # Backend runs on http://localhost:8181
    ```
 
 2. **Start the Frontend** (Development):
    ```bash
    pnpm dev:fe
-   # Frontend runs on http://localhost:8080
+   # Frontend runs on http://localhost:8180
    ```
 
 3. **Login**:
-   - Navigate to `http://localhost:8080`
+   - Navigate to `http://localhost:8180`
    - Enter credentials (default: admin/admin)
    - You'll be redirected to the dashboard
 
@@ -312,10 +312,10 @@ Access tools through group-specific endpoints:
 
 ```bash
 # List tools for development group
-curl http://localhost:3000/development/mcp/list_tools
+curl http://localhost:8181/development/mcp/list_tools
 
 # Call a tool in the research group
-curl -X POST http://localhost:3000/research/mcp/call_tool \
+curl -X POST http://localhost:8181/research/mcp/call_tool \
   -H "Content-Type: application/json" \
   -d '{
     "name": "search",
@@ -397,8 +397,74 @@ pnpm test:mcp         # MCP protocol tests
 
 ### Development & Deployment
 - [Development Guide](docs/DEVELOPMENT.md) - Development environment setup and contribution guide
+- [Release Process](#release-process) - Version management and publishing with Changesets
+- [NPM Trusted Publishers](docs/NPM_TRUSTED_PUBLISHERS.md) - Secure package publishing setup
 - [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment instructions
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
+
+### Release Process
+
+MCP Hub uses [Changesets](https://github.com/changesets/changesets) for version management and publishing, with [NPM Trusted Publishers](docs/NPM_TRUSTED_PUBLISHERS.md) for secure package publishing.
+
+#### Daily Development Workflow
+
+1. **Complete feature development**:
+   ```bash
+   git checkout -b feature/my-feature
+   # Develop and test...
+   pnpm test
+   pnpm check:all
+   ```
+
+2. **Create a Changeset**:
+   ```bash
+   pnpm changeset
+   ```
+   - Select affected packages
+   - Choose version type (major/minor/patch)
+   - Add change description
+
+3. **Commit code**:
+   ```bash
+   git add .
+   git commit -m "feat: add new feature"
+   git push origin feature/my-feature
+   ```
+
+4. **Create Pull Request** to `main` branch
+
+#### Automated Release Process
+
+The project uses GitHub Actions for automated publishing:
+
+1. **PR merged to main**: CI detects changesets
+2. **Version Packages PR created**: Contains version updates and CHANGELOG
+3. **Version Packages PR merged**: Triggers automatic publishing
+   - Publish to npm
+   - Create GitHub Release
+   - Build Docker images
+
+#### Version Type Selection
+
+- **major**: Breaking changes (API changes, removed features)
+- **minor**: New features (new APIs, backward-compatible enhancements)
+- **patch**: Bug fixes, small improvements
+
+#### Related Commands
+
+```bash
+# Create changeset
+pnpm changeset
+
+# Consume changesets (update versions)
+pnpm version
+
+# Check changesets status
+pnpm changeset:check
+
+# Publish to npm (usually automated by CI)
+pnpm release
+```
 
 ## Contributing
 

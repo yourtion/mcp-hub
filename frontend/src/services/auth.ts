@@ -44,7 +44,7 @@ export async function refreshToken(
  */
 export async function validateToken(): Promise<boolean> {
   try {
-    await api.get('/auth/validate');
+    await api.get('/auth/me');
     return true;
   } catch {
     return false;

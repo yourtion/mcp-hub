@@ -1,0 +1,18 @@
+# Source files
+src/
+tsconfig.json
+biome.json
+
+# Development tools
+.vscode/
+.idea/
+*.log
+.DS_Store
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Other
+node_modules/

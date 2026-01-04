@@ -69,7 +69,7 @@ pnpm build
 cd backend && pnpm start
 ```
 
-API 服务器将在 `http://localhost:3000` 可用，提供以下端点：
+API 服务器将在 `http://localhost:8181` 可用，提供以下端点：
 
 - `/mcp` - 全局 MCP 端点（遗留，用于管理）
 - `/:group/mcp` - 组特定的 MCP 端点
@@ -138,7 +138,7 @@ pnpm dev:fe
 pnpm build:fe
 ```
 
-前端界面将在 `http://localhost:8080`（开发模式）可用，或在生产环境中通过后端服务提供。
+前端界面将在 `http://localhost:8180`（开发模式）可用，或在生产环境中通过后端服务提供。
 
 #### Web 界面功能
 
@@ -226,17 +226,17 @@ pnpm build:fe
 1. **启动后端**:
    ```bash
    pnpm dev:api
-   # 后端运行在 http://localhost:3000
+   # 后端运行在 http://localhost:8181
    ```
 
 2. **启动前端**（开发模式）:
    ```bash
    pnpm dev:fe
-   # 前端运行在 http://localhost:8080
+   # 前端运行在 http://localhost:8180
    ```
 
 3. **登录**:
-   - 导航到 `http://localhost:8080`
+   - 导航到 `http://localhost:8180`
    - 输入凭据（默认: admin/admin）
    - 您将被重定向到仪表板
 
@@ -307,10 +307,10 @@ pnpm build:fe
 
 ```bash
 # 列出开发组的工具
-curl http://localhost:3000/development/mcp/list_tools
+curl http://localhost:8181/development/mcp/list_tools
 
 # 在研究组中调用工具
-curl -X POST http://localhost:3000/research/mcp/call_tool \
+curl -X POST http://localhost:8181/research/mcp/call_tool \
   -H "Content-Type: application/json" \
   -d '{
     "name": "search",
@@ -392,8 +392,74 @@ pnpm test:mcp         # MCP 协议测试
 
 ### 开发与部署
 - [开发指南](docs/DEVELOPMENT.md) - 开发环境搭建和贡献指南
+- [发布流程](#发布流程) - 使用 Changesets 进行版本管理和发布
+- [NPM Trusted Publishers 配置](docs/NPM_TRUSTED_PUBLISHERS.md) - 安全的包发布配置
 - [部署指南](docs/DEPLOYMENT.md) - 生产环境部署说明
 - [故障排除](docs/TROUBLESHOOTING.md) - 常见问题和解决方案
+
+### 发布流程
+
+MCP Hub 使用 [Changesets](https://github.com/changesets/changesets) 进行版本管理和发布，并使用 [NPM Trusted Publishers](docs/NPM_TRUSTED_PUBLISHERS.md) 进行安全的包发布。
+
+#### 日常开发流程
+
+1. **完成功能开发**：
+   ```bash
+   git checkout -b feature/my-feature
+   # 开发和测试...
+   pnpm test
+   pnpm check:all
+   ```
+
+2. **创建 Changeset**：
+   ```bash
+   pnpm changeset
+   ```
+   - 选择受影响的包
+   - 选择版本类型（major/minor/patch）
+   - 添加变更描述
+
+3. **提交代码**：
+   ```bash
+   git add .
+   git commit -m "feat: add new feature"
+   git push origin feature/my-feature
+   ```
+
+4. **创建 Pull Request** 到 `main` 分支
+
+#### 自动发布流程
+
+项目使用 GitHub Actions 自动化发布：
+
+1. **PR 合并到 main**：CI 检测到 changesets 文件
+2. **自动创建 Version Packages PR**：包含版本更新和 CHANGELOG
+3. **合并 Version Packages PR**：触发自动发布
+   - 发布到 npm
+   - 创建 GitHub Release
+   - 构建 Docker 镜像
+
+#### 版本类型选择
+
+- **major**: 破坏性变更（API 变更、移除功能）
+- **minor**: 新功能（添加新 API、向后兼容的增强）
+- **patch**: Bug 修复、小改进
+
+#### 相关命令
+
+```bash
+# 创建 changeset
+pnpm changeset
+
+# 消费 changesets（更新版本）
+pnpm version
+
+# 检查 changesets 状态
+pnpm changeset:check
+
+# 发布到 npm（通常由 CI 自动执行）
+pnpm release
+```
 
 ## 贡献
 

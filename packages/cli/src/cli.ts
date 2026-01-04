@@ -480,9 +480,8 @@ async function main() {
 }
 
 // 如果直接运行此文件，则执行主函数
-if (require.main === module) {
-  main().catch((error) => {
-    handleCliError(error);
-    process.exit(1);
-  });
-}
+// 在 ESM 中，直接运行即可，不需要检查
+main().catch((error) => {
+  handleCliError(error);
+  process.exit(1);
+});

@@ -31,7 +31,7 @@ describe('MCP传输协议端到端测试', () => {
   describe('SSE传输协议', () => {
     it('应该能够建立SSE连接', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -61,7 +61,7 @@ describe('MCP传输协议端到端测试', () => {
     it('应该能够处理SSE连接错误', async () => {
       // 尝试连接到不存在的端点
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/nonexistent'),
+        new URL('http://localhost:8181/mcp/nonexistent'),
       );
       const client = new Client(
         {
@@ -92,7 +92,7 @@ describe('MCP传输协议端到端测试', () => {
 
     it('应该能够处理SSE消息流', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -132,7 +132,7 @@ describe('MCP传输协议端到端测试', () => {
   describe('传输协议性能测试', () => {
     it('应该能够处理高频请求', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -177,7 +177,7 @@ describe('MCP传输协议端到端测试', () => {
 
     it('应该能够处理大量数据传输', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -226,7 +226,7 @@ describe('MCP传输协议端到端测试', () => {
   describe('传输协议可靠性测试', () => {
     it('应该能够处理网络延迟', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -262,7 +262,7 @@ describe('MCP传输协议端到端测试', () => {
 
     it('应该能够处理请求超时', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -307,7 +307,7 @@ describe('MCP传输协议端到端测试', () => {
   describe('传输协议兼容性测试', () => {
     it('应该支持标准MCP协议消息格式', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -346,7 +346,7 @@ describe('MCP传输协议端到端测试', () => {
 
     it('应该正确处理MCP协议版本', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {
@@ -377,7 +377,7 @@ describe('MCP传输协议端到端测试', () => {
 
     it('应该支持MCP协议的错误处理', async () => {
       const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/mcp/sse'),
+        new URL('http://localhost:8181/mcp/sse'),
       );
       const client = new Client(
         {

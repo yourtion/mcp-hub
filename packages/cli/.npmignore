@@ -1,0 +1,32 @@
+# Source files and config
+src/
+tsconfig.json
+biome.json
+vitest.config.ts
+scripts/
+
+# Tests
+test/
+tests/
+*.test.ts
+*.spec.ts
+**/__tests__/
+coverage/
+
+# Development tools
+.vscode/
+.idea/
+*.log
+.DS_Store
+
+# CI/CD
+.github/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Other
+node_modules/
+scripts/fix-imports.js

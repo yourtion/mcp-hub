@@ -1,0 +1,15 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": ["@mcp-core/mcp-hub-api", "@mcp-core/mcp-hub-web"],
+  "privatePackages": {
+    "version": true,
+    "tag": false
+  }
+}

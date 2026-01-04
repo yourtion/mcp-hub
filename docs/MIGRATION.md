@@ -168,10 +168,10 @@ node scripts/migrate-data.js
 pnpm dev:api
 
 # 测试现有端点
-curl http://localhost:3000/mcp/list_tools
+curl http://localhost:8181/mcp/list_tools
 
 # 测试新的组端点（如果配置了组）
-curl http://localhost:3000/default/mcp/list_tools
+curl http://localhost:8181/default/mcp/list_tools
 ```
 
 #### 验证 CLI 功能
@@ -376,7 +376,7 @@ export PORT=3001
 cat backend/config/group.json
 
 # 确保组已启用
-curl http://localhost:3000/api/groups
+curl http://localhost:8181/api/groups
 ```
 
 ### 回滚步骤
@@ -469,7 +469,7 @@ pnpm dev:api
 echo "🔍 验证 MCP Hub 迁移..."
 
 # 检查 API 服务器
-if curl -f http://localhost:3000/health > /dev/null 2>&1; then
+if curl -f http://localhost:8181/health > /dev/null 2>&1; then
     echo "✅ API 服务器健康"
 else
     echo "❌ API 服务器不健康"
@@ -477,7 +477,7 @@ else
 fi
 
 # 检查 MCP 端点
-if curl -f http://localhost:3000/mcp/list_tools > /dev/null 2>&1; then
+if curl -f http://localhost:8181/mcp/list_tools > /dev/null 2>&1; then
     echo "✅ MCP 端点工作正常"
 else
     echo "❌ MCP 端点不工作"
@@ -487,7 +487,7 @@ fi
 # 检查组端点（如果存在）
 if [ -f "backend/config/group.json" ]; then
     FIRST_GROUP=$(cat backend/config/group.json | jq -r '.groups | keys[0]')
-    if curl -f "http://localhost:3000/$FIRST_GROUP/mcp/list_tools" > /dev/null 2>&1; then
+    if curl -f "http://localhost:8181/$FIRST_GROUP/mcp/list_tools" > /dev/null 2>&1; then
         echo "✅ 组路由工作正常"
     else
         echo "❌ 组路由不工作"
