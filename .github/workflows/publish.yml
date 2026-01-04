@@ -16,7 +16,7 @@ permissions:
 
 env:
   NODE_VERSION: '18'
-  PNPM_VERSION: '8'
+  PNPM_VERSION: '9'
 
 jobs:
   # 发布到 npm
