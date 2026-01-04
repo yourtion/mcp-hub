@@ -397,8 +397,73 @@ pnpm test:mcp         # MCP protocol tests
 
 ### Development & Deployment
 - [Development Guide](docs/DEVELOPMENT.md) - Development environment setup and contribution guide
+- [Release Process](#release-process) - Version management and publishing with Changesets
 - [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment instructions
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
+
+### Release Process
+
+MCP Hub uses [Changesets](https://github.com/changesets/changesets) for version management and publishing.
+
+#### Daily Development Workflow
+
+1. **Complete feature development**:
+   ```bash
+   git checkout -b feature/my-feature
+   # Develop and test...
+   pnpm test
+   pnpm check:all
+   ```
+
+2. **Create a Changeset**:
+   ```bash
+   pnpm changeset
+   ```
+   - Select affected packages
+   - Choose version type (major/minor/patch)
+   - Add change description
+
+3. **Commit code**:
+   ```bash
+   git add .
+   git commit -m "feat: add new feature"
+   git push origin feature/my-feature
+   ```
+
+4. **Create Pull Request** to `main` branch
+
+#### Automated Release Process
+
+The project uses GitHub Actions for automated publishing:
+
+1. **PR merged to main**: CI detects changesets
+2. **Version Packages PR created**: Contains version updates and CHANGELOG
+3. **Version Packages PR merged**: Triggers automatic publishing
+   - Publish to npm
+   - Create GitHub Release
+   - Build Docker images
+
+#### Version Type Selection
+
+- **major**: Breaking changes (API changes, removed features)
+- **minor**: New features (new APIs, backward-compatible enhancements)
+- **patch**: Bug fixes, small improvements
+
+#### Related Commands
+
+```bash
+# Create changeset
+pnpm changeset
+
+# Consume changesets (update versions)
+pnpm version
+
+# Check changesets status
+pnpm changeset:check
+
+# Publish to npm (usually automated by CI)
+pnpm release
+```
 
 ## Contributing
 

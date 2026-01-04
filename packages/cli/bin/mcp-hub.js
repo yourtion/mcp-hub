@@ -6,4 +6,3 @@
 
 // 使用 import 运行 ES Module
 import('../dist/cli.js');
-

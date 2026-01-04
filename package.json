@@ -31,11 +31,15 @@
     "start:cli": "pnpm --filter @mcp-core/mcp-hub-cli start",
     "clean": "pnpm --filter \"@mcp-core/*\" exec rm -rf dist coverage",
     "clean:all": "pnpm clean && rm -rf node_modules packages/*/node_modules backend/node_modules frontend/node_modules",
-    "publish:packages": "pnpm --filter \"@mcp-core/mcp-hub-*\" --filter \"!@mcp-core/mcp-hub-api\" --filter \"!@mcp-core/mcp-hub-web\" publish",
-    "version:bump": "pnpm --filter \"@mcp-core/mcp-hub-*\" version"
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "changeset publish",
+    "changeset:check": "changeset status",
+    "release:dry-run": "changeset publish --no-git-tag --dry-run"
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.6",
+    "@changesets/cli": "^2.29.8",
     "tsx": "^4.7.1",
     "vitest": "^2.1.8"
   },

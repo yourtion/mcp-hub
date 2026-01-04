@@ -1,13 +1,22 @@
 {
   "name": "@mcp-core/mcp-hub-cli",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "MCP Hub CLI包 - 提供命令行界面的MCP服务聚合器",
   "type": "module",
+  "private": false,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
     "mcp-hub": "./bin/mcp-hub.js"
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc && node scripts/fix-imports.js",
     "dev": "tsc --watch",

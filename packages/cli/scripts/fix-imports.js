@@ -6,8 +6,8 @@
  * to relative imports, which is required for ESM modules.
  */
 
-import { readFile, writeFile, readdir } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);

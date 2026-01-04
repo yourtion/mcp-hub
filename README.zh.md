@@ -392,8 +392,73 @@ pnpm test:mcp         # MCP 协议测试
 
 ### 开发与部署
 - [开发指南](docs/DEVELOPMENT.md) - 开发环境搭建和贡献指南
+- [发布流程](#发布流程) - 使用 Changesets 进行版本管理和发布
 - [部署指南](docs/DEPLOYMENT.md) - 生产环境部署说明
 - [故障排除](docs/TROUBLESHOOTING.md) - 常见问题和解决方案
+
+### 发布流程
+
+MCP Hub 使用 [Changesets](https://github.com/changesets/changesets) 进行版本管理和发布。
+
+#### 日常开发流程
+
+1. **完成功能开发**：
+   ```bash
+   git checkout -b feature/my-feature
+   # 开发和测试...
+   pnpm test
+   pnpm check:all
+   ```
+
+2. **创建 Changeset**：
+   ```bash
+   pnpm changeset
+   ```
+   - 选择受影响的包
+   - 选择版本类型（major/minor/patch）
+   - 添加变更描述
+
+3. **提交代码**：
+   ```bash
+   git add .
+   git commit -m "feat: add new feature"
+   git push origin feature/my-feature
+   ```
+
+4. **创建 Pull Request** 到 `main` 分支
+
+#### 自动发布流程
+
+项目使用 GitHub Actions 自动化发布：
+
+1. **PR 合并到 main**：CI 检测到 changesets 文件
+2. **自动创建 Version Packages PR**：包含版本更新和 CHANGELOG
+3. **合并 Version Packages PR**：触发自动发布
+   - 发布到 npm
+   - 创建 GitHub Release
+   - 构建 Docker 镜像
+
+#### 版本类型选择
+
+- **major**: 破坏性变更（API 变更、移除功能）
+- **minor**: 新功能（添加新 API、向后兼容的增强）
+- **patch**: Bug 修复、小改进
+
+#### 相关命令
+
+```bash
+# 创建 changeset
+pnpm changeset
+
+# 消费 changesets（更新版本）
+pnpm version
+
+# 检查 changesets 状态
+pnpm changeset:check
+
+# 发布到 npm（通常由 CI 自动执行）
+pnpm release
+```
 
 ## 贡献
 
