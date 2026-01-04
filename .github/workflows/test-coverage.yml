@@ -6,13 +6,16 @@ on:
   pull_request:
     branches: [main, develop]
 
+env:
+  PNPM_VERSION: '9'
+
 jobs:
   test-coverage:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [18.x, 20.x, 22.x, 24.x]
 
     steps:
       - name: Checkout 代码
@@ -26,7 +29,7 @@ jobs:
       - name: 安装 pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8
+          version: ${{ env.PNPM_VERSION }}
 
       - name: 获取 pnpm store 目录
         shell: bash
