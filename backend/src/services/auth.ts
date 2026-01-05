@@ -4,39 +4,23 @@
 
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import type { DeepReadonly, SystemConfig } from '@mcp-core/mcp-hub-share';
 import type {
   JwtPayload,
   LoginAttempt,
   RefreshTokenPayload,
-  SystemConfig,
-  UserCredentials,
   UserSession,
 } from '../types/auth.js';
-import { getAllConfig, asMutable } from '../utils/config.js';
-import { JsonStorage } from '../utils/json_storage.js';
-import path from 'node:path';
+import { getAllConfig } from '../utils/config.js';
 
-// 配置存储实例
-let systemConfigInstance: JsonStorage<SystemConfig> | null = null;
-
-/**
- * 获取系统配置存储实例
- */
-function getSystemConfigInstance(): JsonStorage<SystemConfig> {
-  if (!systemConfigInstance) {
-    const configDir =
-      process.env.CONFIG_PATH || path.resolve(process.cwd(), 'config');
-    const systemPath = path.resolve(configDir, 'system.json');
-    systemConfigInstance = new JsonStorage<SystemConfig>(systemPath, {} as SystemConfig);
-  }
-  return systemConfigInstance;
-}
+// 从 SystemConfig 中提取用户凭据的只读类型
+type ReadonlyUserCredentials = DeepReadonly<SystemConfig>['users'][string];
 
 /**
  * 认证服务类
  */
 export class AuthService {
-  private config: SystemConfig | null = null;
+  private config: DeepReadonly<SystemConfig> | null = null;
   private loginAttempts = new Map<string, LoginAttempt[]>();
   private sessions = new Map<string, UserSession>();
   private blacklistedTokens = new Set<string>();
@@ -55,7 +39,8 @@ export class AuthService {
     try {
       // 使用配置工具函数获取配置
       const config = await getAllConfig();
-      this.config = config.system;
+      // config.system 已经是 DeepReadonly<SystemConfig> 类型
+      this.config = config.system as DeepReadonly<SystemConfig>;
 
       // 确保所有用户都有密码哈希
       await this.ensurePasswordHashes();
@@ -65,40 +50,17 @@ export class AuthService {
   }
 
   /**
-   * 确保所有用户都有密码哈希
+   * 确保所有用户都有密码哈希（仅在内存中）
    */
   private async ensurePasswordHashes(): Promise<void> {
     if (!this.config) return;
 
-    let configChanged = false;
-    // 转换为可变类型以修改
-    const mutableConfig = asMutable(this.config);
-
-    for (const [_username, user] of Object.entries(mutableConfig.users)) {
+    // 只是在内存中补充缺失的密码哈希，不修改配置文件
+    for (const user of Object.values(this.config.users)) {
       if (!user.passwordHash && user.password) {
-        user.passwordHash = await bcrypt.hash(user.password, 10);
-        configChanged = true;
+        // 在内存中生成哈希，但不保存到文件
+        (user as any).passwordHash = await bcrypt.hash(user.password, 10);
       }
-    }
-
-    // 如果配置有变化，保存回文件
-    if (configChanged) {
-      await this.saveConfig(mutableConfig);
-    }
-  }
-
-  /**
-   * 保存配置到文件
-   */
-  private async saveConfig(config?: SystemConfig): Promise<void> {
-    const configToSave = config || this.config;
-    if (!configToSave) return;
-
-    try {
-      const instance = getSystemConfigInstance();
-      await instance.write(configToSave);
-    } catch (error) {
-      console.error('Failed to save system config:', error);
     }
   }
 
@@ -163,10 +125,6 @@ export class AuthService {
       userAgent,
     };
     this.sessions.set(sessionId, session);
-
-    // 更新用户最后登录时间
-    user.lastLogin = new Date().toISOString();
-    await this.saveConfig();
 
     return {
       user: {
@@ -293,7 +251,7 @@ export class AuthService {
   /**
    * 生成访问token
    */
-  private generateAccessToken(user: UserCredentials): string {
+  private generateAccessToken(user: ReadonlyUserCredentials): string {
     if (!this.config) {
       throw new Error('Auth service not initialized');
     }
@@ -313,7 +271,7 @@ export class AuthService {
   /**
    * 生成刷新token
    */
-  private generateRefreshToken(user: UserCredentials): string {
+  private generateRefreshToken(user: ReadonlyUserCredentials): string {
     if (!this.config) {
       throw new Error('Auth service not initialized');
     }
@@ -425,7 +383,7 @@ export class AuthService {
   /**
    * 获取用户信息
    */
-  getUserById(userId: string): UserCredentials | null {
+  getUserById(userId: string): ReadonlyUserCredentials | null {
     if (!this.config) return null;
     return (
       Object.values(this.config.users).find((user) => user.id === userId) ||
