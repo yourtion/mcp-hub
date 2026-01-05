@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type {
+  DeepReadonly,
   GroupConfig,
   McpConfig,
   SystemConfig,
@@ -21,7 +22,7 @@ import type {
   ConfigValidationWarning,
   IConfigService,
 } from '../types/config.js';
-import { getAllConfig, saveConfig } from '../utils/config.js';
+import { asMutable, getAllConfig, saveConfig } from '../utils/config.js';
 
 // 配置验证模式
 const systemConfigSchema = z.object({
@@ -132,14 +133,14 @@ export class ConfigService implements IConfigService {
 
   async getCurrentConfig(): Promise<{
     system: SystemConfig;
-    mcps: McpConfig;
-    groups: GroupConfig;
+    mcps: DeepReadonly<McpConfig>;
+    groups: DeepReadonly<GroupConfig>;
   }> {
     const config = await getAllConfig();
     return {
       system: JSON.parse(JSON.stringify(config.system)) as SystemConfig,
       mcps: config.mcps,
-      groups: JSON.parse(JSON.stringify(config.groups)) as GroupConfig,
+      groups: config.groups,
     };
   }
 
@@ -300,26 +301,29 @@ export class ConfigService implements IConfigService {
     for (const [serverId, serverConfig] of Object.entries(
       mcpConfig.mcpServers || {},
     )) {
-      if (!serverConfig.command) {
-        errors.push({
-          path: `mcpServers.${serverId}.command`,
-          message: '服务器命令不能为空',
-          code: 'MISSING_COMMAND',
-          severity: 'error',
-        });
+      // 类型守卫：检查是否为 StdioServerConfig
+      if ('command' in serverConfig) {
+        if (!serverConfig.command) {
+          errors.push({
+            path: `mcpServers.${serverId}.command`,
+            message: '服务器命令不能为空',
+            code: 'MISSING_COMMAND',
+            severity: 'error',
+          });
+        }
       }
 
-      // 检查传输类型配置
-      if (
-        serverConfig.transport?.type === 'sse' &&
-        !serverConfig.transport.url
-      ) {
-        errors.push({
-          path: `mcpServers.${serverId}.transport.url`,
-          message: 'SSE传输类型需要指定URL',
-          code: 'MISSING_SSE_URL',
-          severity: 'error',
-        });
+      // 类型守卫：检查是否为 HTTPServerConfig
+      if ('transport' in serverConfig) {
+        const transport = (serverConfig as { transport?: { type?: string; url?: string } }).transport;
+        if (transport?.type === 'sse' && !transport.url) {
+          errors.push({
+            path: `mcpServers.${serverId}.transport.url`,
+            message: 'SSE传输类型需要指定URL',
+            code: 'MISSING_SSE_URL',
+            severity: 'error',
+          });
+        }
       }
     }
   }
@@ -837,8 +841,8 @@ export class ConfigService implements IConfigService {
     for (const [serverId, serverConfig] of Object.entries(
       mcpConfig.mcpServers || {},
     )) {
-      // 测试命令可执行性
-      if (serverConfig.command) {
+      // 类型守卫：测试命令可执行性（仅 StdioServerConfig）
+      if ('command' in serverConfig && serverConfig.command) {
         try {
           const { spawn } = await import('node:child_process');
           const child = spawn(serverConfig.command, ['--version'], {
@@ -904,26 +908,26 @@ export class ConfigService implements IConfigService {
         });
       }
 
-      // 测试传输配置
-      if (serverConfig.transport) {
-        if (
-          serverConfig.transport.type === 'sse' &&
-          serverConfig.transport.url
-        ) {
-          // 可以添加URL可达性测试
-          tests.push({
-            name: `server_${serverId}_transport`,
-            description: `服务器 ${serverId} 传输配置测试`,
-            status: 'passed',
-            message: `SSE传输配置正确: ${serverConfig.transport.url}`,
-          });
-        } else {
-          tests.push({
-            name: `server_${serverId}_transport`,
-            description: `服务器 ${serverId} 传输配置测试`,
-            status: 'passed',
-            message: `${serverConfig.transport.type} 传输配置正确`,
-          });
+      // 测试传输配置（仅 HTTPServerConfig）
+      if ('transport' in serverConfig) {
+        const transport = (serverConfig as { transport?: { type?: string; url?: string } }).transport;
+        if (transport) {
+          if (transport.type === 'sse' && transport.url) {
+            // 可以添加URL可达性测试
+            tests.push({
+              name: `server_${serverId}_transport`,
+              description: `服务器 ${serverId} 传输配置测试`,
+              status: 'passed',
+              message: `SSE传输配置正确: ${transport.url}`,
+            });
+          } else {
+            tests.push({
+              name: `server_${serverId}_transport`,
+              description: `服务器 ${serverId} 传输配置测试`,
+              status: 'passed',
+              message: `${transport.type} 传输配置正确`,
+            });
+          }
         }
       }
     }

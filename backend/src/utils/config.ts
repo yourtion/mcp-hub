@@ -7,6 +7,14 @@ import type {
 } from '@mcp-core/mcp-hub-share';
 import { JsonStorage } from './json_storage.js';
 
+/**
+ * 将 DeepReadonly 类型转换为可变类型
+ * 这是一个类型安全的转换，因为我们确信在使用时不会修改原始数据
+ */
+export function asMutable<T>(obj: DeepReadonly<T>): T {
+  return obj as unknown as T;
+}
+
 const configDir =
   process.env.CONFIG_PATH || path.resolve(process.cwd(), 'config');
 

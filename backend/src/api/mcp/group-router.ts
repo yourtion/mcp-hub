@@ -3,7 +3,8 @@
  * 处理 /:group/mcp 路由，提供基于组的MCP服务访问
  */
 
-import { McpServiceManager } from '@mcp-core/mcp-hub-core';
+import { McpServiceManager, type ServerConfig as CoreServerConfig } from '@mcp-core/mcp-hub-core';
+import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { toFetchResponse, toReqRes } from 'fetch-to-node';
 import type { Context } from 'hono';
@@ -12,6 +13,27 @@ import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 import type { GroupConfigItem } from '../groups/index.js';
 import { GroupMcpService } from './group-service.js';
+
+/**
+ * 将 share 包的 ServerConfig 转换为 core 包的 ServerConfig
+ * core 包只支持 stdio 类型的服务器，所以需要过滤
+ */
+function convertToCoreServerConfig(
+  servers: Record<string, ServerConfig>,
+): Record<string, CoreServerConfig> {
+  const result: Record<string, CoreServerConfig> = {};
+  for (const [key, server] of Object.entries(servers)) {
+    // 只转换 stdio 类型的服务器（有 command 字段的）
+    if ('command' in server) {
+      result[key] = {
+        command: server.command,
+        args: server.args,
+        env: server.env,
+      } as CoreServerConfig;
+    }
+  }
+  return result;
+}
 
 export const groupMcpRouter = new Hono();
 
@@ -32,9 +54,12 @@ async function ensureCoreServiceInitialized(): Promise<void> {
     const config = await getAllConfig();
 
     coreServiceManager = new McpServiceManager();
+    // 创建可变副本用于初始化，并转换 ServerConfig 类型
+    const mutableServers = JSON.parse(JSON.stringify(config.mcps.mcpServers));
+    const mutableGroups = JSON.parse(JSON.stringify(config.groups));
     const coreConfig = {
-      servers: config.mcps.mcpServers,
-      groups: config.groups as unknown as Record<string, GroupConfigItem>,
+      servers: convertToCoreServerConfig(mutableServers),
+      groups: mutableGroups as Record<string, GroupConfigItem>,
     };
     await coreServiceManager.initializeFromConfig(coreConfig);
 

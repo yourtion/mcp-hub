@@ -1,4 +1,5 @@
 import type {
+  DeepReadonly,
   GroupConfig,
   McpConfig,
   SystemConfig,
@@ -12,8 +13,8 @@ export interface ConfigResponse {
   success: true;
   data: {
     system: SystemConfig;
-    mcp: McpConfig;
-    groups: GroupConfig;
+    mcp: DeepReadonly<McpConfig>;
+    groups: DeepReadonly<GroupConfig>;
     lastUpdated: string;
     version: string;
   };
@@ -161,8 +162,8 @@ export interface IConfigService {
   // 获取当前配置
   getCurrentConfig(): Promise<{
     system: SystemConfig;
-    mcps: McpConfig;
-    groups: GroupConfig;
+    mcps: DeepReadonly<McpConfig>;
+    groups: DeepReadonly<GroupConfig>;
   }>;
 
   // 更新配置
