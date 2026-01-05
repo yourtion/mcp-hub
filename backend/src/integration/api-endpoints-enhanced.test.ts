@@ -6,8 +6,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { app } from '../app.js';
 import {
+  cleanupTestConfig,
   cleanupTestEnvironment,
   safeJsonParse,
+  setupTestConfig,
   setupTestEnvironment,
   sleep,
 } from './test-utils.js';
@@ -19,9 +21,11 @@ describe('API端点集成测试', () => {
   beforeAll(async () => {
     testApp = app;
     restoreConsole = setupTestEnvironment();
+    setupTestConfig();
   });
 
   afterAll(async () => {
+    cleanupTestConfig();
     cleanupTestEnvironment();
     restoreConsole();
   });
@@ -77,20 +81,21 @@ describe('API端点集成测试', () => {
       expect(response.status).toBe(200);
 
       const data = await safeJsonParse(response);
-      expect(data).toHaveProperty('groups');
-      expect(data).toHaveProperty('totalGroups');
-      expect(Array.isArray(data.groups)).toBe(true);
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('groups');
+      expect(data.data).toHaveProperty('totalGroups');
+      expect(Array.isArray(data.data.groups)).toBe(true);
     });
 
     it('应该能够处理组详情请求', async () => {
       const listResponse = await testApp.request('/api/groups');
       const listData = await safeJsonParse(listResponse);
 
-      if (listData.groups.length === 0) {
-        return;
-      }
+      expect(listData.data).toBeDefined();
+      expect(listData.data.groups).toBeDefined();
+      expect(listData.data.groups.length).toBeGreaterThan(0);
 
-      const firstGroup = listData.groups[0];
+      const firstGroup = listData.data.groups[0];
       const response = await testApp.request(`/api/groups/${firstGroup.id}`);
 
       expect(response.status).toBe(200);
@@ -102,11 +107,11 @@ describe('API端点集成测试', () => {
       const listResponse = await testApp.request('/api/groups');
       const listData = await safeJsonParse(listResponse);
 
-      if (listData.groups.length === 0) {
-        return;
-      }
+      expect(listData.data).toBeDefined();
+      expect(listData.data.groups).toBeDefined();
+      expect(listData.data.groups.length).toBeGreaterThan(0);
 
-      const firstGroup = listData.groups[0];
+      const firstGroup = listData.data.groups[0];
       const response = await testApp.request(
         `/api/groups/${firstGroup.id}/health`,
       );
@@ -120,11 +125,11 @@ describe('API端点集成测试', () => {
       const listResponse = await testApp.request('/api/groups');
       const listData = await safeJsonParse(listResponse);
 
-      if (listData.groups.length === 0) {
-        return;
-      }
+      expect(listData.data).toBeDefined();
+      expect(listData.data.groups).toBeDefined();
+      expect(listData.data.groups.length).toBeGreaterThan(0);
 
-      const firstGroup = listData.groups[0];
+      const firstGroup = listData.data.groups[0];
       const response = await testApp.request(
         `/api/groups/${firstGroup.id}/tools`,
       );
@@ -140,11 +145,11 @@ describe('API端点集成测试', () => {
       const listResponse = await testApp.request('/api/groups');
       const listData = await safeJsonParse(listResponse);
 
-      if (listData.groups.length === 0) {
-        return;
-      }
+      expect(listData.data).toBeDefined();
+      expect(listData.data.groups).toBeDefined();
+      expect(listData.data.groups.length).toBeGreaterThan(0);
 
-      const firstGroup = listData.groups[0];
+      const firstGroup = listData.data.groups[0];
       const response = await testApp.request(
         `/api/groups/${firstGroup.id}/servers`,
       );

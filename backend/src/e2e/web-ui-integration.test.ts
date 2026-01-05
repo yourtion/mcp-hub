@@ -6,6 +6,10 @@
 import { serve } from '@hono/node-server';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { app } from '../app.js';
+import {
+  cleanupTestConfig,
+  setupTestConfig,
+} from './test-utils.js';
 
 describe('Web UI 集成端到端测试', () => {
   let server: ReturnType<typeof serve>;
@@ -13,6 +17,8 @@ describe('Web UI 集成端到端测试', () => {
   let authToken: string;
 
   beforeAll(async () => {
+    setupTestConfig(); // 添加测试配置
+
     const port = 3100;
     baseUrl = `http://localhost:${port}`;
 
@@ -31,6 +37,7 @@ describe('Web UI 集成端到端测试', () => {
         server.close(() => resolve());
       });
     }
+    cleanupTestConfig(); // 清理测试配置
   });
 
   describe('认证流程测试', () => {
@@ -46,13 +53,15 @@ describe('Web UI 集成端到端测试', () => {
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      expect(data).toHaveProperty('token');
-      expect(data).toHaveProperty('refreshToken');
-      expect(data).toHaveProperty('user');
-      expect(data.user.username).toBe('admin');
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('accessToken');
+      expect(data.data).toHaveProperty('refreshToken');
+      expect(data.data).toHaveProperty('user');
+      expect(data.data.user.username).toBe('admin');
 
       // 保存token供后续测试使用
-      authToken = data.token;
+      authToken = data.data.accessToken;
     });
 
     it('应该拒绝无效的登录凭据', async () => {
@@ -80,7 +89,7 @@ describe('Web UI 集成端到端测试', () => {
       });
 
       const loginData = await loginResponse.json();
-      const refreshToken = loginData.refreshToken;
+      const refreshToken = loginData.data.refreshToken;
 
       // 刷新token
       const refreshResponse = await fetch(`${baseUrl}/api/auth/refresh`, {
@@ -91,7 +100,8 @@ describe('Web UI 集成端到端测试', () => {
 
       expect(refreshResponse.status).toBe(200);
       const refreshData = await refreshResponse.json();
-      expect(refreshData).toHaveProperty('token');
+      expect(refreshData).toHaveProperty('success', true);
+      expect(refreshData.data).toHaveProperty('accessToken');
     });
 
     it('应该能够登出', async () => {
@@ -134,8 +144,10 @@ describe('Web UI 集成端到端测试', () => {
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      expect(data).toHaveProperty('servers');
-      expect(Array.isArray(data.servers)).toBe(true);
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('servers');
+      expect(Array.isArray(data.data.servers)).toBe(true);
     });
 
     it('应该能够获取单个服务器详情', async () => {
@@ -145,8 +157,8 @@ describe('Web UI 集成端到端测试', () => {
       });
       const listData = await listResponse.json();
 
-      if (listData.servers.length > 0) {
-        const serverId = listData.servers[0].id;
+      if (listData.data.servers.length > 0) {
+        const serverId = listData.data.servers[0].id;
         const response = await fetch(`${baseUrl}/api/servers/${serverId}`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
@@ -220,8 +232,10 @@ describe('Web UI 集成端到端测试', () => {
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      expect(data).toHaveProperty('tools');
-      expect(Array.isArray(data.tools)).toBe(true);
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('tools');
+      expect(Array.isArray(data.data.tools)).toBe(true);
     });
 
     it('应该能够按服务器过滤工具', async () => {
@@ -242,7 +256,9 @@ describe('Web UI 集成端到端测试', () => {
 
         expect(response.status).toBe(200);
         const data = await response.json();
-        expect(data).toHaveProperty('tools');
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('data');
+        expect(data.data).toHaveProperty('tools');
       }
     });
 
@@ -271,8 +287,10 @@ describe('Web UI 集成端到端测试', () => {
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      expect(data).toHaveProperty('groups');
-      expect(Array.isArray(data.groups)).toBe(true);
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('groups');
+      expect(Array.isArray(data.data.groups)).toBe(true);
     });
 
     it('应该能够创建新组', async () => {
@@ -332,7 +350,9 @@ describe('Web UI 集成端到端测试', () => {
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      expect(data).toHaveProperty('overview');
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('overview');
       expect(data.overview).toHaveProperty('totalServers');
       expect(data.overview).toHaveProperty('connectedServers');
       expect(data.overview).toHaveProperty('totalTools');
@@ -345,7 +365,9 @@ describe('Web UI 集成端到端测试', () => {
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      expect(data).toHaveProperty('status');
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('status');
       expect(['healthy', 'warning', 'error']).toContain(data.status);
     });
   });
@@ -358,7 +380,9 @@ describe('Web UI 集成端到端测试', () => {
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      expect(data).toHaveProperty('config');
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('config');
     });
 
     it('应该能够验证配置', async () => {
@@ -380,7 +404,9 @@ describe('Web UI 集成端到端测试', () => {
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      expect(data).toHaveProperty('valid');
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('valid');
     });
   });
 
@@ -392,8 +418,12 @@ describe('Web UI 集成端到端测试', () => {
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      expect(data).toHaveProperty('configs');
-      expect(Array.isArray(data.configs)).toBe(true);
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('data');
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('configs');
+      expect(Array.isArray(data.data.data.configs)).toBe(true);
     });
 
     it('应该能够创建API配置', async () => {
@@ -429,8 +459,10 @@ describe('Web UI 集成端到端测试', () => {
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      expect(data).toHaveProperty('messages');
-      expect(Array.isArray(data.messages)).toBe(true);
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('messages');
+      expect(Array.isArray(data.data.messages)).toBe(true);
     });
 
     it('应该能够获取性能统计', async () => {
@@ -440,7 +472,9 @@ describe('Web UI 集成端到端测试', () => {
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      expect(data).toHaveProperty('stats');
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('stats');
     });
   });
 

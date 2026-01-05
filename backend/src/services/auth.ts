@@ -2,8 +2,6 @@
  * 认证服务
  */
 
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type {
@@ -14,6 +12,25 @@ import type {
   UserCredentials,
   UserSession,
 } from '../types/auth.js';
+import { getAllConfig, asMutable } from '../utils/config.js';
+import { JsonStorage } from '../utils/json_storage.js';
+import path from 'node:path';
+
+// 配置存储实例
+let systemConfigInstance: JsonStorage<SystemConfig> | null = null;
+
+/**
+ * 获取系统配置存储实例
+ */
+function getSystemConfigInstance(): JsonStorage<SystemConfig> {
+  if (!systemConfigInstance) {
+    const configDir =
+      process.env.CONFIG_PATH || path.resolve(process.cwd(), 'config');
+    const systemPath = path.resolve(configDir, 'system.json');
+    systemConfigInstance = new JsonStorage<SystemConfig>(systemPath, {} as SystemConfig);
+  }
+  return systemConfigInstance;
+}
 
 /**
  * 认证服务类
@@ -36,9 +53,9 @@ export class AuthService {
    */
   private async loadConfig(): Promise<void> {
     try {
-      const configPath = path.join(process.cwd(), 'config', 'system.json');
-      const configData = await fs.readFile(configPath, 'utf-8');
-      this.config = JSON.parse(configData) as SystemConfig;
+      // 使用配置工具函数获取配置
+      const config = await getAllConfig();
+      this.config = config.system;
 
       // 确保所有用户都有密码哈希
       await this.ensurePasswordHashes();
@@ -54,7 +71,10 @@ export class AuthService {
     if (!this.config) return;
 
     let configChanged = false;
-    for (const [_username, user] of Object.entries(this.config.users)) {
+    // 转换为可变类型以修改
+    const mutableConfig = asMutable(this.config);
+
+    for (const [_username, user] of Object.entries(mutableConfig.users)) {
       if (!user.passwordHash && user.password) {
         user.passwordHash = await bcrypt.hash(user.password, 10);
         configChanged = true;
@@ -63,20 +83,20 @@ export class AuthService {
 
     // 如果配置有变化，保存回文件
     if (configChanged) {
-      await this.saveConfig();
+      await this.saveConfig(mutableConfig);
     }
   }
 
   /**
    * 保存配置到文件
    */
-  private async saveConfig(): Promise<void> {
-    if (!this.config) return;
+  private async saveConfig(config?: SystemConfig): Promise<void> {
+    const configToSave = config || this.config;
+    if (!configToSave) return;
 
     try {
-      const configPath = path.join(process.cwd(), 'config', 'system.json');
-      const configData = JSON.stringify(this.config, null, 2);
-      await fs.writeFile(configPath, configData, 'utf-8');
+      const instance = getSystemConfigInstance();
+      await instance.write(configToSave);
     } catch (error) {
       console.error('Failed to save system config:', error);
     }

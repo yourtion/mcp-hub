@@ -6,12 +6,18 @@
 import { serve } from '@hono/node-server';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { app } from '../app.js';
+import {
+  cleanupTestConfig,
+  setupTestConfig,
+} from './test-utils.js';
 
 describe('安全功能端到端测试', () => {
   let server: ReturnType<typeof serve>;
   let baseUrl: string;
 
   beforeAll(async () => {
+    setupTestConfig(true); // 启用认证以测试安全功能
+
     const port = 3101;
     baseUrl = `http://localhost:${port}`;
 
@@ -29,6 +35,7 @@ describe('安全功能端到端测试', () => {
         server.close(() => resolve());
       });
     }
+    cleanupTestConfig();
   });
 
   describe('JWT认证测试', () => {
@@ -67,7 +74,7 @@ describe('安全功能端到端测试', () => {
       });
 
       const loginData = await loginResponse.json();
-      const token = loginData.token;
+      const token = loginData.data.accessToken;  // 注意是 accessToken
 
       // 使用有效token访问受保护资源
       const response = await fetch(`${baseUrl}/api/servers`, {

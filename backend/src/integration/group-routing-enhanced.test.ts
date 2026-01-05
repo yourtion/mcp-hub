@@ -6,8 +6,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { app } from '../app.js';
 import {
+  cleanupTestConfig,
   cleanupTestEnvironment,
   safeJsonParse,
+  setupTestConfig,
   setupTestEnvironment,
 } from './test-utils.js';
 
@@ -18,9 +20,11 @@ describe('组路由功能集成测试', () => {
   beforeAll(async () => {
     testApp = app;
     restoreConsole = setupTestEnvironment();
+    setupTestConfig();
   });
 
   afterAll(async () => {
+    cleanupTestConfig();
     cleanupTestEnvironment();
     restoreConsole();
   });
@@ -31,13 +35,15 @@ describe('组路由功能集成测试', () => {
       expect(response.status).toBe(200);
 
       const data = await safeJsonParse(response);
-      expect(data).toHaveProperty('groups');
-      expect(data).toHaveProperty('totalGroups');
+      expect(data).toHaveProperty('success');
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('groups');
+      expect(data.data).toHaveProperty('totalGroups');
       expect(data).toHaveProperty('timestamp');
 
-      expect(Array.isArray(data.groups)).toBe(true);
-      expect(typeof data.totalGroups).toBe('number');
-      expect(data.groups.length).toBe(data.totalGroups);
+      expect(Array.isArray(data.data.groups)).toBe(true);
+      expect(typeof data.data.totalGroups).toBe('number');
+      expect(data.data.groups.length).toBe(data.data.totalGroups);
     });
 
     it('应该能够获取特定组的详细信息', async () => {
@@ -45,11 +51,11 @@ describe('组路由功能集成测试', () => {
       const listResponse = await testApp.request('/api/groups');
       const listData = await safeJsonParse(listResponse);
 
-      if (listData.groups.length === 0) {
-        return; // 跳过测试如果没有组
-      }
+      expect(listData.data).toBeDefined();
+      expect(listData.data.groups).toBeDefined();
+      expect(listData.data.groups.length).toBeGreaterThan(0);
 
-      const firstGroup = listData.groups[0];
+      const firstGroup = listData.data.groups[0];
       const response = await testApp.request(`/api/groups/${firstGroup.id}`);
 
       expect(response.status).toBe(200);
@@ -84,11 +90,11 @@ describe('组路由功能集成测试', () => {
       const listResponse = await testApp.request('/api/groups');
       const listData = await safeJsonParse(listResponse);
 
-      if (listData.groups.length === 0) {
-        return;
-      }
+      expect(listData.data).toBeDefined();
+      expect(listData.data.groups).toBeDefined();
+      expect(listData.data.groups.length).toBeGreaterThan(0);
 
-      const firstGroup = listData.groups[0];
+      const firstGroup = listData.data.groups[0];
       const response = await testApp.request(
         `/api/groups/${firstGroup.id}/health`,
       );
@@ -107,11 +113,11 @@ describe('组路由功能集成测试', () => {
       const listResponse = await testApp.request('/api/groups');
       const listData = await safeJsonParse(listResponse);
 
-      if (listData.groups.length === 0) {
-        return;
-      }
+      expect(listData.data).toBeDefined();
+      expect(listData.data.groups).toBeDefined();
+      expect(listData.data.groups.length).toBeGreaterThan(0);
 
-      const firstGroup = listData.groups[0];
+      const firstGroup = listData.data.groups[0];
       const response = await testApp.request(
         `/api/groups/${firstGroup.id}/tools`,
       );
@@ -132,11 +138,11 @@ describe('组路由功能集成测试', () => {
       const listResponse = await testApp.request('/api/groups');
       const listData = await safeJsonParse(listResponse);
 
-      if (listData.groups.length === 0) {
-        return;
-      }
+      expect(listData.data).toBeDefined();
+      expect(listData.data.groups).toBeDefined();
+      expect(listData.data.groups.length).toBeGreaterThan(0);
 
-      const firstGroup = listData.groups[0];
+      const firstGroup = listData.data.groups[0];
       const response = await testApp.request(
         `/api/groups/${firstGroup.id}/servers`,
       );
@@ -203,7 +209,8 @@ describe('组路由功能集成测试', () => {
       for (const response of responses) {
         expect(response.status).toBe(200);
         const data = await safeJsonParse(response);
-        expect(data).toHaveProperty('groups');
+        expect(data).toHaveProperty('data');
+        expect(data.data).toHaveProperty('groups');
       }
     });
 

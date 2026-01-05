@@ -6,8 +6,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { app } from '../app.js';
 import {
+  cleanupTestConfig,
   cleanupTestEnvironment,
   safeJsonParse,
+  setupTestConfig,
   setupTestEnvironment,
   sleep,
 } from './test-utils.js';
@@ -19,10 +21,12 @@ describe('快速场景测试', () => {
   beforeAll(async () => {
     testApp = app;
     restoreConsole = setupTestEnvironment();
+    setupTestConfig();
     await sleep(500); // 减少等待时间
   });
 
   afterAll(async () => {
+    cleanupTestConfig();
     cleanupTestEnvironment();
     restoreConsole();
   });
@@ -41,10 +45,11 @@ describe('快速场景测试', () => {
       expect(groupsResponse.status).toBe(200);
 
       const groupsData = await safeJsonParse(groupsResponse);
-      expect(groupsData).toHaveProperty('groups');
-      expect(Array.isArray(groupsData.groups)).toBe(true);
+      expect(groupsData).toHaveProperty('data');
+      expect(groupsData.data).toHaveProperty('groups');
+      expect(Array.isArray(groupsData.data.groups)).toBe(true);
 
-      console.log(`✅ 新用户发现流程完成，发现 ${groupsData.totalGroups} 个组`);
+      console.log(`✅ 新用户发现流程完成，发现 ${groupsData.data.totalGroups} 个组`);
     }, 10000); // 减少超时时间
 
     it('应该能够快速处理探索性请求', async () => {
@@ -72,13 +77,12 @@ describe('快速场景测试', () => {
       const groupsResponse = await testApp.request('/api/groups');
       const groupsData = await safeJsonParse(groupsResponse);
 
-      if (groupsData.groups.length === 0) {
-        console.log('⚠️ 没有可用组，跳过多步骤测试');
-        return;
-      }
+      expect(groupsData.data).toBeDefined();
+      expect(groupsData.data.groups).toBeDefined();
+      expect(groupsData.data.groups.length).toBeGreaterThan(0);
 
       // 2. 检查前几个组的状态（限制数量）
-      const groupsToCheck = groupsData.groups.slice(0, 2);
+      const groupsToCheck = groupsData.data.groups.slice(0, 2);
       const healthCheckPromises = groupsToCheck.map((group: any) =>
         testApp.request(`/api/groups/${group.id}/health`),
       );
@@ -96,13 +100,12 @@ describe('快速场景测试', () => {
       const groupsResponse = await testApp.request('/api/groups');
       const groupsData = await safeJsonParse(groupsResponse);
 
-      if (groupsData.groups.length === 0) {
-        console.log('⚠️ 没有可用组，跳过批量操作测试');
-        return;
-      }
+      expect(groupsData.data).toBeDefined();
+      expect(groupsData.data.groups).toBeDefined();
+      expect(groupsData.data.groups.length).toBeGreaterThan(0);
 
       // 限制批量操作的数量
-      const batchGroups = groupsData.groups.slice(0, 2);
+      const batchGroups = groupsData.data.groups.slice(0, 2);
       const batchRequests = batchGroups.map((group: any) => ({
         detail: testApp.request(`/api/groups/${group.id}`),
         tools: testApp.request(`/api/groups/${group.id}/tools`),
@@ -132,14 +135,15 @@ describe('快速场景测试', () => {
       const groupsResponse = await testApp.request('/api/groups');
       const groupsData = await safeJsonParse(groupsResponse);
 
-      expect(groupsData).toHaveProperty('totalGroups');
-      expect(typeof groupsData.totalGroups).toBe('number');
+      expect(groupsData).toHaveProperty('data');
+      expect(groupsData.data).toHaveProperty('totalGroups');
+      expect(typeof groupsData.data.totalGroups).toBe('number');
 
       // 3. 快速检查部分组的健康状态
-      if (groupsData.groups.length > 0) {
-        const samplesToCheck = Math.min(2, groupsData.groups.length);
+      if (groupsData.data.groups.length > 0) {
+        const samplesToCheck = Math.min(2, groupsData.data.groups.length);
         const healthChecks = await Promise.all(
-          groupsData.groups
+          groupsData.data.groups
             .slice(0, samplesToCheck)
             .map((group: any) =>
               testApp.request(`/api/groups/${group.id}/health`),
@@ -218,16 +222,15 @@ describe('快速场景测试', () => {
       const groupsResponse = await testApp.request('/api/groups');
       const groupsData = await safeJsonParse(groupsResponse);
 
-      if (groupsData.groups.length === 0) {
-        console.log('⚠️ 没有可用组，跳过部分不可用测试');
-        return;
-      }
+      expect(groupsData.data).toBeDefined();
+      expect(groupsData.data.groups).toBeDefined();
+      expect(groupsData.data.groups.length).toBeGreaterThan(0);
 
       // 快速检查部分组的健康状态
-      const samplesToCheck = Math.min(2, groupsData.groups.length);
+      const samplesToCheck = Math.min(2, groupsData.data.groups.length);
       const healthResults = [];
 
-      for (const group of groupsData.groups.slice(0, samplesToCheck)) {
+      for (const group of groupsData.data.groups.slice(0, samplesToCheck)) {
         try {
           const healthResponse = await testApp.request(
             `/api/groups/${group.id}/health`,

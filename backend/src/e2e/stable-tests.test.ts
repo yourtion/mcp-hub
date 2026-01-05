@@ -6,8 +6,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { app } from '../app.js';
 import {
+  cleanupTestConfig,
   cleanupTestEnvironment,
   safeJsonParse,
+  setupTestConfig,
   setupTestEnvironment,
   sleep,
 } from './test-utils.js';
@@ -19,11 +21,13 @@ describe('稳定的端到端测试', () => {
   beforeAll(async () => {
     testApp = app;
     restoreConsole = setupTestEnvironment();
+    setupTestConfig();
     // 减少等待时间
     await sleep(1000);
   });
 
   afterAll(async () => {
+    cleanupTestConfig();
     cleanupTestEnvironment();
     restoreConsole();
   });
@@ -48,11 +52,12 @@ describe('稳定的端到端测试', () => {
       expect(response.status).toBe(200);
 
       const data = await safeJsonParse(response);
-      expect(data).toHaveProperty('groups');
-      expect(data).toHaveProperty('totalGroups');
-      expect(Array.isArray(data.groups)).toBe(true);
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('groups');
+      expect(data.data).toHaveProperty('totalGroups');
+      expect(Array.isArray(data.data.groups)).toBe(true);
 
-      console.log(`✅ 组列表获取成功，共 ${data.totalGroups} 个组`);
+      console.log(`✅ 组列表获取成功，共 ${data.data.totalGroups} 个组`);
     });
 
     it('应该能够处理不存在的端点', async () => {
@@ -171,16 +176,16 @@ describe('稳定的端到端测试', () => {
       const response = await testApp.request('/api/groups');
       const data = await safeJsonParse(response);
 
-      expect(data).toHaveProperty('groups');
-      expect(data).toHaveProperty('totalGroups');
-      expect(Array.isArray(data.groups)).toBe(true);
-      expect(typeof data.totalGroups).toBe('number');
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('groups');
+      expect(data.data).toHaveProperty('totalGroups');
+      expect(Array.isArray(data.data.groups)).toBe(true);
+      expect(typeof data.data.totalGroups).toBe('number');
 
-      if (data.groups.length > 0) {
-        const group = data.groups[0];
-        expect(group).toHaveProperty('id');
-        expect(typeof group.id).toBe('string');
-      }
+      expect(data.data.groups.length).toBeGreaterThan(0);
+      const group = data.data.groups[0];
+      expect(group).toHaveProperty('id');
+      expect(typeof group.id).toBe('string');
 
       console.log('✅ 组列表响应格式验证通过');
     });
