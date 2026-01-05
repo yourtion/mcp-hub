@@ -510,6 +510,9 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
     logger.info('关闭API转MCP服务管理器');
 
     try {
+      // 停止配置文件监听
+      this.configManager.stopWatching();
+
       // 停止健康检查
       this.stopHealthMonitoring();
 

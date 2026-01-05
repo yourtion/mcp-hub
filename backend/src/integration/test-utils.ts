@@ -156,15 +156,28 @@ export class SilentLogger {
  * 安全地解析JSON响应，处理可能的解析错误
  */
 export async function safeJsonParse(response: Response): Promise<any> {
+  let text: string | null = null;
+
   try {
-    const text = await response.text();
+    // 只读取一次body
+    text = await response.text();
+
     if (!text.trim()) {
       return null;
     }
+
     return JSON.parse(text);
-  } catch (_error) {
-    console.warn('JSON解析失败，返回原始文本:', await response.text());
-    return { error: 'JSON_PARSE_ERROR', rawText: await response.text() };
+  } catch (error) {
+    // 返回错误信息，使用已读取的文本（如果可用）
+    console.warn('JSON解析失败:', error instanceof Error ? error.message : 'Unknown error');
+
+    return {
+      error: 'JSON_PARSE_ERROR',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      status: response.status,
+      // 如果已经读取了文本，包含它；否则只返回错误信息
+      ...(text && { rawText: text }),
+    };
   }
 }
 

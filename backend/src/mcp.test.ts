@@ -54,6 +54,7 @@ vi.mock('@mcp-core/mcp-hub-core', () => ({
     getCached: vi.fn().mockReturnValue(null),
     setCached: vi.fn(),
     clearCache: vi.fn(),
+    getMetrics: vi.fn().mockReturnValue({}),
   },
 }));
 

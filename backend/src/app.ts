@@ -68,14 +68,21 @@ app.use('*', async (c, next) => {
   await next();
 });
 
-// 应用认证中间件到配置API
-configApi.use('*', createAuthMiddleware(authService));
+// 创建认证中间件
+const authMiddleware = createAuthMiddleware(authService);
+
+// 应用认证中间件到受保护的API路由
+configApi.use('*', authMiddleware);
+serversApi.use('*', authMiddleware);
+toolsApi.use('*', authMiddleware);
+groupsApi.use('*', authMiddleware);
+dashboardApi.use('*', authMiddleware);
+apiToMcpRoutes.use('*', authMiddleware);
 
 app.route('/', mcp);
 app.route('/', sse);
 // 具体的 API 路由放在通配符路由之前，避免被拦截
 app.route('/api', hubApi);
-app.route('/api/groups', groupsApi);
 app.route('/api/auth', createAuthApi(authService));
 app.route('/api/config', configApi);
 app.route('/api/dashboard', dashboardApi);
