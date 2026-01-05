@@ -1,6 +1,16 @@
+import path from 'path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@mcp-core/mcp-hub-core': path.resolve(__dirname, '../packages/core/src'),
+      '@mcp-core/mcp-hub-share': path.resolve(
+        __dirname,
+        '../packages/share/src',
+      ),
+    },
+  },
   test: {
     globals: true,
     environment: 'node',
