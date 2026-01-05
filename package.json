@@ -12,7 +12,7 @@
     "build:api": "pnpm --filter @mcp-core/mcp-hub-api build",
     "build:cli": "pnpm --filter @mcp-core/mcp-hub-cli build",
     "build:fe": "pnpm --filter @mcp-core/mcp-hub-web build",
-    "build:production": "pnpm build:core && pnpm build:api && pnpm build:cli && pnpm build:fe",
+    "build:production": "pnpm --filter @mcp-core/mcp-hub-share build && pnpm build:core && pnpm build:api && pnpm build:cli && pnpm build:fe",
     "check": "pnpm --filter \"@mcp-core/*\" check",
     "check:all": "biome check --write .",
     "inspector": "pnpx @modelcontextprotocol/inspector",

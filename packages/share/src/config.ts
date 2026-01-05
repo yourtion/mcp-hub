@@ -1,4 +1,4 @@
-import { ServerConfig } from './mcp';
+import { ServerConfig } from './mcp.js';
 
 export interface McpConfig {
   mcpServers: {
@@ -6,7 +6,7 @@ export interface McpConfig {
   };
 }
 
-interface Group {
+export interface Group {
   id: string; // group UUID
   name: string; // name of the group
   description?: string; // description of the group
@@ -19,6 +19,9 @@ interface Group {
     lastUpdated?: string;
   };
 }
+
+// Type alias for compatibility
+export type GroupInfo = Group;
 
 export interface GroupConfig {
   [group: string]: Group; // Key-value pairs of group names and their configurations

@@ -11,7 +11,7 @@ import type {
   ApiConfigInfo,
   Activity,
   McpMessage,
-} from './web-api.d.js';
+} from './web-api.js';
 
 // ============================================================================
 // 认证状态类型
