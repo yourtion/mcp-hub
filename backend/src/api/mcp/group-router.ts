@@ -3,7 +3,10 @@
  * 处理 /:group/mcp 路由，提供基于组的MCP服务访问
  */
 
-import { McpServiceManager, type ServerConfig as CoreServerConfig } from '@mcp-core/mcp-hub-core';
+import {
+  type ServerConfig as CoreServerConfig,
+  McpServiceManager,
+} from '@mcp-core/mcp-hub-core';
 import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { toFetchResponse, toReqRes } from 'fetch-to-node';

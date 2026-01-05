@@ -13,8 +13,9 @@ let testConfigDir: string | null = null;
 
 /**
  * 创建测试配置目录并写入测试配置文件
+ * @param enableAuth 是否启用认证，默认为 false
  */
-export function setupTestConfig(): string {
+export function setupTestConfig(enableAuth: boolean = false): string {
   if (testConfigDir) {
     return testConfigDir; // 已经设置过了
   }
@@ -92,7 +93,20 @@ export function setupTestConfig(): string {
         requireStrongPassword: false,
       },
     },
-    users: {},
+    users: enableAuth
+      ? {
+          admin: {
+            id: 'admin-user-id',
+            username: 'admin',
+            password: 'admin123',
+            passwordHash: '', // 将由 AuthService 自动生成
+            role: 'admin',
+            groups: [],
+            createdAt: new Date().toISOString(),
+            enabled: true,
+          },
+        }
+      : {},
     ui: {
       title: 'MCP Hub Test',
       theme: 'light',
@@ -169,7 +183,10 @@ export async function safeJsonParse(response: Response): Promise<any> {
     return JSON.parse(text);
   } catch (error) {
     // 返回错误信息，使用已读取的文本（如果可用）
-    console.warn('JSON解析失败:', error instanceof Error ? error.message : 'Unknown error');
+    console.warn(
+      'JSON解析失败:',
+      error instanceof Error ? error.message : 'Unknown error',
+    );
 
     return {
       error: 'JSON_PARSE_ERROR',

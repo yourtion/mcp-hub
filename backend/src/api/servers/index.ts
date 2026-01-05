@@ -248,7 +248,9 @@ serversApi.post('/', async (c) => {
     };
 
     // 创建可变副本用于保存
-    const mutableConfig = JSON.parse(JSON.stringify(updatedMcpConfig)) as McpConfig;
+    const mutableConfig = JSON.parse(
+      JSON.stringify(updatedMcpConfig),
+    ) as McpConfig;
     await saveConfig('mcp_server.json', mutableConfig);
 
     // 重新初始化服务器管理器以包含新服务器
@@ -329,7 +331,9 @@ serversApi.put('/:id', async (c) => {
     };
 
     // 创建可变副本用于保存
-    const mutableConfig = JSON.parse(JSON.stringify(updatedMcpConfig)) as McpConfig;
+    const mutableConfig = JSON.parse(
+      JSON.stringify(updatedMcpConfig),
+    ) as McpConfig;
     await saveConfig('mcp_server.json', mutableConfig);
 
     // 重新初始化服务器管理器以应用新配置
@@ -386,7 +390,9 @@ serversApi.delete('/:id', async (c) => {
     };
 
     // 创建可变副本用于保存
-    const mutableConfig = JSON.parse(JSON.stringify(updatedMcpConfig)) as McpConfig;
+    const mutableConfig = JSON.parse(
+      JSON.stringify(updatedMcpConfig),
+    ) as McpConfig;
     await saveConfig('mcp_server.json', mutableConfig);
 
     // 重新初始化服务器管理器

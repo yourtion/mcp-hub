@@ -315,7 +315,9 @@ export class ConfigService implements IConfigService {
 
       // 类型守卫：检查是否为 HTTPServerConfig
       if ('transport' in serverConfig) {
-        const transport = (serverConfig as { transport?: { type?: string; url?: string } }).transport;
+        const transport = (
+          serverConfig as { transport?: { type?: string; url?: string } }
+        ).transport;
         if (transport?.type === 'sse' && !transport.url) {
           errors.push({
             path: `mcpServers.${serverId}.transport.url`,
@@ -910,7 +912,9 @@ export class ConfigService implements IConfigService {
 
       // 测试传输配置（仅 HTTPServerConfig）
       if ('transport' in serverConfig) {
-        const transport = (serverConfig as { transport?: { type?: string; url?: string } }).transport;
+        const transport = (
+          serverConfig as { transport?: { type?: string; url?: string } }
+        ).transport;
         if (transport) {
           if (transport.type === 'sse' && transport.url) {
             // 可以添加URL可达性测试

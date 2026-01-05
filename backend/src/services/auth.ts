@@ -2,9 +2,9 @@
  * 认证服务
  */
 
+import type { DeepReadonly, SystemConfig } from '@mcp-core/mcp-hub-share';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import type { DeepReadonly, SystemConfig } from '@mcp-core/mcp-hub-share';
 import type {
   JwtPayload,
   LoginAttempt,

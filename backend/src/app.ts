@@ -36,12 +36,40 @@ app.use('*', secureHeadersMiddleware());
 app.use('*', createPerformanceMiddleware());
 
 // 初始化认证服务
-app.use('*', async (_c, next) => {
+app.use('*', async (c, next) => {
   // 确保认证服务已初始化
   try {
     await authService.initialize();
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     logger.error('Failed to initialize auth service', error as Error);
+
+    // 在测试环境中，区分配置文件不存在/无效和其他错误
+    if (process.env.NODE_ENV === 'test') {
+      // 如果是配置文件不存在或无法读取的错误，继续执行（允许某些测试不配置认证）
+      if (
+        errorMessage.includes('ENOENT') ||
+        errorMessage.includes('no such file') ||
+        errorMessage.includes('Cannot convert undefined or null to object') ||
+        errorMessage.includes('Failed to load system config')
+      ) {
+        await next();
+        return;
+      }
+
+      // 其他错误（如配置格式错误）应该明确失败
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: 'AUTH_INIT_FAILED',
+            message: 'Authentication service failed to initialize',
+            details: errorMessage,
+          },
+        },
+        500,
+      );
+    }
   }
   await next();
 });
@@ -90,6 +118,7 @@ app.route('/api/debug', debugApi);
 app.route('/api/servers', serversApi);
 app.route('/api/tools', toolsApi);
 app.route('/api/tools-admin', toolsAdminApi);
+app.route('/api/groups', groupsApi);
 app.route('/api/performance', performanceApi);
 app.route('/api/api-to-mcp', apiToMcpRoutes);
 // 通配符路由放在最后

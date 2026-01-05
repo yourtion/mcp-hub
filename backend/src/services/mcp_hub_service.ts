@@ -1,4 +1,8 @@
-import type { DeepReadonly, GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
+import type {
+  DeepReadonly,
+  GroupConfig,
+  ServerConfig,
+} from '@mcp-core/mcp-hub-share';
 import type {
   Group,
   McpHubService as IMcpHubService,
@@ -82,7 +86,10 @@ export class McpHubService implements IMcpHubService {
   private healthCheckTimers: Array<NodeJS.Timeout | NodeJS.Immediate> = []; // 追踪所有定时器
   private readonly HEALTH_CHECK_INTERVAL_MS = 30000; // 30 seconds
   private shutdownInProgress = false;
-  private serverConfigs: Record<string, ServerConfig> = {} as Record<string, ServerConfig>;
+  private serverConfigs: Record<string, ServerConfig> = {} as Record<
+    string,
+    ServerConfig
+  >;
   private groupConfigs: GroupConfig = {} as GroupConfig;
   private initializationTime?: Date;
   private lastHealthCheck?: Date;

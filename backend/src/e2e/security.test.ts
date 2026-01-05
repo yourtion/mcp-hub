@@ -6,10 +6,7 @@
 import { serve } from '@hono/node-server';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { app } from '../app.js';
-import {
-  cleanupTestConfig,
-  setupTestConfig,
-} from './test-utils.js';
+import { cleanupTestConfig, setupTestConfig } from './test-utils.js';
 
 describe('安全功能端到端测试', () => {
   let server: ReturnType<typeof serve>;
@@ -74,7 +71,7 @@ describe('安全功能端到端测试', () => {
       });
 
       const loginData = await loginResponse.json();
-      const token = loginData.data.accessToken;  // 注意是 accessToken
+      const token = loginData.data.accessToken; // 注意是 accessToken
 
       // 使用有效token访问受保护资源
       const response = await fetch(`${baseUrl}/api/servers`, {

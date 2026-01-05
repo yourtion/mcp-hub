@@ -49,7 +49,9 @@ describe('快速场景测试', () => {
       expect(groupsData.data).toHaveProperty('groups');
       expect(Array.isArray(groupsData.data.groups)).toBe(true);
 
-      console.log(`✅ 新用户发现流程完成，发现 ${groupsData.data.totalGroups} 个组`);
+      console.log(
+        `✅ 新用户发现流程完成，发现 ${groupsData.data.totalGroups} 个组`,
+      );
     }, 10000); // 减少超时时间
 
     it('应该能够快速处理探索性请求', async () => {

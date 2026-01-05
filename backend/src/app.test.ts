@@ -32,6 +32,8 @@ vi.mock('./sse', () => ({
 describe('App', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // 设置测试环境变量
+    process.env.NODE_ENV = 'test';
   });
 
   it('应该是一个Hono应用实例', async () => {

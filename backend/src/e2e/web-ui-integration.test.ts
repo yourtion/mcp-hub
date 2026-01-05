@@ -6,10 +6,7 @@
 import { serve } from '@hono/node-server';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { app } from '../app.js';
-import {
-  cleanupTestConfig,
-  setupTestConfig,
-} from './test-utils.js';
+import { cleanupTestConfig, setupTestConfig } from './test-utils.js';
 
 describe('Web UI 集成端到端测试', () => {
   let server: ReturnType<typeof serve>;
@@ -256,8 +253,8 @@ describe('Web UI 集成端到端测试', () => {
 
         expect(response.status).toBe(200);
         const data = await response.json();
-      expect(data).toHaveProperty('success', true);
-      expect(data).toHaveProperty('data');
+        expect(data).toHaveProperty('success', true);
+        expect(data).toHaveProperty('data');
         expect(data.data).toHaveProperty('tools');
       }
     });
