@@ -8,6 +8,7 @@ import { app } from '../app.js';
 import {
   cleanupTestConfig,
   cleanupTestEnvironment,
+  createAuthenticatedRequest,
   safeJsonParse,
   setupTestConfig,
   setupTestEnvironment,
@@ -17,11 +18,30 @@ import {
 describe('API端点集成测试', () => {
   let testApp: any;
   let restoreConsole: () => void;
+  let authToken: string;
+  let authRequest: (path: string, init?: RequestInit) => Promise<Response>;
 
   beforeAll(async () => {
     testApp = app;
     restoreConsole = setupTestEnvironment();
     setupTestConfig();
+    await sleep(500); // 等待配置初始化
+
+    // 登录获取认证token
+    const loginResponse = await testApp.request('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: 'admin',
+        password: 'admin123',
+      }),
+    });
+
+    if (loginResponse.status === 200) {
+      const loginData = await loginResponse.json();
+      authToken = loginData.data.accessToken;
+      authRequest = createAuthenticatedRequest(testApp, authToken);
+    }
   });
 
   afterAll(async () => {
@@ -77,7 +97,7 @@ describe('API端点集成测试', () => {
 
   describe('组管理API测试', () => {
     it('应该能够获取组列表', async () => {
-      const response = await testApp.request('/api/groups');
+      const response = await authRequest('/api/groups');
       expect(response.status).toBe(200);
 
       const data = await safeJsonParse(response);
@@ -88,7 +108,7 @@ describe('API端点集成测试', () => {
     });
 
     it('应该能够处理组详情请求', async () => {
-      const listResponse = await testApp.request('/api/groups');
+      const listResponse = await authRequest('/api/groups');
       const listData = await safeJsonParse(listResponse);
 
       expect(listData.data).toBeDefined();
@@ -96,7 +116,7 @@ describe('API端点集成测试', () => {
       expect(listData.data.groups.length).toBeGreaterThan(0);
 
       const firstGroup = listData.data.groups[0];
-      const response = await testApp.request(`/api/groups/${firstGroup.id}`);
+      const response = await authRequest(`/api/groups/${firstGroup.id}`);
 
       expect(response.status).toBe(200);
       const data = await safeJsonParse(response);
@@ -104,7 +124,7 @@ describe('API端点集成测试', () => {
     });
 
     it('应该能够处理组健康检查', async () => {
-      const listResponse = await testApp.request('/api/groups');
+      const listResponse = await authRequest('/api/groups');
       const listData = await safeJsonParse(listResponse);
 
       expect(listData.data).toBeDefined();
@@ -112,7 +132,7 @@ describe('API端点集成测试', () => {
       expect(listData.data.groups.length).toBeGreaterThan(0);
 
       const firstGroup = listData.data.groups[0];
-      const response = await testApp.request(
+      const response = await authRequest(
         `/api/groups/${firstGroup.id}/health`,
       );
 
@@ -122,7 +142,7 @@ describe('API端点集成测试', () => {
     });
 
     it('应该能够获取组工具列表', async () => {
-      const listResponse = await testApp.request('/api/groups');
+      const listResponse = await authRequest('/api/groups');
       const listData = await safeJsonParse(listResponse);
 
       expect(listData.data).toBeDefined();
@@ -130,7 +150,7 @@ describe('API端点集成测试', () => {
       expect(listData.data.groups.length).toBeGreaterThan(0);
 
       const firstGroup = listData.data.groups[0];
-      const response = await testApp.request(
+      const response = await authRequest(
         `/api/groups/${firstGroup.id}/tools`,
       );
 
@@ -142,7 +162,7 @@ describe('API端点集成测试', () => {
     });
 
     it('应该能够获取组服务器列表', async () => {
-      const listResponse = await testApp.request('/api/groups');
+      const listResponse = await authRequest('/api/groups');
       const listData = await safeJsonParse(listResponse);
 
       expect(listData.data).toBeDefined();
@@ -150,7 +170,7 @@ describe('API端点集成测试', () => {
       expect(listData.data.groups.length).toBeGreaterThan(0);
 
       const firstGroup = listData.data.groups[0];
-      const response = await testApp.request(
+      const response = await authRequest(
         `/api/groups/${firstGroup.id}/servers`,
       );
 
@@ -169,7 +189,7 @@ describe('API端点集成测试', () => {
     });
 
     it('应该能够处理不存在的组', async () => {
-      const response = await testApp.request('/api/groups/nonexistent-group');
+      const response = await authRequest('/api/groups/nonexistent-group');
       expect(response.status).toBe(404);
 
       const data = await safeJsonParse(response);
@@ -179,7 +199,7 @@ describe('API端点集成测试', () => {
     });
 
     it('应该能够处理无效的HTTP方法', async () => {
-      const response = await testApp.request('/api/groups', {
+      const response = await authRequest('/api/groups', {
         method: 'DELETE',
       });
 
@@ -204,7 +224,7 @@ describe('API端点集成测试', () => {
 
     it('应该能够在合理时间内响应', async () => {
       const startTime = Date.now();
-      const response = await testApp.request('/api/groups');
+      const response = await authRequest('/api/groups');
       const endTime = Date.now();
       const responseTime = endTime - startTime;
 
@@ -217,7 +237,7 @@ describe('API端点集成测试', () => {
       const requestCount = 10; // 减少请求数量
 
       for (let i = 0; i < requestCount; i++) {
-        const response = await testApp.request('/api/groups');
+        const response = await authRequest('/api/groups');
         expect(response.status).toBe(200);
         await safeJsonParse(response);
 
@@ -248,7 +268,7 @@ describe('API端点集成测试', () => {
 
     it('应该能够处理大量数据请求', async () => {
       const largeGroupId = 'a'.repeat(100); // 减少长度
-      const response = await testApp.request(
+      const response = await authRequest(
         `/api/groups/${encodeURIComponent(largeGroupId)}`,
       );
 

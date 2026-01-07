@@ -17,6 +17,7 @@ import {
 describe('稳定的端到端测试', () => {
   let testApp: any;
   let restoreConsole: () => void;
+  let authToken: string;
 
   beforeAll(async () => {
     testApp = app;
@@ -24,6 +25,21 @@ describe('稳定的端到端测试', () => {
     setupTestConfig();
     // 减少等待时间
     await sleep(1000);
+
+    // 登录获取认证token
+    const loginResponse = await testApp.request('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: 'admin',
+        password: 'admin123',
+      }),
+    });
+
+    if (loginResponse.status === 200) {
+      const loginData = await loginResponse.json();
+      authToken = loginData.data.accessToken;
+    }
   });
 
   afterAll(async () => {
@@ -47,7 +63,9 @@ describe('稳定的端到端测试', () => {
     });
 
     it('应该能够获取组列表', async () => {
-      const response = await testApp.request('/api/groups');
+      const response = await testApp.request('/api/groups', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
 
       expect(response.status).toBe(200);
 
@@ -69,7 +87,9 @@ describe('稳定的端到端测试', () => {
     });
 
     it('应该能够处理不存在的组', async () => {
-      const response = await testApp.request('/api/groups/nonexistent-group');
+      const response = await testApp.request('/api/groups/nonexistent-group', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
 
       expect(response.status).toBe(404);
 
@@ -135,7 +155,9 @@ describe('稳定的端到端测试', () => {
 
       for (const specialChar of specialChars) {
         const encodedChar = encodeURIComponent(specialChar);
-        const response = await testApp.request(`/api/groups/${encodedChar}`);
+        const response = await testApp.request(`/api/groups/${encodedChar}`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
 
         expect(response.status).toBeGreaterThanOrEqual(200);
         expect(response.status).toBeLessThan(600);
@@ -148,6 +170,9 @@ describe('稳定的端到端测试', () => {
       const largeGroupId = 'a'.repeat(100);
       const response = await testApp.request(
         `/api/groups/${encodeURIComponent(largeGroupId)}`,
+        {
+          headers: { Authorization: `Bearer ${authToken}` },
+        },
       );
 
       expect([400, 404, 414]).toContain(response.status);
@@ -173,7 +198,9 @@ describe('稳定的端到端测试', () => {
     });
 
     it('应该保持组列表的响应格式', async () => {
-      const response = await testApp.request('/api/groups');
+      const response = await testApp.request('/api/groups', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       const data = await safeJsonParse(response);
 
       expect(data).toHaveProperty('data');
@@ -254,7 +281,10 @@ describe('稳定的端到端测试', () => {
       const endpoints = ['/api/ping', '/api/groups'];
 
       for (const endpoint of endpoints) {
-        const response = await testApp.request(endpoint);
+        const headers = endpoint === '/api/groups'
+          ? { Authorization: `Bearer ${authToken}` }
+          : {};
+        const response = await testApp.request(endpoint, { headers });
         expect(response.status).toBe(200);
       }
 
@@ -263,13 +293,16 @@ describe('稳定的端到端测试', () => {
 
     it('应该返回正确的HTTP状态码', async () => {
       const testCases = [
-        { path: '/api/ping', expectedStatus: 200 },
-        { path: '/api/groups', expectedStatus: 200 },
-        { path: '/api/nonexistent', expectedStatus: 404 },
+        { path: '/api/ping', expectedStatus: 200, needsAuth: false },
+        { path: '/api/groups', expectedStatus: 200, needsAuth: true },
+        { path: '/api/nonexistent', expectedStatus: 404, needsAuth: false },
       ];
 
       for (const testCase of testCases) {
-        const response = await testApp.request(testCase.path);
+        const headers = testCase.needsAuth
+          ? { Authorization: `Bearer ${authToken}` }
+          : {};
+        const response = await testApp.request(testCase.path, { headers });
         expect(response.status).toBe(testCase.expectedStatus);
       }
 

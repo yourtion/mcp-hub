@@ -13,9 +13,9 @@ let testConfigDir: string | null = null;
 
 /**
  * 创建测试配置目录并写入测试配置文件
- * @param enableAuth 是否启用认证，默认为 false
+ * @param enableAuth 是否启用认证，默认为 true
  */
-export function setupTestConfig(enableAuth: boolean = false): string {
+export function setupTestConfig(enableAuth: boolean = true): string {
   if (testConfigDir) {
     return testConfigDir; // 已经设置过了
   }
@@ -24,13 +24,31 @@ export function setupTestConfig(enableAuth: boolean = false): string {
   testConfigDir = path.join(tmpdir(), `mcp-hub-test-${Date.now()}`);
   mkdirSync(testConfigDir, { recursive: true });
 
-  // 设置环境变量
+  // 设置环境变量（在创建文件前设置）
   process.env.CONFIG_PATH = testConfigDir;
+
+  // 立即验证目录可写
+  try {
+    const testFile = path.join(testConfigDir, '.test-write');
+    writeFileSync(testFile, 'test');
+    rmSync(testFile);
+  } catch (error) {
+    throw new Error(
+      `测试配置目录不可写: ${testConfigDir}. 错误: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 
   // 写入测试配置文件
 
   // 1. group.json - 测试组配置
   const groupConfig = {
+    default: {
+      id: 'default',
+      name: '默认组',
+      description: '默认测试组',
+      servers: ['test-server-1'],
+      tools: [],
+    },
     'test-group-1': {
       id: 'test-group-1',
       name: '测试组 1',
@@ -143,6 +161,25 @@ export function cleanupTestConfig(): void {
   }
   testConfigDir = null;
   delete process.env.CONFIG_PATH;
+}
+
+/**
+ * 创建带认证的请求辅助函数
+ * @param testApp 测试应用实例
+ * @param authToken 认证token
+ * @returns 带认证的请求函数
+ */
+export function createAuthenticatedRequest(
+  testApp: any,
+  authToken: string,
+) {
+  return async (path: string, init?: RequestInit) => {
+    const headers = {
+      ...(init?.headers || {}),
+      Authorization: `Bearer ${authToken}`,
+    };
+    return testApp.request(path, { ...init, headers });
+  };
 }
 
 /**

@@ -35,41 +35,15 @@ app.use('*', secureHeadersMiddleware());
 // 性能监控中间件（在所有路由之前）
 app.use('*', createPerformanceMiddleware());
 
-// 初始化认证服务
+// 认证服务初始化中间件（不阻止请求，只是确保服务已初始化）
 app.use('*', async (c, next) => {
-  // 确保认证服务已初始化
   try {
     await authService.initialize();
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error('Failed to initialize auth service', error as Error);
-
-    // 在测试环境中，区分配置文件不存在/无效和其他错误
-    if (process.env.NODE_ENV === 'test') {
-      // 如果是配置文件不存在或无法读取的错误，继续执行（允许某些测试不配置认证）
-      if (
-        errorMessage.includes('ENOENT') ||
-        errorMessage.includes('no such file') ||
-        errorMessage.includes('Cannot convert undefined or null to object') ||
-        errorMessage.includes('Failed to load system config')
-      ) {
-        await next();
-        return;
-      }
-
-      // 其他错误（如配置格式错误）应该明确失败
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'AUTH_INIT_FAILED',
-            message: 'Authentication service failed to initialize',
-            details: errorMessage,
-          },
-        },
-        500,
-      );
-    }
+    // 初始化失败不阻止请求，只记录错误
+    // 公开端点（如登录）仍然可以工作
+    // 受保护的端点会在认证中间件中处理初始化失败
+    logger.warn('认证服务初始化失败，某些功能可能不可用', error as Error);
   }
   await next();
 });
@@ -106,6 +80,14 @@ toolsApi.use('*', authMiddleware);
 groupsApi.use('*', authMiddleware);
 dashboardApi.use('*', authMiddleware);
 apiToMcpRoutes.use('*', authMiddleware);
+
+// 也在app级别应用认证中间件到受保护的API路径（确保生效）
+app.use('/api/servers/*', authMiddleware);
+app.use('/api/tools/*', authMiddleware);
+app.use('/api/groups/*', authMiddleware);
+app.use('/api/config/*', authMiddleware);
+app.use('/api/dashboard/*', authMiddleware);
+app.use('/api/api-to-mcp/*', authMiddleware);
 
 app.route('/', mcp);
 app.route('/', sse);

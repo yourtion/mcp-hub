@@ -13,8 +13,13 @@ describe('安全功能端到端测试', () => {
   let baseUrl: string;
 
   beforeAll(async () => {
+    // 1. 先创建测试配置
     setupTestConfig(true); // 启用认证以测试安全功能
 
+    // 2. 等待文件系统同步
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // 3. 启动服务器
     const port = 3101;
     baseUrl = `http://localhost:${port}`;
 
@@ -23,6 +28,7 @@ describe('安全功能端到端测试', () => {
       port,
     });
 
+    // 4. 等待服务器完全启动
     await new Promise((resolve) => setTimeout(resolve, 500));
   });
 
@@ -203,7 +209,7 @@ describe('安全功能端到端测试', () => {
       });
 
       const loginData = await loginResponse.json();
-      const refreshToken = loginData.refreshToken;
+      const refreshToken = loginData.data.refreshToken;
 
       // 使用refresh token获取新的access token
       const refreshResponse = await fetch(`${baseUrl}/api/auth/refresh`, {
@@ -214,7 +220,7 @@ describe('安全功能端到端测试', () => {
 
       expect(refreshResponse.status).toBe(200);
       const refreshData = await refreshResponse.json();
-      expect(refreshData).toHaveProperty('token');
+      expect(refreshData.data).toHaveProperty('accessToken');
     });
 
     it('应该拒绝已使用的refresh token', async () => {
@@ -229,7 +235,7 @@ describe('安全功能端到端测试', () => {
       });
 
       const loginData = await loginResponse.json();
-      const refreshToken = loginData.refreshToken;
+      const refreshToken = loginData.data.refreshToken;
 
       // 第一次刷新
       await fetch(`${baseUrl}/api/auth/refresh`, {
@@ -264,7 +270,7 @@ describe('安全功能端到端测试', () => {
       });
 
       const loginData = await loginResponse.json();
-      validToken = loginData.token;
+      validToken = loginData.data.accessToken;
     });
 
     it('应该允许访问公开端点', async () => {
@@ -323,7 +329,7 @@ describe('安全功能端到端测试', () => {
       });
 
       const loginData = await loginResponse.json();
-      validToken = loginData.token;
+      validToken = loginData.data.accessToken;
     });
 
     it('应该验证服务器配置输入', async () => {
@@ -404,7 +410,7 @@ describe('安全功能端到端测试', () => {
       });
 
       const loginData = await loginResponse.json();
-      const token = loginData.token;
+      const token = loginData.data.accessToken;
 
       const response = await fetch(`${baseUrl}/api/servers`, {
         headers: {
@@ -430,7 +436,7 @@ describe('安全功能端到端测试', () => {
         }),
       });
       const login1Data = await login1Response.json();
-      const token1 = login1Data.token;
+      const token1 = login1Data.data.accessToken;
 
       // 用户2登录（同一用户的另一个会话）
       const login2Response = await fetch(`${baseUrl}/api/auth/login`, {
@@ -442,7 +448,7 @@ describe('安全功能端到端测试', () => {
         }),
       });
       const login2Data = await login2Response.json();
-      const token2 = login2Data.token;
+      const token2 = login2Data.data.accessToken;
 
       // 两个token应该不同
       expect(token1).not.toBe(token2);
@@ -470,7 +476,7 @@ describe('安全功能端到端测试', () => {
         }),
       });
       const loginData = await loginResponse.json();
-      const token = loginData.token;
+      const token = loginData.data.accessToken;
 
       // 登出
       await fetch(`${baseUrl}/api/auth/logout`, {

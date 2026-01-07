@@ -29,6 +29,10 @@ export class AuthService {
    * 初始化认证服务
    */
   async initialize(): Promise<void> {
+    // 如果已经初始化，跳过
+    if (this.config) {
+      return;
+    }
     await this.loadConfig();
   }
 
@@ -256,11 +260,15 @@ export class AuthService {
       throw new Error('Auth service not initialized');
     }
 
+    // 生成唯一的 JWT ID
+    const jti = this.generateSessionId();
+
     const payload: Omit<JwtPayload, 'iat' | 'exp'> = {
       sub: user.id,
       username: user.username,
       role: user.role,
       iss: this.config.auth.jwt.issuer,
+      jti, // 添加唯一标识符
     };
 
     return jwt.sign(payload, this.config.auth.jwt.secret, {
@@ -276,10 +284,14 @@ export class AuthService {
       throw new Error('Auth service not initialized');
     }
 
+    // 生成唯一的 JWT ID
+    const jti = this.generateSessionId();
+
     const payload: Omit<RefreshTokenPayload, 'iat' | 'exp'> = {
       sub: user.id,
       type: 'refresh',
       iss: this.config.auth.jwt.issuer,
+      jti, // 添加唯一标识符
     };
 
     return jwt.sign(payload, this.config.auth.jwt.secret, {
