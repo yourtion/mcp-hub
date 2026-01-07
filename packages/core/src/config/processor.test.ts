@@ -19,12 +19,16 @@ import {
 vi.mock('node:fs/promises');
 const mockFs = vi.mocked(fs);
 
-// 模拟控制台方法
+// 模拟控制台方法（完整的 console 对象）
 const mockConsole = {
+  log: vi.fn(),
   info: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
   debug: vi.fn(),
+  trace: vi.fn(),
+  table: vi.fn(),
+  dir: vi.fn(),
 };
 
 // 替换全局console

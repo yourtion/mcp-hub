@@ -9,6 +9,9 @@ import { ApiToolsConfigSchema } from '../config/api-config-schemas.js';
 import type { ApiToolConfig, ApiToolsConfig } from '../types/api-config.js';
 import type { ValidationResult } from '../types/api-tool.js';
 import { EnvironmentResolverImpl } from '../utils/environment-resolver.js';
+import { createLogger } from '../../utils/logger.js';
+
+const logger = createLogger('ApiConfigManager');
 
 /**
  * 配置加载错误
@@ -123,7 +126,7 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
 
       const resolvedTools = resolvedConfig.tools;
 
-      console.log(`成功加载 ${resolvedTools.length} 个API工具配置`);
+      logger.info(`成功加载 ${resolvedTools.length} 个API工具配置`);
       return resolvedTools;
     } catch (error) {
       if (error instanceof ConfigLoadError) {
@@ -230,15 +233,15 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
         { persistent: false },
         (eventType) => {
           if (eventType === 'change') {
-            console.log('检测到配置文件变化，重新加载配置...');
+            logger.info('检测到配置文件变化，重新加载配置...');
             this.handleConfigChange();
           }
         },
       );
 
-      console.log(`开始监听配置文件变化: ${this.configPath}`);
+      logger.info(`开始监听配置文件变化: ${this.configPath}`);
     } catch (error) {
-      console.error('启动配置文件监听失败:', error);
+      logger.error('启动配置文件监听失败:', error);
       throw new Error(
         `启动配置文件监听失败: ${error instanceof Error ? error.message : '未知错误'}`,
       );
@@ -256,9 +259,9 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
 
       const newConfig = await this.loadConfig(this.configPath);
       this.watchCallback(newConfig);
-      console.log('配置文件重新加载成功');
+      logger.info('配置文件重新加载成功');
     } catch (error) {
-      console.error('重新加载配置文件失败:', error);
+      logger.error('重新加载配置文件失败:', error);
       // 不抛出错误，避免中断监听
     }
   }
@@ -295,7 +298,7 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
     if (this.watcher) {
       this.watcher.close();
       this.watcher = undefined;
-      console.log('已停止监听配置文件变化');
+      logger.info('已停止监听配置文件变化');
     }
     this.watchCallback = undefined;
   }
