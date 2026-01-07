@@ -1,4 +1,4 @@
-import type { ServerConfig } from '@mcp-core/mcp-hub-share';
+import type { McpConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { ServerManager } from '../../services/server_manager.js';
@@ -247,7 +247,11 @@ serversApi.post('/', async (c) => {
       },
     };
 
-    await saveConfig('mcp_server.json', updatedMcpConfig);
+    // 创建可变副本用于保存
+    const mutableConfig = JSON.parse(
+      JSON.stringify(updatedMcpConfig),
+    ) as McpConfig;
+    await saveConfig('mcp_server.json', mutableConfig);
 
     // 重新初始化服务器管理器以包含新服务器
     serverManager = null;
@@ -326,7 +330,11 @@ serversApi.put('/:id', async (c) => {
       },
     };
 
-    await saveConfig('mcp_server.json', updatedMcpConfig);
+    // 创建可变副本用于保存
+    const mutableConfig = JSON.parse(
+      JSON.stringify(updatedMcpConfig),
+    ) as McpConfig;
+    await saveConfig('mcp_server.json', mutableConfig);
 
     // 重新初始化服务器管理器以应用新配置
     serverManager = null;
@@ -381,7 +389,11 @@ serversApi.delete('/:id', async (c) => {
       mcpServers: remainingServers,
     };
 
-    await saveConfig('mcp_server.json', updatedMcpConfig);
+    // 创建可变副本用于保存
+    const mutableConfig = JSON.parse(
+      JSON.stringify(updatedMcpConfig),
+    ) as McpConfig;
+    await saveConfig('mcp_server.json', mutableConfig);
 
     // 重新初始化服务器管理器
     serverManager = null;

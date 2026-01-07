@@ -2,24 +2,25 @@
  * 认证服务
  */
 
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import type { DeepReadonly, SystemConfig } from '@mcp-core/mcp-hub-share';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type {
   JwtPayload,
   LoginAttempt,
   RefreshTokenPayload,
-  SystemConfig,
-  UserCredentials,
   UserSession,
 } from '../types/auth.js';
+import { getAllConfig } from '../utils/config.js';
+
+// 从 SystemConfig 中提取用户凭据的只读类型
+type ReadonlyUserCredentials = DeepReadonly<SystemConfig>['users'][string];
 
 /**
  * 认证服务类
  */
 export class AuthService {
-  private config: SystemConfig | null = null;
+  private config: DeepReadonly<SystemConfig> | null = null;
   private loginAttempts = new Map<string, LoginAttempt[]>();
   private sessions = new Map<string, UserSession>();
   private blacklistedTokens = new Set<string>();
@@ -28,6 +29,10 @@ export class AuthService {
    * 初始化认证服务
    */
   async initialize(): Promise<void> {
+    // 如果已经初始化，跳过
+    if (this.config) {
+      return;
+    }
     await this.loadConfig();
   }
 
@@ -36,9 +41,10 @@ export class AuthService {
    */
   private async loadConfig(): Promise<void> {
     try {
-      const configPath = path.join(process.cwd(), 'config', 'system.json');
-      const configData = await fs.readFile(configPath, 'utf-8');
-      this.config = JSON.parse(configData) as SystemConfig;
+      // 使用配置工具函数获取配置
+      const config = await getAllConfig();
+      // config.system 已经是 DeepReadonly<SystemConfig> 类型
+      this.config = config.system as DeepReadonly<SystemConfig>;
 
       // 确保所有用户都有密码哈希
       await this.ensurePasswordHashes();
@@ -48,37 +54,17 @@ export class AuthService {
   }
 
   /**
-   * 确保所有用户都有密码哈希
+   * 确保所有用户都有密码哈希（仅在内存中）
    */
   private async ensurePasswordHashes(): Promise<void> {
     if (!this.config) return;
 
-    let configChanged = false;
-    for (const [_username, user] of Object.entries(this.config.users)) {
+    // 只是在内存中补充缺失的密码哈希，不修改配置文件
+    for (const user of Object.values(this.config.users)) {
       if (!user.passwordHash && user.password) {
-        user.passwordHash = await bcrypt.hash(user.password, 10);
-        configChanged = true;
+        // 在内存中生成哈希，但不保存到文件
+        (user as any).passwordHash = await bcrypt.hash(user.password, 10);
       }
-    }
-
-    // 如果配置有变化，保存回文件
-    if (configChanged) {
-      await this.saveConfig();
-    }
-  }
-
-  /**
-   * 保存配置到文件
-   */
-  private async saveConfig(): Promise<void> {
-    if (!this.config) return;
-
-    try {
-      const configPath = path.join(process.cwd(), 'config', 'system.json');
-      const configData = JSON.stringify(this.config, null, 2);
-      await fs.writeFile(configPath, configData, 'utf-8');
-    } catch (error) {
-      console.error('Failed to save system config:', error);
     }
   }
 
@@ -143,10 +129,6 @@ export class AuthService {
       userAgent,
     };
     this.sessions.set(sessionId, session);
-
-    // 更新用户最后登录时间
-    user.lastLogin = new Date().toISOString();
-    await this.saveConfig();
 
     return {
       user: {
@@ -273,16 +255,20 @@ export class AuthService {
   /**
    * 生成访问token
    */
-  private generateAccessToken(user: UserCredentials): string {
+  private generateAccessToken(user: ReadonlyUserCredentials): string {
     if (!this.config) {
       throw new Error('Auth service not initialized');
     }
+
+    // 生成唯一的 JWT ID
+    const jti = this.generateSessionId();
 
     const payload: Omit<JwtPayload, 'iat' | 'exp'> = {
       sub: user.id,
       username: user.username,
       role: user.role,
       iss: this.config.auth.jwt.issuer,
+      jti, // 添加唯一标识符
     };
 
     return jwt.sign(payload, this.config.auth.jwt.secret, {
@@ -293,15 +279,19 @@ export class AuthService {
   /**
    * 生成刷新token
    */
-  private generateRefreshToken(user: UserCredentials): string {
+  private generateRefreshToken(user: ReadonlyUserCredentials): string {
     if (!this.config) {
       throw new Error('Auth service not initialized');
     }
+
+    // 生成唯一的 JWT ID
+    const jti = this.generateSessionId();
 
     const payload: Omit<RefreshTokenPayload, 'iat' | 'exp'> = {
       sub: user.id,
       type: 'refresh',
       iss: this.config.auth.jwt.issuer,
+      jti, // 添加唯一标识符
     };
 
     return jwt.sign(payload, this.config.auth.jwt.secret, {
@@ -405,7 +395,7 @@ export class AuthService {
   /**
    * 获取用户信息
    */
-  getUserById(userId: string): UserCredentials | null {
+  getUserById(userId: string): ReadonlyUserCredentials | null {
     if (!this.config) return null;
     return (
       Object.values(this.config.users).find((user) => user.id === userId) ||

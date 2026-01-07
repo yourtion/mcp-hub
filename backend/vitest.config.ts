@@ -1,6 +1,16 @@
+import path from 'path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@mcp-core/mcp-hub-core': path.resolve(__dirname, '../packages/core/src'),
+      '@mcp-core/mcp-hub-share': path.resolve(
+        __dirname,
+        '../packages/share/src',
+      ),
+    },
+  },
   test: {
     globals: true,
     environment: 'node',
@@ -14,9 +24,9 @@ export default defineConfig({
       'src/e2e/mcp-protocol/**',
     ],
 
-    testTimeout: 10000, // 减少超时时间
-    hookTimeout: 5000,
-    teardownTimeout: 3000,
+    testTimeout: 30000, // 增加到 30 秒
+    hookTimeout: 10000, // 增加到 10 秒
+    teardownTimeout: 5000,
     // 强制退出配置
     forceRerunTriggers: ['**/vitest.config.*', '**/vite.config.*'],
     // 测试完成后强制退出

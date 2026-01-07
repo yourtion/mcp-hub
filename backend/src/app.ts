@@ -35,13 +35,17 @@ app.use('*', secureHeadersMiddleware());
 // 性能监控中间件（在所有路由之前）
 app.use('*', createPerformanceMiddleware());
 
-// 初始化认证服务
-app.use('*', async (_c, next) => {
-  // 确保认证服务已初始化
+// 认证服务初始化中间件（不阻止请求，只是确保服务已初始化）
+app.use('*', async (c, next) => {
   try {
     await authService.initialize();
   } catch (error) {
-    logger.error('Failed to initialize auth service', error as Error);
+    // 初始化失败不阻止请求，只记录错误
+    // 公开端点（如登录）仍然可以工作
+    // 受保护的端点会在认证中间件中处理初始化失败
+    logger.warn('认证服务初始化失败，某些功能可能不可用', {
+      error: error instanceof Error ? error.message : String(error),
+    } as Record<string, unknown>);
   }
   await next();
 });
@@ -68,14 +72,29 @@ app.use('*', async (c, next) => {
   await next();
 });
 
-// 应用认证中间件到配置API
-configApi.use('*', createAuthMiddleware(authService));
+// 创建认证中间件
+const authMiddleware = createAuthMiddleware(authService);
+
+// 应用认证中间件到受保护的API路由
+configApi.use('*', authMiddleware);
+serversApi.use('*', authMiddleware);
+toolsApi.use('*', authMiddleware);
+groupsApi.use('*', authMiddleware);
+dashboardApi.use('*', authMiddleware);
+apiToMcpRoutes.use('*', authMiddleware);
+
+// 也在app级别应用认证中间件到受保护的API路径（确保生效）
+app.use('/api/servers/*', authMiddleware);
+app.use('/api/tools/*', authMiddleware);
+app.use('/api/groups/*', authMiddleware);
+app.use('/api/config/*', authMiddleware);
+app.use('/api/dashboard/*', authMiddleware);
+app.use('/api/api-to-mcp/*', authMiddleware);
 
 app.route('/', mcp);
 app.route('/', sse);
 // 具体的 API 路由放在通配符路由之前，避免被拦截
 app.route('/api', hubApi);
-app.route('/api/groups', groupsApi);
 app.route('/api/auth', createAuthApi(authService));
 app.route('/api/config', configApi);
 app.route('/api/dashboard', dashboardApi);
@@ -83,6 +102,7 @@ app.route('/api/debug', debugApi);
 app.route('/api/servers', serversApi);
 app.route('/api/tools', toolsApi);
 app.route('/api/tools-admin', toolsAdminApi);
+app.route('/api/groups', groupsApi);
 app.route('/api/performance', performanceApi);
 app.route('/api/api-to-mcp', apiToMcpRoutes);
 // 通配符路由放在最后

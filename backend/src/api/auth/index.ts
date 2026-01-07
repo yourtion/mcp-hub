@@ -311,7 +311,6 @@ export function createAuthApi(authService: AuthService) {
             role: user.role,
             groups: user.groups,
             createdAt: user.createdAt,
-            lastLogin: user.lastLogin,
           },
         },
         timestamp: new Date().toISOString(),

@@ -6,8 +6,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { app } from '../app.js';
 import {
+  cleanupTestConfig,
   cleanupTestEnvironment,
+  createAuthenticatedRequest,
   safeJsonParse,
+  setupTestConfig,
   setupTestEnvironment,
   sleep,
 } from './test-utils.js';
@@ -15,14 +18,35 @@ import {
 describe('快速场景测试', () => {
   let testApp: any;
   let restoreConsole: () => void;
+  let authToken: string;
+  let authRequest: (path: string, init?: RequestInit) => Promise<Response>;
 
   beforeAll(async () => {
     testApp = app;
     restoreConsole = setupTestEnvironment();
+    setupTestConfig();
     await sleep(500); // 减少等待时间
+
+    // 登录获取认证token
+    const loginResponse = await testApp.request('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: 'admin',
+        password: 'admin123',
+      }),
+    });
+
+    if (loginResponse.status === 200) {
+      const loginData = await loginResponse.json();
+      authToken = loginData.data.accessToken;
+      // 创建带认证的请求函数
+      authRequest = createAuthenticatedRequest(testApp, authToken);
+    }
   });
 
   afterAll(async () => {
+    cleanupTestConfig();
     cleanupTestEnvironment();
     restoreConsole();
   });
@@ -37,21 +61,30 @@ describe('快速场景测试', () => {
       expect(pingData.success).toBe(true);
 
       // 2. 查看可用的组
-      const groupsResponse = await testApp.request('/api/groups');
+      const groupsResponse = await testApp.request('/api/groups', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       expect(groupsResponse.status).toBe(200);
 
       const groupsData = await safeJsonParse(groupsResponse);
-      expect(groupsData).toHaveProperty('groups');
-      expect(Array.isArray(groupsData.groups)).toBe(true);
+      expect(groupsData).toHaveProperty('data');
+      expect(groupsData.data).toHaveProperty('groups');
+      expect(Array.isArray(groupsData.data.groups)).toBe(true);
 
-      console.log(`✅ 新用户发现流程完成，发现 ${groupsData.totalGroups} 个组`);
+      console.log(
+        `✅ 新用户发现流程完成，发现 ${groupsData.data.totalGroups} 个组`,
+      );
     }, 10000); // 减少超时时间
 
     it('应该能够快速处理探索性请求', async () => {
       const exploratoryEndpoints = ['/api/ping', '/api/groups'];
 
       for (const endpoint of exploratoryEndpoints) {
-        const response = await testApp.request(endpoint);
+        const headers =
+          endpoint === '/api/groups'
+            ? { Authorization: `Bearer ${authToken}` }
+            : {};
+        const response = await testApp.request(endpoint, { headers });
 
         expect(response.status).toBeGreaterThanOrEqual(200);
         expect(response.status).toBeLessThan(600);
@@ -69,18 +102,19 @@ describe('快速场景测试', () => {
   describe('高级用户快速工作流', () => {
     it('应该能够快速处理多步骤操作', async () => {
       // 1. 获取所有组
-      const groupsResponse = await testApp.request('/api/groups');
+      const groupsResponse = await testApp.request('/api/groups', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       const groupsData = await safeJsonParse(groupsResponse);
 
-      if (groupsData.groups.length === 0) {
-        console.log('⚠️ 没有可用组，跳过多步骤测试');
-        return;
-      }
+      expect(groupsData.data).toBeDefined();
+      expect(groupsData.data.groups).toBeDefined();
+      expect(groupsData.data.groups.length).toBeGreaterThan(0);
 
       // 2. 检查前几个组的状态（限制数量）
-      const groupsToCheck = groupsData.groups.slice(0, 2);
+      const groupsToCheck = groupsData.data.groups.slice(0, 2);
       const healthCheckPromises = groupsToCheck.map((group: any) =>
-        testApp.request(`/api/groups/${group.id}/health`),
+        authRequest(`/api/groups/${group.id}/health`),
       );
 
       const healthResponses = await Promise.all(healthCheckPromises);
@@ -93,19 +127,20 @@ describe('快速场景测试', () => {
     }, 10000);
 
     it('应该能够快速处理批量操作', async () => {
-      const groupsResponse = await testApp.request('/api/groups');
+      const groupsResponse = await testApp.request('/api/groups', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       const groupsData = await safeJsonParse(groupsResponse);
 
-      if (groupsData.groups.length === 0) {
-        console.log('⚠️ 没有可用组，跳过批量操作测试');
-        return;
-      }
+      expect(groupsData.data).toBeDefined();
+      expect(groupsData.data.groups).toBeDefined();
+      expect(groupsData.data.groups.length).toBeGreaterThan(0);
 
       // 限制批量操作的数量
-      const batchGroups = groupsData.groups.slice(0, 2);
+      const batchGroups = groupsData.data.groups.slice(0, 2);
       const batchRequests = batchGroups.map((group: any) => ({
-        detail: testApp.request(`/api/groups/${group.id}`),
-        tools: testApp.request(`/api/groups/${group.id}/tools`),
+        detail: authRequest(`/api/groups/${group.id}`),
+        tools: authRequest(`/api/groups/${group.id}/tools`),
       }));
 
       for (const requests of batchRequests) {
@@ -129,17 +164,20 @@ describe('快速场景测试', () => {
       expect(pingResponse.status).toBe(200);
 
       // 2. 获取组概览
-      const groupsResponse = await testApp.request('/api/groups');
+      const groupsResponse = await testApp.request('/api/groups', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       const groupsData = await safeJsonParse(groupsResponse);
 
-      expect(groupsData).toHaveProperty('totalGroups');
-      expect(typeof groupsData.totalGroups).toBe('number');
+      expect(groupsData).toHaveProperty('data');
+      expect(groupsData.data).toHaveProperty('totalGroups');
+      expect(typeof groupsData.data.totalGroups).toBe('number');
 
       // 3. 快速检查部分组的健康状态
-      if (groupsData.groups.length > 0) {
-        const samplesToCheck = Math.min(2, groupsData.groups.length);
+      if (groupsData.data.groups.length > 0) {
+        const samplesToCheck = Math.min(2, groupsData.data.groups.length);
         const healthChecks = await Promise.all(
-          groupsData.groups
+          groupsData.data.groups
             .slice(0, samplesToCheck)
             .map((group: any) =>
               testApp.request(`/api/groups/${group.id}/health`),
@@ -168,7 +206,9 @@ describe('快速场景测试', () => {
       expect(initialPing.status).toBe(200);
 
       // 2. 获取系统状态快照
-      const groupsSnapshot = await testApp.request('/api/groups');
+      const groupsSnapshot = await testApp.request('/api/groups', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       const snapshotData = await safeJsonParse(groupsSnapshot);
 
       // 3. 模拟维护期间的快速监控
@@ -180,7 +220,9 @@ describe('快速场景测试', () => {
       const finalPing = await testApp.request('/api/ping');
       expect(finalPing.status).toBe(200);
 
-      const finalGroups = await testApp.request('/api/groups');
+      const finalGroups = await testApp.request('/api/groups', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       const finalData = await safeJsonParse(finalGroups);
 
       expect(finalData.totalGroups).toBe(snapshotData.totalGroups);
@@ -215,19 +257,20 @@ describe('快速场景测试', () => {
     }, 5000);
 
     it('应该能够快速处理部分组不可用的情况', async () => {
-      const groupsResponse = await testApp.request('/api/groups');
+      const groupsResponse = await testApp.request('/api/groups', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       const groupsData = await safeJsonParse(groupsResponse);
 
-      if (groupsData.groups.length === 0) {
-        console.log('⚠️ 没有可用组，跳过部分不可用测试');
-        return;
-      }
+      expect(groupsData.data).toBeDefined();
+      expect(groupsData.data.groups).toBeDefined();
+      expect(groupsData.data.groups.length).toBeGreaterThan(0);
 
       // 快速检查部分组的健康状态
-      const samplesToCheck = Math.min(2, groupsData.groups.length);
+      const samplesToCheck = Math.min(2, groupsData.data.groups.length);
       const healthResults = [];
 
-      for (const group of groupsData.groups.slice(0, samplesToCheck)) {
+      for (const group of groupsData.data.groups.slice(0, samplesToCheck)) {
         try {
           const healthResponse = await testApp.request(
             `/api/groups/${group.id}/health`,
@@ -270,7 +313,9 @@ describe('快速场景测试', () => {
           for (let i = 0; i < requestsPerUser; i++) {
             userRequests.push(
               testApp.request('/api/ping'),
-              testApp.request('/api/groups'),
+              testApp.request('/api/groups', {
+                headers: { Authorization: `Bearer ${authToken}` },
+              }),
             );
           }
 

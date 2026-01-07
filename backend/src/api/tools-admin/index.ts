@@ -29,7 +29,7 @@ async function getHubService(): Promise<McpHubService> {
     // 创建hub服务实例
     hubService = new McpHubService(
       config.mcps.mcpServers,
-      config.groups as GroupConfig,
+      config.groups,
       config.apiToolsConfigPath,
     );
 

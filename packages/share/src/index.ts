@@ -1,5 +1,10 @@
-// Export shared types
-export * from './config.d.js';
+// Export types
+export type * from './config.js';
+export type * from './mcp.js';
+export type * from './types.js';
+export type * from './web-api.js';
+export type * from './web-store.js';
+
 // Export frontend logger system
 export {
   ConsoleWriter as FrontendConsoleWriter,
@@ -17,9 +22,3 @@ export {
 } from './frontend-logger.js';
 // Export unified logger system
 export * from './logger.js';
-export * from './mcp.d.js';
-export * from './types.d.js';
-// Export web API types
-export * from './web-api.d.js';
-// Export web store types
-export * from './web-store.d.js';

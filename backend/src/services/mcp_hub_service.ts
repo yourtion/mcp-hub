@@ -1,4 +1,8 @@
-import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
+import type {
+  DeepReadonly,
+  GroupConfig,
+  ServerConfig,
+} from '@mcp-core/mcp-hub-share';
 import type {
   Group,
   McpHubService as IMcpHubService,
@@ -82,18 +86,27 @@ export class McpHubService implements IMcpHubService {
   private healthCheckTimers: Array<NodeJS.Timeout | NodeJS.Immediate> = []; // 追踪所有定时器
   private readonly HEALTH_CHECK_INTERVAL_MS = 30000; // 30 seconds
   private shutdownInProgress = false;
+  private serverConfigs: Record<string, ServerConfig> = {} as Record<
+    string,
+    ServerConfig
+  >;
+  private groupConfigs: GroupConfig = {} as GroupConfig;
   private initializationTime?: Date;
   private lastHealthCheck?: Date;
   private healthCheckEnabled = true;
 
   constructor(
-    private serverConfigs: Record<string, ServerConfig>,
-    private groupConfigs: GroupConfig,
+    serverConfigs: DeepReadonly<Record<string, ServerConfig>>,
+    groupConfigs: DeepReadonly<GroupConfig>,
     private apiToolConfigPath?: string,
   ) {
+    // 创建深拷贝以避免修改原始配置
+    // 注意：这里使用 JSON.parse/stringify 来创建可变副本
+    this.serverConfigs = JSON.parse(JSON.stringify(serverConfigs));
+    this.groupConfigs = JSON.parse(JSON.stringify(groupConfigs));
     // Initialize managers
-    this.serverManager = new ServerManager(serverConfigs);
-    this.groupManager = new GroupManager(groupConfigs, this.serverManager);
+    this.serverManager = new ServerManager(this.serverConfigs);
+    this.groupManager = new GroupManager(this.groupConfigs, this.serverManager);
     this.apiToolService = new ApiToolIntegrationService();
     this.toolManager = new ToolManager(
       this.serverManager,

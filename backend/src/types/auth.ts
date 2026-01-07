@@ -96,6 +96,8 @@ export interface JwtPayload {
   username: string;
   /** 用户角色 */
   role: string;
+  /** JWT ID（用于唯一标识） */
+  jti?: string;
   /** 签发时间 */
   iat: number;
   /** 过期时间 */
@@ -112,6 +114,8 @@ export interface RefreshTokenPayload {
   sub: string;
   /** token类型 */
   type: 'refresh';
+  /** JWT ID（用于唯一标识） */
+  jti?: string;
   /** 签发时间 */
   iat: number;
   /** 过期时间 */

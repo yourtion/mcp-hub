@@ -7,28 +7,74 @@ import type {
 } from '@mcp-core/mcp-hub-share';
 import { JsonStorage } from './json_storage.js';
 
-const configDir =
-  process.env.CONFIG_PATH || path.resolve(process.cwd(), 'config');
+/**
+ * 将 DeepReadonly 类型转换为可变类型
+ * 这是一个类型安全的转换，因为我们确信在使用时不会修改原始数据
+ */
+export function asMutable<T>(obj: DeepReadonly<T>): T {
+  return obj as unknown as T;
+}
 
-const mcpServerPath = path.resolve(configDir, 'mcp_server.json');
-const mcpServerInstance = new JsonStorage<McpConfig>(mcpServerPath, {
-  mcpServers: {},
-}); // Renamed to avoid conflict with imported type
+/**
+ * 获取配置目录路径（动态计算）
+ */
+function getConfigDir(): string {
+  return process.env.CONFIG_PATH || path.resolve(process.cwd(), 'config');
+}
 
-const groupPath = path.resolve(configDir, 'group.json');
-const groupConfigInstance = new JsonStorage<GroupConfig>(
-  groupPath,
-  {} as GroupConfig,
-); // Renamed and added type assertion for default value
+let mcpServerInstance: JsonStorage<McpConfig> | null = null;
+let groupConfigInstance: JsonStorage<GroupConfig> | null = null;
+let systemConfigInstance: JsonStorage<SystemConfig> | null = null;
 
-const systemPath = path.resolve(configDir, 'system.json');
-const systemConfigInstance = new JsonStorage<SystemConfig>(
-  systemPath,
-  {} as SystemConfig,
-); // Renamed and added type assertion for default value
+/**
+ * 获取或创建 MCP 服务器配置实例
+ */
+function getMcpServerInstance(): JsonStorage<McpConfig> {
+  if (!mcpServerInstance) {
+    const configDir = getConfigDir();
+    const mcpServerPath = path.resolve(configDir, 'mcp_server.json');
+    mcpServerInstance = new JsonStorage<McpConfig>(mcpServerPath, {
+      mcpServers: {},
+    });
+  }
+  return mcpServerInstance;
+}
+
+/**
+ * 获取或创建组配置实例
+ */
+function getGroupConfigInstance(): JsonStorage<GroupConfig> {
+  if (!groupConfigInstance) {
+    const configDir = getConfigDir();
+    const groupPath = path.resolve(configDir, 'group.json');
+    groupConfigInstance = new JsonStorage<GroupConfig>(
+      groupPath,
+      {} as GroupConfig,
+    );
+  }
+  return groupConfigInstance;
+}
+
+/**
+ * 获取或创建系统配置实例
+ */
+function getSystemConfigInstance(): JsonStorage<SystemConfig> {
+  if (!systemConfigInstance) {
+    const configDir = getConfigDir();
+    const systemPath = path.resolve(configDir, 'system.json');
+    systemConfigInstance = new JsonStorage<SystemConfig>(
+      systemPath,
+      {} as SystemConfig,
+    );
+  }
+  return systemConfigInstance;
+}
 
 // API工具配置路径
-const apiToolsPath = path.resolve(configDir, 'api-tools.json');
+function getApiToolsPath(): string {
+  const configDir = getConfigDir();
+  return path.resolve(configDir, 'api-tools.json');
+}
 
 export async function getAllConfig(): Promise<
   DeepReadonly<{
@@ -38,9 +84,13 @@ export async function getAllConfig(): Promise<
     apiToolsConfigPath?: string;
   }>
 > {
-  const mcps = await mcpServerInstance.read();
-  const groups = await groupConfigInstance.read();
-  const system = await systemConfigInstance.read();
+  const mcps = await getMcpServerInstance().read();
+  const groups = await getGroupConfigInstance().read();
+  const system = await getSystemConfigInstance().read();
+
+  const configDir = getConfigDir();
+  const systemPath = path.resolve(configDir, 'system.json');
+  const apiToolsPath = getApiToolsPath();
 
   // 检查API工具配置文件是否存在
   let apiToolsConfigPath: string | undefined;
@@ -67,13 +117,13 @@ export async function saveConfig(
 ): Promise<void> {
   switch (configType) {
     case 'mcp_server.json':
-      await mcpServerInstance.write(data as McpConfig);
+      await getMcpServerInstance().write(data as McpConfig);
       break;
     case 'group.json':
-      await groupConfigInstance.write(data as GroupConfig);
+      await getGroupConfigInstance().write(data as GroupConfig);
       break;
     case 'system.json':
-      await systemConfigInstance.write(data as SystemConfig);
+      await getSystemConfigInstance().write(data as SystemConfig);
       break;
     default:
       throw new Error(`不支持的配置文件类型: ${configType}`);

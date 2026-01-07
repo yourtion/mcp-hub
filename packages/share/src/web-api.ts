@@ -2,6 +2,11 @@
  * Web API相关的类型定义
  */
 
+import type { GroupInfo } from './config.js';
+
+// Re-export GroupInfo for other modules
+export type { GroupInfo } from './config.js';
+
 // ============================================================================
 // 认证相关类型
 // ============================================================================
