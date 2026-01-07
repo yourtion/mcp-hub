@@ -54,10 +54,12 @@ jobs:
         run: pnpm ci:test
 
       - name: 生成覆盖率报告
+        if: matrix.node-version == '24.x'
         run: pnpm coverage:merge && pnpm coverage:report
 
       - name: 上传覆盖率报告到 Codecov
         uses: codecov/codecov-action@v3
+        if: matrix.node-version == '24.x'
         with:
           files: |
             ./backend/coverage/lcov.info
@@ -81,7 +83,7 @@ jobs:
           retention-days: 30
 
       - name: 评论 PR 覆盖率报告
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && matrix.node-version == '24.x'
         uses: actions/github-script@v6
         with:
           script: |
