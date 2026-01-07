@@ -43,7 +43,9 @@ app.use('*', async (c, next) => {
     // 初始化失败不阻止请求，只记录错误
     // 公开端点（如登录）仍然可以工作
     // 受保护的端点会在认证中间件中处理初始化失败
-    logger.warn('认证服务初始化失败，某些功能可能不可用', error as Error);
+    logger.warn('认证服务初始化失败，某些功能可能不可用', {
+      error: error instanceof Error ? error.message : String(error),
+    } as Record<string, unknown>);
   }
   await next();
 });
