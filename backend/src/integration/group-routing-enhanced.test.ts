@@ -94,9 +94,7 @@ describe('组路由功能集成测试', () => {
 
     it('应该能够处理不存在的组请求', async () => {
       const nonExistentGroupId = `non-existent-group-${Date.now()}`;
-      const response = await authRequest(
-        `/api/groups/${nonExistentGroupId}`,
-      );
+      const response = await authRequest(`/api/groups/${nonExistentGroupId}`);
 
       expect(response.status).toBe(404);
 
@@ -116,9 +114,7 @@ describe('组路由功能集成测试', () => {
       expect(listData.data.groups.length).toBeGreaterThan(0);
 
       const firstGroup = listData.data.groups[0];
-      const response = await authRequest(
-        `/api/groups/${firstGroup.id}/health`,
-      );
+      const response = await authRequest(`/api/groups/${firstGroup.id}/health`);
 
       expect([200, 503]).toContain(response.status);
 
@@ -139,9 +135,7 @@ describe('组路由功能集成测试', () => {
       expect(listData.data.groups.length).toBeGreaterThan(0);
 
       const firstGroup = listData.data.groups[0];
-      const response = await authRequest(
-        `/api/groups/${firstGroup.id}/tools`,
-      );
+      const response = await authRequest(`/api/groups/${firstGroup.id}/tools`);
 
       expect(response.status).toBe(200);
 

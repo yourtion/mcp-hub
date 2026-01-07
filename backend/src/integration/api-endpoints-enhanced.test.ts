@@ -132,9 +132,7 @@ describe('API端点集成测试', () => {
       expect(listData.data.groups.length).toBeGreaterThan(0);
 
       const firstGroup = listData.data.groups[0];
-      const response = await authRequest(
-        `/api/groups/${firstGroup.id}/health`,
-      );
+      const response = await authRequest(`/api/groups/${firstGroup.id}/health`);
 
       expect([200, 503]).toContain(response.status);
       const data = await safeJsonParse(response);
@@ -150,9 +148,7 @@ describe('API端点集成测试', () => {
       expect(listData.data.groups.length).toBeGreaterThan(0);
 
       const firstGroup = listData.data.groups[0];
-      const response = await authRequest(
-        `/api/groups/${firstGroup.id}/tools`,
-      );
+      const response = await authRequest(`/api/groups/${firstGroup.id}/tools`);
 
       expect(response.status).toBe(200);
       const data = await safeJsonParse(response);

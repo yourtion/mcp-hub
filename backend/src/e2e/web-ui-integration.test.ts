@@ -373,12 +373,19 @@ describe('Web UI 集成端到端测试', () => {
 
       if (response.status !== 200) {
         const errorText = await response.text();
-        console.error('[TEST] Dashboard stats error:', response.status, errorText);
+        console.error(
+          '[TEST] Dashboard stats error:',
+          response.status,
+          errorText,
+        );
       }
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      console.log('[TEST] Dashboard stats response:', JSON.stringify(data, null, 2));
+      console.log(
+        '[TEST] Dashboard stats response:',
+        JSON.stringify(data, null, 2),
+      );
       expect(data).toHaveProperty('success', true);
       expect(data).toHaveProperty('data');
       expect(data.data).toHaveProperty('overview');
@@ -438,7 +445,11 @@ describe('Web UI 集成端到端测试', () => {
 
       if (response.status !== 200) {
         const errorText = await response.text();
-        console.error('[TEST] Config validate error:', response.status, errorText);
+        console.error(
+          '[TEST] Config validate error:',
+          response.status,
+          errorText,
+        );
       }
 
       expect(response.status).toBe(200);
@@ -486,7 +497,11 @@ describe('Web UI 集成端到端测试', () => {
 
       if (![200, 201].includes(response.status)) {
         const errorText = await response.text();
-        console.error('[TEST] API-to-MCP create error:', response.status, errorText);
+        console.error(
+          '[TEST] API-to-MCP create error:',
+          response.status,
+          errorText,
+        );
       }
 
       // 在测试环境中，如果配置文件路径未设置，返回400是预期的
@@ -611,7 +626,11 @@ describe('Web UI 集成端到端测试', () => {
 
       if (![200, 404].includes(detailResponse.status)) {
         const errorText = await detailResponse.text();
-        console.error('[TEST] Server detail error:', detailResponse.status, errorText);
+        console.error(
+          '[TEST] Server detail error:',
+          detailResponse.status,
+          errorText,
+        );
       }
 
       expect([200, 404]).toContain(detailResponse.status);
@@ -638,7 +657,11 @@ describe('Web UI 集成端到端测试', () => {
 
       if (![200, 404].includes(updateResponse.status)) {
         const errorText = await updateResponse.text();
-        console.error('[TEST] Server update error:', updateResponse.status, errorText);
+        console.error(
+          '[TEST] Server update error:',
+          updateResponse.status,
+          errorText,
+        );
       }
 
       expect([200, 404]).toContain(updateResponse.status);

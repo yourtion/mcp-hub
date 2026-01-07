@@ -80,9 +80,10 @@ describe('快速场景测试', () => {
       const exploratoryEndpoints = ['/api/ping', '/api/groups'];
 
       for (const endpoint of exploratoryEndpoints) {
-        const headers = endpoint === '/api/groups'
-          ? { Authorization: `Bearer ${authToken}` }
-          : {};
+        const headers =
+          endpoint === '/api/groups'
+            ? { Authorization: `Bearer ${authToken}` }
+            : {};
         const response = await testApp.request(endpoint, { headers });
 
         expect(response.status).toBeGreaterThanOrEqual(200);

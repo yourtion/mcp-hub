@@ -281,9 +281,10 @@ describe('稳定的端到端测试', () => {
       const endpoints = ['/api/ping', '/api/groups'];
 
       for (const endpoint of endpoints) {
-        const headers = endpoint === '/api/groups'
-          ? { Authorization: `Bearer ${authToken}` }
-          : {};
+        const headers =
+          endpoint === '/api/groups'
+            ? { Authorization: `Bearer ${authToken}` }
+            : {};
         const response = await testApp.request(endpoint, { headers });
         expect(response.status).toBe(200);
       }

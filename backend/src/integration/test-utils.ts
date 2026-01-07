@@ -169,10 +169,7 @@ export function cleanupTestConfig(): void {
  * @param authToken 认证token
  * @returns 带认证的请求函数
  */
-export function createAuthenticatedRequest(
-  testApp: any,
-  authToken: string,
-) {
+export function createAuthenticatedRequest(testApp: any, authToken: string) {
   return async (path: string, init?: RequestInit) => {
     const headers = {
       ...(init?.headers || {}),

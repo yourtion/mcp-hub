@@ -103,9 +103,8 @@ function getDashboardService(): DashboardService {
         { name: 'test_tool_1', description: 'Test Tool 1' },
         { name: 'test_tool_2', description: 'Test Tool 2' },
       ],
-      getServerHealth: () => new Map([
-        ['test-server-1', { status: 'connected', isHealthy: true }],
-      ]),
+      getServerHealth: () =>
+        new Map([['test-server-1', { status: 'connected', isHealthy: true }]]),
     } as any;
 
     dashboardService = new DashboardService(mockHubService);
