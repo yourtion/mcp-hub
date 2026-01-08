@@ -128,7 +128,8 @@ describe('ConcurrentExecutor', () => {
         concurrency: 2,
       });
 
-      expect(results[0].duration).toBeGreaterThanOrEqual(50);
+      // 使用更宽松的断言，避免由于 setTimeout 精度问题导致的测试失败
+      expect(results[0].duration).toBeGreaterThan(45);
       expect(results[1].duration).toBeLessThan(results[0].duration);
     });
   });
