@@ -3,7 +3,7 @@
  * 生成各种测试场景所需的数据
  */
 
-import type { ToolInfo } from '../../services/tool/tool-registry.js';
+import type { ToolInfo } from '../../types/tool.js';
 import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 
 /**
@@ -62,20 +62,20 @@ export class TestDataGenerator {
       name: `tool_${i + 1}`,
       description: `Auto-generated tool ${i + 1}`,
       serverId,
-      inputSchema: {
-        type: 'object',
-        properties: {
-          param1: {
-            type: 'string',
-            description: `Parameter 1 for tool ${i + 1}`,
-          },
-          param2: {
-            type: 'number',
-            description: `Parameter 2 for tool ${i + 1}`,
-          },
+      parameters: [
+        {
+          name: 'param1',
+          type: 'string',
+          description: `Parameter 1 for tool ${i + 1}`,
+          required: true,
         },
-        required: ['param1'],
-      },
+        {
+          name: 'param2',
+          type: 'number',
+          description: `Parameter 2 for tool ${i + 1}`,
+          required: false,
+        },
+      ],
     }));
   }
 
@@ -166,15 +166,14 @@ export class TestDataGenerator {
       name,
       description: `Randomly generated tool ${name}`,
       serverId: serverId || `server-${Math.floor(Math.random() * 10)}`,
-      inputSchema: {
-        type: 'object',
-        properties: {
-          param1: {
-            type: 'string',
-            description: 'Random parameter',
-          },
+      parameters: [
+        {
+          name: 'param1',
+          type: 'string',
+          description: 'Random parameter',
+          required: false,
         },
-      },
+      ],
     };
   }
 

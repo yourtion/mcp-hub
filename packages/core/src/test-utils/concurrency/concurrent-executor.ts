@@ -93,18 +93,25 @@ export class ConcurrentExecutor {
 
       // 控制并发数
       if (executing.length >= concurrency) {
+        // 等待至少一个完成
         await Promise.race(executing);
+
         // 移除已完成的 promise
-        const settled = await Promise.allSettled(executing);
-        executing.length = 0;
-        // 将未完成的加入
-        for (let j = 0; j < settled.length; j++) {
-          if (settled[j].status === 'pending') {
-            executing.push(
-              Promise.allSettled([executing[j]]).then(() => undefined),
-            );
+        const stillExecuting = [];
+        for (const p of executing) {
+          // 创建一个立即完成的 race 来检查状态
+          const checked = await Promise.race([
+            p.then(() => ({ done: true })),
+            Promise.resolve({ done: false }).then(() => ({ done: false }))
+          ]);
+
+          if (!checked.done) {
+            stillExecuting.push(p);
           }
         }
+
+        executing.length = 0;
+        executing.push(...stillExecuting);
       }
     }
 

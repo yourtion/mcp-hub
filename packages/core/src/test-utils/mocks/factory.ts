@@ -9,7 +9,7 @@ import type {
   ServerConfig,
   SystemConfig,
 } from '@mcp-core/mcp-hub-share';
-import type { ToolInfo } from '../../services/tool/tool-registry.js';
+import type { ToolInfo } from '../../types/tool.js';
 
 /**
  * Mock 配置工厂
@@ -19,17 +19,23 @@ export class MockConfigFactory {
    * 创建服务器配置
    */
   static createServerConfig(
-    overrides?: Partial<ServerConfig> & { id?: string },
-  ): ServerConfig & { id?: string } {
-    return {
-      id: overrides?.id || 'mock-server',
+    overrides?: Partial<ServerConfig>,
+  ): { id: string; config: ServerConfig } {
+    const id = 'mock-server';
+
+    // 明确创建 stdio 类型的配置
+    const baseConfig: ServerConfig = {
       type: 'stdio',
       command: 'node',
       args: ['server.js'],
-      env: {},
-      enabled: true,
-      ...overrides,
     };
+
+    // 如果提供了 overrides，合并配置
+    const config: ServerConfig = overrides
+      ? { ...baseConfig, ...overrides } as ServerConfig
+      : baseConfig;
+
+    return { id, config };
   }
 
   /**
@@ -41,11 +47,12 @@ export class MockConfigFactory {
     const servers: Record<string, ServerConfig> = {};
 
     for (let i = 1; i <= serverCount; i++) {
-      servers[`server${i}`] = this.createServerConfig({
-        id: `server${i}`,
+      const { config } = this.createServerConfig({
         command: `node server${i}.js`,
         args: [`--port=${3000 + i}`],
       });
+
+      servers[`server${i}`] = config;
     }
 
     return servers;
@@ -146,15 +153,14 @@ export class MockToolFactory {
       name: 'test_tool',
       description: 'A test tool',
       serverId: 'server1',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          param1: {
-            type: 'string',
-            description: 'First parameter',
-          },
+      parameters: [
+        {
+          name: 'param1',
+          type: 'string',
+          description: 'First parameter',
+          required: false,
         },
-      },
+      ],
       ...overrides,
     };
   }
@@ -180,36 +186,32 @@ export class MockToolFactory {
       name: 'complex_tool',
       description: 'A tool with complex parameters',
       serverId: 'server1',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          stringParam: {
-            type: 'string',
-            description: 'String parameter',
-            minLength: 1,
-            maxLength: 100,
-          },
-          numberParam: {
-            type: 'number',
-            description: 'Number parameter',
-            minimum: 0,
-            maximum: 100,
-          },
-          objectParam: {
-            type: 'object',
-            description: 'Object parameter',
-            properties: {
-              nested: { type: 'string' },
-            },
-          },
-          arrayParam: {
-            type: 'array',
-            description: 'Array parameter',
-            items: { type: 'string' },
-          },
+      parameters: [
+        {
+          name: 'stringParam',
+          type: 'string',
+          description: 'String parameter',
+          required: true,
         },
-        required: ['stringParam', 'numberParam'],
-      },
+        {
+          name: 'numberParam',
+          type: 'number',
+          description: 'Number parameter',
+          required: true,
+        },
+        {
+          name: 'objectParam',
+          type: 'object',
+          description: 'Object parameter',
+          required: false,
+        },
+        {
+          name: 'arrayParam',
+          type: 'array',
+          description: 'Array parameter',
+          required: false,
+        },
+      ],
       ...overrides,
     };
   }

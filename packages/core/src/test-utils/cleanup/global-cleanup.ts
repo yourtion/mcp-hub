@@ -71,7 +71,7 @@ export function cleanupWithTimeout(
   cleanupFn: () => Promise<void> | void,
   timeout: number = 5000,
 ): Promise<void> {
-  return Promise.race([
+  return Promise.race<void>([
     cleanupFn(),
     new Promise((_, reject) =>
       setTimeout(() => reject(new Error(`Cleanup timeout after ${timeout}ms`)), timeout),

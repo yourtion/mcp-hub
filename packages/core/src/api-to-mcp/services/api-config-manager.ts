@@ -11,7 +11,7 @@ import type { ValidationResult } from '../types/api-tool.js';
 import { EnvironmentResolverImpl } from '../utils/environment-resolver.js';
 import { createLogger } from '../../utils/logger.js';
 
-const logger = createLogger('ApiConfigManager');
+const logger = createLogger({ component: 'ApiConfigManager' });
 
 /**
  * 配置加载错误
@@ -241,7 +241,7 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
 
       logger.info(`开始监听配置文件变化: ${this.configPath}`);
     } catch (error) {
-      logger.error('启动配置文件监听失败:', error);
+      logger.error('启动配置文件监听失败:', error as Error);
       throw new Error(
         `启动配置文件监听失败: ${error instanceof Error ? error.message : '未知错误'}`,
       );
@@ -261,7 +261,7 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
       this.watchCallback(newConfig);
       logger.info('配置文件重新加载成功');
     } catch (error) {
-      logger.error('重新加载配置文件失败:', error);
+      logger.error('重新加载配置文件失败:', error as Error);
       // 不抛出错误，避免中断监听
     }
   }
