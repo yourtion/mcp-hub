@@ -21,7 +21,9 @@
   },
   "scripts": {
     "build": "tsc",
-    "check": "biome check --write"
+    "check": "biome check --write",
+    "test": "vitest --run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +31,8 @@
   "packageManager": "pnpm@10.6.4",
   "devDependencies": {
     "@types/node": "^20.11.17",
-    "typescript": "^5.8.3"
+    "@vitest/ui": "^2.1.8",
+    "typescript": "^5.8.3",
+    "vitest": "^4.0.16"
   }
 }

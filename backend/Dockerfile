@@ -24,7 +24,7 @@ FROM base AS builder
 COPY packages/share ./packages/share
 COPY packages/core ./packages/core
 COPY backend ./backend
-COPY tsconfig.json biome.json ./
+COPY biome.json ./
 
 # 构建所有包
 RUN pnpm build:core
@@ -57,8 +57,8 @@ COPY --from=builder --chown=mcp-hub:nodejs /app/packages/share/dist ./packages/s
 COPY --from=builder --chown=mcp-hub:nodejs /app/packages/core/dist ./packages/core/dist
 COPY --from=builder --chown=mcp-hub:nodejs /app/backend/dist ./backend/dist
 
-# 复制配置文件目录
-COPY --chown=mcp-hub:nodejs backend/config ./backend/config
+# 创建配置文件目录（用于运行时挂载）
+RUN mkdir -p /app/backend/config && chown -R mcp-hub:nodejs /app/backend/config
 
 # 切换到非 root 用户
 USER mcp-hub

@@ -58,13 +58,24 @@ describe('McpServiceManager', () => {
     serviceManager = new McpServiceManager();
   });
 
-  afterEach(() => {
-    // 清理
+  afterEach(async () => {
+    // 等待所有异步操作完成
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // 清理服务
     if (serviceManager) {
-      serviceManager.shutdown().catch(() => {
+      try {
+        await serviceManager.shutdown();
+        // 等待所有连接真正关闭
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (error) {
         // 忽略关闭错误
-      });
+      }
     }
+
+    // 清除 mocks
+    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('构造函数', () => {

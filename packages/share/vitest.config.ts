@@ -1,13 +1,6 @@
-import path from 'path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      '@mcp-core/mcp-hub-core': path.resolve(__dirname, '../core/src'),
-      '@mcp-core/mcp-hub-share': path.resolve(__dirname, '../share/src'),
-    },
-  },
   test: {
     globals: true,
     environment: 'node',
@@ -33,14 +26,25 @@ export default defineConfig({
 
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'json-summary', 'html', 'lcov'],
+      reportsDirectory: './coverage',
       exclude: [
         'node_modules/',
         'dist/',
         '**/*.d.ts',
         '**/*.test.ts',
-        'src/test-utils/', // 排除测试工具
+        'vitest.config.ts',
       ],
+      thresholds: {
+        global: {
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80,
+        },
+      },
+      all: true,
+      include: ['src/**/*.ts'],
     },
   },
 });
