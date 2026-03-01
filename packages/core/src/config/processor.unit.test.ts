@@ -45,10 +45,11 @@ describe('SharedConfigProcessor', () => {
 
     // 创建模拟配置
     mockServerConfig = {
+      type: 'stdio',
       command: 'node',
       args: ['server.js'],
       env: { NODE_ENV: 'production' },
-      disabled: false,
+      enabled: true,
       timeout: 5000,
       retry: {
         maxRetries: 3,
@@ -61,9 +62,10 @@ describe('SharedConfigProcessor', () => {
       servers: {
         server1: mockServerConfig,
         server2: {
+          type: 'stdio',
           command: 'python',
           args: ['server.py'],
-          disabled: false,
+          enabled: true,
         },
       },
       groups: {
@@ -427,7 +429,7 @@ describe('SharedConfigProcessor', () => {
 
     it('应该检测无效的服务器配置', () => {
       const invalidConfig = {
-        // 缺少必需的 command
+        // 缺少必需的 type 和 command
         args: ['test'],
         timeout: -1, // 无效的超时值
         retry: {
@@ -440,7 +442,7 @@ describe('SharedConfigProcessor', () => {
       expect(result.valid).toBe(false);
       // 检查是否包含预期的错误消息
       expect(result.errors.length).toBeGreaterThan(0);
-      expect(result.errors.some((e) => e.includes('服务器命令'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('服务器类型'))).toBe(true);
       expect(result.errors.some((e) => e.includes('超时时间'))).toBe(true);
       expect(result.errors.some((e) => e.includes('最大重试次数'))).toBe(true);
     });
@@ -455,7 +457,7 @@ describe('SharedConfigProcessor', () => {
       const invalidConfig = {
         servers: {
           invalidServer: {
-            // 缺少必需的 command
+            // 缺少必需的 type 和 command
             args: ['test'],
           },
         },
@@ -474,7 +476,7 @@ describe('SharedConfigProcessor', () => {
       const result = processor.validateMcpServerConfig(invalidConfig);
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
-      expect(result.errors.some((e) => e.includes('服务器命令'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('服务器类型'))).toBe(true);
       expect(result.errors.some((e) => e.includes('组名称'))).toBe(true);
       expect(result.errors.some((e) => e.includes('日志级别'))).toBe(true);
     });
@@ -558,7 +560,7 @@ describe('SharedConfigProcessor', () => {
       const invalidConfig = {
         servers: {
           invalidServer: {
-            // 缺少必需的 command
+            // 缺少必需的 type 和 command
           },
         },
       } as McpServerConfig;

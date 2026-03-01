@@ -46,6 +46,9 @@ export class AuthService {
       // config.system 已经是 DeepReadonly<SystemConfig> 类型
       this.config = config.system as DeepReadonly<SystemConfig>;
 
+      // 验证用户配置
+      this.validateUserConfig();
+
       // 确保所有用户都有密码哈希
       await this.ensurePasswordHashes();
     } catch (error) {
@@ -65,6 +68,28 @@ export class AuthService {
         // 在内存中生成哈希，但不保存到文件
         (user as any).passwordHash = await bcrypt.hash(user.password, 10);
       }
+    }
+  }
+
+  /**
+   * 验证用户配置是否有效
+   */
+  private validateUserConfig(): void {
+    if (!this.config) return;
+
+    for (const [username, user] of Object.entries(this.config.users)) {
+      if (!user.password && !user.passwordHash) {
+        throw new Error(`用户 ${username} 必须配置 password 或 passwordHash`);
+      }
+      if (user.password && !user.passwordHash) {
+        // 会在 ensurePasswordHashes 中处理
+        continue;
+      }
+      if (!user.password && user.passwordHash) {
+        // 只配置了 passwordHash，有效
+        continue;
+      }
+      // 两者都配置了，也有效
     }
   }
 
@@ -97,6 +122,12 @@ export class AuthService {
       (u) => u.username === username,
     );
     if (!user) {
+      this.recordLoginAttempt(username, false, ip, userAgent);
+      throw new Error('Invalid username or password');
+    }
+
+    // 确保用户有密码哈希
+    if (!user.passwordHash) {
       this.recordLoginAttempt(username, false, ip, userAgent);
       throw new Error('Invalid username or password');
     }

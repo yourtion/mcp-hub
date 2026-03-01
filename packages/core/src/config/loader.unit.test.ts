@@ -20,6 +20,7 @@ describe('ConfigLoader', () => {
       const mockConfig = {
         servers: {
           test_server: {
+            type: 'stdio',
             command: 'test-command',
             args: ['--test'],
           },
@@ -59,6 +60,7 @@ describe('ConfigLoader', () => {
       const mockConfig = {
         servers: {
           test_server: {
+            type: 'stdio',
             command: 'test-command',
             args: ['--test'],
           },
@@ -90,17 +92,19 @@ describe('ConfigLoader', () => {
       const complexConfig = {
         servers: {
           server1: {
+            type: 'stdio',
             command: 'node',
             args: ['server1.js'],
             env: {
               NODE_ENV: 'production',
             },
-            disabled: false,
+            enabled: true,
           },
           server2: {
+            type: 'stdio',
             command: 'python',
             args: ['-m', 'server2'],
-            disabled: true,
+            enabled: false,
           },
         },
         groups: {

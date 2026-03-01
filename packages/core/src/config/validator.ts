@@ -44,9 +44,29 @@ export class ConfigValidator {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // TODO: 实现服务器配置验证逻辑
-    if (!config.command) {
-      errors.push('服务器配置必须包含command字段');
+    // 验证 type 字段
+    if (!config.type || typeof config.type !== 'string') {
+      errors.push('服务器类型 (type) 是必需的且必须是字符串');
+    } else if (
+      config.type !== 'stdio' &&
+      config.type !== 'sse' &&
+      config.type !== 'streaming'
+    ) {
+      errors.push(
+        '服务器类型 (type) 必须是 stdio、sse 或 streaming 之一',
+      );
+    }
+
+    // 检查是否为 StdioServerConfig
+    if (config.type === 'stdio') {
+      if (!config.command || typeof config.command !== 'string') {
+        errors.push('Stdio 服务器配置必须包含 command 字段');
+      }
+    } else if (config.type === 'sse' || config.type === 'streaming') {
+      // 检查是否为 HTTPServerConfig
+      if (!config.url || typeof config.url !== 'string') {
+        errors.push('HTTP 服务器配置必须包含 url 字段');
+      }
     }
 
     return {

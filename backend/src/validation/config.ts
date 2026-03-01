@@ -28,14 +28,15 @@ const ServerConfigSchema = z.union([
   HTTPServerConfigSchema,
 ]);
 
-// MCP配置验证模式
+// MCP 配置验证模式
 const McpConfigSchema = z.object({
-  mcpServers: z
+  servers: z
     .record(z.string(), ServerConfigSchema)
     .refine(
       (servers) => Object.keys(servers).length > 0,
-      '至少需要配置一个MCP服务器',
+      '至少需要配置一个 MCP 服务器',
     ),
+  settings: z.record(z.unknown()).optional(),
 });
 
 // 组配置验证模式
@@ -76,12 +77,18 @@ const SystemConfigSchema = z.object({
     z.object({
       id: z.string(),
       username: z.string(),
-      password: z.string().min(1, '密码不能为空'),
-      passwordHash: z.string(),
+      password: z.string().min(1, '密码不能为空').optional(),
+      passwordHash: z.string().optional(),
       role: z.string(),
       groups: z.array(z.string()),
       createdAt: z.string(),
-    }),
+    }).refine(
+      (data) => data.password || data.passwordHash,
+      {
+        message: '必须配置 password 或 passwordHash 至少一个',
+        path: ['password'],
+      },
+    ),
   ),
   ui: z.object({
     title: z.string(),
@@ -218,7 +225,7 @@ export function validateConfigCrossReferences(
   groupConfig: GroupConfig,
 ): { success: true } | { success: false; errors: string[] } {
   const errors: string[] = [];
-  const availableServers = Object.keys(mcpConfig.mcpServers);
+  const availableServers = Object.keys(mcpConfig.servers);
 
   // 检查组配置中引用的服务器是否在MCP配置中存在
   for (const [groupName, group] of Object.entries(groupConfig)) {

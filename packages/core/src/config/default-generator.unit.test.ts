@@ -230,7 +230,7 @@ describe('DefaultConfigGenerator', () => {
       expect(config.servers.fetch.args).toContain(
         '@modelcontextprotocol/server-fetch',
       );
-      expect(config.servers.fetch.disabled).toBe(false);
+      expect(config.servers.fetch.disabled).toBeUndefined();
     });
 
     it('环境变量应该正确配置', async () => {

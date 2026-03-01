@@ -38,9 +38,10 @@ describe('ServerConnectionManager', () => {
 
     // 创建模拟服务器配置
     mockServerConfig = {
+      type: 'stdio',
       command: 'node',
       args: ['test-server.js'],
-      disabled: false,
+      enabled: true,
     };
 
     connectionManager = new ServerConnectionManager();
@@ -99,11 +100,11 @@ describe('ServerConnectionManager', () => {
       expect(status.lastConnected).toBeInstanceOf(Date);
       expect(status.error).toBeNull();
 
+      // 验证日志输出（command 会被类型守卫处理）
       expect(mockConsole.info).toHaveBeenCalledWith(
         '创建服务器连接',
         expect.objectContaining({
           serverId: 'test-server',
-          command: 'node',
         }),
       );
 

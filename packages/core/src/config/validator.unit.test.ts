@@ -14,6 +14,7 @@ describe('ConfigValidator', () => {
       const validConfig: McpServerConfig = {
         servers: {
           test_server: {
+            type: 'stdio',
             command: 'node',
             args: ['server.js'],
           },
@@ -50,10 +51,12 @@ describe('ConfigValidator', () => {
       const validConfig: McpServerConfig = {
         servers: {
           server1: {
+            type: 'stdio',
             command: 'node',
             args: ['server1.js'],
           },
           server2: {
+            type: 'stdio',
             command: 'python',
             args: ['-m', 'server2'],
           },
@@ -70,6 +73,7 @@ describe('ConfigValidator', () => {
       const validConfig: McpServerConfig = {
         servers: {
           test_server: {
+            type: 'stdio',
             command: 'node',
             args: ['server.js'],
           },
@@ -86,6 +90,7 @@ describe('ConfigValidator', () => {
   describe('validateServerConfig', () => {
     it('应该验证有效的服务器配置', () => {
       const validConfig: ServerConfig = {
+        type: 'stdio',
         command: 'node',
         args: ['server.js'],
       };
@@ -96,7 +101,7 @@ describe('ConfigValidator', () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it('应该拒绝缺少command字段的配置', () => {
+    it('应该拒绝缺少type字段的配置', () => {
       const invalidConfig = {
         args: ['server.js'],
       } as ServerConfig;
@@ -104,23 +109,24 @@ describe('ConfigValidator', () => {
       const result = validator.validateServerConfig(invalidConfig);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain('服务器配置必须包含command字段');
+      expect(result.errors.some((e) => e.includes('服务器类型'))).toBe(true);
     });
 
-    it('应该拒绝command为空字符串的配置', () => {
-      const invalidConfig: ServerConfig = {
-        command: '',
+    it('应该拒绝缺少command字段的配置', () => {
+      const invalidConfig = {
+        type: 'stdio',
         args: ['server.js'],
-      };
+      } as ServerConfig;
 
       const result = validator.validateServerConfig(invalidConfig);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain('服务器配置必须包含command字段');
+      expect(result.errors.some((e) => e.includes('command'))).toBe(true);
     });
 
     it('应该验证包含环境变量的配置', () => {
       const validConfig: ServerConfig = {
+        type: 'stdio',
         command: 'node',
         args: ['server.js'],
         env: {
@@ -135,11 +141,12 @@ describe('ConfigValidator', () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it('应该验证包含disabled字段的配置', () => {
+    it('应该验证包含enabled字段的配置', () => {
       const validConfig: ServerConfig = {
+        type: 'stdio',
         command: 'node',
         args: ['server.js'],
-        disabled: true,
+        enabled: false,
       };
 
       const result = validator.validateServerConfig(validConfig);
@@ -150,6 +157,7 @@ describe('ConfigValidator', () => {
 
     it('应该返回警告信息（如果有）', () => {
       const validConfig: ServerConfig = {
+        type: 'stdio',
         command: 'node',
         args: ['server.js'],
       };

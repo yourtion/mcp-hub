@@ -65,7 +65,7 @@ export class MockConfigFactory {
     serverCount: number = 3,
   ): McpConfig {
     return {
-      mcpServers: this.createMcpServerConfig(serverCount),
+      servers: this.createMcpServerConfig(serverCount),
     };
   }
 

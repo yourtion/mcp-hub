@@ -20,14 +20,14 @@ export interface JwtConfig {
  * 用户凭据
  */
 export interface UserCredentials {
-  /** 用户ID */
+  /** 用户 ID */
   id: string;
   /** 用户名 */
   username: string;
   /** 明文密码（仅用于配置） */
-  password: string;
+  password?: string;
   /** 密码哈希 */
-  passwordHash: string;
+  passwordHash?: string;
   /** 用户角色 */
   role: string;
   /** 用户所属组 */

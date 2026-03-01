@@ -1,8 +1,11 @@
 import { ServerConfig } from './mcp.js';
 
 export interface McpConfig {
-  mcpServers: {
+  servers: {
     [key: string]: ServerConfig; // Key-value pairs of server names and their configurations
+  };
+  settings?: {
+    [key: string]: unknown; // Global settings
   };
 }
 
@@ -50,8 +53,8 @@ export interface SystemConfig {
     [username: string]: {
       id: string;
       username: string;
-      password: string;
-      passwordHash: string;
+      password?: string;
+      passwordHash?: string;
       role: string;
       groups: string[];
       createdAt: string;

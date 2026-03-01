@@ -70,9 +70,10 @@ export class DefaultConfigGenerator {
       name: 'Fetch',
       description: 'Web fetching and HTTP requests',
       config: {
+        type: 'stdio',
         command: 'npx',
         args: ['-y', '@modelcontextprotocol/server-fetch'],
-        disabled: false,
+        enabled: true,
       },
     },
     time: {
@@ -80,9 +81,10 @@ export class DefaultConfigGenerator {
       name: 'Time',
       description: 'Time and date functionality',
       config: {
+        type: 'stdio',
         command: 'npx',
         args: ['-y', '@modelcontextprotocol/server-time'],
-        disabled: false,
+        enabled: true,
       },
     },
     'sequential-thinking': {
@@ -90,9 +92,10 @@ export class DefaultConfigGenerator {
       name: 'Sequential Thinking',
       description: 'Sequential thinking capabilities',
       config: {
+        type: 'stdio',
         command: 'npx',
         args: ['-y', '@modelcontextprotocol/server-sequential-thinking'],
-        disabled: false,
+        enabled: true,
       },
     },
     filesystem: {
@@ -100,13 +103,14 @@ export class DefaultConfigGenerator {
       name: 'Filesystem',
       description: 'File system operations',
       config: {
+        type: 'stdio',
         command: 'npx',
         args: [
           '-y',
           '@modelcontextprotocol/server-filesystem',
           '/path/to/allowed/directory',
         ],
-        disabled: false,
+        enabled: true,
       },
       requiresAdditionalConfig: true,
       additionalConfigNote:
@@ -117,9 +121,10 @@ export class DefaultConfigGenerator {
       name: 'Memory',
       description: 'Persistent memory storage',
       config: {
+        type: 'stdio',
         command: 'npx',
         args: ['-y', '@modelcontextprotocol/server-memory'],
-        disabled: false,
+        enabled: true,
       },
     },
     'brave-search': {
@@ -127,12 +132,13 @@ export class DefaultConfigGenerator {
       name: 'Brave Search',
       description: 'Brave search engine integration',
       config: {
+        type: 'stdio',
         command: 'npx',
         args: ['-y', '@modelcontextprotocol/server-brave-search'],
         env: {
           BRAVE_API_KEY: 'your-api-key-here',
         },
-        disabled: false,
+        enabled: true,
       },
       requiresAdditionalConfig: true,
       additionalConfigNote: '请设置 BRAVE_API_KEY 环境变量',
@@ -142,12 +148,13 @@ export class DefaultConfigGenerator {
       name: 'GitHub',
       description: 'GitHub repository management',
       config: {
+        type: 'stdio',
         command: 'npx',
         args: ['-y', '@modelcontextprotocol/server-github'],
         env: {
           GITHUB_PERSONAL_ACCESS_TOKEN: 'your-token-here',
         },
-        disabled: false,
+        enabled: true,
       },
       requiresAdditionalConfig: true,
       additionalConfigNote: '请设置 GITHUB_PERSONAL_ACCESS_TOKEN 环境变量',
@@ -235,7 +242,7 @@ export class DefaultConfigGenerator {
   /**
    * 生成 MCP 服务配置
    */
-  private generateMcpServiceConfig(): McpServerConfig {
+  private generateMcpServiceConfig(): { servers: Record<string, ServerConfig>; settings: Record<string, unknown> } {
     const servers: Record<string, ServerConfig> = {};
 
     // 添加默认服务器预设
@@ -251,36 +258,37 @@ export class DefaultConfigGenerator {
       // 可以在这里添加更多示例配置
     }
 
-    return {
-      servers,
-      settings: {
-        logLevel: 'info',
-        connectionTimeout: 30000,
-        maxConcurrentConnections: 10,
-      },
+    // 添加全局设置
+    const settings: Record<string, unknown> = {
+      logLevel: 'info',
+      connectionTimeout: 30000,
+      maxConcurrentConnections: 10,
     };
+
+    return { servers, settings };
   }
 
   /**
    * 生成组配置
    */
-  private generateGroupConfig(): Record<string, GroupConfig> {
-    const groups: Record<string, GroupConfig> = {
+  private generateGroupConfig(): Record<string, { id: string; name: string; description: string; servers: string[]; tools: string[]; validation: { enabled: boolean } }> {
+    const groups: Record<string, { id: string; name: string; description: string; servers: string[]; tools: string[]; validation: { enabled: boolean } }> = {
       default: {
+        id: 'group-default',
         name: '默认组',
         description: '包含所有默认服务器',
         servers: this.defaultPresets,
+        tools: [],
         validation: {
           enabled: false,
         },
       },
       'web-tools': {
+        id: 'group-web-tools',
         name: 'Web工具组',
         description: '仅包含Web相关工具',
         servers: ['fetch'],
-        toolFilter: {
-          include: ['fetch'],
-        },
+        tools: [],
         validation: {
           enabled: false,
         },

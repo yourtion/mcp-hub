@@ -3,7 +3,7 @@
  */
 
 /**
- * MCP服务器配置
+ * MCP 服务器配置
  */
 export interface McpServerConfig {
   /** 服务器配置 */
@@ -15,24 +15,49 @@ export interface McpServerConfig {
 }
 
 /**
- * 单个服务器配置
+ * 基础服务器配置
  */
-export interface ServerConfig {
-  /** 启动命令 */
-  command: string;
-  /** 命令参数 */
-  args?: string[];
+interface BaseServerConfig {
   /** 环境变量 */
   env?: Record<string, string>;
+  /** 是否禁用 */
+  enabled?: boolean;
   /** 工作目录 */
   cwd?: string;
-  /** 是否禁用 */
-  disabled?: boolean;
   /** 超时设置 */
   timeout?: number;
   /** 重试配置 */
   retry?: RetryConfig;
 }
+
+/**
+ * Stdio 服务器配置
+ */
+interface StdioServerConfig extends BaseServerConfig {
+  /** 服务器类型 */
+  type: 'stdio';
+  /** 启动命令 */
+  command: string;
+  /** 命令参数 */
+  args?: string[];
+}
+
+/**
+ * HTTP 服务器配置
+ */
+interface HTTPServerConfig extends BaseServerConfig {
+  /** 服务器类型 */
+  type: 'sse' | 'streaming';
+  /** 服务器 URL */
+  url: string;
+  /** HTTP 头 */
+  headers?: Record<string, string>;
+}
+
+/**
+ * 单个服务器配置
+ */
+export type ServerConfig = StdioServerConfig | HTTPServerConfig;
 
 /**
  * 组配置

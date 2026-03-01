@@ -72,7 +72,7 @@ const systemConfigSchema = z.object({
 });
 
 const mcpConfigSchema = z.object({
-  mcpServers: z.record(
+  servers: z.record(
     z.object({
       command: z.string(),
       args: z.array(z.string()).optional(),
@@ -87,6 +87,7 @@ const mcpConfigSchema = z.object({
         .optional(),
     }),
   ),
+  settings: z.record(z.unknown()).optional(),
 });
 
 const groupConfigSchema = z.record(
@@ -299,13 +300,13 @@ export class ConfigService implements IConfigService {
 
     // 验证服务器配置
     for (const [serverId, serverConfig] of Object.entries(
-      mcpConfig.mcpServers || {},
+      mcpConfig.servers || {},
     )) {
       // 类型守卫：检查是否为 StdioServerConfig
       if ('command' in serverConfig) {
         if (!serverConfig.command) {
           errors.push({
-            path: `mcpServers.${serverId}.command`,
+            path: `servers.${serverId}.command`,
             message: '服务器命令不能为空',
             code: 'MISSING_COMMAND',
             severity: 'error',
@@ -320,8 +321,8 @@ export class ConfigService implements IConfigService {
         ).transport;
         if (transport?.type === 'sse' && !transport.url) {
           errors.push({
-            path: `mcpServers.${serverId}.transport.url`,
-            message: 'SSE传输类型需要指定URL',
+            path: `servers.${serverId}.transport.url`,
+            message: 'SSE 传输类型需要指定 URL',
             code: 'MISSING_SSE_URL',
             severity: 'error',
           });
@@ -338,7 +339,7 @@ export class ConfigService implements IConfigService {
     const groupConfig = config as GroupConfig;
     const currentMcpConfig = await this.getCurrentConfig();
     const availableServers = Object.keys(
-      currentMcpConfig.mcps.mcpServers || {},
+      currentMcpConfig.mcps.servers || {},
     );
 
     // 验证组配置
@@ -841,7 +842,7 @@ export class ConfigService implements IConfigService {
 
     // 测试服务器配置
     for (const [serverId, serverConfig] of Object.entries(
-      mcpConfig.mcpServers || {},
+      mcpConfig.servers || {},
     )) {
       // 类型守卫：测试命令可执行性（仅 StdioServerConfig）
       if ('command' in serverConfig && serverConfig.command) {
@@ -943,7 +944,7 @@ export class ConfigService implements IConfigService {
   ): Promise<void> {
     const groupConfig = config as GroupConfig;
     const currentConfig = await this.getCurrentConfig();
-    const availableServers = Object.keys(currentConfig.mcps.mcpServers || {});
+    const availableServers = Object.keys(currentConfig.mcps.servers || {});
 
     // 测试组配置
     for (const [groupId, group] of Object.entries(groupConfig)) {

@@ -292,16 +292,39 @@ export class SharedConfigProcessor implements SharedConfigProcessorInterface {
   validateServerConfig(config: ServerConfig): ValidationResult {
     const errors: string[] = [];
 
+    // 验证 type 字段
+    if (!config.type || typeof config.type !== 'string') {
+      errors.push('服务器类型 (type) 是必需的且必须是字符串');
+    } else if (
+      config.type !== 'stdio' &&
+      config.type !== 'sse' &&
+      config.type !== 'streaming'
+    ) {
+      errors.push(
+        '服务器类型 (type) 必须是 stdio、sse 或 streaming 之一',
+      );
+    }
+
     // 验证必需字段
-    if (!config.command || typeof config.command !== 'string') {
-      errors.push('服务器命令 (command) 是必需的且必须是字符串');
+    if (config.type === 'stdio') {
+      if (!config.command || typeof config.command !== 'string') {
+        errors.push('Stdio 服务器命令 (command) 是必需的且必须是字符串');
+      }
+      // 验证可选字段类型
+      if (config.args && !Array.isArray(config.args)) {
+        errors.push('服务器参数 (args) 必须是数组');
+      }
+    } else if (config.type === 'sse' || config.type === 'streaming') {
+      if (!config.url || typeof config.url !== 'string') {
+        errors.push('HTTP 服务器 URL (url) 是必需的且必须是字符串');
+      }
+      // 验证可选字段类型
+      if (config.headers && typeof config.headers !== 'object') {
+        errors.push('HTTP 头 (headers) 必须是对象');
+      }
     }
 
-    // 验证可选字段类型
-    if (config.args && !Array.isArray(config.args)) {
-      errors.push('服务器参数 (args) 必须是数组');
-    }
-
+    // 验证基础配置字段
     if (config.env && typeof config.env !== 'object') {
       errors.push('环境变量 (env) 必须是对象');
     }
@@ -310,8 +333,8 @@ export class SharedConfigProcessor implements SharedConfigProcessorInterface {
       errors.push('工作目录 (cwd) 必须是字符串');
     }
 
-    if (config.disabled !== undefined && typeof config.disabled !== 'boolean') {
-      errors.push('禁用标志 (disabled) 必须是布尔值');
+    if (config.enabled !== undefined && typeof config.enabled !== 'boolean') {
+      errors.push('启用标志 (enabled) 必须是布尔值');
     }
 
     if (
@@ -525,7 +548,7 @@ export class SharedConfigProcessor implements SharedConfigProcessorInterface {
   }
 
   private transformRawConfig(rawConfig: unknown): McpServerConfig {
-    // 处理不同的配置文件格式，确保兼容性
+    // 处理配置文件
     const config: McpServerConfig = {
       servers: {},
       groups: {},
@@ -535,13 +558,6 @@ export class SharedConfigProcessor implements SharedConfigProcessorInterface {
     // 处理服务器配置
     if (rawConfig && typeof rawConfig === 'object' && 'servers' in rawConfig) {
       config.servers = rawConfig.servers as Record<string, ServerConfig>;
-    } else if (
-      rawConfig &&
-      typeof rawConfig === 'object' &&
-      'mcpServers' in rawConfig
-    ) {
-      // 兼容旧格式
-      config.servers = rawConfig.mcpServers as Record<string, ServerConfig>;
     }
 
     // 处理组配置
