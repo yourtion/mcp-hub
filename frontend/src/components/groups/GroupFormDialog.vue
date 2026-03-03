@@ -129,6 +129,7 @@ const serverStore = useServerStore();
 const groupStore = useGroupStore();
 const formRef = ref<FormInstance>();
 const enableToolFilter = ref(false);
+const isFormValid = ref(false);
 
 // 计算属性
 const dialogVisible = computed({
@@ -144,6 +145,7 @@ const confirmBtnProps = computed(() => ({
   content: props.mode === 'create' ? '创建' : '保存',
   theme: 'primary',
   loading: groupStore.loading,
+  disabled: !isFormValid.value,
 }));
 
 const availableServers = computed(() => 
@@ -328,6 +330,20 @@ watch(
   (newServers, oldServers) => {
     if (newServers.length !== oldServers?.length) {
       formData.value.tools = [];
+    }
+  },
+  { deep: true }
+);
+
+// 监听表单数据变化，实时验证表单状态
+watch(
+  () => formData.value,
+  async () => {
+    try {
+      await formRef.value?.validate();
+      isFormValid.value = true;
+    } catch {
+      isFormValid.value = false;
     }
   },
   { deep: true }

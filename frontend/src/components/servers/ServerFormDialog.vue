@@ -409,6 +409,7 @@ const validating = ref(false);
 const testing = ref(false);
 const validationResult = ref<ValidateServerResponse | null>(null);
 const testResult = ref<TestServerResponse | null>(null);
+const isFormValid = ref(false);
 
 // 表单数据
 const formData = ref<FormData>({
@@ -435,6 +436,7 @@ const dialogTitle = computed(() => {
 const confirmBtnProps = computed(() => ({
   content: props.mode === 'create' ? '创建' : '保存',
   loading: loading.value,
+  disabled: !isFormValid.value,
 }));
 
 const configPreview = computed(() => {
@@ -724,6 +726,20 @@ watch(() => formData.value.type, (type) => {
     }
   });
 });
+
+// 监听表单数据变化，实时验证表单状态
+watch(
+  () => formData.value,
+  async () => {
+    try {
+      await formRef.value?.validate();
+      isFormValid.value = true;
+    } catch {
+      isFormValid.value = false;
+    }
+  },
+  { deep: true }
+);
 </script>
 
 <style scoped>

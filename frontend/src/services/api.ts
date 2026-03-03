@@ -1,6 +1,18 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
 import type { ApiResponse } from '@/types/api';
 
+// 错误消息映射表
+const errorMessages: Record<number, string> = {
+  400: '请求参数错误，请检查输入',
+  401: '用户名或密码错误',
+  403: '没有权限执行此操作',
+  404: '请求的资源不存在',
+  409: '数据冲突，请刷新后重试',
+  500: '服务器错误，请稍后重试',
+  502: '网关错误，请稍后重试',
+  503: '服务暂时不可用，请稍后重试',
+};
+
 // 创建axios实例
 const api: AxiosInstance = axios.create({
   baseURL: '/api',
@@ -24,7 +36,7 @@ api.interceptors.request.use(
   },
 );
 
-// 响应拦截器 - 处理token刷新
+// 响应拦截器 - 处理token刷新和错误消息
 api.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
@@ -55,6 +67,17 @@ api.interceptors.response.use(
         localStorage.removeItem('refresh_token');
         window.location.href = '/login';
       }
+    }
+
+    // 添加用户友好的错误消息
+    if (error.response) {
+      const status = error.response.status;
+      const message = errorMessages[status] || `请求失败 (${status})`;
+      error.userMessage = message;
+    } else if (error.request) {
+      error.userMessage = '网络错误，请检查网络连接';
+    } else {
+      error.userMessage = '请求配置错误';
     }
 
     return Promise.reject(error);

@@ -85,37 +85,58 @@ export const EnvironmentDetector = {
    * 检查是否在测试环境中
    */
   isTestEnvironment(): boolean {
-    return process.env.NODE_ENV === 'test' || !!process.env.VITEST;
+    if (typeof window !== 'undefined') {
+      return (window as any).__vitest_environment__ === true;
+    }
+    if (typeof process !== 'undefined' && process?.env) {
+      return process.env.NODE_ENV === 'test' || !!process.env.VITEST;
+    }
+    return false;
   },
 
   /**
    * 检查是否启用调试模式
    */
   isDebugMode(): boolean {
-    return process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true';
+    if (typeof window !== 'undefined') {
+      return (window as any).__vitest_debug__ === true;
+    }
+    if (typeof process !== 'undefined' && process?.env) {
+      return (
+        process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true'
+      );
+    }
+    return false;
   },
 
   /**
    * 获取环境适配的日志级别
    */
   getEnvironmentLogLevel(defaultLevel: LogLevel = LogLevel.INFO): LogLevel {
-    // 如果设置了 LOG_LEVEL 环境变量，优先使用
-    if (process.env.LOG_LEVEL) {
-      const envLevel =
-        LogLevel[process.env.LOG_LEVEL.toUpperCase() as keyof typeof LogLevel];
-      if (envLevel !== undefined) {
-        return envLevel;
+    try {
+      if (
+        typeof window !== 'undefined' &&
+        typeof localStorage !== 'undefined'
+      ) {
+        const logLevelStr = localStorage.getItem('LOG_LEVEL');
+        if (logLevelStr) {
+          const envLevel =
+            LogLevel[logLevelStr.toUpperCase() as keyof typeof LogLevel];
+          if (envLevel !== undefined) return envLevel;
+        }
       }
+      if (typeof process !== 'undefined' && process?.env?.LOG_LEVEL) {
+        const envLevel =
+          LogLevel[
+            process.env.LOG_LEVEL.toUpperCase() as keyof typeof LogLevel
+          ];
+        if (envLevel !== undefined) return envLevel;
+      }
+    } catch {
+      // Ignore errors
     }
-
-    // 测试环境中，如果没有启用调试模式，则使用 WARN 级别
-    if (
-      EnvironmentDetector.isTestEnvironment() &&
-      !EnvironmentDetector.isDebugMode()
-    ) {
-      return LogLevel.WARN;
-    }
-
+    if (EnvironmentDetector.isDebugMode()) return LogLevel.DEBUG;
+    if (EnvironmentDetector.isTestEnvironment()) return LogLevel.WARN;
     return defaultLevel;
   },
 
