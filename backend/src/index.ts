@@ -6,7 +6,7 @@ import {
 import { shutdownHubApi } from './api/hub.js';
 import { shutdownGroupMcpRouter } from './api/mcp/group-router.js';
 import { shutdownServersApi } from './api/servers/index.js';
-import { app } from './app.js';
+import { app, apiToMcpWebService } from './app.js';
 import { shutdownMcpService } from './mcp.js';
 import { initConfig } from './services/config.js';
 import { McpHubService } from './services/mcp_hub_service.js';
@@ -27,11 +27,14 @@ async function validateConfigurations() {
   try {
     const config = await getAllConfig();
 
+    // 检查 system 配置是否为空对象，如果是则跳过验证
+    const systemConfig = config.system && Object.keys(config.system).length > 0 ? config.system : undefined;
+
     // 验证所有配置
     const validationResult = validateAllConfigs(
       config.mcps,
       config.groups,
-      config.system,
+      systemConfig,
     );
 
     if (!validationResult.success) {
@@ -45,7 +48,7 @@ async function validateConfigurations() {
     }
 
     logger.info('配置验证成功', {
-      serverCount: Object.keys(validationResult.data.mcpConfig.mcpServers)
+      serverCount: Object.keys(validationResult.data.mcpConfig.servers)
         .length,
       groupCount: Object.keys(validationResult.data.groupConfig).length,
       hasSystemConfig: !!validationResult.data.systemConfig,
@@ -67,7 +70,7 @@ async function initializeHubService(validatedConfig: any) {
   try {
     // 创建 Hub 服务实例
     hubService = new McpHubService(
-      validatedConfig.mcpConfig.mcpServers,
+      validatedConfig.mcpConfig.servers,
       validatedConfig.groupConfig,
     );
 
@@ -118,6 +121,21 @@ async function startServer() {
       logger.info('初始化仪表板服务...');
       initializeDashboardServices(hubService);
       logger.info('仪表板服务初始化完成');
+    }
+
+    // 5. 初始化 API 到 MCP Web 服务
+    logger.info('初始化 API 到 MCP Web 服务...');
+    try {
+      const config = await getAllConfig();
+      const configPath = config.apiToolsConfigPath;
+      if (configPath) {
+        await apiToMcpWebService.initialize(configPath);
+        logger.info('API 到 MCP Web 服务初始化成功', { configPath });
+      } else {
+        logger.warn('未配置 API 工具配置文件路径，API 到 MCP 功能将不可用');
+      }
+    } catch (error) {
+      logger.error('API 到 MCP Web 服务初始化失败', error as Error);
     }
 
     // 5. 创建 HTTP 服务器

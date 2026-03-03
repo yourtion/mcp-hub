@@ -23,48 +23,34 @@ export function createAuthMiddleware(authService: AuthService) {
    */
   return async function authMiddleware(c: Context, next: Next) {
     try {
-      // 获取Authorization头
+      let token: string | null = null;
+
+      // 优先从Authorization头获取token
       const authHeader = c.req.header('Authorization');
-      if (!authHeader) {
-        return c.json(
-          {
-            success: false,
-            error: {
-              code: 'AUTH_MISSING_TOKEN',
-              message: 'Authorization header is required',
-            },
-            timestamp: new Date().toISOString(),
-            path: c.req.path,
-          },
-          401,
-        );
+      if (authHeader) {
+        // 解析Bearer token
+        const parts = authHeader.split(' ');
+        if (parts.length === 2 && parts[0] === 'Bearer' && parts[1]) {
+          token = parts[1];
+        }
       }
 
-      // 解析Bearer token
-      const parts = authHeader.split(' ');
-      if (parts.length !== 2 || parts[0] !== 'Bearer') {
-        return c.json(
-          {
-            success: false,
-            error: {
-              code: 'AUTH_INVALID_FORMAT',
-              message: 'Authorization header must be in format: Bearer <token>',
-            },
-            timestamp: new Date().toISOString(),
-            path: c.req.path,
-          },
-          401,
-        );
+      // 如果没有从header获取到token，尝试从URL查询参数获取（用于SSE等不支持自定义header的场景）
+      if (!token) {
+        const urlToken = c.req.query('token');
+        if (urlToken) {
+          token = urlToken;
+          logger.debug('从URL参数获取token用于认证');
+        }
       }
 
-      const token = parts[1];
       if (!token) {
         return c.json(
           {
             success: false,
             error: {
               code: 'AUTH_MISSING_TOKEN',
-              message: 'Token is required',
+              message: 'Authorization header or token parameter is required',
             },
             timestamp: new Date().toISOString(),
             path: c.req.path,

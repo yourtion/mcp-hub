@@ -79,44 +79,12 @@
         </t-row>
 
         <t-form-item label="请求头" name="api.headers">
-          <div class="headers-section">
-            <div
-              v-for="(header, index) in formData.api.headers"
-              :key="index"
-              class="header-item"
-            >
-              <t-input
-                v-model="header.key"
-                placeholder="Header名称"
-                class="header-key"
-                :disabled="loading"
-              />
-              <t-input
-                v-model="header.value"
-                placeholder="Header值"
-                class="header-value"
-                :disabled="loading"
-              />
-              <t-button
-                variant="text"
-                theme="danger"
-                size="small"
-                :disabled="loading"
-                @click="removeHeader(index)"
-              >
-                <template #icon><delete-icon /></template>
-              </t-button>
-            </div>
-            <t-button
-              variant="outline"
-              size="small"
-              :disabled="loading"
-              @click="addHeader"
-            >
-              <template #icon><add-icon /></template>
-              添加请求头
-            </t-button>
-          </div>
+          <t-input
+            v-model="headersJson"
+            placeholder="请输入请求头（JSON格式）"
+            :disabled="loading"
+          />
+          <t-helper text="例如: {Content-Type: application/json}" />
         </t-form-item>
 
         <t-form-item label="超时时间(ms)" name="api.timeout">
@@ -326,6 +294,7 @@ const formRef = ref();
 const loading = ref(false);
 const schemaJson = ref('');
 const schemaError = ref('');
+const headersJson = ref('{}');
 
 // 表单数据
 const formData = reactive<ApiToolConfig>({
@@ -335,7 +304,7 @@ const formData = reactive<ApiToolConfig>({
   api: {
     url: '',
     method: 'GET',
-    headers: [],
+    headers: {},
     timeout: 10000,
   },
   parameters: {
@@ -409,7 +378,7 @@ const resetForm = () => {
     api: {
       url: '',
       method: 'GET',
-      headers: [],
+      headers: {},
       timeout: 10000,
     },
     parameters: {
@@ -442,15 +411,7 @@ const resetForm = () => {
   schemaError.value = '';
 };
 
-// 添加请求头
-const addHeader = () => {
-  formData.api.headers.push({ key: '', value: '' });
-};
 
-// 移除请求头
-const removeHeader = (index: number) => {
-  formData.api.headers.splice(index, 1);
-};
 
 // 加载Schema模板
 const loadSchemaTemplate = () => {
@@ -534,35 +495,49 @@ const getSecurityPlaceholder = () => {
 };
 
 // 提交表单
-const handleSubmit = async () => {
-  try {
-    const valid = await formRef.value?.validate();
-    if (!valid) return;
+  const handleSubmit = async () => {
+    try {
+      const valid = await formRef.value?.validate();
+      if (!valid) return;
 
-    // 验证Schema
-    if (!schemaJson.value.trim()) {
-      MessagePlugin.error('请输入参数JSON Schema');
-      return;
+      // 验证Schema
+      if (!schemaJson.value.trim()) {
+        MessagePlugin.error('请输入参数JSON Schema');
+        return;
+      }
+
+      if (!await validateSchema()) {
+        return;
+      }
+
+      loading.value = true;
+
+      // 解析Schema
+      formData.parameters = JSON.parse(schemaJson.value);
+
+      // 解析请求头
+      try {
+        const headers = JSON.parse(headersJson.value);
+        // 确保headers是对象
+        if (typeof headers !== 'object' || headers === null) {
+          MessagePlugin.error('请求头格式错误，请输入有效的JSON对象');
+          return;
+        }
+        formData.api.headers = headers;
+      } catch (error) {
+        MessagePlugin.error('请求头格式错误，请输入有效的JSON格式');
+        return;
+      }
+
+      // 触发提交事件
+      emit('submit', { ...formData });
+    } catch (error) {
+      console.error('表单提交失败:', error);
+      MessagePlugin.error('表单提交失败');
+    } finally {
+      loading.value = false;
     }
-
-    if (!await validateSchema()) {
-      return;
-    }
-
-    loading.value = true;
-
-    // 解析Schema
-    formData.parameters = JSON.parse(schemaJson.value);
-
-    // 触发提交事件
-    emit('submit', { ...formData });
-  } catch (error) {
-    console.error('表单提交失败:', error);
-    MessagePlugin.error('表单提交失败');
-  } finally {
-    loading.value = false;
-  }
-};
+  };
 
 // 取消操作
 const handleCancel = () => {

@@ -34,6 +34,13 @@ export class SSEService {
   }
 
   /**
+   * 获取认证token
+   */
+  private getAuthToken(): string | null {
+    return localStorage.getItem('auth_token');
+  }
+
+  /**
    * 连接到SSE端点
    */
   connect(subscriptions: SSEEventType[] = []): Promise<void> {
@@ -55,13 +62,22 @@ export class SSEService {
       this.subscriptions = subscriptions;
 
       try {
+        // 获取认证token
+        const token = this.getAuthToken();
+        if (!token) {
+          reject(new Error('未找到认证token，请先登录'));
+          this.isConnecting = false;
+          return;
+        }
+
         // 构建URL参数
         const params = new URLSearchParams();
+        params.append('token', token); // 添加token参数用于认证
         if (subscriptions.length > 0) {
           params.append('subscriptions', subscriptions.join(','));
         }
 
-        const url = `/api/dashboard/events${params.toString() ? `?${params.toString()}` : ''}`;
+        const url = `/api/dashboard/events?${params.toString()}`;
 
         this.eventSource = new EventSource(url);
 

@@ -25,7 +25,7 @@ import { createPerformanceMiddleware } from './utils/performance-monitor.js';
 const authService = new AuthService();
 
 // 创建 API 到 MCP Web 服务实例
-const apiToMcpWebService = new ApiToMcpWebService();
+export const apiToMcpWebService = new ApiToMcpWebService();
 
 export const app = new Hono();
 
@@ -53,17 +53,7 @@ app.use('*', async (c, next) => {
 // 初始化 API 到 MCP Web 服务
 app.use('*', async (c, next) => {
   try {
-    const config = await getAllConfig();
-    const configPath = config.apiToolsConfigPath;
-
-    // 检查服务是否已初始化
-    const healthStatus = await apiToMcpWebService.getHealthStatus();
-    if (!healthStatus.initialized && configPath) {
-      await apiToMcpWebService.initialize(configPath);
-      logger.info('API 到 MCP Web 服务初始化成功', { configPath });
-    }
-
-    // 将服务实例注入到上下文
+    // 直接将服务实例注入到上下文
     c.set('apiToMcpWebService', apiToMcpWebService);
   } catch (error) {
     logger.error('API 到 MCP Web 服务初始化失败', error as Error);

@@ -42,11 +42,11 @@ api.interceptors.response.use(
             refreshToken,
           });
 
-          const { token } = response.data;
-          localStorage.setItem('auth_token', token);
+          const { accessToken } = response.data.data;
+          localStorage.setItem('auth_token', accessToken);
 
           // 重试原始请求
-          originalRequest.headers.Authorization = `Bearer ${token}`;
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return api(originalRequest);
         }
       } catch (_refreshError) {

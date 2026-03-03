@@ -9,12 +9,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, 'src'),
     },
-    // 定义全局常量
-    define: {
-      'process.env.NODE_ENV': JSON.stringify(
-        process.env.NODE_ENV || 'development',
-      ),
-    },
   },
   server: {
     port: 8180,

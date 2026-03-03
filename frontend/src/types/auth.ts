@@ -12,7 +12,7 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
+  accessToken: string;
   refreshToken: string;
   user: User;
 }
@@ -22,7 +22,7 @@ export interface RefreshRequest {
 }
 
 export interface RefreshResponse {
-  token: string;
+  accessToken: string;
 }
 
 export interface AuthState {

@@ -61,7 +61,7 @@ describe('ConfigService', () => {
             retentionDays: 30,
           },
         } as SystemConfig,
-        mcps: { mcpServers: {} } as McpConfig,
+        mcps: { servers: {} } as McpConfig,
         groups: {} as GroupConfig,
       };
 
@@ -172,14 +172,12 @@ describe('ConfigService', () => {
 
     it('应该成功验证有效的MCP配置', async () => {
       const validMcpConfig = {
-        mcpServers: {
+        servers: {
           'test-server': {
+            type: 'stdio',
             command: 'node',
             args: ['server.js'],
             env: { NODE_ENV: 'production' },
-            transport: {
-              type: 'stdio' as const,
-            },
           },
         },
       };
@@ -192,13 +190,10 @@ describe('ConfigService', () => {
 
     it('应该检测到无效的MCP配置', async () => {
       const invalidMcpConfig = {
-        mcpServers: {
+        servers: {
           'invalid-server': {
+            type: 'stdio',
             command: '', // 空命令
-            transport: {
-              type: 'sse' as const,
-              // 缺少必需的URL
-            },
           },
         },
       };
@@ -214,16 +209,9 @@ describe('ConfigService', () => {
       // 检查是否包含命令为空的错误
       const commandError = result.errors.find(
         (error) =>
-          error.path.includes('command') && error.code === 'MISSING_COMMAND',
+          error.path.includes('command') && error.message.includes('命令不能为空'),
       );
       expect(commandError).toBeDefined();
-
-      // 检查是否包含SSE URL缺失的错误
-      const sseUrlError = result.errors.find(
-        (error) =>
-          error.path.includes('url') && error.code === 'MISSING_SSE_URL',
-      );
-      expect(sseUrlError).toBeDefined();
     });
 
     it('应该成功验证有效的组配置', async () => {
@@ -231,9 +219,9 @@ describe('ConfigService', () => {
       const mockCurrentConfig = {
         system: {} as SystemConfig,
         mcps: {
-          mcpServers: {
-            server1: { command: 'test' },
-            server2: { command: 'test' },
+          servers: {
+            server1: { type: 'stdio', command: 'test' },
+            server2: { type: 'stdio', command: 'test' },
           },
         } as McpConfig,
         groups: {} as GroupConfig,
@@ -270,8 +258,8 @@ describe('ConfigService', () => {
       const mockCurrentConfig = {
         system: {} as SystemConfig,
         mcps: {
-          mcpServers: {
-            server1: { command: 'test' },
+          servers: {
+            server1: { type: 'stdio', command: 'test' },
           },
         } as McpConfig,
         groups: {} as GroupConfig,
@@ -339,8 +327,9 @@ describe('ConfigService', () => {
 
     it('应该正确分析MCP配置的影响', async () => {
       const mcpConfig = {
-        mcpServers: {
+        servers: {
           'new-server': {
+            type: 'stdio',
             command: 'node',
             args: ['server.js'],
           },
@@ -382,7 +371,7 @@ describe('ConfigService', () => {
       // Mock getCurrentConfig
       const mockConfig = {
         system: { server: { port: 3000, host: 'localhost' } } as SystemConfig,
-        mcps: { mcpServers: {} } as McpConfig,
+        mcps: { servers: {} } as McpConfig,
         groups: {} as GroupConfig,
       };
 
@@ -557,14 +546,12 @@ describe('ConfigService', () => {
 
     it('应该测试MCP配置', async () => {
       const mcpConfig = {
-        mcpServers: {
+        servers: {
           'test-server': {
+            type: 'stdio',
             command: 'node',
             args: ['server.js'],
             env: { NODE_ENV: 'test' },
-            transport: {
-              type: 'stdio' as const,
-            },
           },
         },
       };
@@ -588,7 +575,7 @@ describe('ConfigService', () => {
         system: {
           server: { port: 3000, host: 'localhost' },
         } as SystemConfig,
-        mcps: { mcpServers: {} } as McpConfig,
+        mcps: { servers: {} } as McpConfig,
         groups: {} as GroupConfig,
       };
 

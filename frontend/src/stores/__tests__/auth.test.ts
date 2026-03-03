@@ -63,7 +63,7 @@ describe('Auth Store', () => {
 
   it('应该正确处理登录', async () => {
     const mockResponse = {
-      token: 'new-token',
+      accessToken: 'new-token',
       refreshToken: 'new-refresh-token',
       user: { id: '1', username: 'test', role: 'admin' },
     };

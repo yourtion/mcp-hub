@@ -182,7 +182,8 @@ describe('认证中间件', () => {
 
       const data = await res.json();
       expect(data.success).toBe(false);
-      expect(data.error.code).toBe('AUTH_INVALID_FORMAT');
+      // 无效格式的Authorization头会被当作缺少token处理
+      expect(data.error.code).toBe('AUTH_MISSING_TOKEN');
     });
 
     it('应该拒绝无效token', async () => {

@@ -17,6 +17,7 @@ import { logger } from '../utils/logger.js';
 export class ApiToolIntegrationService {
   private apiServiceManager: ApiToMcpServiceManager;
   private initialized = false;
+  private configPath?: string;
 
   constructor() {
     this.apiServiceManager = new ApiToMcpServiceManagerImpl();

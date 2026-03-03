@@ -34,7 +34,7 @@ function getMcpServerInstance(): JsonStorage<McpConfig> {
     const configDir = getConfigDir();
     const mcpServerPath = path.resolve(configDir, 'mcp_server.json');
     mcpServerInstance = new JsonStorage<McpConfig>(mcpServerPath, {
-      mcpServers: {},
+      servers: {},
     });
   }
   return mcpServerInstance;

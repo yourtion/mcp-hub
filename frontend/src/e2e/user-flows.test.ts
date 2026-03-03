@@ -79,7 +79,7 @@ describe('前端用户流程端到端测试', () => {
 
       // 模拟登录成功 - 使用setAuth方法
       authStore.setAuth({
-        token: 'test-token',
+        accessToken: 'test-token',
         refreshToken: 'test-refresh-token',
         user: {
           id: '1',
@@ -98,7 +98,7 @@ describe('前端用户流程端到端测试', () => {
 
       // 设置初始状态
       authStore.setAuth({
-        token: 'test-token',
+        accessToken: 'test-token',
         refreshToken: 'test-refresh-token',
         user: {
           id: '1',
@@ -418,7 +418,7 @@ describe('前端用户流程端到端测试', () => {
       // 1. 用户登录
       const authStore = useAuthStore();
       authStore.setAuth({
-        token: 'test-token',
+        accessToken: 'test-token',
         refreshToken: 'test-refresh-token',
         user: { id: '1', username: 'newuser', role: 'user' },
       });
@@ -459,7 +459,7 @@ describe('前端用户流程端到端测试', () => {
       // 1. 管理员登录
       const authStore = useAuthStore();
       authStore.setAuth({
-        token: 'admin-token',
+        accessToken: 'admin-token',
         refreshToken: 'admin-refresh-token',
         user: { id: '1', username: 'admin', role: 'admin' },
       });
@@ -516,7 +516,7 @@ describe('前端用户流程端到端测试', () => {
       // 1. 登录
       const authStore = useAuthStore();
       authStore.setAuth({
-        token: 'user-token',
+        accessToken: 'user-token',
         refreshToken: 'user-refresh-token',
         user: { id: '1', username: 'user', role: 'user' },
       });

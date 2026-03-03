@@ -45,16 +45,16 @@ export const useAuthStore = defineStore('auth', () => {
 
   // 设置认证状态
   const setAuth = (authData: {
-    token: string;
+    accessToken: string;
     refreshToken: string;
     user: User;
   }) => {
-    token.value = authData.token;
+    token.value = authData.accessToken;
     refreshToken.value = authData.refreshToken;
     user.value = authData.user;
 
     // 持久化到本地存储
-    localStorage.setItem('auth_token', authData.token);
+    localStorage.setItem('auth_token', authData.accessToken);
     localStorage.setItem('refresh_token', authData.refreshToken);
     localStorage.setItem('user_info', JSON.stringify(authData.user));
   };
@@ -115,8 +115,8 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const response = await authService.refreshToken(refreshToken.value);
-      token.value = response.token;
-      localStorage.setItem('auth_token', response.token);
+      token.value = response.accessToken;
+      localStorage.setItem('auth_token', response.accessToken);
       return true;
     } catch {
       clearAuth();

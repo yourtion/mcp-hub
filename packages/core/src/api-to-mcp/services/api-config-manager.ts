@@ -104,7 +104,8 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
 
       const config = configData as ApiToolsConfig;
 
-      // 先解析环境变量，再进行验证
+      // 先解析环境变量，再验证配置格式
+      // 这样可以确保包含环境变量占位符的 URL 能够正确验证
       const resolvedConfig: ApiToolsConfig = {
         ...config,
         tools: config.tools.map((tool) =>
@@ -271,9 +272,19 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
       // 深度克隆配置对象，避免修改原始配置
       const clonedConfig = JSON.parse(JSON.stringify(config));
 
+      // 确保headers是对象
+      if (clonedConfig.api && (typeof clonedConfig.api.headers !== 'object' || clonedConfig.api.headers === null)) {
+        clonedConfig.api.headers = {};
+      }
+
       // 使用环境变量解析器处理整个配置对象
       const resolvedConfig =
         this.environmentResolver.resolveObject(clonedConfig);
+
+      // 再次确保headers是对象
+      if (resolvedConfig.api && (typeof resolvedConfig.api.headers !== 'object' || resolvedConfig.api.headers === null)) {
+        resolvedConfig.api.headers = {};
+      }
 
       // 验证必需的环境变量
       const requiredVars =

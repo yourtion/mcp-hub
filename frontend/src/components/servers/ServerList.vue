@@ -126,7 +126,7 @@ import {
   DeleteIcon,
 } from 'tdesign-icons-vue-next';
 import { useServerStore } from '@/stores/server';
-import { ContentLayout, StatCard, DataTable, StatusIndicator, ConfirmDialog } from '@/design-system';
+import { ContentLayout, StatCard, DataTable, StatusIndicator, ConfirmDialog, ActionGroup } from '@/design-system';
 import type { Action } from '@/design-system';
 import ServerDetail from './ServerDetail.vue';
 import type { ServerInfo, ServerStatus, ServerType } from '@/types/server';

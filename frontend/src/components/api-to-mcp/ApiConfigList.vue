@@ -613,7 +613,7 @@ const handleExport = () => {
 // 表单提交处理
 const handleFormSubmit = async (config: ApiToolConfig) => {
   try {
-    if (config.id) {
+    if (currentConfig.value) {
       // 更新配置
       await apiToMcpService.updateConfig(config.id, config);
       MessagePlugin.success('配置更新成功');

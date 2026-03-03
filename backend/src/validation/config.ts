@@ -30,12 +30,7 @@ const ServerConfigSchema = z.union([
 
 // MCP 配置验证模式
 const McpConfigSchema = z.object({
-  servers: z
-    .record(z.string(), ServerConfigSchema)
-    .refine(
-      (servers) => Object.keys(servers).length > 0,
-      '至少需要配置一个 MCP 服务器',
-    ),
+  servers: z.record(z.string(), ServerConfigSchema),
   settings: z.record(z.unknown()).optional(),
 });
 
@@ -288,7 +283,7 @@ export function validateAllConfigs(
   }
 
   // 验证组配置
-  const availableServers = Object.keys(mcpResult.data.mcpServers);
+  const availableServers = Object.keys(mcpResult.data.servers);
   const groupResult = validateGroupConfig(groupConfig, availableServers);
   if (!groupResult.success) {
     allErrors.push(...groupResult.errors.map((err) => `组配置错误: ${err}`));
