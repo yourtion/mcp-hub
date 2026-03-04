@@ -69,21 +69,20 @@ const SystemConfigSchema = z.object({
   }),
   users: z.record(
     z.string(),
-    z.object({
-      id: z.string(),
-      username: z.string(),
-      password: z.string().min(1, '密码不能为空').optional(),
-      passwordHash: z.string().optional(),
-      role: z.string(),
-      groups: z.array(z.string()),
-      createdAt: z.string(),
-    }).refine(
-      (data) => data.password || data.passwordHash,
-      {
+    z
+      .object({
+        id: z.string(),
+        username: z.string(),
+        password: z.string().min(1, '密码不能为空').optional(),
+        passwordHash: z.string().optional(),
+        role: z.string(),
+        groups: z.array(z.string()),
+        createdAt: z.string(),
+      })
+      .refine((data) => data.password || data.passwordHash, {
         message: '必须配置 password 或 passwordHash 至少一个',
         path: ['password'],
-      },
-    ),
+      }),
   ),
   ui: z.object({
     title: z.string(),

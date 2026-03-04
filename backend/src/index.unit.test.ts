@@ -94,9 +94,11 @@ describe('服务初始化测试', () => {
 
       if (!result.success) {
         expect(result.errors.length).toBeGreaterThan(0);
-        expect(result.errors.some((err) => err.includes('引用了未在MCP配置中定义的服务器'))).toBe(
-          true,
-        );
+        expect(
+          result.errors.some((err) =>
+            err.includes('引用了未在MCP配置中定义的服务器'),
+          ),
+        ).toBe(true);
       }
     });
 

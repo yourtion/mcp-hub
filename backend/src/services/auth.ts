@@ -86,8 +86,6 @@ export class AuthService {
         continue;
       }
       if (!user.password && user.passwordHash) {
-        // 只配置了 passwordHash，有效
-        continue;
       }
       // 两者都配置了，也有效
     }

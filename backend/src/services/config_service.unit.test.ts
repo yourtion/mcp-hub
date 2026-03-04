@@ -209,7 +209,8 @@ describe('ConfigService', () => {
       // 检查是否包含命令为空的错误
       const commandError = result.errors.find(
         (error) =>
-          error.path.includes('command') && error.message.includes('命令不能为空'),
+          error.path.includes('command') &&
+          error.message.includes('命令不能为空'),
       );
       expect(commandError).toBeDefined();
     });

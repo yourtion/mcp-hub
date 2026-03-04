@@ -338,9 +338,7 @@ export class ConfigService implements IConfigService {
   ): Promise<void> {
     const groupConfig = config as GroupConfig;
     const currentMcpConfig = await this.getCurrentConfig();
-    const availableServers = Object.keys(
-      currentMcpConfig.mcps.servers || {},
-    );
+    const availableServers = Object.keys(currentMcpConfig.mcps.servers || {});
 
     // 验证组配置
     for (const [groupId, group] of Object.entries(groupConfig)) {

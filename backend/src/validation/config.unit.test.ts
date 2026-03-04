@@ -421,9 +421,11 @@ describe('配置验证工具', () => {
       const result = validateAllConfigs(mcpConfig, groupConfig);
       expect(result.success).toBe(false); // 因为 server1 不存在于 servers 中
       if (!result.success) {
-        expect(result.errors.some((err) => err.includes('引用了未在MCP配置中定义的服务器'))).toBe(
-          true,
-        );
+        expect(
+          result.errors.some((err) =>
+            err.includes('引用了未在MCP配置中定义的服务器'),
+          ),
+        ).toBe(true);
       }
     });
   });

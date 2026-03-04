@@ -6,9 +6,10 @@ import {
 import { shutdownHubApi } from './api/hub.js';
 import { shutdownGroupMcpRouter } from './api/mcp/group-router.js';
 import { shutdownServersApi } from './api/servers/index.js';
-import { app, apiToMcpWebService } from './app.js';
+import { apiToMcpWebService, app } from './app.js';
 import { shutdownMcpService } from './mcp.js';
 import { initConfig } from './services/config.js';
+import { getConfigVersionService } from './services/config_version_service.js';
 import { McpHubService } from './services/mcp_hub_service.js';
 import { getAllConfig } from './utils/config.js';
 import { logger } from './utils/logger.js';
@@ -19,16 +20,61 @@ let hubService: McpHubService | null = null;
 let httpServer: any = null;
 
 /**
- * 验证配置文件
+ * 验证配置文件（增强版，包含健康检查和自动恢复）
  */
 async function validateConfigurations() {
   logger.info('开始验证配置文件...');
 
   try {
+    // 1. 执行健康检查
+    const versionService = getConfigVersionService();
+    const healthCheck = await versionService.globalHealthCheck();
+
+    logger.info('配置健康检查结果', {
+      mcp: healthCheck.configs.mcp.healthy,
+      groups: healthCheck.configs.groups.healthy,
+      system: healthCheck.configs.system.healthy,
+      overall: healthCheck.healthy,
+    });
+
+    // 2. 如果配置不健康，尝试恢复
+    if (!healthCheck.healthy) {
+      logger.warn('配置健康检查失败，尝试自动恢复...');
+
+      const { mcp, groups, system } = healthCheck.configs;
+
+      if (!mcp.healthy && mcp.canRecover) {
+        logger.info('尝试恢复 MCP 配置...');
+        await versionService.getMcpStorage().read({ allowRecovery: true });
+      }
+
+      if (!groups.healthy && groups.canRecover) {
+        logger.info('尝试恢复组配置...');
+        await versionService.getGroupStorage().read({ allowRecovery: true });
+      }
+
+      if (!system.healthy && system.canRecover) {
+        logger.info('尝试恢复系统配置...');
+        await versionService.getSystemStorage().read({ allowRecovery: true });
+      }
+
+      // 重新检查健康状态
+      const newHealthCheck = await versionService.globalHealthCheck();
+      if (!newHealthCheck.healthy) {
+        throw new Error('配置自动恢复失败，请手动检查配置文件或使用备份恢复');
+      }
+
+      logger.info('配置自动恢复成功');
+    }
+
+    // 3. 读取并验证配置
     const config = await getAllConfig();
 
     // 检查 system 配置是否为空对象，如果是则跳过验证
-    const systemConfig = config.system && Object.keys(config.system).length > 0 ? config.system : undefined;
+    const systemConfig =
+      config.system && Object.keys(config.system).length > 0
+        ? config.system
+        : undefined;
 
     // 验证所有配置
     const validationResult = validateAllConfigs(
@@ -48,8 +94,7 @@ async function validateConfigurations() {
     }
 
     logger.info('配置验证成功', {
-      serverCount: Object.keys(validationResult.data.mcpConfig.servers)
-        .length,
+      serverCount: Object.keys(validationResult.data.mcpConfig.servers).length,
       groupCount: Object.keys(validationResult.data.groupConfig).length,
       hasSystemConfig: !!validationResult.data.systemConfig,
     });

@@ -4,9 +4,9 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { startTestServer, stopTestServer } from '../test-server.js';
-import { E2ETestHelper, E2EScenarioHelper } from '../e2e-test-helper.js';
+import { E2EScenarioHelper, E2ETestHelper } from '../e2e-test-helper.js';
 import { MockServerManager } from '../mock-mcp-server.js';
+import { startTestServer, stopTestServer } from '../test-server.js';
 
 describe('完整用户流程 E2E 测试', () => {
   const testServer = startTestServer(3000);
@@ -99,10 +99,13 @@ describe('完整用户流程 E2E 测试', () => {
   describe('工具发现和执行流程', () => {
     it('应该完成工具发现到执行的全流程', async () => {
       // 步骤 1: 等待系统就绪
-      await E2ETestHelper.waitFor(async () => {
-        const response = await fetch(`${baseUrl}/api/health`);
-        return response.ok;
-      }, { timeout: 10000 });
+      await E2ETestHelper.waitFor(
+        async () => {
+          const response = await fetch(`${baseUrl}/api/health`);
+          return response.ok;
+        },
+        { timeout: 10000 },
+      );
 
       // 步骤 2: 获取所有工具
       const toolsResponse = await fetch(`${baseUrl}/api/tools`);
@@ -157,10 +160,13 @@ describe('完整用户流程 E2E 测试', () => {
 
   describe('服务器管理流程', () => {
     it('应该完成服务器的添加、连接和移除流程', async () => {
-      await E2ETestHelper.waitFor(async () => {
-        const response = await fetch(`${baseUrl}/api/health`);
-        return response.ok;
-      }, { timeout: 10000 });
+      await E2ETestHelper.waitFor(
+        async () => {
+          const response = await fetch(`${baseUrl}/api/health`);
+          return response.ok;
+        },
+        { timeout: 10000 },
+      );
 
       // 步骤 1: 添加新服务器
       const newServer = {
@@ -200,10 +206,13 @@ describe('完整用户流程 E2E 测试', () => {
 
   describe('组管理流程', () => {
     it('应该完成组的创建、配置和使用流程', async () => {
-      await E2ETestHelper.waitFor(async () => {
-        const response = await fetch(`${baseUrl}/api/health`);
-        return response.ok;
-      }, { timeout: 10000 });
+      await E2ETestHelper.waitFor(
+        async () => {
+          const response = await fetch(`${baseUrl}/api/health`);
+          return response.ok;
+        },
+        { timeout: 10000 },
+      );
 
       // 步骤 1: 查看现有组
       const groupsResponse = await fetch(`${baseUrl}/api/groups`);
@@ -239,10 +248,13 @@ describe('完整用户流程 E2E 测试', () => {
 
   describe('错误处理流程', () => {
     it('应该正确处理各种错误情况', async () => {
-      await E2ETestHelper.waitFor(async () => {
-        const response = await fetch(`${baseUrl}/api/health`);
-        return response.ok;
-      }, { timeout: 10000 });
+      await E2ETestHelper.waitFor(
+        async () => {
+          const response = await fetch(`${baseUrl}/api/health`);
+          return response.ok;
+        },
+        { timeout: 10000 },
+      );
 
       // 测试 1: 尝试执行不存在的工具
       const executeResponse = await fetch(`${baseUrl}/api/tools/execute`, {
@@ -286,10 +298,13 @@ describe('完整用户流程 E2E 测试', () => {
 
   describe('并发操作流程', () => {
     it('应该能够并发执行多个工具调用', async () => {
-      await E2ETestHelper.waitFor(async () => {
-        const response = await fetch(`${baseUrl}/api/health`);
-        return response.ok;
-      }, { timeout: 10000 });
+      await E2ETestHelper.waitFor(
+        async () => {
+          const response = await fetch(`${baseUrl}/api/health`);
+          return response.ok;
+        },
+        { timeout: 10000 },
+      );
 
       // 获取可用工具
       const toolsResponse = await fetch(`${baseUrl}/api/tools`);
@@ -301,7 +316,7 @@ describe('完整用户流程 E2E 测试', () => {
       }
 
       // 并发执行多个工具
-      const operations = tools.slice(0, 5).map(tool => async () => {
+      const operations = tools.slice(0, 5).map((tool) => async () => {
         const response = await fetch(`${baseUrl}/api/tools/execute`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -320,9 +335,7 @@ describe('完整用户流程 E2E 测试', () => {
 
       const { benchmark } = await E2ETestHelper.benchmark(
         async () => {
-          await Promise.all(
-            operations.map(op => op()),
-          );
+          await Promise.all(operations.map((op) => op()));
         },
         { iterations: 10, warmupIterations: 2 },
       );
@@ -336,10 +349,13 @@ describe('完整用户流程 E2E 测试', () => {
 
   describe('性能和稳定性', () => {
     it('应该在负载下保持稳定', async () => {
-      await E2ETestHelper.waitFor(async () => {
-        const response = await fetch(`${baseUrl}/api/health`);
-        return response.ok;
-      }, { timeout: 10000 });
+      await E2ETestHelper.waitFor(
+        async () => {
+          const response = await fetch(`${baseUrl}/api/health`);
+          return response.ok;
+        },
+        { timeout: 10000 },
+      );
 
       // 模拟多个并发请求
       const requests = Array.from({ length: 20 }, () =>
@@ -351,7 +367,7 @@ describe('完整用户流程 E2E 测试', () => {
       const duration = Date.now() - startTime;
 
       // 验证所有请求都成功
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.ok).toBe(true);
       });
 
@@ -363,10 +379,13 @@ describe('完整用户流程 E2E 测试', () => {
     }, 20000);
 
     it('应该能够处理大量请求', async () => {
-      await E2ETestHelper.waitFor(async () => {
-        const response = await fetch(`${baseUrl}/api/health`);
-        return response.ok;
-      }, { timeout: 10000 });
+      await E2ETestHelper.waitFor(
+        async () => {
+          const response = await fetch(`${baseUrl}/api/health`);
+          return response.ok;
+        },
+        { timeout: 10000 },
+      );
 
       const totalRequests = 50;
       const successThreshold = 0.95; // 95% 成功率

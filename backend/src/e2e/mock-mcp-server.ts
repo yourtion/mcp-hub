@@ -154,7 +154,7 @@ export class EnhancedMockMcpServer {
     arguments?: Record<string, unknown>;
   }): Promise<{ content: Array<{ type: string; text: string }> }> {
     return this.handleRequest('call_tool', params, () => {
-      const tool = this.tools.find(t => t.name === params.name);
+      const tool = this.tools.find((t) => t.name === params.name);
 
       if (!tool) {
         throw new Error(`Tool ${params.name} not found`);
@@ -290,7 +290,9 @@ export class EnhancedMockMcpServer {
    * 更新平均响应时间
    */
   private updateAvgResponseTime(duration: number): void {
-    const total = this.stats.avgResponseTime * (this.stats.successfulRequests - 1) + duration;
+    const total =
+      this.stats.avgResponseTime * (this.stats.successfulRequests - 1) +
+      duration;
     this.stats.avgResponseTime = total / this.stats.successfulRequests;
   }
 
@@ -298,7 +300,7 @@ export class EnhancedMockMcpServer {
    * 延迟函数
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -419,7 +421,7 @@ export class MockServerManager {
    * 启动所有服务器
    */
   async startAll(): Promise<void> {
-    const startPromises = Array.from(this.servers.values()).map(server =>
+    const startPromises = Array.from(this.servers.values()).map((server) =>
       server.start(),
     );
     await Promise.all(startPromises);
@@ -429,7 +431,7 @@ export class MockServerManager {
    * 停止所有服务器
    */
   async stopAll(): Promise<void> {
-    const stopPromises = Array.from(this.servers.values()).map(server =>
+    const stopPromises = Array.from(this.servers.values()).map((server) =>
       server.stop(),
     );
     await Promise.all(stopPromises);
@@ -439,14 +441,14 @@ export class MockServerManager {
    * 获取所有服务器统计
    */
   getAllStats(): MockServerStats[] {
-    return Array.from(this.servers.values()).map(server => server.getStats());
+    return Array.from(this.servers.values()).map((server) => server.getStats());
   }
 
   /**
    * 重置所有服务器统计
    */
   resetAllStats(): void {
-    this.servers.forEach(server => server.resetStats());
+    this.servers.forEach((server) => server.resetStats());
   }
 
   /**
