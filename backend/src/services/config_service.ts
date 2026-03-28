@@ -23,6 +23,8 @@ import type {
   IConfigService,
 } from '../types/config.js';
 import { asMutable, getAllConfig, saveConfig } from '../utils/config.js';
+import type { HealthCheckResult } from '../utils/enhanced_json_storage.js';
+import { EnhancedJsonStorage } from '../utils/enhanced_json_storage.js';
 
 // 配置验证模式
 const systemConfigSchema = z.object({
@@ -113,14 +115,49 @@ export class ConfigService implements IConfigService {
   private readonly historyDir: string;
   private readonly backupDir: string;
 
+  // 新增：增强存储实例
+  private mcpStorage!: EnhancedJsonStorage<McpConfig>;
+  private groupStorage!: EnhancedJsonStorage<GroupConfig>;
+  private systemStorage!: EnhancedJsonStorage<SystemConfig>;
+
   constructor() {
     this.configDir =
       process.env.CONFIG_PATH || path.resolve(process.cwd(), 'config');
     this.historyDir = path.resolve(this.configDir, '.history');
     this.backupDir = path.resolve(this.configDir, '.backups');
 
+    // 初始化增强存储
+    this.initializeEnhancedStorage();
+
     // 确保目录存在
     this.ensureDirectories();
+  }
+
+  /**
+   * 初始化增强存储实例
+   */
+  private initializeEnhancedStorage(): void {
+    const mcpPath = path.resolve(this.configDir, 'mcp_server.json');
+    const groupPath = path.resolve(this.configDir, 'group.json');
+    const systemPath = path.resolve(this.configDir, 'system.json');
+
+    this.mcpStorage = new EnhancedJsonStorage<McpConfig>(
+      mcpPath,
+      { servers: {} },
+      this.isMcpConfig.bind(this),
+    );
+
+    this.groupStorage = new EnhancedJsonStorage<GroupConfig>(
+      groupPath,
+      {} as GroupConfig,
+      this.isGroupConfig.bind(this),
+    );
+
+    this.systemStorage = new EnhancedJsonStorage<SystemConfig>(
+      systemPath,
+      undefined, // system.json 是可选的
+      this.isSystemConfig.bind(this),
+    );
   }
 
   private async ensureDirectories(): Promise<void> {
@@ -149,34 +186,45 @@ export class ConfigService implements IConfigService {
     configType: ConfigType,
     config: Record<string, unknown>,
     description?: string,
+    expectedVersion?: string, // 新增：期望的版本号
   ): Promise<void> {
     // 获取当前配置用于比较
     const currentConfig = await this.getCurrentConfig();
     let oldConfig: unknown;
-    let fileName: string;
+    let storage: EnhancedJsonStorage<any>; // 新增：存储实例
 
     switch (configType) {
       case 'system':
         oldConfig = currentConfig.system;
-        fileName = 'system.json';
+        storage = this.systemStorage;
         break;
       case 'mcp':
         oldConfig = currentConfig.mcps;
-        fileName = 'mcp_server.json';
+        storage = this.mcpStorage;
         break;
       case 'groups':
         oldConfig = currentConfig.groups;
-        fileName = 'group.json';
+        storage = this.groupStorage;
         break;
       default:
         throw new Error(`不支持的配置类型: ${configType}`);
     }
 
-    // 保存配置
-    await saveConfig(
-      fileName as 'system.json' | 'mcp_server.json' | 'group.json',
-      config as SystemConfig | McpConfig | GroupConfig,
-    );
+    try {
+      // 使用增强存储的原子写入
+      await storage.write(config, {
+        expectedVersion, // 乐观锁
+        createBackup: true,
+      });
+    } catch (error) {
+      // 处理版本冲突
+      if (error instanceof Error && error.message.includes('版本冲突')) {
+        throw new Error(
+          `配置已被其他用户修改，请刷新后重试（当前版本: ${expectedVersion}）`,
+        );
+      }
+      throw error;
+    }
 
     // 记录历史
     await this.recordConfigHistory(configType, oldConfig, config, description);
@@ -1085,5 +1133,154 @@ export class ConfigService implements IConfigService {
     }
 
     return changes;
+  }
+
+  // ========== 类型守卫方法 ==========
+
+  /**
+   * MCP配置类型守卫
+   */
+  private isMcpConfig(data: unknown): data is McpConfig {
+    return (
+      typeof data === 'object' &&
+      data !== null &&
+      'servers' in data &&
+      typeof data.servers === 'object'
+    );
+  }
+
+  /**
+   * 组配置类型守卫
+   */
+  private isGroupConfig(data: unknown): data is GroupConfig {
+    return typeof data === 'object' && data !== null;
+  }
+
+  /**
+   * 系统配置类型守卫
+   */
+  private isSystemConfig(data: unknown): data is SystemConfig {
+    return (
+      typeof data === 'object' &&
+      data !== null &&
+      'server' in data &&
+      typeof data.server === 'object'
+    );
+  }
+
+  // ========== 版本管理方法 ==========
+
+  /**
+   * 获取配置文件路径
+   */
+  private getFilePath(configType: ConfigType): string {
+    switch (configType) {
+      case 'system':
+        return path.resolve(this.configDir, 'system.json');
+      case 'mcp':
+        return path.resolve(this.configDir, 'mcp_server.json');
+      case 'groups':
+        return path.resolve(this.configDir, 'group.json');
+      default:
+        throw new Error(`不支持的配置类型: ${configType}`);
+    }
+  }
+
+  /**
+   * 获取存储实例
+   */
+  private getStorage(
+    configType: ConfigType,
+  ): EnhancedJsonStorage<McpConfig | GroupConfig | SystemConfig> {
+    switch (configType) {
+      case 'system':
+        return this.systemStorage;
+      case 'mcp':
+        return this.mcpStorage;
+      case 'groups':
+        return this.groupStorage;
+      default:
+        throw new Error(`不支持的配置类型: ${configType}`);
+    }
+  }
+
+  /**
+   * 获取配置版本信息
+   */
+  async getConfigVersionInfo(configType: ConfigType): Promise<{
+    version: string;
+    lastModified: string;
+    checksum: string;
+  }> {
+    const filePath = this.getFilePath(configType);
+    const metadataPath = `${filePath}.metadata.json`;
+
+    try {
+      const content = await fs.readFile(metadataPath, 'utf-8');
+      const metadata = JSON.parse(content);
+
+      return {
+        version: metadata.version,
+        lastModified: metadata.timestamp,
+        checksum: metadata.checksum,
+      };
+    } catch {
+      // 如果没有元数据，返回初始版本
+      const stats = await fs.stat(filePath);
+      return {
+        version: '1',
+        lastModified: stats.mtime.toISOString(),
+        checksum: '',
+      };
+    }
+  }
+
+  /**
+   * 验证配置版本
+   */
+  async validateVersion(
+    configType: ConfigType,
+    expectedVersion: string,
+  ): Promise<boolean> {
+    const currentInfo = await this.getConfigVersionInfo(configType);
+    return currentInfo.version === expectedVersion;
+  }
+
+  /**
+   * 健康检查
+   */
+  async healthCheck(): Promise<{
+    healthy: boolean;
+    configs: {
+      mcp: HealthCheckResult;
+      groups: HealthCheckResult;
+      system: HealthCheckResult;
+    };
+  }> {
+    const [mcp, groups, system] = await Promise.all([
+      this.mcpStorage.healthCheck().catch((error) => ({
+        healthy: false,
+        error,
+        canRecover: false,
+        backupAvailable: false,
+      })),
+      this.groupStorage.healthCheck().catch((error) => ({
+        healthy: false,
+        error,
+        canRecover: false,
+        backupAvailable: false,
+      })),
+      this.systemStorage.healthCheck().catch((error) => ({
+        healthy: false,
+        error,
+        canRecover: false,
+        backupAvailable: false,
+      })),
+    ]);
+
+    return {
+      healthy: mcp.healthy && groups.healthy && system.healthy,
+      configs: { mcp, groups, system },
+    };
   }
 }

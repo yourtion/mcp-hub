@@ -119,6 +119,11 @@ export interface SecurityLogger {
    * @param callback 告警回调函数
    */
   setAlertCallback(callback: (alert: SecurityAlert) => void): void;
+
+  /**
+   * 释放后台资源
+   */
+  destroy(): void;
 }
 
 /**
@@ -177,6 +182,7 @@ export class SecurityLoggerImpl implements SecurityLogger {
   private sensitiveConfig: SensitiveDataConfig;
   private monitoringConfig: SecurityMonitoringConfig;
   private alertCallback?: (alert: SecurityAlert) => void;
+  private cleanupTimer?: NodeJS.Timeout;
 
   constructor(
     sensitiveConfig?: Partial<SensitiveDataConfig>,
@@ -207,12 +213,13 @@ export class SecurityLoggerImpl implements SecurityLogger {
     };
 
     // 定期清理旧日志（保留24小时）
-    setInterval(
+    this.cleanupTimer = setInterval(
       () => {
         this.cleanupOldLogs();
       },
       60 * 60 * 1000,
     ); // 每小时清理一次
+    this.cleanupTimer.unref?.();
   }
 
   logApiCall(log: ApiCallLog): void {
@@ -364,6 +371,13 @@ export class SecurityLoggerImpl implements SecurityLogger {
 
   setAlertCallback(callback: (alert: SecurityAlert) => void): void {
     this.alertCallback = callback;
+  }
+
+  destroy(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = undefined;
+    }
   }
 
   private sanitizeData(data: unknown): unknown {

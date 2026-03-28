@@ -12,12 +12,30 @@ export const dashboardApi = new Hono();
 let dashboardService: DashboardService | null = null;
 let sseEventManager: SSEEventManager | null = null;
 let eventIntegrationService: EventIntegrationService | null = null;
+let dashboardCleanupInterval: NodeJS.Timeout | null = null;
+let dashboardHealthInterval: NodeJS.Timeout | null = null;
+
+function stopDashboardIntervals(): void {
+  if (dashboardCleanupInterval) {
+    clearInterval(dashboardCleanupInterval);
+    dashboardCleanupInterval = null;
+  }
+  if (dashboardHealthInterval) {
+    clearInterval(dashboardHealthInterval);
+    dashboardHealthInterval = null;
+  }
+}
 
 /**
  * 初始化仪表板服务
  */
 export function initializeDashboardServices(hubService: McpHubService): void {
   logger.info('初始化仪表板服务');
+
+  stopDashboardIntervals();
+  if (sseEventManager) {
+    sseEventManager.shutdown();
+  }
 
   dashboardService = new DashboardService(hubService);
   sseEventManager = new SSEEventManager();
@@ -30,7 +48,7 @@ export function initializeDashboardServices(hubService: McpHubService): void {
   eventIntegrationService.recordSystemStart();
 
   // 设置定期清理任务（每天清理一次）
-  setInterval(
+  dashboardCleanupInterval = setInterval(
     () => {
       if (dashboardService) {
         dashboardService.cleanup();
@@ -38,10 +56,11 @@ export function initializeDashboardServices(hubService: McpHubService): void {
     },
     24 * 60 * 60 * 1000,
   ); // 24小时
+  dashboardCleanupInterval.unref?.();
 
   // 设置定期健康检查任务（每5分钟检查一次）
   let lastHealthStatus: 'healthy' | 'warning' | 'error' = 'healthy';
-  setInterval(
+  dashboardHealthInterval = setInterval(
     async () => {
       if (dashboardService && eventIntegrationService) {
         try {
@@ -73,6 +92,7 @@ export function initializeDashboardServices(hubService: McpHubService): void {
     },
     5 * 60 * 1000,
   ); // 5分钟
+  dashboardHealthInterval.unref?.();
 
   logger.info('仪表板服务初始化完成');
 }
@@ -837,6 +857,8 @@ export async function shutdownDashboardServices(): Promise<void> {
   logger.info('关闭仪表板服务');
 
   try {
+    stopDashboardIntervals();
+
     if (sseEventManager) {
       sseEventManager.shutdown();
       sseEventManager = null;

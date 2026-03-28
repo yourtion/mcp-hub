@@ -6,3 +6,5 @@ coverage/
 .claude/hooks/
 .claude/session-config.json
 .claude/sessions.json
+
+qa

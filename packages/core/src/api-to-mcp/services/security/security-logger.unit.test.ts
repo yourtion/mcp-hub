@@ -2,7 +2,7 @@
  * 安全日志记录器测试
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SecurityEvent } from '../../types/security.js';
 import { SecurityLoggerImpl } from './security-logger.js';
 
@@ -32,6 +32,10 @@ describe('SecurityLoggerImpl', () => {
     securityLogger.setAlertCallback((alert) => {
       alerts.push(alert);
     });
+  });
+
+  afterEach(() => {
+    securityLogger.destroy();
   });
 
   describe('API调用日志记录', () => {
@@ -405,6 +409,7 @@ describe('SecurityLoggerImpl', () => {
 
       // 自定义敏感字段应该被脱敏
       expect(true).toBe(true);
+      customLogger.destroy();
     });
 
     it('应该使用自定义监控配置', async () => {
@@ -453,6 +458,7 @@ describe('SecurityLoggerImpl', () => {
 
       // 30%错误率应该触发25%阈值的告警
       expect(customAlerts.length).toBeGreaterThan(0);
+      customLogger.destroy();
     });
   });
 });

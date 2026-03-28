@@ -7,6 +7,7 @@ import type {
   ConfigHistoryResponse,
   ConfigResponse,
   ConfigRestoreRequest,
+  ConfigType,
   ConfigUpdateRequest,
   ConfigValidationRequest,
   ConfigValidationResponse,
@@ -20,6 +21,7 @@ const configUpdateSchema = z.object({
   configType: z.enum(['system', 'mcp', 'groups']),
   config: z.record(z.unknown()),
   description: z.string().optional(),
+  expectedVersion: z.string().optional(), // 新增：期望的版本号
 });
 
 // 配置验证请求验证模式
@@ -78,11 +80,12 @@ configApi.get('/', async (c) => {
 });
 
 /**
- * PUT /api/config - 更新系统配置
+ * PUT /api/config - 更新系统配置（支持版本控制）
  */
 configApi.put('/', zValidator('json', configUpdateSchema), async (c) => {
   try {
-    const { configType, config, description } = c.req.valid('json');
+    const { configType, config, description, expectedVersion } =
+      c.req.valid('json');
 
     // 验证配置
     const validationResult = await configService.validateConfig(
@@ -103,12 +106,49 @@ configApi.put('/', zValidator('json', configUpdateSchema), async (c) => {
       );
     }
 
-    // 更新配置
-    await configService.updateConfig(configType, config, description);
+    // 更新配置（带版本控制）
+    try {
+      await configService.updateConfig(
+        configType,
+        config,
+        description,
+        expectedVersion,
+      );
+    } catch (updateError) {
+      // 处理版本冲突
+      if (
+        updateError instanceof Error &&
+        updateError.message.includes('配置已被其他用户修改')
+      ) {
+        // 获取当前版本信息
+        const currentVersionInfo =
+          await configService.getConfigVersionInfo(configType);
+
+        return c.json(
+          {
+            success: false,
+            error: {
+              code: 'CONFIG_VERSION_CONFLICT',
+              message: '配置已被其他用户修改，请刷新后重试',
+              details: {
+                expectedVersion,
+                currentVersion: currentVersionInfo.version,
+                lastModified: currentVersionInfo.lastModified,
+              },
+            },
+          },
+          409, // Conflict status code
+        );
+      }
+      throw updateError;
+    }
 
     return c.json({
       success: true,
       message: '配置更新成功',
+      data: {
+        version: (await configService.getConfigVersionInfo(configType)).version,
+      },
     });
   } catch (error) {
     console.error('更新配置失败:', error);
@@ -383,6 +423,100 @@ configApi.get('/backups', async (c) => {
         error: {
           code: 'CONFIG_BACKUP_LIST_ERROR',
           message: '获取备份列表失败',
+          details: error instanceof Error ? error.message : '未知错误',
+        },
+      },
+      500,
+    );
+  }
+});
+
+/**
+ * GET /api/config/health - 配置健康检查
+ */
+configApi.get('/health', async (c) => {
+  try {
+    const healthCheck = await configService.healthCheck();
+
+    return c.json({
+      success: true,
+      data: {
+        healthy: healthCheck.healthy,
+        configs: {
+          mcp: {
+            healthy: healthCheck.configs.mcp.healthy,
+            canRecover: healthCheck.configs.mcp.canRecover,
+            backupAvailable: healthCheck.configs.mcp.backupAvailable,
+            version: healthCheck.configs.mcp.version?.version,
+            lastModified: healthCheck.configs.mcp.version?.timestamp,
+          },
+          groups: {
+            healthy: healthCheck.configs.groups.healthy,
+            canRecover: healthCheck.configs.groups.canRecover,
+            backupAvailable: healthCheck.configs.groups.backupAvailable,
+            version: healthCheck.configs.groups.version?.version,
+            lastModified: healthCheck.configs.groups.version?.timestamp,
+          },
+          system: {
+            healthy: healthCheck.configs.system.healthy,
+            canRecover: healthCheck.configs.system.canRecover,
+            backupAvailable: healthCheck.configs.system.backupAvailable,
+            version: healthCheck.configs.system.version?.version,
+            lastModified: healthCheck.configs.system.version?.timestamp,
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.error('配置健康检查失败:', error);
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: 'CONFIG_HEALTH_CHECK_ERROR',
+          message: '配置健康检查失败',
+          details: error instanceof Error ? error.message : '未知错误',
+        },
+      },
+      500,
+    );
+  }
+});
+
+/**
+ * GET /api/config/version/:configType - 获取配置版本信息
+ */
+configApi.get('/version/:configType', async (c) => {
+  try {
+    const configType = c.req.param('configType') as ConfigType;
+
+    if (!['system', 'mcp', 'groups'].includes(configType)) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: 'INVALID_CONFIG_TYPE',
+            message: '不支持的配置类型',
+          },
+        },
+        400,
+      );
+    }
+
+    const versionInfo = await configService.getConfigVersionInfo(configType);
+
+    return c.json({
+      success: true,
+      data: versionInfo,
+    });
+  } catch (error) {
+    console.error('获取配置版本信息失败:', error);
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: 'CONFIG_VERSION_ERROR',
+          message: '获取配置版本信息失败',
           details: error instanceof Error ? error.message : '未知错误',
         },
       },

@@ -13,6 +13,13 @@ A centralized hub server engineered to consolidate multiple MCP servers into ded
 - **Tool Filtering**: Groups support tool filtering and screening capabilities
 - **Validation Support**: Groups can set separate validation keys for security
 - **Modular Architecture**: Clean separation between core logic, API, and CLI packages
+- **Enhanced Configuration Management**:
+  - Atomic writes using temporary files to prevent corruption
+  - Version-based optimistic locking for concurrent modification detection
+  - SHA256 checksums for data integrity verification
+  - Automatic backup creation (keeps last 10 versions)
+  - Auto-recovery from backups when corruption detected
+  - Startup health checks with automatic repair
 
 ## Architecture
 

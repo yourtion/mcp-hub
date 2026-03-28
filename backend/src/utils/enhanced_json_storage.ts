@@ -81,7 +81,7 @@ export class EnhancedJsonStorage<T> {
   async read(options?: { allowRecovery?: boolean }): Promise<T> {
     try {
       // 尝试读取主文件
-      const data = await this.readFile(this.filePath) as T;
+      const data = (await this.readFile(this.filePath)) as T;
 
       // 验证数据
       if (this.validator && !this.validator(data)) {
@@ -229,7 +229,7 @@ export class EnhancedJsonStorage<T> {
     const backup = await this.getLatestBackup();
     if (backup) {
       try {
-        const data = await this.readFile(backup.path) as T;
+        const data = (await this.readFile(backup.path)) as T;
 
         if (this.validator && !this.validator(data)) {
           throw new Error('备份数据验证失败');

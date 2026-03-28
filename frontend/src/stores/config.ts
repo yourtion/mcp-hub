@@ -84,14 +84,20 @@ export const useConfigStore = defineStore('config', () => {
   };
 
   /**
-   * 更新配置
+   * 更新配置（支持版本控制）
    */
   const updateConfig = async (request: ConfigUpdateRequest): Promise<void> => {
     try {
       loading.value = true;
       error.value = null;
 
-      await configService.updateConfig(request);
+      // 添加当前版本号到请求中
+      const requestWithVersion = {
+        ...request,
+        expectedVersion: configData.value?.version,
+      };
+
+      await configService.updateConfig(requestWithVersion);
 
       // 更新成功后重新获取配置
       await fetchConfig();
@@ -99,7 +105,32 @@ export const useConfigStore = defineStore('config', () => {
       // 清除表单状态
       clearFormData();
     } catch (err) {
-      error.value = err instanceof Error ? err.message : '更新配置失败';
+      // 增强错误处理，特别是版本冲突
+      if (err && typeof err === 'object') {
+        const axiosError = err as Record<string, unknown>;
+        if ('response' in axiosError) {
+          const response = axiosError.response as Record<string, unknown>;
+          if (response.status === 409) {
+            // 版本冲突错误
+            const data = response.data as Record<string, unknown>;
+            const errorData = data.error as Record<string, unknown>;
+            const conflictMessage = `配置已被其他用户修改。
+
+服务器版本: ${(errorData.details as Record<string, string>)?.currentVersion || '未知'}
+您的版本: ${requestWithVersion.expectedVersion || '未知'}
+
+请刷新页面获取最新配置后再试。`;
+            error.value = conflictMessage;
+          } else {
+            error.value = err instanceof Error ? err.message : '更新配置失败';
+          }
+        } else {
+          error.value = err instanceof Error ? err.message : '更新配置失败';
+        }
+      } else {
+        error.value = err instanceof Error ? err.message : '更新配置失败';
+      }
+
       console.error('更新配置失败:', err);
       throw err;
     } finally {
