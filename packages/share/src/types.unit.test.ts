@@ -31,7 +31,10 @@ describe('DeepReadonly', () => {
   it('应该使对象只读', () => {
     // 测试类型编译正确
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const obj: DeepReadonly<{ a: number; b: string }> = { a: 1, b: 'test' } as any;
+    const obj: DeepReadonly<{ a: number; b: string }> = {
+      a: 1,
+      b: 'test',
+    } as any;
 
     expect(obj).toEqual({ a: 1, b: 'test' });
   });
@@ -53,9 +56,10 @@ describe('DeepReadonly', () => {
   it('应该使对象数组只读', () => {
     // 测试类型编译正确
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const objArr: DeepReadonly<
-      Array<{ a: number; b: string }>
-    > = [{ a: 1, b: 'test' }, { a: 2, b: 'test2' }] as any;
+    const objArr: DeepReadonly<Array<{ a: number; b: string }>> = [
+      { a: 1, b: 'test' },
+      { a: 2, b: 'test2' },
+    ] as any;
 
     expect(objArr).toEqual([
       { a: 1, b: 'test' },

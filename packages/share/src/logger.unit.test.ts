@@ -5,12 +5,12 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  createLogger,
   EnvironmentDetector,
   JsonFormatter,
-  LogLevel,
   LOG_LEVEL_NAMES,
+  LogLevel,
   TextFormatter,
-  createLogger,
 } from './logger.js';
 
 describe('LogLevel', () => {
@@ -250,6 +250,8 @@ describe('createLogger', () => {
     });
 
     // 不应该抛出错误
-    expect(() => logger.info('Test message', { userId: '123', action: 'test' })).not.toThrow();
+    expect(() =>
+      logger.info('Test message', { userId: '123', action: 'test' }),
+    ).not.toThrow();
   });
 });

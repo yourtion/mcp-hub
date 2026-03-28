@@ -102,7 +102,7 @@ export class ConcurrentExecutor {
           // 创建一个立即完成的 race 来检查状态
           const checked = await Promise.race([
             p.then(() => ({ done: true })),
-            Promise.resolve({ done: false }).then(() => ({ done: false }))
+            Promise.resolve({ done: false }).then(() => ({ done: false })),
           ]);
 
           if (!checked.done) {
@@ -128,11 +128,11 @@ export class ConcurrentExecutor {
     operations: Array<() => Promise<T>>,
     options: ConcurrentExecutionOptions = {},
   ) {
-    const results = await this.execute(operations, options);
+    const results = await ConcurrentExecutor.execute(operations, options);
 
-    const successful = results.filter(r => r.success);
-    const failed = results.filter(r => !r.success);
-    const durations = results.map(r => r.duration);
+    const successful = results.filter((r) => r.success);
+    const failed = results.filter((r) => !r.success);
+    const durations = results.map((r) => r.duration);
 
     return {
       results,
@@ -165,12 +165,16 @@ export class ConcurrentExecutor {
   }> {
     const operations = Array.from({ length: iterations }, () => operation);
 
-    const results = await this.execute(operations, { concurrency });
+    const results = await ConcurrentExecutor.execute(operations, {
+      concurrency,
+    });
 
     // 检查结果一致性
-    const successfulResults = results.filter(r => r.success && r.result !== undefined);
+    const successfulResults = results.filter(
+      (r) => r.success && r.result !== undefined,
+    );
     const uniqueResults = new Set(
-      successfulResults.map(r => JSON.stringify(r.result)),
+      successfulResults.map((r) => JSON.stringify(r.result)),
     );
 
     const inconsistencies = Math.max(0, uniqueResults.size - 1);
@@ -214,10 +218,19 @@ export class ConcurrentExecutor {
     const breakdown = [];
     let maxSafeConcurrency = startConcurrency;
 
-    for (let concurrency = startConcurrency; concurrency <= maxConcurrency; concurrency += increment) {
-      const operations = Array.from({ length: operationsPerLevel }, () => operation);
+    for (
+      let concurrency = startConcurrency;
+      concurrency <= maxConcurrency;
+      concurrency += increment
+    ) {
+      const operations = Array.from(
+        { length: operationsPerLevel },
+        () => operation,
+      );
 
-      const { stats } = await this.executeWithStats(operations, { concurrency });
+      const { stats } = await ConcurrentExecutor.executeWithStats(operations, {
+        concurrency,
+      });
 
       const successRate = stats.successRate;
 
@@ -259,14 +272,20 @@ export class ConcurrentExecutor {
     } = options;
 
     // 预热
-    const warmupOperations = Array.from({ length: warmupIterations }, () => operation);
-    await this.execute(warmupOperations, { concurrency });
+    const warmupOperations = Array.from(
+      { length: warmupIterations },
+      () => operation,
+    );
+    await ConcurrentExecutor.execute(warmupOperations, { concurrency });
 
     // 实际测试
     const operations = Array.from({ length: iterations }, () => operation);
     const startTime = Date.now();
 
-    const { stats, results } = await this.executeWithStats(operations, { concurrency });
+    const { stats, results } = await ConcurrentExecutor.executeWithStats(
+      operations,
+      { concurrency },
+    );
 
     const endTime = Date.now();
 
@@ -279,12 +298,12 @@ export class ConcurrentExecutor {
         avgLatency: stats.avgDuration,
         minLatency: stats.minDuration,
         maxLatency: stats.maxDuration,
-        p95Latency: this.calculatePercentile(
-          results.map(r => r.duration),
+        p95Latency: ConcurrentExecutor.calculatePercentile(
+          results.map((r) => r.duration),
           95,
         ),
-        p99Latency: this.calculatePercentile(
-          results.map(r => r.duration),
+        p99Latency: ConcurrentExecutor.calculatePercentile(
+          results.map((r) => r.duration),
           99,
         ),
       },
@@ -294,7 +313,10 @@ export class ConcurrentExecutor {
   /**
    * 计算百分位数
    */
-  private static calculatePercentile(values: number[], percentile: number): number {
+  private static calculatePercentile(
+    values: number[],
+    percentile: number,
+  ): number {
     const sorted = [...values].sort((a, b) => a - b);
     const index = Math.ceil((percentile / 100) * sorted.length) - 1;
     return sorted[index] || 0;
@@ -321,17 +343,20 @@ export class ConcurrentExecutor {
       timestamp: number;
     }> = [];
 
-    const operations = Array.from({ length: iterations }, (_, i) => async () => {
-      const result = await operation();
-      results.push({
-        iteration: i,
-        result,
-        timestamp: Date.now(),
-      });
-      return result;
-    });
+    const operations = Array.from(
+      { length: iterations },
+      (_, i) => async () => {
+        const result = await operation();
+        results.push({
+          iteration: i,
+          result,
+          timestamp: Date.now(),
+        });
+        return result;
+      },
+    );
 
-    await this.execute(operations, { concurrency });
+    await ConcurrentExecutor.execute(operations, { concurrency });
 
     // 按时间戳排序，检查是否有异常的时间顺序
     const sorted = [...results].sort((a, b) => a.timestamp - b.timestamp);
@@ -357,11 +382,16 @@ export class ConcurrentOperations {
    * 并发工具执行
    */
   static async executeTools(
-    toolExecutor: (toolName: string, args: Record<string, unknown>) => Promise<unknown>,
+    toolExecutor: (
+      toolName: string,
+      args: Record<string, unknown>,
+    ) => Promise<unknown>,
     tools: Array<{ name: string; args: Record<string, unknown> }>,
     concurrency: number = 10,
   ) {
-    const operations = tools.map(tool => () => toolExecutor(tool.name, tool.args));
+    const operations = tools.map(
+      (tool) => () => toolExecutor(tool.name, tool.args),
+    );
 
     return ConcurrentExecutor.execute(operations, { concurrency });
   }
@@ -374,7 +404,7 @@ export class ConcurrentOperations {
     serverIds: string[],
     concurrency: number = 5,
   ) {
-    const operations = serverIds.map(id => () => serverConnector(id));
+    const operations = serverIds.map((id) => () => serverConnector(id));
 
     return ConcurrentExecutor.execute(operations, { concurrency });
   }
@@ -387,7 +417,7 @@ export class ConcurrentOperations {
     configPaths: string[],
     concurrency: number = 3,
   ) {
-    const operations = configPaths.map(path => () => configLoader(path));
+    const operations = configPaths.map((path) => () => configLoader(path));
 
     return ConcurrentExecutor.execute(operations, { concurrency });
   }

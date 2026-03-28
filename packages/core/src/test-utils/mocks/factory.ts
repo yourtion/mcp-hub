@@ -18,9 +18,10 @@ export class MockConfigFactory {
   /**
    * 创建服务器配置
    */
-  static createServerConfig(
-    overrides?: Partial<ServerConfig>,
-  ): { id: string; config: ServerConfig } {
+  static createServerConfig(overrides?: Partial<ServerConfig>): {
+    id: string;
+    config: ServerConfig;
+  } {
     const id = 'mock-server';
 
     // 明确创建 stdio 类型的配置
@@ -32,7 +33,7 @@ export class MockConfigFactory {
 
     // 如果提供了 overrides，合并配置
     const config: ServerConfig = overrides
-      ? { ...baseConfig, ...overrides } as ServerConfig
+      ? ({ ...baseConfig, ...overrides } as ServerConfig)
       : baseConfig;
 
     return { id, config };
@@ -47,7 +48,7 @@ export class MockConfigFactory {
     const servers: Record<string, ServerConfig> = {};
 
     for (let i = 1; i <= serverCount; i++) {
-      const { config } = this.createServerConfig({
+      const { config } = MockConfigFactory.createServerConfig({
         command: `node server${i}.js`,
         args: [`--port=${3000 + i}`],
       });
@@ -61,11 +62,9 @@ export class MockConfigFactory {
   /**
    * 创建 MCP 配置
    */
-  static createMcpConfig(
-    serverCount: number = 3,
-  ): McpConfig {
+  static createMcpConfig(serverCount: number = 3): McpConfig {
     return {
-      mcpServers: this.createMcpServerConfig(serverCount),
+      mcpServers: MockConfigFactory.createMcpServerConfig(serverCount),
     };
   }
 
@@ -99,9 +98,7 @@ export class MockConfigFactory {
   /**
    *创建系统配置
    */
-  static createSystemConfig(
-    overrides?: Partial<SystemConfig>,
-  ): SystemConfig {
+  static createSystemConfig(overrides?: Partial<SystemConfig>): SystemConfig {
     return {
       server: {
         port: 3000,
@@ -170,7 +167,7 @@ export class MockToolFactory {
    */
   static createTools(count: number, serverId: string = 'server1'): ToolInfo[] {
     return Array.from({ length: count }, (_, i) => ({
-      ...this.createTool({
+      ...MockToolFactory.createTool({
         name: `tool${i + 1}`,
         description: `Test tool ${i + 1}`,
         serverId,
@@ -273,25 +270,31 @@ export class MockMcpClientFactory {
    */
   static createTimeoutClient() {
     const client = {
-      connect: vi.fn().mockImplementation(
-        () =>
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Connection timeout')), 100),
-          ),
-      ),
+      connect: vi
+        .fn()
+        .mockImplementation(
+          () =>
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Connection timeout')), 100),
+            ),
+        ),
       close: vi.fn().mockResolvedValue(undefined),
-      listTools: vi.fn().mockImplementation(
-        () =>
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('List tools timeout')), 100),
-          ),
-      ),
-      callTool: vi.fn().mockImplementation(
-        () =>
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Call tool timeout')), 100),
-          ),
-      ),
+      listTools: vi
+        .fn()
+        .mockImplementation(
+          () =>
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('List tools timeout')), 100),
+            ),
+        ),
+      callTool: vi
+        .fn()
+        .mockImplementation(
+          () =>
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Call tool timeout')), 100),
+            ),
+        ),
       isConnected: vi.fn().mockReturnValue(false),
       getStatus: vi.fn().mockReturnValue('timeout'),
     };
@@ -313,7 +316,7 @@ export class MockMcpClientFactory {
       [
         { name: 'tool1', description: 'Tool 1' },
         { name: 'tool2', description: 'Tool 2' },
-      ].map(t => ({
+      ].map((t) => ({
         ...t,
         inputSchema: { type: 'object', properties: {} },
       }));
@@ -321,7 +324,7 @@ export class MockMcpClientFactory {
     const client = {
       connect: vi.fn().mockImplementation(async () => {
         if (config.delay) {
-          await new Promise(resolve => setTimeout(resolve, config.delay));
+          await new Promise((resolve) => setTimeout(resolve, config.delay));
         }
         if (config.shouldFail) {
           throw new Error('Connection failed');
@@ -330,7 +333,7 @@ export class MockMcpClientFactory {
       close: vi.fn().mockResolvedValue(undefined),
       listTools: vi.fn().mockImplementation(async () => {
         if (config.delay) {
-          await new Promise(resolve => setTimeout(resolve, config.delay));
+          await new Promise((resolve) => setTimeout(resolve, config.delay));
         }
         if (config.shouldFail) {
           throw new Error('List tools failed');
@@ -339,17 +342,21 @@ export class MockMcpClientFactory {
       }),
       callTool: vi.fn().mockImplementation(async () => {
         if (config.delay) {
-          await new Promise(resolve => setTimeout(resolve, config.delay));
+          await new Promise((resolve) => setTimeout(resolve, config.delay));
         }
         if (config.shouldFail) {
           throw new Error('Tool call failed');
         }
-        return config.toolResult || {
-          content: [{ type: 'text', text: 'Success' }],
-        };
+        return (
+          config.toolResult || {
+            content: [{ type: 'text', text: 'Success' }],
+          }
+        );
       }),
       isConnected: vi.fn().mockReturnValue(!config.shouldFail),
-      getStatus: vi.fn().mockReturnValue(config.shouldFail ? 'error' : 'connected'),
+      getStatus: vi
+        .fn()
+        .mockReturnValue(config.shouldFail ? 'error' : 'connected'),
     };
 
     return client;
@@ -388,7 +395,7 @@ export class MockGroupFactory {
         (_, j) => `server${i * serversPerGroup + j + 1}`,
       );
 
-      return this.createGroup({
+      return MockGroupFactory.createGroup({
         id: `group${i + 1}`,
         name: `Group ${i + 1}`,
         servers,

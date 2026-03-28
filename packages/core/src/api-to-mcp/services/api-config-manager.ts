@@ -5,11 +5,11 @@
 
 import { type FSWatcher, promises as fs, watch } from 'node:fs';
 import { resolve } from 'node:path';
+import { createLogger } from '../../utils/logger.js';
 import { ApiToolsConfigSchema } from '../config/api-config-schemas.js';
 import type { ApiToolConfig, ApiToolsConfig } from '../types/api-config.js';
 import type { ValidationResult } from '../types/api-tool.js';
 import { EnvironmentResolverImpl } from '../utils/environment-resolver.js';
-import { createLogger } from '../../utils/logger.js';
 
 const logger = createLogger({ component: 'ApiConfigManager' });
 

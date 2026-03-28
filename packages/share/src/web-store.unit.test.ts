@@ -5,25 +5,25 @@
 
 import { describe, expect, it } from 'vitest';
 import type {
-  AuthState,
-  AuthActions,
-  ServerState,
-  ServerActions,
-  ToolState,
-  ToolActions,
-  GroupState,
-  GroupActions,
-  TestResult,
-  ApiToMcpState,
   ApiToMcpActions,
-  DashboardState,
-  DashboardActions,
-  DebugState,
-  DebugActions,
-  AppState,
-  Notification,
+  ApiToMcpState,
   AppActions,
+  AppState,
+  AuthActions,
+  AuthState,
+  DashboardActions,
+  DashboardState,
+  DebugActions,
+  DebugState,
+  GroupActions,
+  GroupState,
+  Notification,
   RootStore,
+  ServerActions,
+  ServerState,
+  TestResult,
+  ToolActions,
+  ToolState,
 } from './web-store.js';
 
 describe('Web Store Types - Authentication', () => {
@@ -459,7 +459,7 @@ describe('Web Store Types - App', () => {
         'info',
       ];
 
-      types.forEach(type => {
+      types.forEach((type) => {
         const notification: Notification = {
           id: `notif-${type}`,
           type,

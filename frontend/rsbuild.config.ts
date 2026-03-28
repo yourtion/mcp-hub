@@ -27,6 +27,7 @@ export default defineConfig({
   },
   html: {
     title: 'MCP Hub 管理界面',
+    mountId: 'app',
   },
   performance: {
     // 代码分割配置

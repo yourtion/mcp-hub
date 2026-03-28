@@ -57,12 +57,12 @@ describe('ServerManager', () => {
 
   afterEach(async () => {
     // 等待所有异步操作完成
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     try {
       await serverManager.shutdown();
       // 等待所有子进程和连接真正关闭
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     } catch (_error) {
       // Ignore shutdown errors in tests
     }

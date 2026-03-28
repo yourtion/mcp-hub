@@ -14,7 +14,7 @@ describe('ConcurrentExecutor', () => {
   describe('execute', () => {
     it('应该成功执行并发操作', async () => {
       const operations = Array.from({ length: 10 }, () => async () => {
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
         return 'success';
       });
 
@@ -23,7 +23,7 @@ describe('ConcurrentExecutor', () => {
       });
 
       expect(results).toHaveLength(10);
-      expect(results.every(r => r.success)).toBe(true);
+      expect(results.every((r) => r.success)).toBe(true);
     });
 
     it('应该处理部分操作失败', async () => {
@@ -33,7 +33,7 @@ describe('ConcurrentExecutor', () => {
         if (callCount % 3 === 0) {
           throw new Error('Simulated failure');
         }
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
         return 'success';
       });
 
@@ -42,8 +42,8 @@ describe('ConcurrentExecutor', () => {
       });
 
       expect(results).toHaveLength(10);
-      const successful = results.filter(r => r.success);
-      const failed = results.filter(r => !r.success);
+      const successful = results.filter((r) => r.success);
+      const failed = results.filter((r) => !r.success);
       expect(successful.length).toBeGreaterThan(0);
       expect(failed.length).toBeGreaterThan(0);
     });
@@ -51,11 +51,11 @@ describe('ConcurrentExecutor', () => {
     it('应该支持超时控制', async () => {
       const operations = [
         async () => {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
           return 'fast';
         },
         async () => {
-          await new Promise(resolve => setTimeout(resolve, 5000)); // 会超时
+          await new Promise((resolve) => setTimeout(resolve, 5000)); // 会超时
           return 'slow';
         },
       ];
@@ -77,7 +77,7 @@ describe('ConcurrentExecutor', () => {
         if (callCount === 5) {
           throw new Error('Stop here');
         }
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
         return 'success';
       });
 
@@ -87,7 +87,7 @@ describe('ConcurrentExecutor', () => {
       });
 
       // 第5个操作失败后应该停止
-      const executed = results.filter(r => r !== undefined);
+      const executed = results.filter((r) => r !== undefined);
       expect(executed.length).toBeLessThan(20);
     });
 
@@ -96,7 +96,7 @@ describe('ConcurrentExecutor', () => {
       const total = 10;
 
       const operations = Array.from({ length: total }, () => async () => {
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
         return 'done';
       });
 
@@ -115,11 +115,11 @@ describe('ConcurrentExecutor', () => {
     it('应该记录执行时间', async () => {
       const operations = [
         async () => {
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise((resolve) => setTimeout(resolve, 50));
           return 'slow';
         },
         async () => {
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await new Promise((resolve) => setTimeout(resolve, 10));
           return 'fast';
         },
       ];
@@ -140,7 +140,7 @@ describe('ConcurrentExecutor', () => {
         if (i % 4 === 0) {
           throw new Error('Failed');
         }
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 20));
+        await new Promise((resolve) => setTimeout(resolve, Math.random() * 20));
         return 'success';
       });
 
@@ -167,7 +167,7 @@ describe('ConcurrentExecutor', () => {
       const unsafeOperation = async () => {
         // 不安全的操作
         const old = counter;
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
+        await new Promise((resolve) => setTimeout(resolve, Math.random() * 10));
         counter = old + 1;
         return counter;
       };
@@ -182,7 +182,7 @@ describe('ConcurrentExecutor', () => {
 
     it('应该验证安全的操作', async () => {
       const safeOperation = async () => {
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
+        await new Promise((resolve) => setTimeout(resolve, Math.random() * 10));
         return { value: 42 }; // 每次返回相同的值
       };
 
@@ -198,12 +198,12 @@ describe('ConcurrentExecutor', () => {
 
   describe('stressTest', () => {
     it('应该找到最大安全并发数', async () => {
-      let failureThreshold = 100; // 在并发超过100时开始失败
+      const failureThreshold = 100; // 在并发超过100时开始失败
 
       const operation = async () => {
         // 模拟在特定并发下失败
         if (Math.random() * 1000 < failureThreshold) {
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await new Promise((resolve) => setTimeout(resolve, 10));
           return 'success';
         } else {
           throw new Error('Overloaded');
@@ -221,14 +221,14 @@ describe('ConcurrentExecutor', () => {
 
       expect(maxSafeConcurrency).toBeGreaterThan(0);
       expect(breakdown.length).toBeGreaterThan(0);
-      expect(breakdown.every(b => b.concurrency > 0)).toBe(true);
+      expect(breakdown.every((b) => b.concurrency > 0)).toBe(true);
     }, 30000); // 30秒超时
   });
 
   describe('benchmark', () => {
     it('应该执行性能基准测试', async () => {
       const operation = async () => {
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
         return { data: 'test' };
       };
 
@@ -258,7 +258,7 @@ describe('ConcurrentExecutor', () => {
 
       const operation = async () => {
         const id = Math.random().toString(36).substring(7);
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
+        await new Promise((resolve) => setTimeout(resolve, Math.random() * 10));
         results.push(id);
         return id;
       };
@@ -267,7 +267,7 @@ describe('ConcurrentExecutor', () => {
         await ConcurrentExecutor.detectRaceConditions(operation, 50, 10);
 
       expect(details).toHaveLength(50);
-      expect(details.every(d => d.result)).toBe(true);
+      expect(details.every((d) => d.result)).toBe(true);
       // 并发操作可能产生竞态条件
       expect(typeof hasRaceConditions).toBe('boolean');
     });
@@ -285,7 +285,11 @@ describe('ConcurrentOperations', () => {
 
       const executor = vi.fn().mockResolvedValue({ success: true });
 
-      const results = await ConcurrentOperations.executeTools(executor, tools, 2);
+      const results = await ConcurrentOperations.executeTools(
+        executor,
+        tools,
+        2,
+      );
 
       expect(results).toHaveLength(3);
       expect(executor).toHaveBeenCalledTimes(3);
@@ -304,7 +308,11 @@ describe('ConcurrentOperations', () => {
         return { success: true };
       });
 
-      const results = await ConcurrentOperations.executeTools(executor, tools, 2);
+      const results = await ConcurrentOperations.executeTools(
+        executor,
+        tools,
+        2,
+      );
 
       expect(results[0].success).toBe(true);
       expect(results[1].success).toBe(false);
@@ -320,7 +328,7 @@ describe('ConcurrentOperations', () => {
       await ConcurrentOperations.connectServers(connector, serverIds, 2);
 
       expect(connector).toHaveBeenCalledTimes(3);
-      serverIds.forEach(id => {
+      serverIds.forEach((id) => {
         expect(connector).toHaveBeenCalledWith(id);
       });
     });
@@ -335,7 +343,7 @@ describe('ConcurrentOperations', () => {
       await ConcurrentOperations.loadConfigs(loader, configPaths, 2);
 
       expect(loader).toHaveBeenCalledTimes(3);
-      configPaths.forEach(path => {
+      configPaths.forEach((path) => {
         expect(loader).toHaveBeenCalledWith(path);
       });
     });
@@ -349,12 +357,12 @@ describe('测试工具集成', () => {
 
     // 创建模拟的工具执行器
     const executor = vi.fn().mockImplementation(async (toolName) => {
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 20));
+      await new Promise((resolve) => setTimeout(resolve, Math.random() * 20));
       return { executed: toolName };
     });
 
     // 使用并发操作执行工具
-    const operations = tools.map(tool => () => executor(tool.name));
+    const operations = tools.map((tool) => () => executor(tool.name));
 
     const { stats } = await ConcurrentExecutor.executeWithStats(operations, {
       concurrency: 5,

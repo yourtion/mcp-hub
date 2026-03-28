@@ -3,8 +3,8 @@
  * 生成各种测试场景所需的数据
  */
 
-import type { ToolInfo } from '../../types/tool.js';
 import type { ServerConfig } from '@mcp-core/mcp-hub-share';
+import type { ToolInfo } from '../../types/tool.js';
 
 /**
  * 测试数据生成器
@@ -144,7 +144,8 @@ export class TestDataGenerator {
    * 生成随机字符串
    */
   static randomString(length: number = 10): string {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const chars =
+      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     return Array.from({ length }, () =>
       chars.charAt(Math.floor(Math.random() * chars.length)),
     ).join('');
@@ -161,7 +162,7 @@ export class TestDataGenerator {
    * 生成随机工具
    */
   static randomTool(serverId?: string): ToolInfo {
-    const name = `random_${this.randomString(8)}`;
+    const name = `random_${TestDataGenerator.randomString(8)}`;
     return {
       name,
       description: `Randomly generated tool ${name}`,
@@ -310,7 +311,7 @@ export class TestDataGenerator {
 
       // 单个元素
       single: {
-        servers: { 'server1': { type: 'stdio', command: 'test', args: [] } },
+        servers: { server1: { type: 'stdio', command: 'test', args: [] } },
         tools: [
           {
             name: 'tool1',
@@ -320,7 +321,7 @@ export class TestDataGenerator {
           },
         ],
         groups: {
-          'group1': {
+          group1: {
             id: 'group1',
             name: 'Single Group',
             servers: ['server1'],

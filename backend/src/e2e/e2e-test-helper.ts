@@ -18,7 +18,11 @@ export class E2ETestHelper {
       message?: string;
     } = {},
   ): Promise<void> {
-    const { timeout = 10000, interval = 100, message = 'Condition not met' } = options;
+    const {
+      timeout = 10000,
+      interval = 100,
+      message = 'Condition not met',
+    } = options;
 
     const startTime = Date.now();
 
@@ -27,7 +31,7 @@ export class E2ETestHelper {
         return;
       }
 
-      await this.delay(interval);
+      await E2ETestHelper.delay(interval);
     }
 
     throw new Error(`${message} (timeout: ${timeout}ms)`);
@@ -43,10 +47,12 @@ export class E2ETestHelper {
   ): Promise<void> {
     const { timeout = 30000, interval = 500 } = options;
 
-    await this.waitFor(
+    await E2ETestHelper.waitFor(
       async () => {
         try {
-          const response = await fetch(`${baseUrl}/api/servers/${serverId}/health`);
+          const response = await fetch(
+            `${baseUrl}/api/servers/${serverId}/health`,
+          );
           const data = await response.json();
           return data.healthy === true;
         } catch {
@@ -71,7 +77,7 @@ export class E2ETestHelper {
   ): Promise<void> {
     const { timeout = 10000, interval = 500 } = options;
 
-    await this.waitFor(
+    await E2ETestHelper.waitFor(
       async () => {
         try {
           const response = await fetch(`${baseUrl}/api/tools`);
@@ -205,7 +211,7 @@ export class E2ETestHelper {
     const results = await execute(operations, { concurrency });
 
     const totalTime = Date.now() - startTime;
-    const successful = results.filter(r => r.success);
+    const successful = results.filter((r) => r.success);
 
     return {
       totalTime,
@@ -247,7 +253,7 @@ export class E2ETestHelper {
         }
 
         // 指数退避
-        await this.delay(delay * Math.pow(backoff, attempt));
+        await E2ETestHelper.delay(delay * backoff ** attempt);
       }
     }
 
@@ -275,11 +281,9 @@ export class E2ETestHelper {
     for (let i = 0; i < operations.length; i += batchSize) {
       const batch = operations.slice(i, i + batchSize);
 
-      const batchResults = await Promise.allSettled(
-        batch.map(op => op()),
-      );
+      const batchResults = await Promise.allSettled(batch.map((op) => op()));
 
-      batchResults.forEach(result => {
+      batchResults.forEach((result) => {
         if (result.status === 'fulfilled') {
           results.push({ success: true, result: result.value });
         } else {
@@ -292,7 +296,7 @@ export class E2ETestHelper {
 
       // 批次间延迟
       if (i + batchSize < operations.length) {
-        await this.delay(delayBetweenBatches);
+        await E2ETestHelper.delay(delayBetweenBatches);
       }
     }
 
@@ -365,7 +369,7 @@ export class E2ETestHelper {
     const { timeout = 5000, ignoreErrors = true } = options;
 
     const results = await Promise.allSettled(
-      cleanupFns.map(fn =>
+      cleanupFns.map((fn) =>
         Promise.race([
           fn(),
           new Promise((_, reject) =>
@@ -377,11 +381,13 @@ export class E2ETestHelper {
 
     if (!ignoreErrors) {
       const errors = results
-        .filter(r => r.status === 'rejected')
-        .map(r => (r as PromiseRejectedResult).reason);
+        .filter((r) => r.status === 'rejected')
+        .map((r) => (r as PromiseRejectedResult).reason);
 
       if (errors.length > 0) {
-        throw new Error(`Cleanup failed: ${errors.map(e => String(e)).join(', ')}`);
+        throw new Error(
+          `Cleanup failed: ${errors.map((e) => String(e)).join(', ')}`,
+        );
       }
     }
   }
@@ -390,7 +396,7 @@ export class E2ETestHelper {
    * 延迟函数
    */
   static delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -415,13 +421,13 @@ export class E2ETestHelper {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeout) {
-      const results = await Promise.all(conditions.map(c => c()));
+      const results = await Promise.all(conditions.map((c) => c()));
 
-      if (results.every(r => r === true)) {
+      if (results.every((r) => r === true)) {
         return;
       }
 
-      await this.delay(interval);
+      await E2ETestHelper.delay(interval);
     }
 
     throw new Error('Not all conditions met within timeout');
@@ -442,14 +448,14 @@ export class E2ETestHelper {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeout) {
-      const results = await Promise.all(conditions.map(c => c()));
+      const results = await Promise.all(conditions.map((c) => c()));
 
-      const firstTrue = results.findIndex(r => r === true);
+      const firstTrue = results.findIndex((r) => r === true);
       if (firstTrue !== -1) {
         return firstTrue;
       }
 
-      await this.delay(interval);
+      await E2ETestHelper.delay(interval);
     }
 
     throw new Error('No condition met within timeout');
@@ -484,7 +490,7 @@ export class E2ETestHelper {
         // 忽略错误
       }
 
-      await this.delay(100);
+      await E2ETestHelper.delay(100);
     }
 
     if (latencies.length === 0) {
@@ -497,8 +503,7 @@ export class E2ETestHelper {
 
     // 计算标准差
     const variance =
-      latencies.reduce((sum, l) => sum + Math.pow(l - avg, 2), 0) /
-      latencies.length;
+      latencies.reduce((sum, l) => sum + (l - avg) ** 2, 0) / latencies.length;
     const stdDev = Math.sqrt(variance);
 
     return {
@@ -531,7 +536,7 @@ export class E2ETestHelper {
       // 添加一些随机抖动
       const jitter = latency * 0.2;
       const actualDelay = latency + (Math.random() - 0.5) * jitter;
-      await this.delay(actualDelay);
+      await E2ETestHelper.delay(actualDelay);
     }
 
     return operation();
@@ -549,7 +554,8 @@ export class E2EScenarioHelper {
     success: boolean;
     steps: Array<{ name: string; success: boolean; duration: number }>;
   }> {
-    const steps: Array<{ name: string; success: boolean; duration: number }> = [];
+    const steps: Array<{ name: string; success: boolean; duration: number }> =
+      [];
 
     try {
       // 步骤 1: 系统启动
@@ -647,7 +653,8 @@ export class E2EScenarioHelper {
     recoveryTime: number;
     steps: Array<{ name: string; success: boolean; duration: number }>;
   }> {
-    const steps: Array<{ name: string; success: boolean; duration: number }> = [];
+    const steps: Array<{ name: string; success: boolean; duration: number }> =
+      [];
 
     try {
       // 步骤 1: 检查初始健康状态
@@ -678,7 +685,9 @@ export class E2EScenarioHelper {
       const step3Start = Date.now();
       await E2ETestHelper.waitFor(
         async () => {
-          const response = await fetch(`${baseUrl}/api/servers/${serverId}/health`);
+          const response = await fetch(
+            `${baseUrl}/api/servers/${serverId}/health`,
+          );
           const data = await response.json();
           return data.healthy === false;
         },

@@ -2,27 +2,21 @@ import { createPinia } from 'pinia';
 import TDesign from 'tdesign-vue-next';
 import { createApp } from 'vue';
 import App from './App.vue';
+import { useTheme } from './composables/useTheme';
 import router from './router';
-import { setupGlobalErrorHandler } from './utils/error-handler';
 
-// 引入扩展主题系统（包含 TDesign 样式）
-import './styles/theme-extended.less';
+import 'tdesign-vue-next/es/style/index.css';
 import './index.css';
 
 const app = createApp(App);
+const pinia = createPinia();
 
-// 设置全局错误处理
-setupGlobalErrorHandler();
-
-// 安装插件
-app.use(createPinia());
+app.use(pinia);
 app.use(router);
 app.use(TDesign);
 
-// 全局错误处理器
-app.config.errorHandler = (err, instance, info) => {
-  console.error('Vue Error:', err, info);
-  // 可以在这里添加错误上报逻辑
-};
+// Initialize theme
+const { applyTheme } = useTheme();
+applyTheme(useTheme().mode.value);
 
-app.mount('#root');
+app.mount('#app');
