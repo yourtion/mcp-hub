@@ -3,14 +3,14 @@
  */
 
 import type {
-  User,
-  ServerInfo,
-  ToolInfo,
-  ToolExecution,
-  GroupInfo,
-  ApiConfigInfo,
   Activity,
+  ApiConfigInfo,
+  GroupInfo,
   McpMessage,
+  ServerInfo,
+  ToolExecution,
+  ToolInfo,
+  User,
 } from './web-api.js';
 
 // ============================================================================

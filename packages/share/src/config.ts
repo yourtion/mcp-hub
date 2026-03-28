@@ -1,4 +1,4 @@
-import { ServerConfig } from './mcp.js';
+import type { ServerConfig } from './mcp.js';
 
 export interface McpConfig {
   mcpServers: {

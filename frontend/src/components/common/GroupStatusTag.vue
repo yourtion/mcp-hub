@@ -1,61 +1,27 @@
 <template>
-  <t-tag
-    :theme="tagTheme"
-    :variant="variant"
-    :class="['group-status-tag', `group-status-tag--${status}`]"
-  >
-    <component :is="icon" size="14px" />
-    {{ text }}
+  <t-tag :theme="theme" variant="light" size="small">
+    {{ label }} ({{ healthScore }})
   </t-tag>
 </template>
 
 <script setup lang="ts">
-import { computed, markRaw } from 'vue';
-import {
-  CheckCircleFilledIcon,
-  CloseCircleFilledIcon,
-  InfoCircleFilledIcon,
-  ErrorCircleFilledIcon
-} from 'tdesign-icons-vue-next';
+import { computed } from 'vue';
+import { Tag as TTag } from 'tdesign-vue-next';
 
-interface Props {
-  status: 'healthy' | 'partial' | 'unhealthy';
-  variant?: 'dark' | 'light' | 'outline' | 'light-outline';
-}
+const props = defineProps<{
+  isHealthy: boolean;
+  healthScore: number;
+}>();
 
-const props = withDefaults(defineProps<Props>(), {
-  variant: 'light',
+const theme = computed<'success' | 'warning' | 'danger'>(() => {
+  if (props.healthScore > 80) return 'success';
+  if (props.healthScore > 50) return 'warning';
+  return 'danger';
 });
 
-// 状态配置映射
-const statusConfig = {
-  healthy: {
-    theme: 'success' as const,
-    text: '健康',
-    icon: markRaw(CheckCircleFilledIcon),
-  },
-  partial: {
-    theme: 'warning' as const,
-    text: '部分健康',
-    icon: markRaw(InfoCircleFilledIcon),
-  },
-  unhealthy: {
-    theme: 'danger' as const,
-    text: '不健康',
-    icon: markRaw(ErrorCircleFilledIcon),
-  },
-};
-
-const config = computed(() => statusConfig[props.status]);
-const tagTheme = computed(() => config.value.theme);
-const text = computed(() => config.value.text);
-const icon = computed(() => config.value.icon);
+const label = computed(() => {
+  if (props.healthScore > 80) return '健康';
+  if (props.healthScore > 50) return '警告';
+  return '异常';
+});
 </script>
-
-<style scoped>
-.group-status-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-</style>

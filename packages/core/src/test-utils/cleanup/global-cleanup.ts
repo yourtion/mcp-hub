@@ -11,10 +11,10 @@ import { afterEach } from 'vitest';
  */
 afterEach(async () => {
   // 1. 等待所有微任务完成
-  await new Promise(resolve => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
 
   // 2. 等待一个事件循环，让异步清理完成
-  await new Promise(resolve => setTimeout(resolve, 10));
+  await new Promise((resolve) => setTimeout(resolve, 10));
 
   // 3. 清除所有 mocks
   vi.restoreAllMocks();
@@ -24,7 +24,7 @@ afterEach(async () => {
   if (global.gc) {
     global.gc();
     // 等待 GC 完成
-    await new Promise(resolve => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
   }
 });
 
@@ -35,7 +35,7 @@ afterEach(async () => {
 export async function waitForAsyncOperations(): Promise<void> {
   // 等待多个事件循环，确保所有异步操作完成
   for (let i = 0; i < 5; i++) {
-    await new Promise(resolve => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
   }
 }
 
@@ -59,7 +59,7 @@ export async function safeCleanup(
         console.warn('Cleanup failed (ignoring):', error);
       }
       // 等待后重试
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
   }
 }
@@ -74,7 +74,10 @@ export function cleanupWithTimeout(
   return Promise.race<void>([
     cleanupFn(),
     new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`Cleanup timeout after ${timeout}ms`)), timeout),
+      setTimeout(
+        () => reject(new Error(`Cleanup timeout after ${timeout}ms`)),
+        timeout,
+      ),
     ),
   ]);
 }

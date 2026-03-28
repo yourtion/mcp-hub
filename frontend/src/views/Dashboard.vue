@@ -1,176 +1,144 @@
 <template>
-  <div class="dashboard-container">
-    <!-- 页面头部 -->
-    <PageHeader
-      title="系统概览"
-      description="欢迎使用 MCP Hub 管理系统"
-      :meta="lastUpdated ? `最后更新: ${formatTime(lastUpdated)}` : undefined"
-      :actions="[
-        { text: '刷新数据', icon: RefreshIcon, loading: isRefreshing, onClick: handleRefresh }
-      ]"
-    >
-      <template #extra>
-        <!-- SSE连接状态 -->
-        <div class="sse-status" :class="[`sse-status--${sseConnectionState}`]">
-          <component :is="sseStatusIconComponent" size="14px" />
-          <span>{{ sseStatusText }}</span>
-        </div>
-
-        <!-- 用户信息 -->
-        <div class="user-info">
-          <span>{{ user?.username }}</span>
-          <t-button theme="default" size="small" @click="handleLogout">
-            退出登录
-          </t-button>
-        </div>
-      </template>
-    </PageHeader>
-    
-    <!-- 仪表板内容 -->
-    <div class="dashboard-content">
-      <!-- 统计卡片行 -->
-      <div class="stats-row">
-        <div 
-          v-for="card in statCards" 
-          :key="card.label" 
-          class="stat-card-wrapper"
+  <div class="mcp-page dashboard">
+    <!-- Page Header -->
+    <div class="mcp-page__header">
+      <div class="mcp-page__header-content">
+        <h1 class="mcp-page__title">仪表板</h1>
+        <p class="mcp-page__desc">系统运行状态概览</p>
+      </div>
+      <div class="mcp-page__actions">
+        <t-button
+          variant="outline"
+          :loading="isRefreshing"
+          @click="handleRefresh"
         >
-          <StatCard :data="card" />
+          <template #icon>
+            <RefreshIcon />
+          </template>
+          刷新
+        </t-button>
+      </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div v-if="isLoading" class="mcp-grid mcp-grid--4">
+      <div
+        v-for="i in 4"
+        :key="i"
+        class="mcp-card mcp-stat stat-card stat-card--skeleton"
+      >
+        <div class="skeleton skeleton--icon" />
+        <div class="skeleton skeleton--value" />
+        <div class="skeleton skeleton--label" />
+      </div>
+    </div>
+
+    <div v-else class="mcp-grid mcp-grid--4">
+      <div
+        v-for="card in statCardConfigs"
+        :key="card.label"
+        class="mcp-card mcp-stat stat-card"
+      >
+        <div class="stat-card__icon" :class="`stat-card__icon--${card.colorClass}`">
+          <component :is="card.icon" />
+        </div>
+        <div class="mcp-stat__value">{{ card.value }}</div>
+        <div class="mcp-stat__label">{{ card.label }}</div>
+        <div
+          v-if="card.trend"
+          class="mcp-stat__trend"
+          :class="`mcp-stat__trend--${card.trend.direction}`"
+        >
+          {{ card.trend.value.toFixed(1) }}% {{ card.trend.period }}
         </div>
       </div>
-      
-      <!-- 主要内容区域 -->
-      <div class="main-content">
-        <!-- 左侧列 -->
-        <div class="content-left">
-          <!-- 系统健康状态 -->
-          <SystemHealthCard 
-            :health="systemHealth"
-            :loading="loading.health"
-            @refresh="fetchSystemHealth"
-          />
-          
-          <!-- 性能统计图表 -->
-          <t-card title="性能统计" class="performance-card">
-            <template #actions>
-              <t-button
-                theme="default"
-                size="small"
-                :loading="loading.performance"
-                @click="fetchPerformanceStats"
-              >
-                <template #icon>
-                  <RefreshIcon />
-                </template>
-                刷新
-              </t-button>
-            </template>
+    </div>
 
-            <div v-if="loading.performance && !performanceStats" class="card-loading">
-              <t-loading size="small" />
-              <span>加载中...</span>
-            </div>
-
-            <div v-else-if="performanceStats" class="performance-content">
-              <div class="performance-metrics">
-                <div class="metric-item">
-                  <div class="metric-label">总请求数</div>
-                  <div class="metric-value">{{ performanceStats.totalRequests }}</div>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-label">平均响应时间</div>
-                  <div class="metric-value">{{ performanceStats.averageResponseTime }}ms</div>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-label">错误率</div>
-                  <div class="metric-value">{{ (performanceStats.errorRate * 100).toFixed(2) }}%</div>
-                </div>
-              </div>
-
-              <!-- 热门工具 -->
-              <div v-if="performanceStats?.topTools && performanceStats.topTools.length > 0" class="top-tools">
-                <h4>热门工具</h4>
-                <div class="tools-list">
-                  <div
-                    v-for="tool in performanceStats.topTools.slice(0, 5)"
-                    :key="tool.name"
-                    class="tool-item"
-                  >
-                    <div class="tool-name">{{ tool.name }}</div>
-                    <div class="tool-stats">
-                      <span>{{ tool.calls }} 次调用</span>
-                      <span>{{ tool.avgTime }}ms 平均</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div v-else class="card-error">
-              <CloseIcon size="24px" />
-              <span>无法获取性能数据</span>
-            </div>
-          </t-card>
+    <!-- Two-column layout -->
+    <div class="dashboard__panels">
+      <!-- Left: Recent Activities -->
+      <div class="mcp-card activities-panel">
+        <div class="panel-header">
+          <h2 class="panel-header__title">最近活动</h2>
+          <t-tooltip content="通过 SSE 实时推送">
+            <span class="panel-header__badge">
+              <span
+                class="mcp-status__dot"
+                :class="sseDotClass"
+              />
+              {{ sseLabel }}
+            </span>
+          </t-tooltip>
         </div>
-        
-        <!-- 右侧列 -->
-        <div class="content-right">
-          <!-- 最近活动 -->
-          <RecentActivityCard 
-            :activities="activities"
-            :loading="loading.activities"
-            @refresh="fetchActivities"
-            @show-more="handleShowMoreActivities"
-          />
-          
-          <!-- 快速操作 -->
-          <t-card title="快速操作" class="quick-actions-card">
-            <div class="quick-actions">
-              <t-button
-                theme="primary"
-                block
-                @click="navigateTo('/servers')"
-              >
-                <template #icon>
-                  <ServerIcon />
-                </template>
-                管理服务器
-              </t-button>
 
-              <t-button
-                theme="default"
-                block
-                @click="navigateTo('/tools')"
-              >
-                <template #icon>
-                  <ToolsIcon />
-                </template>
-                查看工具
-              </t-button>
+        <t-loading :loading="dashboardStore.loading.activities" />
+        <div v-if="!dashboardStore.loading.activities">
+          <div v-if="activities.length === 0" class="mcp-empty">
+            <HelpCircleIcon class="mcp-empty__icon" />
+            <p class="mcp-empty__title">暂无活动记录</p>
+            <p class="mcp-empty__desc">系统活动将通过 SSE 实时推送到此处</p>
+          </div>
 
-              <t-button
-                theme="default"
-                block
-                @click="navigateTo('/groups')"
-              >
-                <template #icon>
-                  <FolderIcon />
-                </template>
-                管理组
-              </t-button>
-
-              <t-button
-                theme="default"
-                block
-                @click="navigateTo('/debug')"
-              >
-                <template #icon>
-                  <CloseIcon />
-                </template>
-                调试工具
-              </t-button>
+          <div v-else class="activities-list">
+            <div
+              v-for="activity in activities"
+              :key="activity.id"
+              class="activity-item"
+            >
+              <span
+                class="activity-item__dot"
+                :class="`activity-item__dot--${activity.severity}`"
+              />
+              <div class="activity-item__content">
+                <span class="activity-item__message">{{ activity.message }}</span>
+                <span class="activity-item__time">{{ formatTimestamp(activity.timestamp) }}</span>
+              </div>
             </div>
-          </t-card>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: System Health -->
+      <div class="mcp-card health-panel">
+        <div class="panel-header">
+          <h2 class="panel-header__title">系统健康</h2>
+          <t-tag
+            v-if="healthStatus"
+            :theme="healthTagTheme"
+            variant="light"
+            size="small"
+          >
+            {{ healthStatusLabel }}
+          </t-tag>
+        </div>
+
+        <t-loading :loading="dashboardStore.loading.health" />
+        <div v-if="!dashboardStore.loading.health && healthStatus">
+          <div class="health-checks">
+            <div
+              v-for="check in healthCheckItems"
+              :key="check.key"
+              class="health-check"
+            >
+              <span
+                class="health-check__dot"
+                :class="`health-check__dot--${check.status}`"
+              />
+              <span class="health-check__name">{{ check.name }}</span>
+              <span class="health-check__message">{{ check.message }}</span>
+            </div>
+          </div>
+
+          <div class="health-footer">
+            <div class="health-footer__item">
+              <TimeIcon class="health-footer__icon" />
+              <span>运行时间: {{ formatUptime(healthStatus.uptime) }}</span>
+            </div>
+            <div class="health-footer__item">
+              <CheckCircleIcon class="health-footer__icon" />
+              <span>上次检查: {{ formatTimestamp(healthStatus.lastCheck) }}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -178,494 +146,510 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, markRaw, type Component } from 'vue';
-import { useRouter } from 'vue-router';
-import { storeToRefs } from 'pinia';
-import { MessagePlugin } from 'tdesign-vue-next';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import {
-  CheckIcon,
-  CloseIcon,
+  Button as TButton,
+  Tag as TTag,
+  Loading as TLoading,
+  Tooltip as TTooltip,
+} from 'tdesign-vue-next';
+import {
   RefreshIcon,
   ServerIcon,
-  ToolsIcon,
+  LinkIcon,
+  PreciseMonitorIcon,
   FolderIcon,
-  MinusIcon,
+  CheckCircleIcon,
+  HelpCircleIcon,
+  TimeIcon,
 } from 'tdesign-icons-vue-next';
-import { useAuthStore } from '@/stores/auth';
 import { useDashboardStore } from '@/stores/dashboard';
-import PageHeader from '@/design-system/components/layout/PageHeader.vue';
-import StatCard from '@/design-system/components/data-display/StatCard.vue';
-import SystemHealthCard from '@/components/dashboard/SystemHealthCard.vue';
-import RecentActivityCard from '@/components/dashboard/RecentActivityCard.vue';
+import type { Activity, SystemHealth } from '@/types/dashboard';
 
-const router = useRouter();
-const authStore = useAuthStore();
 const dashboardStore = useDashboardStore();
 
-// 计算属性
-const user = computed(() => authStore.user);
+// --- Local reactive state ---
+const isRefreshing = ref(false);
+let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
-// 使用 storeToRefs 保持响应式
-const {
-  stats,
-  systemHealth,
-  performanceStats,
-  activities,
-  loading,
-  statCards,
-  sseConnectionState,
-  lastUpdated: storeLastUpdated,
-} = storeToRefs(dashboardStore);
+// --- Loading state ---
+const isLoading = computed(() => dashboardStore.loading.stats);
 
-// 方法需要从原 store 解构（不是响应式的）
-const { fetchSystemHealth, fetchPerformanceStats, fetchActivities, refreshAll } = dashboardStore;
-
-// 最后更新时间
-const lastUpdated = computed(() => {
-  const times = Object.values(storeLastUpdated.value);
-  if (times.length === 0) return null;
-  return times.reduce((latest, current) => {
-    return new Date(current) > new Date(latest) ? current : latest;
-  });
-});
-
-// 是否正在刷新
-const isRefreshing = computed(() => {
-  return Object.values(loading.value).some(l => l);
-});
-
-// SSE状态
-const sseStatusIconComponent = computed(() => {
-  const iconMap: Record<string, Component> = {
-    connecting: markRaw(MinusIcon), // 可以使用旋转动画
-    open: markRaw(CheckIcon),
-    closed: markRaw(CloseIcon),
-  };
-  return iconMap[sseConnectionState.value] || iconMap.closed;
-});
-
-const sseStatusText = computed(() => {
-  const textMap: Record<string, string> = {
-    connecting: '连接中',
-    open: '已连接',
-    closed: '未连接',
-  };
-  return textMap[sseConnectionState.value] || '未连接';
-});
-
-// 方法
-const handleLogout = async () => {
-  try {
-    await authStore.logout();
-    MessagePlugin.success('已退出登录');
-    router.push('/login');
-  } catch (error) {
-    console.error('退出登录失败:', error);
-    MessagePlugin.error('退出登录失败');
+// --- Stat card configurations ---
+const statCardConfigs = computed(() => {
+  const stats = dashboardStore.stats;
+  if (!stats) {
+    return [
+      { label: '服务器总数', value: '-', icon: ServerIcon, colorClass: 'blue' },
+      { label: '已连接', value: '-', icon: LinkIcon, colorClass: 'green' },
+      { label: '可用工具', value: '-', icon: PreciseMonitorIcon, colorClass: 'purple' },
+      { label: '服务器组', value: '-', icon: FolderIcon, colorClass: 'orange' },
+    ];
   }
-};
 
-const handleRefresh = async () => {
+  const totalServers = stats.overview.totalServers;
+  const connectedServers = stats.overview.connectedServers;
+  const connectionRate = totalServers > 0 ? (connectedServers / totalServers) * 100 : 0;
+
+  return [
+    {
+      label: '服务器总数',
+      value: totalServers,
+      icon: ServerIcon,
+      colorClass: 'blue',
+    },
+    {
+      label: '已连接',
+      value: connectedServers,
+      icon: LinkIcon,
+      colorClass: 'green',
+      trend: {
+        value: connectionRate,
+        direction: (connectionRate >= 80 ? 'up' : connectionRate >= 50 ? 'stable' : 'down') as 'up' | 'down' | 'stable',
+        period: '连接率',
+      },
+    },
+    {
+      label: '可用工具',
+      value: stats.overview.totalTools,
+      icon: PreciseMonitorIcon,
+      colorClass: 'purple',
+    },
+    {
+      label: '服务器组',
+      value: stats.overview.totalGroups,
+      icon: FolderIcon,
+      colorClass: 'orange',
+    },
+  ];
+});
+
+// --- Activities ---
+const activities = computed<Activity[]>(() => dashboardStore.activities);
+
+// --- SSE connection status ---
+const sseDotClass = computed(() => {
+  switch (dashboardStore.sseConnectionState) {
+    case 'open':
+      return 'sse-dot--connected';
+    case 'connecting':
+      return 'sse-dot--connecting';
+    default:
+      return 'sse-dot--closed';
+  }
+});
+
+const sseLabel = computed(() => {
+  switch (dashboardStore.sseConnectionState) {
+    case 'open':
+      return '已连接';
+    case 'connecting':
+      return '连接中...';
+    default:
+      return '未连接';
+  }
+});
+
+// --- System Health ---
+const healthStatus = computed<SystemHealth | null>(() => dashboardStore.systemHealth);
+
+const healthTagTheme = computed(() => {
+  const status = healthStatus.value?.status;
+  if (status === 'healthy') return 'success';
+  if (status === 'warning') return 'warning';
+  return 'danger';
+});
+
+const healthStatusLabel = computed(() => {
+  const status = healthStatus.value?.status;
+  if (status === 'healthy') return '健康';
+  if (status === 'warning') return '警告';
+  return '异常';
+});
+
+const healthCheckItems = computed(() => {
+  const checks = healthStatus.value?.checks;
+  if (!checks) return [];
+
+  return [
+    { key: 'servers', name: '服务器', status: checks.servers.status, message: checks.servers.message },
+    { key: 'groups', name: '服务器组', status: checks.groups.status, message: checks.groups.message },
+    { key: 'apiTools', name: 'API 工具', status: checks.apiTools.status, message: checks.apiTools.message },
+    { key: 'memory', name: '内存', status: checks.memory.status, message: checks.memory.message },
+  ];
+});
+
+// --- Helpers ---
+function formatTimestamp(isoString: string): string {
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  } catch {
+    return isoString;
+  }
+}
+
+function formatUptime(seconds: number): string {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days}天`);
+  if (hours > 0) parts.push(`${hours}小时`);
+  parts.push(`${minutes}分钟`);
+
+  return parts.join(' ');
+}
+
+// --- Actions ---
+async function handleRefresh(): Promise<void> {
+  isRefreshing.value = true;
   try {
     await dashboardStore.refreshAll();
-    MessagePlugin.success('数据已刷新');
-  } catch (error) {
-    console.error('刷新数据失败:', error);
-    MessagePlugin.error('刷新数据失败');
+  } finally {
+    isRefreshing.value = false;
   }
-};
+}
 
-const navigateTo = (path: string) => {
-  router.push(path);
-};
-
-const handleShowMoreActivities = () => {
-  // TODO: 导航到活动详情页面
-  MessagePlugin.info('活动详情页面开发中');
-};
-
-const formatTime = (timestamp: string): string => {
-  const date = new Date(timestamp);
-  return date.toLocaleString('zh-CN');
-};
-
-// 生命周期
+// --- Lifecycle ---
 onMounted(async () => {
-  try {
-    // 初始化仪表板数据
-    await dashboardStore.initializeDashboard();
-    
-    // 连接SSE
-    await dashboardStore.connectSSE([
-      'server_status',
-      'tool_execution', 
-      'system_alert',
-      'health_check'
-    ]);
-  } catch (error) {
-    console.error('初始化仪表板失败:', error);
-    MessagePlugin.error('初始化仪表板失败');
-  }
+  await dashboardStore.initializeDashboard();
+  await dashboardStore.connectSSE();
+
+  // Auto-refresh every 30 seconds
+  refreshTimer = setInterval(() => {
+    dashboardStore.refreshAll();
+  }, 30_000);
 });
 
 onUnmounted(() => {
-  // 清理资源
+  if (refreshTimer !== null) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
   dashboardStore.cleanup();
 });
 </script>
 
-<style lang="less" scoped>
-@import '../design-system/styles/mixins.less';
-
-.dashboard-container {
-  padding: var(--page-padding);
-  min-height: 100vh;
-  background: linear-gradient(135deg, var(--td-bg-color-page) 0%, rgba(64, 158, 255, 0.03) 100%);
+<style scoped>
+/* Page layout */
+.dashboard {
+  animation: fadeIn var(--transition-slow);
 }
 
-// SSE 状态样式
-.sse-status {
+.mcp-page__header {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  transition: all var(--duration-normal) var(--easing-ease);
-  backdrop-filter: blur(10px);
-}
-
-.sse-status--connecting {
-  background: linear-gradient(135deg, rgba(255, 159, 64, 0.15) 0%, rgba(255, 159, 64, 0.08) 100%);
-  color: #ff9f40;
-  border: 1px solid rgba(255, 159, 64, 0.2);
-}
-
-.sse-status--open {
-  background: linear-gradient(135deg, rgba(103, 194, 58, 0.15) 0%, rgba(103, 194, 58, 0.08) 100%);
-  color: #67c23a;
-  border: 1px solid rgba(103, 194, 58, 0.2);
-}
-
-.sse-status--closed {
-  background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.08) 100%);
-  color: #f56c6c;
-  border: 1px solid rgba(245, 108, 108, 0.2);
-}
-
-// 用户信息样式
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: var(--font-size-base);
-  color: var(--td-text-color-secondary);
-  padding: 8px 16px;
-  background-color: var(--td-bg-color-container-hover);
-  border-radius: var(--radius-md);
-  transition: all var(--duration-normal) var(--easing-ease);
-}
-
-.user-info:hover {
-  background-color: var(--td-bg-color-container);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.sse-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.sse-status--connecting {
-  background: linear-gradient(135deg, rgba(255, 159, 64, 0.15) 0%, rgba(255, 159, 64, 0.08) 100%);
-  color: #ff9f40;
-  border: 1px solid rgba(255, 159, 64, 0.2);
-}
-
-.sse-status--open {
-  background: linear-gradient(135deg, rgba(103, 194, 58, 0.15) 0%, rgba(103, 194, 58, 0.08) 100%);
-  color: #67c23a;
-  border: 1px solid rgba(103, 194, 58, 0.2);
-}
-
-.sse-status--closed {
-  background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.08) 100%);
-  color: #f56c6c;
-  border: 1px solid rgba(245, 108, 108, 0.2);
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 14px;
-  color: var(--td-text-color-secondary);
-  padding: 8px 16px;
-  background-color: var(--td-bg-color-container-hover);
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.user-info:hover {
-  background-color: var(--td-bg-color-container);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.dashboard-content {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-}
-
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
-  margin-bottom: 8px;
-}
-
-.stat-card-wrapper {
-  min-width: 0;
-}
-
-.main-content {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 28px;
-}
-
-.content-left {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-}
-
-.content-right {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-}
-
-.performance-card {
-  min-height: 320px;
-}
-
-.card-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 60px;
-  color: var(--td-text-color-secondary);
-  font-size: 15px;
-}
-
-.card-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 60px;
-  color: var(--td-text-color-placeholder);
-}
-
-.performance-content {
-  padding: 12px 0;
-}
-
-.performance-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-bottom: 28px;
-}
-
-.metric-item {
-  text-align: center;
-  padding: 20px 16px;
-  background: linear-gradient(135deg, var(--td-bg-color-container-hover) 0%, var(--td-bg-color-page) 100%);
-  border-radius: 10px;
-  border: 1px solid var(--td-border-level-1-color);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.metric-item:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  border-color: var(--td-brand-color);
-}
-
-.metric-label {
-  font-size: 13px;
-  color: var(--td-text-color-secondary);
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-
-.metric-value {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--td-text-color-primary);
-}
-
-.top-tools {
-  margin-top: 24px;
-}
-
-.top-tools h4 {
-  margin: 0 0 16px 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--td-text-color-primary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.top-tools h4::before {
-  content: '';
-  width: 4px;
-  height: 18px;
-  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
-  border-radius: 2px;
-}
-
-.tools-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.tool-item {
-  display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, var(--td-bg-color-container-hover) 0%, var(--td-bg-color-page) 100%);
-  border-radius: 8px;
-  border: 1px solid transparent;
-  transition: all 0.3s ease;
-  cursor: pointer;
+  gap: var(--space-4);
 }
 
-.tool-item:hover {
-  background: var(--td-bg-color-container);
-  border-color: var(--td-brand-color);
-  transform: translateX(4px);
-  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15);
+.mcp-page__header-content {
+  flex: 1;
 }
 
-.tool-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--td-text-color-primary);
+/* Stat cards */
+.stat-card {
+  position: relative;
+  transition:
+    box-shadow var(--transition-base),
+    transform var(--transition-base);
 }
 
-.tool-stats {
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.stat-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
   display: flex;
-  gap: 12px;
-  font-size: 12px;
-  color: var(--td-text-color-secondary);
-  font-weight: 500;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: var(--space-3);
 }
 
-.quick-actions-card {
-  min-height: 220px;
+.stat-card__icon--blue {
+  background: var(--info-light);
+  color: var(--info);
 }
 
-.quick-actions {
+.stat-card__icon--green {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.stat-card__icon--purple {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.stat-card__icon--orange {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+/* Skeleton loading */
+.stat-card--skeleton {
+  pointer-events: none;
+}
+
+.skeleton {
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton--icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+}
+
+.skeleton--value {
+  width: 60%;
+  height: 28px;
+  margin-top: var(--space-3);
+}
+
+.skeleton--label {
+  width: 80%;
+  height: 14px;
+  margin-top: var(--space-2);
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Two-column layout */
+.dashboard__panels {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding: 8px 0;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
 }
 
-.quick-actions :deep(.t-button) {
-  height: auto;
-  padding: 16px 12px;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.quick-actions :deep(.t-button:hover) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* 响应式设计 */
-@media (max-width: 1200px) {
-  .main-content {
+@media (max-width: 1024px) {
+  .dashboard__panels {
     grid-template-columns: 1fr;
   }
-
-  .content-right {
-    order: -1;
-  }
-
-  .quick-actions {
-    grid-template-columns: repeat(4, 1fr);
-  }
 }
 
-@media (max-width: 768px) {
-  .dashboard-container {
-    padding: 16px;
-  }
+/* Panel shared styles */
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border);
+}
 
-  .dashboard-header {
+.panel-header__title {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.panel-header__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-weight: var(--weight-medium);
+}
+
+/* SSE dot states */
+.sse-dot--connected {
+  background: var(--success);
+  box-shadow: 0 0 0 3px var(--success-light);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.sse-dot--connecting {
+  background: var(--warning);
+  box-shadow: 0 0 0 3px var(--warning-light);
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+
+.sse-dot--closed {
+  background: var(--text-tertiary);
+}
+
+/* Activities panel */
+.activities-panel {
+  min-height: 300px;
+}
+
+.activities-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: var(--space-2) 0;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color var(--transition-fast);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-item:hover {
+  background-color: var(--bg-secondary);
+}
+
+.activity-item__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.activity-item__dot--info {
+  background: var(--info);
+  box-shadow: 0 0 0 3px var(--info-light);
+}
+
+.activity-item__dot--warning {
+  background: var(--warning);
+  box-shadow: 0 0 0 3px var(--warning-light);
+}
+
+.activity-item__dot--error {
+  background: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-light);
+}
+
+.activity-item__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  flex: 1;
+}
+
+.activity-item__message {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: var(--leading-normal);
+  word-break: break-word;
+}
+
+.activity-item__time {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+
+/* Health panel */
+.health-panel {
+  min-height: 300px;
+}
+
+.health-checks {
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.health-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.health-check__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.health-check__dot--healthy {
+  background: var(--success);
+  box-shadow: 0 0 0 3px var(--success-light);
+}
+
+.health-check__dot--warning {
+  background: var(--warning);
+  box-shadow: 0 0 0 3px var(--warning-light);
+}
+
+.health-check__dot--error {
+  background: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-light);
+}
+
+.health-check__name {
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  min-width: 64px;
+}
+
+.health-check__message {
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.health-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border-light);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.health-footer__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.health-footer__icon {
+  font-size: 16px;
+  color: var(--text-tertiary);
+}
+
+/* Empty state adjustments */
+.activities-panel .mcp-empty {
+  padding: var(--space-8) var(--space-6);
+}
+
+.activities-panel .mcp-empty__icon {
+  font-size: 36px;
+}
+
+/* Responsive: single column on mobile */
+@media (max-width: 640px) {
+  .mcp-page__header {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-    padding: 20px;
+    gap: var(--space-3);
   }
 
-  .header-left h1 {
-    font-size: 24px;
-  }
-
-  .header-actions {
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: space-between;
-  }
-
-  .stats-row {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .performance-metrics {
+  .dashboard__panels {
     grid-template-columns: 1fr;
-  }
-
-  .quick-actions {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 480px) {
-  .stats-row {
-    grid-template-columns: 1fr;
-  }
-
-  .header-subtitle > span {
-    font-size: 14px;
-  }
-
-  .user-info {
-    width: 100%;
-    justify-content: space-between;
   }
 }
 </style>

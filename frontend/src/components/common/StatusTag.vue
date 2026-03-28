@@ -1,94 +1,52 @@
 <template>
-  <t-tag
-    :theme="tagTheme"
-    :variant="variant"
-    :class="['status-tag', `status-tag--${status}`]"
-  >
-    <component :is="icon" size="14px" />
-    {{ text }}
+  <t-tag :theme="theme" variant="light" size="small">
+    {{ label }}
   </t-tag>
 </template>
 
 <script setup lang="ts">
-import { computed, markRaw } from 'vue';
-import {
-  CheckCircleIcon,
-  CloseCircleIcon,
-  LoadingIcon,
-  ErrorCircleIcon
-} from 'tdesign-icons-vue-next';
-import type { ServerStatus } from '@/types/server';
+import { computed } from 'vue';
+import { Tag as TTag } from 'tdesign-vue-next';
 
-interface Props {
-  status?: ServerStatus;
-  variant?: 'dark' | 'light' | 'outline' | 'light-outline';
-}
+type StatusValue =
+  | 'connected'
+  | 'disconnected'
+  | 'connecting'
+  | 'error'
+  | 'available'
+  | 'unavailable'
+  | 'healthy'
+  | 'active'
+  | 'inactive';
 
-const props = withDefaults(defineProps<Props>(), {
-  status: 'disconnected',
-  variant: 'light',
-});
+const props = defineProps<{
+  status: StatusValue;
+}>();
 
-// 状态配置映射
-const statusConfig = {
-  connected: {
-    theme: 'success' as const,
-    text: '已连接',
-    icon: markRaw(CheckCircleIcon),
-  },
-  disconnected: {
-    theme: 'default' as const,
-    text: '未连接',
-    icon: markRaw(CloseCircleIcon),
-  },
-  connecting: {
-    theme: 'warning' as const,
-    text: '连接中',
-    icon: markRaw(LoadingIcon),
-  },
-  error: {
-    theme: 'danger' as const,
-    text: '错误',
-    icon: markRaw(ErrorCircleIcon),
-  },
+const themeMap: Record<StatusValue, 'success' | 'warning' | 'default' | 'danger'> = {
+  connected: 'success',
+  available: 'success',
+  healthy: 'success',
+  active: 'success',
+  connecting: 'warning',
+  disconnected: 'default',
+  unavailable: 'default',
+  inactive: 'default',
+  error: 'danger',
 };
 
-const config = computed(() => {
-  // 调试：检查 status 类型
-  if (typeof props.status !== 'string') {
-    console.error('StatusTag: status is not a string', props.status);
-    return statusConfig.disconnected; // 默认返回未连接状态
-  }
-  const config = statusConfig[props.status];
-  if (!config) {
-    console.error('StatusTag: invalid status value', props.status);
-    return statusConfig.disconnected; // 默认返回未连接状态
-  }
-  return config;
-});
+const labelMap: Record<StatusValue, string> = {
+  connected: '已连接',
+  disconnected: '已断开',
+  connecting: '连接中',
+  error: '错误',
+  available: '可用',
+  unavailable: '不可用',
+  healthy: '健康',
+  active: '活跃',
+  inactive: '未激活',
+};
 
-const tagTheme = computed(() => config.value.theme);
-const text = computed(() => config.value.text);
-const icon = computed(() => config.value.icon);
+const theme = computed(() => themeMap[props.status] ?? 'default');
+const label = computed(() => labelMap[props.status] ?? props.status);
 </script>
-
-<style scoped>
-.status-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.status-tag--connecting :deep(.t-icon) {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-</style>

@@ -4,9 +4,12 @@
  */
 
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { startTestServer, stopTestServer } from '../test-server.js';
 import { E2ETestHelper } from '../e2e-test-helper.js';
-import { MockServerManager, type MockServerConfig } from '../mock-mcp-server.js';
+import {
+  type MockServerConfig,
+  MockServerManager,
+} from '../mock-mcp-server.js';
+import { startTestServer, stopTestServer } from '../test-server.js';
 
 describe('故障恢复 E2E 测试', () => {
   const testServer = startTestServer(3000);
@@ -198,7 +201,7 @@ describe('故障恢复 E2E 测试', () => {
         { id: 'server-c', name: 'Server C', toolCount: 3 },
       ];
 
-      servers.forEach(config => {
+      servers.forEach((config) => {
         mockManager.addServer(config);
       });
 
@@ -206,9 +209,11 @@ describe('故障恢复 E2E 测试', () => {
 
       // 等待所有服务器就绪
       await E2ETestHelper.waitForAll(
-        servers.map(s => async () => {
+        servers.map((s) => async () => {
           try {
-            const response = await fetch(`${baseUrl}/api/servers/${s.id}/health`);
+            const response = await fetch(
+              `${baseUrl}/api/servers/${s.id}/health`,
+            );
             const data = await response.json();
             return data.healthy === true;
           } catch {
@@ -229,7 +234,9 @@ describe('故障恢复 E2E 测试', () => {
       // 等待故障检测
       await E2ETestHelper.waitFor(
         async () => {
-          const response = await fetch(`${baseUrl}/api/servers/server-b/health`);
+          const response = await fetch(
+            `${baseUrl}/api/servers/server-b/health`,
+          );
           const data = await response.json();
           return data.healthy === false;
         },
@@ -237,11 +244,15 @@ describe('故障恢复 E2E 测试', () => {
       );
 
       // 验证其他服务器仍然可用
-      const serverAHealth = await fetch(`${baseUrl}/api/servers/server-a/health`);
+      const serverAHealth = await fetch(
+        `${baseUrl}/api/servers/server-a/health`,
+      );
       const serverAData = await serverAHealth.json();
       expect(serverAData.healthy).toBe(true);
 
-      const serverCHealth = await fetch(`${baseUrl}/api/servers/server-c/health`);
+      const serverCHealth = await fetch(
+        `${baseUrl}/api/servers/server-c/health`,
+      );
       const serverCData = await serverCHealth.json();
       expect(serverCData.healthy).toBe(true);
 
@@ -393,7 +404,7 @@ describe('故障恢复 E2E 测试', () => {
 
       const responses = await Promise.allSettled(requests);
 
-      const successful = responses.filter(r => {
+      const successful = responses.filter((r) => {
         if (r.status === 'fulfilled') {
           return r.value.ok;
         }

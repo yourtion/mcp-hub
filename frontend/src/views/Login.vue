@@ -1,25 +1,25 @@
 <template>
-  <div class="login-container">
+  <div class="login-page">
     <div class="login-card">
       <div class="login-header">
-        <h1 class="login-title">MCP Hub 管理系统</h1>
-        <p class="login-subtitle">请登录您的账户</p>
+        <h1 class="login-title">MCP Hub</h1>
+        <p class="login-subtitle">Model Context Protocol 管理平台</p>
       </div>
 
       <t-form
         ref="formRef"
         :data="formData"
         :rules="formRules"
-        class="login-form"
-        @submit="handleSubmit"
+        label-width="0"
+        @submit="handleLogin"
       >
-        <t-form-item name="username" class="form-item">
+        <t-form-item name="username">
           <t-input
             v-model="formData.username"
             placeholder="请输入用户名"
             size="large"
-            :disabled="loading"
             clearable
+            @enter="handleLogin"
           >
             <template #prefix-icon>
               <UserIcon />
@@ -27,14 +27,14 @@
           </t-input>
         </t-form-item>
 
-        <t-form-item name="password" class="form-item">
+        <t-form-item name="password">
           <t-input
             v-model="formData.password"
             type="password"
             placeholder="请输入密码"
             size="large"
-            :disabled="loading"
             clearable
+            @enter="handleLogin"
           >
             <template #prefix-icon>
               <LockOnIcon />
@@ -42,179 +42,158 @@
           </t-input>
         </t-form-item>
 
-        <t-form-item class="form-item">
+        <t-form-item>
+          <t-checkbox v-model="formData.remember">记住我</t-checkbox>
+        </t-form-item>
+
+        <t-form-item v-if="errorMessage" class="login-error-item">
+          <div class="login-error">{{ errorMessage }}</div>
+        </t-form-item>
+
+        <t-form-item>
           <t-button
-            type="submit"
             theme="primary"
-            size="large"
+            type="submit"
             block
+            size="large"
             :loading="loading"
           >
-            {{ loading ? '登录中...' : '登录' }}
+            登录
           </t-button>
         </t-form-item>
       </t-form>
-
-      <!-- 错误提示 -->
-      <t-alert
-        v-if="error"
-        theme="error"
-        :message="error"
-        class="error-alert"
-        close
-        @close="clearError"
-      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
-import { MessagePlugin } from 'tdesign-vue-next';
+import { ref, reactive } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { UserIcon, LockOnIcon } from 'tdesign-icons-vue-next';
 import { useAuthStore } from '@/stores/auth';
 import type { FormInstanceFunctions, FormRule } from 'tdesign-vue-next';
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 
-// 表单引用
-const formRef = ref<FormInstanceFunctions>();
+const formRef = ref<FormInstanceFunctions | null>(null);
+const loading = ref(false);
+const errorMessage = ref('');
 
-// 表单数据
-const formData = ref({
+const formData = reactive({
   username: '',
   password: '',
+  remember: false,
 });
 
-// 表单验证规则
 const formRules: Record<string, FormRule[]> = {
-  username: [
-    { required: true, message: '请输入用户名' },
-    { min: 2, message: '用户名至少2个字符', type: 'string' },
-  ],
-  password: [
-    { required: true, message: '请输入密码' },
-    { min: 6, message: '密码至少6个字符', type: 'string' },
-  ],
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 };
 
-// 计算属性
-const loading = computed(() => authStore.loading);
-const error = computed(() => authStore.error);
+const handleLogin = async ({
+  validateResult,
+}: {
+  validateResult: boolean;
+}) => {
+  if (validateResult !== true) {
+    return;
+  }
 
-// 清除错误信息
-const clearError = () => {
-  authStore.error = null;
-};
+  loading.value = true;
+  errorMessage.value = '';
 
-// 处理表单提交
-const handleSubmit = async ({ validateResult, firstError }: { validateResult: boolean | Record<string, unknown>, firstError?: string }) => {
-  if (validateResult === true) {
-    try {
-      await authStore.login({
-        username: formData.value.username,
-        password: formData.value.password,
-      });
+  try {
+    await authStore.login({
+      username: formData.username,
+      password: formData.password,
+    });
 
-      MessagePlugin.success('登录成功');
-
-      // 等待状态更新后再跳转
-      await nextTick();
-
-      // 跳转到首页或之前访问的页面
-      const redirect = router.currentRoute.value.query.redirect as string;
-      await router.push(redirect || '/dashboard');
-    } catch (err) {
-      console.error('登录失败:', err);
-      // 错误信息已经在store中设置，组件会自动显示
-    }
-  } else {
-    // 验证失败，显示第一个错误信息
-    if (firstError) {
-      MessagePlugin.warning(firstError);
-    }
+    const redirect =
+      (route.query.redirect as string) || '/dashboard';
+    await router.push(redirect);
+  } catch (err: unknown) {
+    errorMessage.value =
+      err instanceof Error ? err.message : '登录失败，请检查用户名和密码';
+  } finally {
+    loading.value = false;
   }
 };
-
-// 组件挂载时检查是否已登录
-onMounted(async () => {
-  if (authStore.isAuthenticated) {
-    await router.push('/dashboard');
-  }
-});
 </script>
 
-<style lang="less" scoped>
-@import '../design-system/styles/mixins.less';
-@import '../design-system/tokens/spacing.less';
-@import '../design-system/tokens/typography.less';
-
-.login-container {
+<style scoped>
+.login-page {
   display: flex;
-  min-height: 100vh;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: @spacing-xl;
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      ellipse at 30% 20%,
+      var(--accent-subtle) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 70% 80%,
+      var(--accent-subtle) 0%,
+      transparent 50%
+    ),
+    var(--bg-canvas);
 }
 
 .login-card {
   width: 100%;
-  max-width: 400px;
-  padding: 40px;
-  background: var(--td-bg-color-container);
-  border-radius: var(--radius-lg);
+  max-width: 420px;
+  padding: var(--space-10) var(--space-8);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
+  animation: loginEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: @spacing-xxxl;
+  margin-bottom: var(--space-8);
 }
 
 .login-title {
-  font-size: @font-size-xxxl;
-  font-weight: @font-weight-semibold;
-  color: var(--td-text-color-primary);
-  margin: 0 0 @spacing-sm 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+  letter-spacing: -0.02em;
 }
 
 .login-subtitle {
-  font-size: @font-size-lg;
-  color: var(--td-text-color-secondary);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
   margin: 0;
 }
 
-.login-form {
+.login-error {
   width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--danger);
+  background: var(--danger-light);
+  border-radius: var(--radius-sm);
+  text-align: center;
 }
 
-.form-item {
-  margin-bottom: @spacing-xxl;
+.login-error-item {
+  margin-bottom: var(--space-2);
 }
 
-.form-item:last-child {
-  margin-bottom: 0;
-}
-
-.error-alert {
-  margin-top: @spacing-lg;
-}
-
-/* 响应式设计 */
-@media (max-width: 480px) {
-  .login-container {
-    padding: @spacing-md;
+@keyframes loginEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
   }
-
-  .login-card {
-    padding: @spacing-xxl;
-  }
-
-  .login-title {
-    font-size: @font-size-xxl;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

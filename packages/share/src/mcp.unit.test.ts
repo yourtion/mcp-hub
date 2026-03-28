@@ -155,7 +155,10 @@ describe('ServerConfig Types', () => {
         expect(sseConfig.url).toBeDefined();
       }
 
-      if (streamingConfig.type === 'sse' || streamingConfig.type === 'streaming') {
+      if (
+        streamingConfig.type === 'sse' ||
+        streamingConfig.type === 'streaming'
+      ) {
         expect(streamingConfig.url).toBeDefined();
       }
     });

@@ -1,143 +1,100 @@
 <template>
-  <div class="app-header">
-    <!-- 左侧：面包屑导航 -->
-    <div class="header-left">
+  <header class="app-header">
+    <div class="app-header__left">
+      <Button
+        variant="text"
+        shape="square"
+        size="medium"
+        @click="$emit('toggle-sidebar')"
+      >
+        <template #icon>
+          <MenuUnfoldIcon v-if="collapsed" />
+          <MenuFoldIcon v-else />
+        </template>
+      </Button>
       <Breadcrumb />
     </div>
-
-    <!-- 右侧：用户信息和操作 -->
-    <div class="header-right">
-      <!-- 主题切换按钮 -->
-      <t-tooltip content="切换主题" placement="bottom">
-        <t-button
+    <div class="app-header__right">
+      <div class="app-header__theme-btn">
+        <Button
           variant="text"
           shape="square"
-          class="header-action-btn"
+          size="medium"
           @click="toggleTheme"
         >
           <template #icon>
-            <MoonIcon v-if="!isDark" />
-            <SunnyIcon v-else />
+            <SunnyIcon v-if="isDark" />
+            <MoonIcon v-else />
           </template>
-        </t-button>
-      </t-tooltip>
-
-      <!-- 全屏按钮 -->
-      <t-tooltip content="全屏" placement="bottom">
-        <t-button
-          variant="text"
-          shape="square"
-          class="header-action-btn"
-          @click="toggleFullscreen"
-        >
-          <template #icon>
-            <FullscreenIcon v-if="!isFullscreen" />
-            <FullscreenExitIcon v-else />
-          </template>
-        </t-button>
-      </t-tooltip>
-
-      <!-- 用户下拉菜单 -->
-      <t-dropdown
-        :options="userMenuOptions"
-        trigger="click"
-        @click="handleUserMenuClick"
+        </Button>
+      </div>
+      <Dropdown
+        :options="userDropdownOptions"
+        @click="handleDropdownClick"
       >
-        <div class="user-info">
-          <t-avatar size="32px">
-            {{ userInitial }}
-          </t-avatar>
-          <span v-if="authStore.user" class="username">
-            {{ authStore.user.username }}
-          </span>
-          <ChevronDownIcon class="dropdown-icon" />
+        <div class="app-header__user-btn">
+          <Button variant="text" size="medium">
+            <template #icon>
+              <UserIcon />
+            </template>
+            <span v-if="authStore.user" class="app-header__username">
+              {{ authStore.user.username }}
+            </span>
+          </Button>
         </div>
-      </t-dropdown>
+      </Dropdown>
     </div>
-  </div>
+  </header>
 </template>
 
 <script setup lang="ts">
-import { computed, h } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import { useFullscreen } from '@vueuse/core';
-import { useTheme } from '@/composables';
+import { computed } from 'vue';
+import { Button, Dropdown } from 'tdesign-vue-next';
 import {
-  Button as TButton,
-  Tooltip as TTooltip,
-  Dropdown as TDropdown,
-  Avatar as TAvatar,
-  MessagePlugin,
-} from 'tdesign-vue-next';
-import {
-  MoonIcon,
+  MenuFoldIcon,
+  MenuUnfoldIcon,
   SunnyIcon,
-  FullscreenIcon,
-  FullscreenExitIcon,
-  ChevronDownIcon,
+  MoonIcon,
   UserIcon,
-  LockOnIcon,
-  LogoutIcon,
+  PoweroffIcon,
 } from 'tdesign-icons-vue-next';
+import { useTheme } from '@/composables/useTheme';
+import { useAuthStore } from '@/stores/auth';
 import Breadcrumb from './Breadcrumb.vue';
 
-const router = useRouter();
+defineProps<{
+  collapsed: boolean;
+}>();
+
+defineEmits<{
+  (e: 'toggle-sidebar'): void;
+}>();
+
+const { toggleTheme, resolvedTheme } = useTheme();
 const authStore = useAuthStore();
 
-// 主题管理
-const { isDark, toggleTheme: toggleThemeMode } = useTheme();
+const isDark = computed(() => resolvedTheme() === 'dark');
 
-// 全屏状态
-const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
+interface DropdownOption {
+  content: string;
+  value: string;
+  prefixIcon?: typeof PoweroffIcon;
+}
 
-// 用户名首字母
-const userInitial = computed(() => {
-  if (authStore.user?.username) {
-    return authStore.user.username.charAt(0).toUpperCase();
-  }
-  return 'U';
+const userDropdownOptions = computed(() => {
+  const options: DropdownOption[] = [
+    {
+      content: '退出登录',
+      value: 'logout',
+      prefixIcon: PoweroffIcon,
+    },
+  ];
+  return options;
 });
 
-// 用户菜单选项
-const userMenuOptions = [
-  {
-    content: '个人设置',
-    value: 'profile',
-    prefixIcon: () => h(UserIcon),
-  },
-  {
-    content: '修改密码',
-    value: 'change-password',
-    prefixIcon: () => h(LockOnIcon),
-  },
-  {
-    content: '退出登录',
-    value: 'logout',
-    prefixIcon: () => h(LogoutIcon),
-  },
-];
-
-// 切换主题
-const toggleTheme = () => {
-  toggleThemeMode();
-  MessagePlugin.success(isDark.value ? '已切换到暗色模式' : '已切换到亮色模式');
-};
-
-// 处理用户菜单点击
-const handleUserMenuClick = async (data: { value: string }) => {
-  switch (data.value) {
-    case 'profile':
-      MessagePlugin.info('个人设置功能开发中');
-      break;
-    case 'change-password':
-      MessagePlugin.info('修改密码功能开发中');
-      break;
-    case 'logout':
-      await authStore.logout();
-      router.push('/login');
-      MessagePlugin.success('已退出登录');
-      break;
+const handleDropdownClick = (data: { value: string }) => {
+  if (data.value === 'logout') {
+    authStore.logout();
   }
 };
 </script>
@@ -147,67 +104,39 @@ const handleUserMenuClick = async (data: { value: string }) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 100%;
-  padding: 0 24px;
+  height: var(--header-height);
+  padding: 0 var(--space-4);
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
-.header-left {
-  flex: 1;
-  min-width: 0;
-}
-
-.header-right {
+.app-header__left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
-.header-action-btn {
-  width: 40px;
-  height: 40px;
-}
-
-.user-info {
+.app-header__right {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 12px;
-  border-radius: var(--td-radius-default);
-  cursor: pointer;
-  transition: background-color 0.2s;
+  gap: var(--space-2);
 }
 
-.user-info:hover {
-  background: var(--td-bg-color-container-hover);
+.app-header__theme-btn :deep(.t-button),
+.app-header__user-btn :deep(.t-button) {
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
 }
 
-.username {
-  font-size: 14px;
-  color: var(--td-text-color-primary);
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.app-header__theme-btn:hover :deep(.t-button),
+.app-header__user-btn:hover :deep(.t-button) {
+  color: var(--text-primary);
 }
 
-.dropdown-icon {
-  font-size: 16px;
-  color: var(--td-text-color-secondary);
-  transition: transform 0.2s;
-}
-
-.user-info:hover .dropdown-icon {
-  transform: rotate(180deg);
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .app-header {
-    padding: 0 16px;
-  }
-
-  .username {
-    display: none;
-  }
+.app-header__username {
+  margin-left: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 </style>

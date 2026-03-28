@@ -89,6 +89,34 @@ config.global.stubs = {
     template: '<div class="mock-radio-group"><slot /></div>',
     props: ['modelValue', 'variant'],
   },
+  // Layout component stubs
+  Menu: {
+    template: '<div class="mock-menu"><slot /></div>',
+    props: ['value', 'collapsed', 'theme'],
+    emits: ['change'],
+  },
+  MenuItem: {
+    template: '<div class="mock-menu-item"><slot name="icon" /><slot /></div>',
+    props: ['value'],
+  },
+  Breadcrumb: {
+    template: '<div class="mock-breadcrumb"><slot /></div>',
+    props: ['separator'],
+  },
+  BreadcrumbItem: {
+    template: '<span class="mock-breadcrumb-item"><slot /></span>',
+  },
+  Button: {
+    template:
+      '<button class="mock-button"><slot name="icon" /><slot /></button>',
+    props: ['theme', 'variant', 'loading', 'size', 'shape'],
+    emits: ['click'],
+  },
+  Dropdown: {
+    template: '<div class="mock-dropdown"><slot /></div>',
+    props: ['options'],
+    emits: ['click'],
+  },
 };
 
 // Mock MessagePlugin

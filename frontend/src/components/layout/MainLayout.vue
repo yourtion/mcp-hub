@@ -1,84 +1,95 @@
 <template>
-  <t-layout class="main-layout">
-    <t-aside :width="asideWidth" class="main-aside">
-      <SideNavigation
-        :collapsed="collapsed"
-        @toggle-collapse="handleToggleCollapse"
-      />
-    </t-aside>
-    <t-layout>
-      <t-header class="main-header">
-        <AppHeader />
-      </t-header>
-      <t-content class="main-content">
-        <router-view />
-      </t-content>
-    </t-layout>
-  </t-layout>
+  <div class="main-layout">
+    <aside class="sidebar" :class="{ collapsed }">
+      <SideNavigation :collapsed="collapsed" />
+    </aside>
+    <div class="main-content">
+      <AppHeader :collapsed="collapsed" @toggle-sidebar="toggleSidebar" />
+      <main class="page-content">
+        <router-view v-slot="{ Component }">
+          <transition name="page" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </main>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { Layout as TLayout, Aside as TAside, Header as THeader, Content as TContent } from 'tdesign-vue-next';
-import { useResponsive } from '@/composables';
+import { ref, onMounted } from 'vue';
 import SideNavigation from './SideNavigation.vue';
 import AppHeader from './AppHeader.vue';
 
-// 响应式设计
-const { isMobile, isTablet } = useResponsive();
+const STORAGE_KEY = 'sidebar_collapsed';
 
-// 侧边栏折叠状态
 const collapsed = ref(false);
 
-// 计算侧边栏宽度
-const asideWidth = computed(() => (collapsed.value ? '64px' : '240px'));
-
-// 切换侧边栏折叠状态
-const handleToggleCollapse = () => {
+const toggleSidebar = () => {
   collapsed.value = !collapsed.value;
+  localStorage.setItem(STORAGE_KEY, String(collapsed.value));
 };
 
-// 响应式自动折叠
-watch([isMobile, isTablet], ([mobile, tablet]) => {
-  // 移动设备和平板设备默认折叠侧边栏
-  if (mobile || tablet) {
-    collapsed.value = true;
+onMounted(() => {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored !== null) {
+    collapsed.value = stored === 'true';
   }
-}, { immediate: true });
+});
 </script>
 
 <style scoped>
 .main-layout {
-  min-height: 100vh;
-  background: var(--td-bg-color-page);
-}
-
-.main-aside {
-  background: var(--td-bg-color-container);
-  border-right: 1px solid var(--td-border-level-1-color);
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  width: 100%;
+  height: 100vh;
   overflow: hidden;
 }
 
-.main-header {
-  background: var(--td-bg-color-container);
-  border-bottom: 1px solid var(--td-border-level-1-color);
-  padding: 0;
-  height: 64px;
-  display: flex;
-  align-items: center;
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  transition: width var(--transition-slow);
+  overflow: hidden;
+}
+
+.sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
 }
 
 .main-content {
-  padding: 24px;
-  min-height: calc(100vh - 64px);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  height: 100vh;
+  background-color: var(--bg-canvas);
 }
 
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .main-content {
-    padding: 16px;
-  }
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Page transition */
+.page-enter-active {
+  transition: opacity var(--transition-base), transform var(--transition-base);
+}
+
+.page-leave-active {
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 </style>

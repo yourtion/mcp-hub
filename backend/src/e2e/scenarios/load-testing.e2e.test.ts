@@ -4,9 +4,12 @@
  */
 
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { startTestServer, stopTestServer } from '../test-server.js';
 import { E2ETestHelper } from '../e2e-test-helper.js';
-import { MockServerManager, type MockServerConfig } from '../mock-mcp-server.js';
+import {
+  type MockServerConfig,
+  MockServerManager,
+} from '../mock-mcp-server.js';
+import { startTestServer, stopTestServer } from '../test-server.js';
 
 describe('性能和压力测试 E2E', () => {
   const testServer = startTestServer(3000);
@@ -72,10 +75,11 @@ describe('性能和压力测试 E2E', () => {
 
       // 分析结果
       const successful = responses.filter(
-        r => r.status === 'fulfilled' && r.value.ok,
+        (r) => r.status === 'fulfilled' && r.value.ok,
       );
       const failed = responses.filter(
-        r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok),
+        (r) =>
+          r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok),
       );
 
       const successRate = (successful.length / concurrentRequests) * 100;
@@ -139,7 +143,7 @@ describe('性能和压力测试 E2E', () => {
         const responses = await Promise.allSettled(batch);
 
         const batchSuccessful = responses.filter(
-          r => r.status === 'fulfilled' && r.value.ok,
+          (r) => r.status === 'fulfilled' && r.value.ok,
         ).length;
 
         totalSuccessful += batchSuccessful;
@@ -211,7 +215,7 @@ describe('性能和压力测试 E2E', () => {
       const duration = Date.now() - startTime;
 
       const successful = responses.filter(
-        r => r.status === 'fulfilled' && r.value.ok,
+        (r) => r.status === 'fulfilled' && r.value.ok,
       );
 
       const successRate = (successful.length / extremeConcurrency) * 100;
@@ -277,7 +281,7 @@ describe('性能和压力测试 E2E', () => {
         const duration = Date.now() - startTime;
 
         const successful = responses.filter(
-          r => r.status === 'fulfilled' && r.value.ok,
+          (r) => r.status === 'fulfilled' && r.value.ok,
         );
 
         totalSuccessful += successful.length;
@@ -437,7 +441,7 @@ describe('性能和压力测试 E2E', () => {
         return;
       }
 
-      const memoryValues = memoryUsage.map(m => m.used);
+      const memoryValues = memoryUsage.map((m) => m.used);
       const minMemory = Math.min(...memoryValues);
       const maxMemory = Math.max(...memoryValues);
       const avgMemory =
@@ -451,15 +455,21 @@ describe('性能和压力测试 E2E', () => {
       console.log(`  平均内存: ${(avgMemory / 1024 / 1024).toFixed(2)} MB`);
 
       // 检查是否有内存泄漏（内存持续增长）
-      const firstQuarter = memoryUsage.slice(0, Math.floor(memoryUsage.length / 4));
-      const lastQuarter = memoryUsage.slice(-Math.floor(memoryUsage.length / 4));
+      const firstQuarter = memoryUsage.slice(
+        0,
+        Math.floor(memoryUsage.length / 4),
+      );
+      const lastQuarter = memoryUsage.slice(
+        -Math.floor(memoryUsage.length / 4),
+      );
 
       const avgFirstQuarter =
         firstQuarter.reduce((sum, m) => sum + m.used, 0) / firstQuarter.length;
       const avgLastQuarter =
         lastQuarter.reduce((sum, m) => sum + m.used, 0) / lastQuarter.length;
 
-      const growthRate = ((avgLastQuarter - avgFirstQuarter) / avgFirstQuarter) * 100;
+      const growthRate =
+        ((avgLastQuarter - avgFirstQuarter) / avgFirstQuarter) * 100;
 
       console.log(`  内存增长率: ${growthRate.toFixed(2)}%`);
 
