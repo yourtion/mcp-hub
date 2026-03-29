@@ -38,7 +38,7 @@
     "@modelcontextprotocol/sdk": "^1.0.4",
     "axios": "^1.6.7",
     "jsonata": "^2.0.3",
-    "zod": "^3.23.8"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/jsonata": "^1.5.1",

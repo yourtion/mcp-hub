@@ -193,7 +193,7 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
       }
 
       // 转换Zod错误为ValidationError格式
-      const errors = result.error.errors.map((error) => ({
+      const errors = result.error.issues.map((error) => ({
         path: error.path.join('.'),
         message: error.message,
         code: error.code,

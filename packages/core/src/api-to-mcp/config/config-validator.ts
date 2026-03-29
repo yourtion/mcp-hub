@@ -4,7 +4,7 @@
  */
 
 import jsonata from 'jsonata';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import type { ApiToolConfig, ApiToolsConfig } from '../types/api-config.js';
 import type {
   ValidationResult,
@@ -53,7 +53,7 @@ export interface ConfigValidator {
    * @param data 要验证的数据
    */
   validateWithSchema<T>(
-    schema: z.ZodSchema<T>,
+    schema: z.ZodType<T>,
     data: unknown,
   ): ValidationResultWithData<T>;
 }
@@ -159,7 +159,7 @@ export class ConfigValidatorImpl implements ConfigValidator {
   }
 
   validateWithSchema<T>(
-    schema: z.ZodSchema<T>,
+    schema: z.ZodType<T>,
     data: unknown,
   ): ValidationResultWithData<T> {
     try {
@@ -173,7 +173,7 @@ export class ConfigValidatorImpl implements ConfigValidator {
       if (error instanceof z.ZodError) {
         return {
           valid: false,
-          errors: error.errors.map((err) => ({
+          errors: error.issues.map((err) => ({
             path: err.path.join('.'),
             message: err.message,
             code: err.code,

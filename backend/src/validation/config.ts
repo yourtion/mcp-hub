@@ -3,11 +3,11 @@ import type {
   McpConfig,
   SystemConfig,
 } from '@mcp-core/mcp-hub-share';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 // MCP服务器配置验证模式
 const BaseServerConfigSchema = z.object({
-  env: z.record(z.string()).optional(),
+  env: z.record(z.string(), z.string()).optional(),
   enabled: z.boolean().optional().default(true),
 });
 
@@ -20,7 +20,7 @@ const StdioServerConfigSchema = BaseServerConfigSchema.extend({
 const HTTPServerConfigSchema = BaseServerConfigSchema.extend({
   type: z.enum(['sse', 'streaming']),
   url: z.string().url('必须是有效的URL'),
-  headers: z.record(z.string()).optional(),
+  headers: z.record(z.string(), z.string()).optional(),
 });
 
 const ServerConfigSchema = z.union([
@@ -116,7 +116,7 @@ export function validateMcpConfig(config: unknown):
     return { success: true, data: result };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.errors.map((err) => {
+      const errors = error.issues.map((err) => {
         const path = err.path.join('.');
         return `${path}: ${err.message}`;
       });
@@ -173,7 +173,7 @@ export function validateGroupConfig(
     return { success: true, data: result };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.errors.map((err) => {
+      const errors = error.issues.map((err) => {
         const path = err.path.join('.');
         return `${path}: ${err.message}`;
       });
@@ -200,7 +200,7 @@ export function validateSystemConfig(config: unknown):
     return { success: true, data: result };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.errors.map((err) => {
+      const errors = error.issues.map((err) => {
         const path = err.path.join('.');
         return `${path}: ${err.message}`;
       });

@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 // JSON Schema types
 interface JsonSchema {
@@ -430,12 +430,12 @@ export class GroupMcpService {
    */
   private convertToZodSchema(
     inputSchema: JsonSchema,
-  ): Record<string, z.ZodTypeAny> {
+  ): Record<string, z.ZodType> {
     if (!inputSchema || !inputSchema.properties) {
       return {};
     }
 
-    const zodSchema: Record<string, z.ZodTypeAny> = {};
+    const zodSchema: Record<string, z.ZodType> = {};
 
     for (const [propName, propDef] of Object.entries(inputSchema.properties)) {
       const prop = propDef as JsonSchemaProperty;
@@ -452,7 +452,7 @@ export class GroupMcpService {
           zodSchema[propName] = z.boolean();
           break;
         case 'object':
-          zodSchema[propName] = z.record(z.any());
+          zodSchema[propName] = z.record(z.string(), z.any());
           break;
         case 'array':
           zodSchema[propName] = z.array(z.any());

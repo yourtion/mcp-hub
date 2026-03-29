@@ -3,7 +3,7 @@
  * 将 JSON Schema 转换为类型安全的 Zod Schema
  */
 
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 /**
  * JSON Schema 属性定义
@@ -28,7 +28,7 @@ interface JsonSchema {
  */
 export function convertToZodSchema(
   inputSchema: JsonSchema | unknown,
-): Record<string, z.ZodTypeAny> {
+): Record<string, z.ZodType> {
   if (!inputSchema || typeof inputSchema !== 'object') {
     return {};
   }
@@ -38,10 +38,10 @@ export function convertToZodSchema(
     return {};
   }
 
-  const zodSchema: Record<string, z.ZodTypeAny> = {};
+  const zodSchema: Record<string, z.ZodType> = {};
 
   for (const [propName, propDef] of Object.entries(schema.properties)) {
-    let zodType: z.ZodTypeAny;
+    let zodType: z.ZodType;
 
     // 基本类型转换
     switch (propDef.type) {
@@ -55,7 +55,7 @@ export function convertToZodSchema(
         zodType = z.boolean();
         break;
       case 'object':
-        zodType = z.record(z.unknown());
+        zodType = z.record(z.string(), z.unknown());
         break;
       case 'array':
         zodType = z.array(z.unknown());

@@ -1,6 +1,6 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { ConfigService } from '../../services/config_service.js';
 import type {
   ConfigBackupRequest,
@@ -18,14 +18,14 @@ const configService = new ConfigService();
 // 配置更新请求验证模式
 const configUpdateSchema = z.object({
   configType: z.enum(['system', 'mcp', 'groups']),
-  config: z.record(z.unknown()),
+  config: z.record(z.string(), z.unknown()),
   description: z.string().optional(),
 });
 
 // 配置验证请求验证模式
 const configValidationSchema = z.object({
   configType: z.enum(['system', 'mcp', 'groups']),
-  config: z.record(z.unknown()),
+  config: z.record(z.string(), z.unknown()),
 });
 
 // 配置备份请求验证模式
