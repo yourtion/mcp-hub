@@ -8,7 +8,7 @@ import { access, mkdir, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ConfigError, ErrorCode } from '../errors/index.js';
 import type {
-  GroupConfig,
+  Group,
   McpServerConfig,
   ServerConfig,
 } from '../types/index.js';
@@ -264,25 +264,23 @@ export class DefaultConfigGenerator {
   /**
    * 生成组配置
    */
-  private generateGroupConfig(): Record<string, GroupConfig> {
-    const groups: Record<string, GroupConfig> = {
+  private generateGroupConfig(): Record<string, Group> {
+    const groups: Record<string, Group> = {
       default: {
+        id: 'default',
         name: '默认组',
         description: '包含所有默认服务器',
         servers: this.defaultPresets,
-        validation: {
-          enabled: false,
-        },
+        tools: [],
       },
       'web-tools': {
+        id: 'web-tools',
         name: 'Web工具组',
         description: '仅包含Web相关工具',
         servers: ['fetch'],
+        tools: [],
         toolFilter: {
           include: ['fetch'],
-        },
-        validation: {
-          enabled: false,
         },
       },
     };

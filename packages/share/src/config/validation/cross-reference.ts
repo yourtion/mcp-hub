@@ -100,7 +100,7 @@ export function validateAllConfigs(
 
   // 交叉引用校验
   const crossRefResult = validateCrossReferences(
-    mcpResult.data!.mcpServers as Record<string, unknown>,
+    mcpResult.data!.servers as Record<string, unknown>,
     groupResult.data!,
   );
   if (!crossRefResult.valid) {
