@@ -1,6 +1,6 @@
 import type { McpConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 import { Hono } from 'hono';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { ServerManager } from '../../services/server_manager.js';
 import { ServerStatus } from '../../types/mcp-hub.js';
 import { getAllConfig, saveConfig } from '../../utils/config.js';
@@ -45,15 +45,15 @@ const StdioServerConfigSchema = z.object({
   type: z.literal('stdio'),
   command: z.string().min(1, '命令不能为空'),
   args: z.array(z.string()).optional(),
-  env: z.record(z.string()).optional(),
+  env: z.record(z.string(), z.string()).optional(),
   enabled: z.boolean().optional().default(true),
 });
 
 const HttpServerConfigSchema = z.object({
   type: z.enum(['sse', 'streaming']),
   url: z.string().url('必须是有效的URL'),
-  headers: z.record(z.string()).optional(),
-  env: z.record(z.string()).optional(),
+  headers: z.record(z.string(), z.string()).optional(),
+  env: z.record(z.string(), z.string()).optional(),
   enabled: z.boolean().optional().default(true),
 });
 
@@ -212,7 +212,7 @@ serversApi.post('/', async (c) => {
           error: {
             code: 'VALIDATION_ERROR',
             message: '请求数据验证失败',
-            details: validationResult.error.errors,
+            details: validationResult.error.issues,
           },
           timestamp: new Date().toISOString(),
         },
@@ -295,7 +295,7 @@ serversApi.put('/:id', async (c) => {
           error: {
             code: 'VALIDATION_ERROR',
             message: '请求数据验证失败',
-            details: validationResult.error.errors,
+            details: validationResult.error.issues,
           },
           timestamp: new Date().toISOString(),
         },
@@ -628,7 +628,7 @@ serversApi.post('/test', async (c) => {
           error: {
             code: 'VALIDATION_ERROR',
             message: '服务器配置验证失败',
-            details: validationResult.error.errors,
+            details: validationResult.error.issues,
           },
           timestamp: new Date().toISOString(),
         },
@@ -779,7 +779,7 @@ serversApi.post('/validate', async (c) => {
 
     if (!validationResult.success) {
       // 转换Zod错误为友好的错误信息
-      validationResponse.errors = validationResult.error.errors.map(
+      validationResponse.errors = validationResult.error.issues.map(
         (error) => ({
           field: error.path.join('.'),
           message: error.message,

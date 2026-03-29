@@ -6,7 +6,7 @@
 import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createCliLogger } from '@mcp-core/mcp-hub-share';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import type { CliConfig, CliError } from '../types';
 import { CliErrorCode } from '../types';
 import {
@@ -21,7 +21,7 @@ import { ConfigValidator, type ValidationResult } from './config-validator';
 const ServerConfigSchema = z.object({
   command: z.string().min(1, '命令不能为空'),
   args: z.array(z.string()).optional(),
-  env: z.record(z.string()).optional(),
+  env: z.record(z.string(), z.string()).optional(),
   cwd: z.string().optional(),
   disabled: z.boolean().optional(),
   timeout: z.number().positive().optional(),
@@ -48,7 +48,11 @@ const CliConfigSchema = z.object({
       type: z.literal('stdio').default('stdio'),
       options: z
         .object({
-          sessionIdGenerator: z.function().returns(z.string()).optional(),
+          sessionIdGenerator: z
+            .function()
+            .input(z.tuple([]))
+            .output(z.string())
+            .optional(),
         })
         .optional(),
     })
@@ -242,7 +246,7 @@ export class CliConfigManager {
       return CliConfigSchema.parse(rawConfig);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errorMessages = error.errors
+        const errorMessages = error.issues
           .map((err) => `${err.path.join('.')}: ${err.message}`)
           .join('; ');
 
@@ -251,7 +255,7 @@ export class CliConfigManager {
           `配置文件格式无效: ${errorMessages}`,
           {
             configPath,
-            validationErrors: error.errors,
+            validationErrors: error.issues,
             errorMessages,
           },
         );

@@ -2,7 +2,7 @@
  * API配置相关的类型定义
  */
 
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 /**
  * JSON Schema 基础类型定义
@@ -116,9 +116,9 @@ export type RequestBody = string | Record<string, unknown>;
 export const ApiEndpointConfigSchema = z.object({
   url: z.string().url(),
   method: HttpMethodSchema,
-  headers: z.record(z.string()).optional(),
-  queryParams: z.record(z.string()).optional(),
-  body: z.union([z.string(), z.record(z.unknown())]).optional(),
+  headers: z.record(z.string(), z.string()).optional(),
+  queryParams: z.record(z.string(), z.string()).optional(),
+  body: z.union([z.string(), z.record(z.string(), z.unknown())]).optional(),
   timeout: z.number().positive().optional(),
   retries: z.number().nonnegative().optional(),
 });
@@ -126,7 +126,7 @@ export const ApiEndpointConfigSchema = z.object({
 /**
  * JSON Schema 验证器
  */
-const JsonSchemaPropertySchema: z.ZodSchema<JsonSchemaProperty> = z.lazy(() =>
+const JsonSchemaPropertySchema: z.ZodType<JsonSchemaProperty> = z.lazy(() =>
   z.object({
     type: z.enum(['string', 'number', 'boolean', 'object', 'array', 'null']),
     description: z.string().optional(),
@@ -141,7 +141,7 @@ const JsonSchemaPropertySchema: z.ZodSchema<JsonSchemaProperty> = z.lazy(() =>
     maxItems: z.number().optional(),
     pattern: z.string().optional(),
     items: JsonSchemaPropertySchema.optional(),
-    properties: z.record(JsonSchemaPropertySchema).optional(),
+    properties: z.record(z.string(), JsonSchemaPropertySchema).optional(),
     required: z.array(z.string()).optional(),
     additionalProperties: z
       .union([z.boolean(), JsonSchemaPropertySchema])
@@ -154,7 +154,7 @@ const JsonSchemaPropertySchema: z.ZodSchema<JsonSchemaProperty> = z.lazy(() =>
  */
 export const JsonSchemaSchema = z.object({
   type: z.literal('object'),
-  properties: z.record(JsonSchemaPropertySchema),
+  properties: z.record(z.string(), JsonSchemaPropertySchema),
   required: z.array(z.string()).optional(),
   additionalProperties: z.boolean().optional(),
   description: z.string().optional(),

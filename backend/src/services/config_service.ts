@@ -7,7 +7,7 @@ import type {
   McpConfig,
   SystemConfig,
 } from '@mcp-core/mcp-hub-share';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import type {
   ConfigBackup,
   ConfigChange,
@@ -45,6 +45,7 @@ const systemConfigSchema = z.object({
     }),
   }),
   users: z.record(
+    z.string(),
     z.object({
       id: z.string(),
       username: z.string(),
@@ -73,16 +74,17 @@ const systemConfigSchema = z.object({
 
 const mcpConfigSchema = z.object({
   mcpServers: z.record(
+    z.string(),
     z.object({
       command: z.string(),
       args: z.array(z.string()).optional(),
-      env: z.record(z.string()).optional(),
+      env: z.record(z.string(), z.string()).optional(),
       cwd: z.string().optional(),
       transport: z
         .object({
           type: z.enum(['stdio', 'sse', 'websocket']),
           url: z.string().optional(),
-          headers: z.record(z.string()).optional(),
+          headers: z.record(z.string(), z.string()).optional(),
         })
         .optional(),
     }),
@@ -90,6 +92,7 @@ const mcpConfigSchema = z.object({
 });
 
 const groupConfigSchema = z.record(
+  z.string(),
   z.object({
     id: z.string(),
     name: z.string(),
@@ -189,7 +192,7 @@ export class ConfigService implements IConfigService {
     const warnings: ConfigValidationWarning[] = [];
 
     try {
-      let schema: z.ZodSchema;
+      let schema: z.ZodType;
 
       switch (configType) {
         case 'system':

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 // 测试服务器配置验证模式
 describe('服务器配置验证', () => {
@@ -7,15 +7,15 @@ describe('服务器配置验证', () => {
     type: z.literal('stdio'),
     command: z.string().min(1, '命令不能为空'),
     args: z.array(z.string()).optional(),
-    env: z.record(z.string()).optional(),
+    env: z.record(z.string(), z.string()).optional(),
     enabled: z.boolean().optional().default(true),
   });
 
   const HttpServerConfigSchema = z.object({
     type: z.enum(['sse', 'streaming']),
     url: z.string().url('必须是有效的URL'),
-    headers: z.record(z.string()).optional(),
-    env: z.record(z.string()).optional(),
+    headers: z.record(z.string(), z.string()).optional(),
+    env: z.record(z.string(), z.string()).optional(),
     enabled: z.boolean().optional().default(true),
   });
 

@@ -10,7 +10,7 @@ import {
 import { createCliLogger } from '@mcp-core/mcp-hub-share';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { McpProtocolHandler } from '../protocol/mcp-protocol-handler.js';
 import type { CliConfig } from '../types';
 
@@ -225,7 +225,7 @@ export class CliMcpServer {
               toolInfo.description || `来自服务器 ${toolInfo.serverId} 的工具`,
             inputSchema: {
               // 使用通用的输入模式，允许任意参数
-              args: z.record(z.unknown()).optional(),
+              args: z.record(z.string(), z.unknown()).optional(),
             },
           },
           toolHandler,

@@ -3,7 +3,7 @@
  * 提供详细的配置验证和错误报告
  */
 
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import type { CliConfig, CliError, CliErrorCode } from '../types';
 
 /**

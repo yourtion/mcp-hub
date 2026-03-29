@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { McpServiceManager } from '@mcp-core/mcp-hub-core';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 // 读取 package.json
 const pkg = JSON.parse(
@@ -180,7 +180,9 @@ async function registerHubTools(): Promise<void> {
     'execute_tool',
     {
       toolName: z.string().describe('Name of the tool to execute'),
-      args: z.record(z.unknown()).describe('Arguments to pass to the tool'),
+      args: z
+        .record(z.string(), z.unknown())
+        .describe('Arguments to pass to the tool'),
       groupId: z
         .string()
         .optional()
