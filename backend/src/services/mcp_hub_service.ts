@@ -736,7 +736,7 @@ export class McpHubService implements IMcpHubService {
     const loadedGroups = this.groupManager.getAllGroups().size;
     const totalGroups = Object.keys(this.groupConfigs).length;
 
-    if (loadedGroups === 0) {
+    if (loadedGroups === 0 && totalGroups > 0) {
       issues.push('No groups are loaded');
     } else if (loadedGroups < totalGroups) {
       warnings.push(`Only ${loadedGroups} of ${totalGroups} groups are loaded`);

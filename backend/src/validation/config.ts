@@ -166,9 +166,7 @@ export function validateAllConfigs(
   }
 
   // 验证系统配置（如果提供）
-  let systemResult:
-    | { success: true; data: SystemConfig }
-    | undefined;
+  let systemResult: { success: true; data: SystemConfig } | undefined;
   if (systemConfig) {
     const sysResult = validateSystemConfig(systemConfig);
     if (!sysResult.success) {

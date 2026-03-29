@@ -5,19 +5,19 @@
  */
 
 export type {
+  CliConfig,
+  CliLogging,
+  CliServerConfig,
+  CliTransport,
+  GroupConfig,
+  GroupValidation,
+  HttpServerConfig,
+  McpConfig,
+  RetryConfig,
   ServerConfig,
   StdioServerConfig,
-  HttpServerConfig,
-  RetryConfig,
-  GroupConfig,
-  ToolFilter,
-  GroupValidation,
-  McpConfig,
   SystemConfig,
-  CliConfig,
-  CliServerConfig,
-  CliLogging,
-  CliTransport,
+  ToolFilter,
 } from '@mcp-core/mcp-hub-share/config';
 
 /**
@@ -26,7 +26,10 @@ export type {
  */
 export interface McpServerConfig {
   /** 服务器配置 */
-  servers: Record<string, import('@mcp-core/mcp-hub-share/config').ServerConfig>;
+  servers: Record<
+    string,
+    import('@mcp-core/mcp-hub-share/config').ServerConfig
+  >;
   /** 组配置 */
   groups?: import('@mcp-core/mcp-hub-share/config').GroupConfig;
   /** 全局设置 */

@@ -4,10 +4,7 @@
  */
 
 import type { McpServerConfig } from '@mcp-core/mcp-hub-core';
-import type {
-  GroupConfig,
-  McpConfig,
-} from '@mcp-core/mcp-hub-share/config';
+import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share/config';
 
 /**
  * 将配置转换为 McpServerConfig 格式

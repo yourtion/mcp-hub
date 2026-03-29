@@ -13,10 +13,10 @@ import type {
 import {
   GroupConfigSchema,
   McpConfigSchema,
+  type SchemaValidationResult,
   SystemConfigSchema,
   validateCrossReferences,
   validateWithSchema,
-  type SchemaValidationResult,
 } from '@mcp-core/mcp-hub-share/config';
 
 /**
@@ -31,10 +31,7 @@ export interface AllConfig {
 /**
  * 配置文件类型
  */
-export type ConfigFileType =
-  | 'mcp_server.json'
-  | 'group.json'
-  | 'system.json';
+export type ConfigFileType = 'mcp_server.json' | 'group.json' | 'system.json';
 
 /**
  * 统一配置管理器
@@ -153,9 +150,7 @@ export class ConfigManager {
   /**
    * 校验系统配置
    */
-  validateSystemConfig(
-    config: unknown,
-  ): SchemaValidationResult<SystemConfig> {
+  validateSystemConfig(config: unknown): SchemaValidationResult<SystemConfig> {
     return validateWithSchema(SystemConfigSchema, config);
   }
 
@@ -254,10 +249,7 @@ export class ConfigManager {
   /**
    * 安全写入配置文件 (原子写入)
    */
-  private async saveConfigFile(
-    filePath: string,
-    data: unknown,
-  ): Promise<void> {
+  private async saveConfigFile(filePath: string, data: unknown): Promise<void> {
     const dir = path.dirname(filePath);
     await mkdir(dir, { recursive: true });
 

@@ -113,7 +113,7 @@ export class ServerManager implements IServerManager {
       serverConnection.status = ServerStatus.CONNECTING;
       logger.info('Server connecting', { serverId });
 
-      if (config.type === 'stdio') {
+      if (config.type === 'stdio' || (!config.type && 'command' in config)) {
         await this.connectStdioServer(serverConnection);
       } else {
         throw new Error(`Server type ${config.type} not yet implemented`);
@@ -142,7 +142,7 @@ export class ServerManager implements IServerManager {
   ): Promise<void> {
     const { config, client } = serverConnection;
 
-    if (config.type !== 'stdio') {
+    if (config.type !== 'stdio' && !('command' in config)) {
       throw new Error('Invalid server type for stdio connection');
     }
 
