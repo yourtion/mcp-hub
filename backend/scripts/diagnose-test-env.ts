@@ -76,7 +76,7 @@ try {
   );
 
   const mcpConfig = {
-    mcpServers: {
+    servers: {
       'test-server': {
         type: 'stdio' as const,
         command: 'echo',
