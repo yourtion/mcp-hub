@@ -18,7 +18,7 @@ export const RetryConfigSchema = z.object({
  */
 export const BaseServerConfigSchema = z.object({
   env: z.record(z.string(), z.string()).optional(),
-  enabled: z.boolean().optional().default(true),
+  enabled: z.boolean().optional(),
 });
 
 /**
@@ -26,7 +26,7 @@ export const BaseServerConfigSchema = z.object({
  * 注意：type 字段可选（兼容旧配置文件），默认值为 'stdio'
  */
 export const StdioServerConfigSchema = BaseServerConfigSchema.extend({
-  type: z.literal('stdio').optional().default('stdio'),
+  type: z.literal('stdio').optional(),
   command: z.string().min(1, { error: '命令不能为空' }),
   args: z.array(z.string()).optional(),
   cwd: z.string().optional(),

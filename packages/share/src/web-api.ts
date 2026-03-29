@@ -2,10 +2,22 @@
  * Web API相关的类型定义
  */
 
-import type { GroupInfo } from './config.js';
+// Import config types for internal use (these are exported via config/types/index.ts)
+import type {
+  ApiEndpointConfig,
+  ApiToolConfig,
+  AuthConfig,
+  CacheConfig,
+  Group,
+  HttpMethod,
+  ResponseConfig,
+  SecurityConfig,
+} from './config/types/index.js';
 
-// Re-export GroupInfo for other modules
-export type { GroupInfo } from './config.js';
+// Re-export Group for backward compatibility (was GroupInfo in legacy config.ts)
+export type { Group };
+/** @deprecated Use Group instead */
+export type GroupInfo = Group;
 
 // ============================================================================
 // 认证相关类型
@@ -297,7 +309,7 @@ export interface ToolComplexityEstimation {
 /**
  * 组信息（扩展版，包含运行时状态）
  */
-export interface ExtendedGroupInfo extends GroupInfo {
+export interface ExtendedGroupInfo extends Group {
   /** 服务器数量 */
   serverCount: number;
   /** 已连接服务器数量 */
@@ -476,121 +488,10 @@ export interface ExtendedGroupListResponse {
 }
 
 // ============================================================================
-// API到MCP相关类型
+// API到MCP相关类型 — 以下类型从 Zod schema 统一导出
+// AuthConfig, SecurityConfig, ResponseConfig, ApiEndpointConfig, CacheConfig, ApiToolConfig, HttpMethod
+// 均从 config/types/index.ts 导出，不再在此重复定义
 // ============================================================================
-
-/**
- * HTTP请求方法
- */
-export type HttpMethod =
-  | 'GET'
-  | 'POST'
-  | 'PUT'
-  | 'DELETE'
-  | 'PATCH'
-  | 'HEAD'
-  | 'OPTIONS';
-
-/**
- * 认证配置
- */
-export interface AuthConfig {
-  /** 认证类型 */
-  type: 'bearer' | 'apikey' | 'basic';
-  /** Token（用于bearer和apikey） */
-  token?: string;
-  /** 头部名称（用于apikey） */
-  header?: string;
-  /** 用户名（用于basic） */
-  username?: string;
-  /** 密码（用于basic） */
-  password?: string;
-}
-
-/**
- * 安全配置
- */
-export interface SecurityConfig {
-  /** 认证配置 */
-  authentication?: AuthConfig;
-  /** 允许的域名列表 */
-  allowedDomains?: string[];
-  /** 频率限制配置 */
-  rateLimiting?: {
-    /** 时间窗口（秒） */
-    windowSeconds: number;
-    /** 最大请求数 */
-    maxRequests: number;
-    /** 是否启用 */
-    enabled: boolean;
-  };
-}
-
-/**
- * 响应处理配置
- */
-export interface ResponseConfig {
-  /** JSONata表达式 */
-  jsonata?: string;
-  /** 错误路径 */
-  errorPath?: string;
-  /** 成功条件 */
-  successCondition?: string;
-}
-
-/**
- * API端点配置
- */
-export interface ApiEndpointConfig {
-  /** API URL */
-  url: string;
-  /** HTTP方法 */
-  method: HttpMethod;
-  /** 请求头 */
-  headers?: Record<string, string>;
-  /** 查询参数 */
-  queryParams?: Record<string, string>;
-  /** 请求体 */
-  body?: string | Record<string, unknown>;
-  /** 超时时间（毫秒） */
-  timeout?: number;
-  /** 重试次数 */
-  retries?: number;
-}
-
-/**
- * 缓存配置
- */
-export interface CacheConfig {
-  /** 是否启用缓存 */
-  enabled: boolean;
-  /** 缓存生存时间（秒） */
-  ttl: number;
-  /** 最大缓存条目数 */
-  maxSize?: number;
-}
-
-/**
- * API工具配置
- */
-export interface ApiToolConfig {
-  /** 工具ID */
-  id: string;
-  /** 工具名称 */
-  name: string;
-  /** 工具描述 */
-  description: string;
-  /** API端点配置 */
-  api: ApiEndpointConfig;
-  /** 参数schema */
-  parameters: JsonSchema;
-  /** 响应处理配置 */
-  response: ResponseConfig;
-  /** 安全配置 */
-  security?: SecurityConfig;
-  /** 缓存配置 */
-  cache?: CacheConfig;
-}
 
 /**
  * API配置信息

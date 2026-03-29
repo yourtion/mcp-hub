@@ -1,69 +1,40 @@
 /**
  * 配置相关类型定义
+ *
+ * 所有类型统一从 share 的 Zod schema 推导
  */
 
+export type {
+  ServerConfig,
+  StdioServerConfig,
+  HttpServerConfig,
+  RetryConfig,
+  GroupConfig,
+  ToolFilter,
+  GroupValidation,
+  McpConfig,
+  SystemConfig,
+  CliConfig,
+  CliServerConfig,
+  CliLogging,
+  CliTransport,
+} from '@mcp-core/mcp-hub-share/config';
+
 /**
- * MCP服务器配置
+ * MCP 服务器配置 (core 特有的组合类型)
+ * 包含 servers + groups + settings
  */
 export interface McpServerConfig {
   /** 服务器配置 */
-  servers: Record<string, ServerConfig>;
+  servers: Record<string, import('@mcp-core/mcp-hub-share/config').ServerConfig>;
   /** 组配置 */
-  groups?: Record<string, GroupConfig>;
+  groups?: Record<string, import('@mcp-core/mcp-hub-share/config').GroupConfig>;
   /** 全局设置 */
   settings?: GlobalSettings;
 }
 
 /**
- * 单个服务器配置
- */
-export interface ServerConfig {
-  /** 启动命令 */
-  command: string;
-  /** 命令参数 */
-  args?: string[];
-  /** 环境变量 */
-  env?: Record<string, string>;
-  /** 工作目录 */
-  cwd?: string;
-  /** 是否禁用 */
-  disabled?: boolean;
-  /** 超时设置 */
-  timeout?: number;
-  /** 重试配置 */
-  retry?: RetryConfig;
-}
-
-/**
- * 组配置
- */
-export interface GroupConfig {
-  /** 组名称 */
-  name: string;
-  /** 组描述 */
-  description?: string;
-  /** 包含的服务器ID */
-  servers: string[];
-  /** 工具过滤规则 */
-  toolFilter?: ConfigToolFilter;
-  /** 验证配置 */
-  validation?: ValidationConfig;
-}
-
-/**
- * 重试配置
- */
-export interface RetryConfig {
-  /** 最大重试次数 */
-  maxRetries: number;
-  /** 重试延迟（毫秒） */
-  delay: number;
-  /** 是否使用指数退避 */
-  exponentialBackoff?: boolean;
-}
-
-/**
- * 全局设置
+ * 全局设置 (core 特有)
  */
 export interface GlobalSettings {
   /** 日志级别 */
@@ -72,26 +43,4 @@ export interface GlobalSettings {
   connectionTimeout?: number;
   /** 最大并发连接数 */
   maxConcurrentConnections?: number;
-}
-
-/**
- * 配置中的工具过滤规则
- */
-export interface ConfigToolFilter {
-  /** 包含的工具名称 */
-  include?: string[];
-  /** 排除的工具名称 */
-  exclude?: string[];
-  /** 工具名称模式匹配 */
-  patterns?: string[];
-}
-
-/**
- * 验证配置
- */
-export interface ValidationConfig {
-  /** 验证密钥 */
-  validationKey?: string;
-  /** 是否启用验证 */
-  enabled: boolean;
 }

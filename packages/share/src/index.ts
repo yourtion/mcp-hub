@@ -1,5 +1,5 @@
-// Export types
-export type * from './config.js';
+// Export config types (from Zod schemas)
+export type * from './config/types/index.js';
 // Export frontend logger system
 export {
   ConsoleWriter as FrontendConsoleWriter,
@@ -17,7 +17,6 @@ export {
 } from './frontend-logger.js';
 // Export unified logger system
 export * from './logger.js';
-export type * from './mcp.js';
 export type * from './types.js';
 export type * from './web-api.js';
 export type * from './web-store.js';

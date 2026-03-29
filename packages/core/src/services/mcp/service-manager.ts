@@ -535,8 +535,8 @@ export class McpServiceManager implements McpServiceManagerInterface {
     serverId: string,
     config: ServerConfig,
   ): Promise<void> {
-    // 跳过禁用的服务器
-    if (config.disabled === true) {
+    // 跳过禁用的服务器（仅 stdio 类型支持 disabled）
+    if ('disabled' in config && config.disabled === true) {
       this.logger.info('跳过禁用的服务器', { serverId });
       return;
     }

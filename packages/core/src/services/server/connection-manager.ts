@@ -196,7 +196,7 @@ export class ServerConnectionManager
   ): Promise<void> {
     this.ensureInitialized();
 
-    console.info('创建服务器连接', { serverId, command: config.command });
+    console.info('创建服务器连接', { serverId, command: 'command' in config ? config.command : config.url });
 
     // 检查是否已存在连接
     if (this.connections.has(serverId)) {
@@ -573,7 +573,7 @@ export class ServerConnectionManager
   ): Promise<void> {
     const { id: serverId, config } = connection;
 
-    console.debug('执行服务器连接', { serverId, command: config.command });
+    console.debug('执行服务器连接', { serverId, command: 'command' in config ? config.command : config.url });
 
     try {
       // 这里应该实现实际的MCP客户端连接逻辑
