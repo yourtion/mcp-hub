@@ -12,7 +12,7 @@ describe('配置验证工具', () => {
   describe('validateMcpConfig', () => {
     it('应该验证有效的stdio服务器配置', () => {
       const config = {
-        mcpServers: {
+        servers: {
           'test-server': {
             type: 'stdio',
             command: 'node',
@@ -26,13 +26,13 @@ describe('配置验证工具', () => {
       const result = validateMcpConfig(config);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.mcpServers['test-server'].type).toBe('stdio');
+        expect(result.data.servers['test-server'].type).toBe('stdio');
       }
     });
 
     it('应该验证有效的SSE服务器配置', () => {
       const config = {
-        mcpServers: {
+        servers: {
           'sse-server': {
             type: 'sse',
             url: 'http://localhost:8181/sse',
@@ -45,27 +45,27 @@ describe('配置验证工具', () => {
       const result = validateMcpConfig(config);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.mcpServers['sse-server'].type).toBe('sse');
+        expect(result.data.servers['sse-server'].type).toBe('sse');
       }
     });
 
     it('应该拒绝空的服务器配置', () => {
       const config = {
-        mcpServers: {},
+        servers: {},
       };
 
       const result = validateMcpConfig(config);
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.errors).toContain(
-          'mcpServers: 至少需要配置一个MCP服务器',
+          'servers: 至少需要配置一个MCP服务器',
         );
       }
     });
 
     it('应该拒绝无效的命令配置', () => {
       const config = {
-        mcpServers: {
+        servers: {
           'invalid-server': {
             type: 'stdio',
             command: '', // 空命令
@@ -84,7 +84,7 @@ describe('配置验证工具', () => {
 
     it('应该拒绝无效的URL配置', () => {
       const config = {
-        mcpServers: {
+        servers: {
           'invalid-sse': {
             type: 'sse',
             url: 'not-a-url',
@@ -268,7 +268,7 @@ describe('配置验证工具', () => {
   describe('validateConfigCrossReferences', () => {
     it('应该验证有效的交叉引用', () => {
       const mcpConfig: McpConfig = {
-        mcpServers: {
+        servers: {
           server1: {
             type: 'stdio',
             command: 'node',
@@ -303,7 +303,7 @@ describe('配置验证工具', () => {
 
     it('应该拒绝引用不存在服务器的交叉引用', () => {
       const mcpConfig: McpConfig = {
-        mcpServers: {
+        servers: {
           server1: {
             type: 'stdio',
             command: 'node',
@@ -336,7 +336,7 @@ describe('配置验证工具', () => {
   describe('validateAllConfigs', () => {
     it('应该验证所有有效配置', () => {
       const mcpConfig = {
-        mcpServers: {
+        servers: {
           server1: {
             type: 'stdio',
             command: 'node',
@@ -411,7 +411,7 @@ describe('配置验证工具', () => {
 
     it('应该在任何配置无效时返回错误', () => {
       const mcpConfig = {
-        mcpServers: {}, // 无效：空服务器配置
+        servers: {}, // 无效：空服务器配置
       };
 
       const groupConfig = {

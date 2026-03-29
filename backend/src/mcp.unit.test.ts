@@ -90,7 +90,7 @@ vi.mock('./services/mcp_service.js', () => ({
 vi.mock('./utils/config.js', () => ({
   getAllConfig: vi.fn().mockResolvedValue({
     mcps: {
-      mcpServers: {
+      servers: {
         server1: { command: 'test', args: [] },
       },
     },

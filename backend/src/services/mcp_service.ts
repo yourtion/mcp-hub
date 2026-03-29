@@ -54,7 +54,7 @@ export async function initializeMcpService(): Promise<void> {
 
     // Create and initialize hub service (for backward compatibility)
     hubService = new McpHubService(
-      config.mcps.mcpServers as never,
+      config.mcps.servers as never,
       config.groups as never,
     );
 

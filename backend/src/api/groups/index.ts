@@ -79,7 +79,7 @@ async function ensureCoreServiceInitialized(): Promise<void> {
 
     coreServiceManager = new McpServiceManager();
     const coreConfig = {
-      servers: config.mcps.mcpServers as any,
+      servers: config.mcps.servers as any,
       groups: config.groups as Record<string, GroupConfigItem>,
     };
     await coreServiceManager.initializeFromConfig(coreConfig);
@@ -1188,9 +1188,9 @@ groupsApi.post('/', async (c) => {
     }
 
     // 验证服务器是否存在
-    const mcpServers = config.mcps.mcpServers as Record<string, unknown>;
+    const servers = config.mcps.servers as Record<string, unknown>;
     const invalidServers = body.servers.filter(
-      (serverId) => !mcpServers[serverId],
+      (serverId) => !servers[serverId],
     );
 
     if (invalidServers.length > 0) {
@@ -1338,9 +1338,9 @@ groupsApi.put('/:groupId', async (c) => {
 
     // 验证服务器是否存在（如果提供了服务器列表）
     if (body.servers) {
-      const mcpServers = config.mcps.mcpServers as Record<string, unknown>;
+      const servers = config.mcps.servers as Record<string, unknown>;
       const invalidServers = body.servers.filter(
-        (serverId) => !mcpServers[serverId],
+        (serverId) => !servers[serverId],
       );
 
       if (invalidServers.length > 0) {

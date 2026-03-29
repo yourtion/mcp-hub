@@ -1,10 +1,10 @@
 import path from 'node:path';
+import type { DeepReadonly } from '@mcp-core/mcp-hub-share';
 import type {
-  DeepReadonly,
   GroupConfig,
   McpConfig,
   SystemConfig,
-} from '@mcp-core/mcp-hub-share';
+} from '@mcp-core/mcp-hub-share/config';
 import { JsonStorage } from './json_storage.js';
 
 /**
@@ -34,7 +34,7 @@ function getMcpServerInstance(): JsonStorage<McpConfig> {
     const configDir = getConfigDir();
     const mcpServerPath = path.resolve(configDir, 'mcp_server.json');
     mcpServerInstance = new JsonStorage<McpConfig>(mcpServerPath, {
-      mcpServers: {},
+      servers: {},
     });
   }
   return mcpServerInstance;

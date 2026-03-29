@@ -72,7 +72,7 @@ export function setupTestConfig(enableAuth: boolean = true): string {
 
   // 2. mcp_server.json - 测试 MCP 服务器配置
   const mcpServerConfig = {
-    mcpServers: {
+    servers: {
       'test-server-1': {
         type: 'stdio',
         command: 'echo',

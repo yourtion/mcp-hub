@@ -14,7 +14,7 @@ describe('配置管理API - 简化测试', () => {
         success: true,
         data: {
           system: { server: { port: 3000, host: 'localhost' } },
-          mcp: { mcpServers: {} },
+          mcp: { servers: {} },
           groups: {},
           lastUpdated: '2024-01-01T00:00:00.000Z',
           version: 'abc12345',

@@ -58,7 +58,7 @@ async function ensureCoreServiceInitialized(): Promise<void> {
 
     coreServiceManager = new McpServiceManager();
     // 创建可变副本用于初始化，并转换 ServerConfig 类型
-    const mutableServers = JSON.parse(JSON.stringify(config.mcps.mcpServers));
+    const mutableServers = JSON.parse(JSON.stringify(config.mcps.servers));
     const mutableGroups = JSON.parse(JSON.stringify(config.groups));
     const coreConfig = {
       servers: convertToCoreServerConfig(mutableServers),

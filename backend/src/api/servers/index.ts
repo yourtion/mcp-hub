@@ -25,7 +25,7 @@ async function getServerManager(): Promise<ServerManager> {
 
     // 创建服务器管理器实例
     serverManager = new ServerManager(
-      config.mcps.mcpServers as Record<string, ServerConfig>,
+      config.mcps.servers as Record<string, ServerConfig>,
     );
 
     // 初始化服务器管理器
@@ -224,7 +224,7 @@ serversApi.post('/', async (c) => {
 
     // 检查服务器ID是否已存在
     const currentConfig = await getAllConfig();
-    if (currentConfig.mcps.mcpServers[serverId]) {
+    if (currentConfig.mcps.servers[serverId]) {
       return c.json(
         {
           success: false,
@@ -241,8 +241,8 @@ serversApi.post('/', async (c) => {
     // 保存新的服务器配置
     const updatedMcpConfig = {
       ...currentConfig.mcps,
-      mcpServers: {
-        ...currentConfig.mcps.mcpServers,
+      servers: {
+        ...currentConfig.mcps.servers,
         [serverId]: config,
       },
     };
@@ -307,7 +307,7 @@ serversApi.put('/:id', async (c) => {
 
     // 检查服务器是否存在
     const currentConfig = await getAllConfig();
-    if (!currentConfig.mcps.mcpServers[serverId]) {
+    if (!currentConfig.mcps.servers[serverId]) {
       return c.json(
         {
           success: false,
@@ -324,8 +324,8 @@ serversApi.put('/:id', async (c) => {
     // 更新服务器配置
     const updatedMcpConfig = {
       ...currentConfig.mcps,
-      mcpServers: {
-        ...currentConfig.mcps.mcpServers,
+      servers: {
+        ...currentConfig.mcps.servers,
         [serverId]: config,
       },
     };
@@ -367,7 +367,7 @@ serversApi.delete('/:id', async (c) => {
 
     // 检查服务器是否存在
     const currentConfig = await getAllConfig();
-    if (!currentConfig.mcps.mcpServers[serverId]) {
+    if (!currentConfig.mcps.servers[serverId]) {
       return c.json(
         {
           success: false,
@@ -383,10 +383,10 @@ serversApi.delete('/:id', async (c) => {
 
     // 从配置中删除服务器
     const { [serverId]: removedServer, ...remainingServers } =
-      currentConfig.mcps.mcpServers;
+      currentConfig.mcps.servers;
     const updatedMcpConfig = {
       ...currentConfig.mcps,
-      mcpServers: remainingServers,
+      servers: remainingServers,
     };
 
     // 创建可变副本用于保存
