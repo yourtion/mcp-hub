@@ -3,14 +3,19 @@
  * 测试配置类型的结构和验证
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Group, GroupConfig, McpConfig, SystemConfig } from './config.js';
+import { describe, expect, it } from 'vitest';
+import type {
+  Group,
+  GroupConfig,
+  McpConfig,
+  SystemConfig,
+} from './config/types/index.js';
 
 describe('Config Types', () => {
   describe('McpConfig', () => {
     it('应该创建有效的 MCP 配置', () => {
       const config: McpConfig = {
-        mcpServers: {
+        servers: {
           'test-server': {
             type: 'stdio',
             command: 'node',
@@ -20,14 +25,17 @@ describe('Config Types', () => {
         },
       };
 
-      expect(config.mcpServers).toBeDefined();
-      expect(config.mcpServers['test-server']).toBeDefined();
-      expect(config.mcpServers['test-server'].command).toBe('node');
+      expect(config.servers).toBeDefined();
+      expect(config.servers['test-server']).toBeDefined();
+      const server = config.servers['test-server'];
+      if ('command' in server) {
+        expect(server.command).toBe('node');
+      }
     });
 
     it('应该支持多个服务器', () => {
       const config: McpConfig = {
-        mcpServers: {
+        servers: {
           server1: {
             type: 'stdio',
             command: 'node',
@@ -42,12 +50,12 @@ describe('Config Types', () => {
         },
       };
 
-      expect(Object.keys(config.mcpServers)).toHaveLength(2);
+      expect(Object.keys(config.servers)).toHaveLength(2);
     });
 
     it('应该支持禁用服务器', () => {
       const config: McpConfig = {
-        mcpServers: {
+        servers: {
           'disabled-server': {
             type: 'stdio',
             command: 'node',
@@ -57,7 +65,10 @@ describe('Config Types', () => {
         },
       };
 
-      expect(config.mcpServers['disabled-server'].disabled).toBe(true);
+      const disabledServer = config.servers['disabled-server'];
+      if ('disabled' in disabledServer) {
+        expect(disabledServer.disabled).toBe(true);
+      }
     });
   });
 

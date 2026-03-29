@@ -62,7 +62,7 @@ export interface UserConfig {
 
 // MCP配置接口
 export interface McpConfig {
-  mcpServers: Record<string, McpServerConfig>;
+  servers: Record<string, McpServerConfig>;
 }
 
 // MCP服务器配置接口

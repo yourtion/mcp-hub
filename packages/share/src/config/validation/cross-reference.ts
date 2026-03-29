@@ -21,13 +21,13 @@ export interface CrossReferenceResult {
  * 校验 MCP 配置与 Group 配置之间的交叉引用关系
  */
 export function validateCrossReferences(
-  mcpServers: Record<string, unknown>,
+  servers: Record<string, unknown>,
   groups: Record<string, Group>,
 ): CrossReferenceResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  const availableServers = new Set(Object.keys(mcpServers));
+  const availableServers = new Set(Object.keys(servers));
 
   // 检查组中引用的服务器是否存在
   for (const [groupName, group] of Object.entries(groups)) {
@@ -48,7 +48,7 @@ export function validateCrossReferences(
     }
   }
 
-  const unusedServers = Object.keys(mcpServers).filter(
+  const unusedServers = Object.keys(servers).filter(
     (server) => !usedServers.has(server),
   );
 
