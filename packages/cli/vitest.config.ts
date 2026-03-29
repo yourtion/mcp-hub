@@ -5,6 +5,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@mcp-core/mcp-hub-core': path.resolve(__dirname, '../core/src'),
+      '@mcp-core/mcp-hub-share/config': path.resolve(__dirname, '../share/src/config/index.ts'),
       '@mcp-core/mcp-hub-share': path.resolve(__dirname, '../share/src'),
     },
   },

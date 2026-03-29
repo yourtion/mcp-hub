@@ -6,6 +6,10 @@
 import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createCliLogger } from '@mcp-core/mcp-hub-share';
+import {
+  CliConfigSchema,
+  CliServerConfigSchema,
+} from '@mcp-core/mcp-hub-share/config';
 import { z } from 'zod/v4';
 import type { CliConfig, CliError } from '../types';
 import { CliErrorCode } from '../types';
@@ -14,50 +18,6 @@ import {
   type ConfigTemplateType,
 } from './config-template';
 import { ConfigValidator, type ValidationResult } from './config-validator';
-
-/**
- * 服务器配置Zod模式
- */
-const ServerConfigSchema = z.object({
-  command: z.string().min(1, '命令不能为空'),
-  args: z.array(z.string()).optional(),
-  env: z.record(z.string(), z.string()).optional(),
-  cwd: z.string().optional(),
-  disabled: z.boolean().optional(),
-  timeout: z.number().positive().optional(),
-});
-
-/**
- * CLI配置Zod模式
- */
-const CliConfigSchema = z.object({
-  servers: z
-    .record(z.string(), ServerConfigSchema)
-    .refine(
-      (servers) => Object.keys(servers).length > 0,
-      '至少需要配置一个服务器',
-    ),
-  logging: z
-    .object({
-      level: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
-      file: z.string().optional(),
-    })
-    .default({ level: 'info' }),
-  transport: z
-    .object({
-      type: z.literal('stdio').default('stdio'),
-      options: z
-        .object({
-          sessionIdGenerator: z
-            .function()
-            .input(z.tuple([]))
-            .output(z.string())
-            .optional(),
-        })
-        .optional(),
-    })
-    .default({ type: 'stdio' }),
-});
 
 /**
  * CLI配置管理器类
@@ -291,7 +251,7 @@ export class CliConfigManager {
    */
   validateServerConfig(serverConfig: unknown): boolean {
     try {
-      ServerConfigSchema.parse(serverConfig);
+      CliServerConfigSchema.parse(serverConfig);
       return true;
     } catch (error) {
       this.logger.error('服务器配置验证失败:', error as Error);

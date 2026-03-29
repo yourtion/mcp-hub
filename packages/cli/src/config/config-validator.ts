@@ -370,7 +370,9 @@ export class ConfigValidator {
     // 检查重复的命令
     const commands = new Set<string>();
     for (const [serverId, serverConfig] of Object.entries(config.servers)) {
-      const commandKey = `${serverConfig.command} ${(serverConfig.args || []).join(' ')}`;
+      const commandKey = 'command' in serverConfig
+        ? `${serverConfig.command} ${(serverConfig.args || []).join(' ')}`
+        : serverConfig.url;
       if (commands.has(commandKey)) {
         result.warnings.push({
           path: ['servers', serverId],
