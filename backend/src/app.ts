@@ -36,7 +36,7 @@ app.use('*', secureHeadersMiddleware());
 app.use('*', createPerformanceMiddleware());
 
 // 认证服务初始化中间件（不阻止请求，只是确保服务已初始化）
-app.use('*', async (c, next) => {
+app.use('*', async (_c, next) => {
   try {
     await authService.initialize();
   } catch (error) {

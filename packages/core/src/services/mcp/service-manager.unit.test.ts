@@ -68,7 +68,7 @@ describe('McpServiceManager', () => {
         await serviceManager.shutdown();
         // 等待所有连接真正关闭
         await new Promise((resolve) => setTimeout(resolve, 100));
-      } catch (error) {
+      } catch (_error) {
         // 忽略关闭错误
       }
     }

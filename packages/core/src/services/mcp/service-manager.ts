@@ -193,7 +193,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
           status: 'fulfilled',
           value: result,
         }));
-      } catch (error) {
+      } catch (_error) {
         // 如果并行初始化失败，回退到Promise.allSettled
         results = await Promise.allSettled(initTasks.map((task) => task()));
       }

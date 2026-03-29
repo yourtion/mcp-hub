@@ -795,7 +795,7 @@ function encryptValidationKey(key: string): string {
     encrypted += cipher.final('hex');
 
     // 将IV和加密数据一起返回
-    return iv.toString('hex') + ':' + encrypted;
+    return `${iv.toString('hex')}:${encrypted}`;
   } catch (error) {
     logger.error('加密验证密钥失败', error as Error);
     throw new Error('密钥加密失败');

@@ -84,7 +84,10 @@ export const EnvironmentDetector = {
     try {
       // 浏览器环境优先检查
       if (typeof window !== 'undefined') {
-        return (window as any).__vitest_environment__ === true;
+        return (
+          (window as unknown as Record<string, unknown>)
+            .__vitest_environment__ === true
+        );
       }
 
       // Node.js 环境检查（确保 process 存在且有效）
@@ -106,7 +109,10 @@ export const EnvironmentDetector = {
     try {
       // 浏览器环境优先检查
       if (typeof window !== 'undefined') {
-        return (window as any).__vitest_debug__ === true;
+        return (
+          (window as unknown as Record<string, unknown>).__vitest_debug__ ===
+          true
+        );
       }
 
       // Node.js 环境检查
@@ -259,7 +265,7 @@ export class TextFormatter implements LogFormatter {
     return parts.filter(Boolean).join(' ');
   }
 
-  private colorize(text: string, style: string): string {
+  private colorize(text: string, _style: string): string {
     if (!this.enableColors) return text;
     // 在浏览器环境中使用 console styling
     return `%c${text}`;
@@ -302,7 +308,7 @@ export class TextFormatter implements LogFormatter {
  * 日志写入器接口
  */
 export interface LogWriter {
-  write(formattedMessage: string, ...args: any[]): void;
+  write(formattedMessage: string, ...args: unknown[]): void;
   close?(): void;
 }
 
@@ -310,7 +316,7 @@ export interface LogWriter {
  * 控制台写入器（浏览器环境）
  */
 export class ConsoleWriter implements LogWriter {
-  write(formattedMessage: string, ...args: any[]): void {
+  write(formattedMessage: string, ...args: unknown[]): void {
     // 在浏览器环境中使用 console.log
     if (args.length > 0) {
       console.log(formattedMessage, ...args);
@@ -390,7 +396,6 @@ export class FrontendLogger {
       }
     } else {
       // 对于文本格式，在浏览器环境中使用 console styling
-      const textFormatter = this.formatter as TextFormatter;
       const parts: string[] = [];
 
       // 时间戳

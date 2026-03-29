@@ -134,8 +134,7 @@ export class ApiToolRegistry {
           context: {
             currentSize: this.tools.size,
             maxSize: this.MAX_TOOLS,
-            usagePercent:
-              ((this.tools.size / this.MAX_TOOLS) * 100).toFixed(1) + '%',
+            usagePercent: `${((this.tools.size / this.MAX_TOOLS) * 100).toFixed(1)}%`,
           },
         });
       }

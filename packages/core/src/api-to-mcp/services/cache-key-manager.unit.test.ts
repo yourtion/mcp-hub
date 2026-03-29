@@ -179,7 +179,7 @@ describe('CacheKeyManagerImpl', () => {
     it('应该使用策略的验证函数', () => {
       const customStrategy: CacheKeyStrategy = {
         name: 'custom',
-        generateKey: (toolId, params) => `${toolId}:custom`,
+        generateKey: (toolId, _params) => `${toolId}:custom`,
         validateKey: (key) => key.endsWith(':custom'),
       };
 

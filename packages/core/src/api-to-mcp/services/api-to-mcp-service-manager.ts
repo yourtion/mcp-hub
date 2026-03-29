@@ -308,7 +308,7 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
           if (typeof response.data === 'string') {
             try {
               jsonData = JSON.parse(response.data);
-            } catch (parseError) {
+            } catch (_parseError) {
               // 如果解析失败，保持原始数据
               jsonData = response.data;
             }

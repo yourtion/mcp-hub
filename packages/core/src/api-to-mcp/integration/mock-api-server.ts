@@ -51,11 +51,11 @@ export class MockApiServer {
     });
 
     return new Promise((resolve, reject) => {
-      this.server!.listen(port, (error?: Error) => {
+      this.server?.listen(port, (error?: Error) => {
         if (error) {
           reject(error);
         } else {
-          this.port = (this.server!.address() as AddressInfo).port;
+          this.port = (this.server?.address() as AddressInfo).port;
           resolve(this.port);
         }
       });
@@ -71,7 +71,7 @@ export class MockApiServer {
     }
 
     return new Promise((resolve, reject) => {
-      this.server!.close((error) => {
+      this.server?.close((error) => {
         if (error) {
           reject(error);
         } else {

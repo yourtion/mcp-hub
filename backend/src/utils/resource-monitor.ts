@@ -55,7 +55,7 @@ export class ResourceMonitor {
       if (process.stdin && 'fd' in process.stdin) {
         // 尝试读取 /proc/self/limits (Linux)
         try {
-          const fs = require('fs');
+          const fs = require('node:fs');
           if (fs.existsSync('/proc/self/limits')) {
             const limits = fs.readFileSync('/proc/self/limits', 'utf-8');
             const match = limits.match(/max open files\s+(\d+)/);
@@ -72,7 +72,7 @@ export class ResourceMonitor {
 
         // 尝试使用 os-module (跨平台)
         if (!this.systemFdLimit) {
-          const os = require('os');
+          const os = require('node:os');
           // 在某些系统上可用
           try {
             this.systemFdLimit = os.getppid ? undefined : 1024; // 默认值
@@ -214,7 +214,7 @@ export class ResourceMonitor {
    */
   private getFileDescriptorCount(): number | undefined {
     try {
-      const fs = require('fs');
+      const fs = require('node:fs');
       // 读取 /proc/self/fd 目录（Linux）
       if (fs.existsSync('/proc/self/fd')) {
         const files = fs.readdirSync('/proc/self/fd');

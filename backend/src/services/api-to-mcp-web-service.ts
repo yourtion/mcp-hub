@@ -8,16 +8,13 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import type {
   ApiConfigManager,
-  ApiConfigManagerImpl,
   ApiToolsConfig,
 } from '@mcp-core/mcp-hub-core/api-to-mcp';
 import { ConfigLoadError } from '@mcp-core/mcp-hub-core/api-to-mcp';
 import type {
   ApiConfigInfo,
   ApiConfigListResponse,
-  ApiResponse,
   ApiToolConfig,
-  TestApiConfigRequest,
   TestApiConfigResponse,
 } from '../types/web-api.js';
 import { logger } from '../utils/logger.js';
@@ -440,7 +437,7 @@ export class ApiToMcpWebService {
   /**
    * 从工具schema中提取HTTP方法
    */
-  private extractHttpMethod(schema: any): string {
+  private extractHttpMethod(_schema: any): string {
     // 尝试从schema中提取HTTP方法信息
     // 这是一个简化的实现，实际可能需要更复杂的逻辑
     return 'GET';

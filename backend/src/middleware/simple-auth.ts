@@ -30,7 +30,7 @@ export function requireAuth(c: Context, next: Next) {
   }
 
   // 提取token（暂不验证，待JWT认证实现）
-  const token = authHeader.substring(7);
+  const _token = authHeader.substring(7);
 
   // TODO: 验证JWT token的有效性和权限
 

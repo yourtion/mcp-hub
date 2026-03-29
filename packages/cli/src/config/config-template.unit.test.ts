@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { CliConfig, ConfigTemplateType } from '../types';
+import type { ConfigTemplateType } from '../types';
 import { ConfigTemplateGenerator } from './config-template';
 
 describe('ConfigTemplateGenerator', () => {
@@ -388,7 +388,7 @@ describe('ConfigTemplateGenerator', () => {
       for (const type of types) {
         const template = generator.generateTemplate(type);
 
-        for (const [serverId, serverConfig] of Object.entries(
+        for (const [_serverId, serverConfig] of Object.entries(
           template.servers,
         )) {
           expect(serverConfig).toHaveProperty('command');

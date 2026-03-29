@@ -3,10 +3,7 @@
  * 使用核心包的McpServiceManager和MCP SDK的StdioServerTransport
  */
 
-import {
-  McpServiceManager,
-  performanceOptimizer,
-} from '@mcp-core/mcp-hub-core';
+import { McpServiceManager } from '@mcp-core/mcp-hub-core';
 import { createCliLogger } from '@mcp-core/mcp-hub-share';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -270,7 +267,7 @@ export class CliMcpServer {
         try {
           global.gc();
           this.logger.debug('已触发垃圾回收');
-        } catch (error) {
+        } catch (_error) {
           // GC 调用失败不影响其他清理逻辑
           this.logger.debug('垃圾回收调用失败（可能未启用 --expose-gc）');
         }

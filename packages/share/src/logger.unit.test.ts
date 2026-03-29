@@ -3,7 +3,7 @@
  * 测试核心日志功能
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   createLogger,
   EnvironmentDetector,

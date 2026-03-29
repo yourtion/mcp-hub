@@ -345,7 +345,7 @@ export class RedisCacheManager implements CacheManager {
     logger.warn('RedisCacheManager 是一个占位符实现，需要实际的Redis客户端');
   }
 
-  async get(key: string): Promise<unknown | null> {
+  async get(_key: string): Promise<unknown | null> {
     this.stats.totalRequests++;
 
     // TODO: 实现Redis GET操作
@@ -356,7 +356,7 @@ export class RedisCacheManager implements CacheManager {
     return null;
   }
 
-  async set(key: string, value: unknown, ttl?: number): Promise<void> {
+  async set(key: string, _value: unknown, ttl?: number): Promise<void> {
     const effectiveTtl = ttl ?? this.defaultTtl;
 
     // TODO: 实现Redis SET操作

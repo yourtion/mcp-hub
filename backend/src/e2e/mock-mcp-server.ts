@@ -270,7 +270,7 @@ export class EnhancedMockMcpServer {
   /**
    * 注入错误
    */
-  private injectError(method: string): never {
+  private injectError(_method: string): never {
     const errorType = this.injectionConfig?.errorType || 'error';
 
     switch (errorType) {

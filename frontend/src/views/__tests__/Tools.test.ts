@@ -186,7 +186,7 @@ describe('Tools', () => {
 
     const buttons = wrapper.findAll('.mock-button');
     const refreshBtn = buttons.find((btn) => btn.text().includes('刷新'));
-    await refreshBtn!.trigger('click');
+    await refreshBtn?.trigger('click');
 
     expect(mockRefresh).toHaveBeenCalled();
   });

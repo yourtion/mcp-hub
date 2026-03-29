@@ -7,13 +7,7 @@ import { mkdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { ConfigError } from '../errors/index.js';
-import {
-  type ConfigInitResult,
-  DefaultConfigGenerator,
-  type GeneratorOptions,
-  type ServerPreset,
-} from './default-generator.js';
+import { DefaultConfigGenerator } from './default-generator.js';
 
 describe('DefaultConfigGenerator', () => {
   let testDir: string;

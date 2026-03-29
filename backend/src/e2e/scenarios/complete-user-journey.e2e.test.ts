@@ -4,14 +4,14 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { E2EScenarioHelper, E2ETestHelper } from '../e2e-test-helper.js';
+import { E2ETestHelper } from '../e2e-test-helper.js';
 import { MockServerManager } from '../mock-mcp-server.js';
 import { startTestServer, stopTestServer } from '../test-server.js';
 
 describe('完整用户流程 E2E 测试', () => {
   const testServer = startTestServer(3000);
   const baseUrl = 'http://localhost:3000';
-  const mockManager = new MockServerManager();
+  const _mockManager = new MockServerManager();
 
   beforeEach(async () => {
     // 确保测试服务器已启动
@@ -177,7 +177,7 @@ describe('完整用户流程 E2E 测试', () => {
         args: ['test-server.js'],
       };
 
-      const addResponse = await fetch(`${baseUrl}/api/servers`, {
+      const _addResponse = await fetch(`${baseUrl}/api/servers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newServer),
@@ -388,7 +388,7 @@ describe('完整用户流程 E2E 测试', () => {
       );
 
       const totalRequests = 50;
-      const successThreshold = 0.95; // 95% 成功率
+      const _successThreshold = 0.95; // 95% 成功率
 
       const { benchmark } = await E2ETestHelper.benchmark(
         async () => {

@@ -84,7 +84,7 @@ describe('CLI与核心包交互集成测试', () => {
       if (coreService) {
         await coreService.shutdown();
       }
-    } catch (error) {
+    } catch (_error) {
       // 忽略清理错误
     }
   });
@@ -133,7 +133,7 @@ describe('CLI与核心包交互集成测试', () => {
       const mockInitialize = vi
         .spyOn(coreService, 'initializeFromConfig')
         .mockResolvedValue();
-      const mockGetServiceStatus = vi
+      const _mockGetServiceStatus = vi
         .spyOn(coreService, 'getServiceStatus')
         .mockReturnValue({
           isInitialized: true,
