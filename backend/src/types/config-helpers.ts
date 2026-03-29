@@ -7,8 +7,7 @@ import type { McpServerConfig } from '@mcp-core/mcp-hub-core';
 import type {
   GroupConfig,
   McpConfig,
-  ServerConfig,
-} from '@mcp-core/mcp-hub-share';
+} from '@mcp-core/mcp-hub-share/config';
 
 /**
  * 将配置转换为 McpServerConfig 格式
@@ -18,11 +17,7 @@ export function toMcpServerConfig(config: {
   groups: GroupConfig;
 }): McpServerConfig {
   return {
-    servers: config.mcps.mcpServers as unknown as Record<
-      string,
-      Record<string, unknown>
-    >,
-    groups: config.groups as unknown as Record<string, GroupConfig>,
-    settings: undefined,
-  } as unknown as McpServerConfig;
+    servers: config.mcps.servers,
+    groups: config.groups,
+  } as McpServerConfig;
 }

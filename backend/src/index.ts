@@ -45,7 +45,7 @@ async function validateConfigurations() {
     }
 
     logger.info('配置验证成功', {
-      serverCount: Object.keys(validationResult.data.mcpConfig.mcpServers)
+      serverCount: Object.keys(validationResult.data.mcpConfig.servers)
         .length,
       groupCount: Object.keys(validationResult.data.groupConfig).length,
       hasSystemConfig: !!validationResult.data.systemConfig,
@@ -67,7 +67,7 @@ async function initializeHubService(validatedConfig: any) {
   try {
     // 创建 Hub 服务实例
     hubService = new McpHubService(
-      validatedConfig.mcpConfig.mcpServers,
+      validatedConfig.mcpConfig.servers,
       validatedConfig.groupConfig,
     );
 

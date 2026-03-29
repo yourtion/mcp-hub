@@ -18,7 +18,7 @@ describe('服务初始化集成测试', () => {
   it('应该能够处理完整的配置验证流程', async () => {
     // 模拟真实的配置数据
     const mcpConfig: McpConfig = {
-      mcpServers: {
+      servers: {
         'time-mcp': {
           type: 'stdio',
           command: 'npx',
@@ -146,10 +146,10 @@ describe('服务初始化集成测试', () => {
 
     if (result.success) {
       // 验证 MCP 配置
-      expect(result.data.mcpConfig.mcpServers).toBeDefined();
-      expect(Object.keys(result.data.mcpConfig.mcpServers)).toHaveLength(3);
-      expect(result.data.mcpConfig.mcpServers['time-mcp'].type).toBe('stdio');
-      expect(result.data.mcpConfig.mcpServers['sse-server'].type).toBe('sse');
+      expect(result.data.mcpConfig.servers).toBeDefined();
+      expect(Object.keys(result.data.mcpConfig.servers)).toHaveLength(3);
+      expect(result.data.mcpConfig.servers['time-mcp'].type).toBe('stdio');
+      expect(result.data.mcpConfig.servers['sse-server'].type).toBe('sse');
 
       // 验证组配置
       expect(result.data.groupConfig).toBeDefined();
@@ -169,7 +169,7 @@ describe('服务初始化集成测试', () => {
   it('应该能够处理配置验证错误场景', async () => {
     // 创建包含多种错误的配置
     const invalidMcpConfig = {
-      mcpServers: {
+      servers: {
         'invalid-stdio': {
           type: 'stdio',
           command: '', // 错误：空命令
@@ -227,7 +227,7 @@ describe('服务初始化集成测试', () => {
   it('应该能够处理边界情况', async () => {
     // 测试最小有效配置
     const minimalMcpConfig = {
-      mcpServers: {
+      servers: {
         'minimal-server': {
           type: 'stdio',
           command: 'echo',
@@ -249,7 +249,7 @@ describe('服务初始化集成测试', () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(Object.keys(result.data.mcpConfig.mcpServers)).toHaveLength(1);
+      expect(Object.keys(result.data.mcpConfig.servers)).toHaveLength(1);
       expect(Object.keys(result.data.groupConfig)).toHaveLength(1);
       expect(result.data.systemConfig).toBeUndefined();
     }
@@ -257,7 +257,7 @@ describe('服务初始化集成测试', () => {
 
   it('应该能够处理复杂的服务器和组关系', async () => {
     const complexMcpConfig = {
-      mcpServers: {
+      servers: {
         'server-a': { type: 'stdio', command: 'node', args: ['a.js'] },
         'server-b': { type: 'stdio', command: 'node', args: ['b.js'] },
         'server-c': { type: 'sse', url: 'http://localhost:8181/c' },
@@ -297,7 +297,7 @@ describe('服务初始化集成测试', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       // 验证所有服务器都被正确配置
-      expect(Object.keys(result.data.mcpConfig.mcpServers)).toHaveLength(4);
+      expect(Object.keys(result.data.mcpConfig.servers)).toHaveLength(4);
 
       // 验证所有组都被正确配置
       expect(Object.keys(result.data.groupConfig)).toHaveLength(4);

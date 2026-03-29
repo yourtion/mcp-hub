@@ -44,7 +44,7 @@ describe('服务初始化测试', () => {
   describe('配置验证', () => {
     it('应该正确验证有效的配置组合', () => {
       const mcpConfig = {
-        mcpServers: {
+        servers: {
           'test-server': {
             type: 'stdio',
             command: 'node',
@@ -68,7 +68,7 @@ describe('服务初始化测试', () => {
       if (result.success) {
         expect(result.data.mcpConfig).toBeDefined();
         expect(result.data.groupConfig).toBeDefined();
-        expect(Object.keys(result.data.mcpConfig.mcpServers)).toContain(
+        expect(Object.keys(result.data.mcpConfig.servers)).toContain(
           'test-server',
         );
         expect(Object.keys(result.data.groupConfig)).toContain('default');
@@ -77,7 +77,7 @@ describe('服务初始化测试', () => {
 
     it('应该拒绝无效的配置组合', () => {
       const mcpConfig = {
-        mcpServers: {}, // 空配置，应该失败
+        servers: {}, // 空配置，应该失败
       };
 
       const groupConfig = {
@@ -102,7 +102,7 @@ describe('服务初始化测试', () => {
 
     it('应该检测交叉引用错误', () => {
       const mcpConfig = {
-        mcpServers: {
+        servers: {
           server1: {
             type: 'stdio',
             command: 'node',
@@ -139,7 +139,7 @@ describe('服务初始化测试', () => {
   describe('错误处理', () => {
     it('应该正确处理配置验证错误', () => {
       const invalidConfig = {
-        mcpServers: {
+        servers: {
           'invalid-server': {
             type: 'stdio',
             command: '', // 无效的空命令
@@ -169,7 +169,7 @@ describe('服务初始化测试', () => {
 
     it('应该处理复杂的配置验证场景', () => {
       const mcpConfig = {
-        mcpServers: {
+        servers: {
           'stdio-server': {
             type: 'stdio',
             command: 'node',
@@ -212,14 +212,14 @@ describe('服务初始化测试', () => {
       expect(result.success).toBe(true);
 
       if (result.success) {
-        expect(Object.keys(result.data.mcpConfig.mcpServers)).toHaveLength(2);
+        expect(Object.keys(result.data.mcpConfig.servers)).toHaveLength(2);
         expect(Object.keys(result.data.groupConfig)).toHaveLength(3);
 
         // 验证服务器配置
-        expect(result.data.mcpConfig.mcpServers['stdio-server'].type).toBe(
+        expect(result.data.mcpConfig.servers['stdio-server'].type).toBe(
           'stdio',
         );
-        expect(result.data.mcpConfig.mcpServers['sse-server'].type).toBe('sse');
+        expect(result.data.mcpConfig.servers['sse-server'].type).toBe('sse');
 
         // 验证组配置
         expect(result.data.groupConfig['stdio-group'].servers).toContain(
@@ -235,7 +235,7 @@ describe('服务初始化测试', () => {
   describe('系统配置验证', () => {
     it('应该验证包含系统配置的完整配置', () => {
       const mcpConfig = {
-        mcpServers: {
+        servers: {
           'test-server': {
             type: 'stdio',
             command: 'node',
@@ -322,7 +322,7 @@ describe('服务初始化测试', () => {
 
     it('应该拒绝无效的系统配置', () => {
       const mcpConfig = {
-        mcpServers: {
+        servers: {
           'test-server': {
             type: 'stdio',
             command: 'node',

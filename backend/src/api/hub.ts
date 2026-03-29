@@ -33,7 +33,7 @@ async function getHubService(): Promise<McpHubService> {
 
     // Create hub service instance
     hubService = new McpHubService(
-      config.mcps.mcpServers as Record<string, ServerConfig>,
+      config.mcps.servers as Record<string, ServerConfig>,
       config.groups as GroupConfig,
       config.apiToolsConfigPath,
     );

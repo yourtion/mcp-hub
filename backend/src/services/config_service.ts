@@ -7,6 +7,11 @@ import type {
   McpConfig,
   SystemConfig,
 } from '@mcp-core/mcp-hub-share';
+import {
+  GroupConfigSchema,
+  McpConfigSchema,
+  SystemConfigSchema,
+} from '@mcp-core/mcp-hub-share/config';
 import { z } from 'zod/v4';
 import type {
   ConfigBackup,
@@ -22,93 +27,12 @@ import type {
   ConfigValidationWarning,
   IConfigService,
 } from '../types/config.js';
-import { asMutable, getAllConfig, saveConfig } from '../utils/config.js';
+import { getAllConfig, saveConfig } from '../utils/config.js';
 
-// 配置验证模式
-const systemConfigSchema = z.object({
-  server: z.object({
-    port: z.number().min(1).max(65535),
-    host: z.string().min(1),
-  }),
-  auth: z.object({
-    jwt: z.object({
-      secret: z.string().min(32),
-      expiresIn: z.string(),
-      refreshExpiresIn: z.string(),
-      issuer: z.string(),
-    }),
-    security: z.object({
-      maxLoginAttempts: z.number().min(1),
-      lockoutDuration: z.number().min(0),
-      passwordMinLength: z.number().min(4),
-      requireStrongPassword: z.boolean(),
-    }),
-  }),
-  users: z.record(
-    z.string(),
-    z.object({
-      id: z.string(),
-      username: z.string(),
-      password: z.string(),
-      passwordHash: z.string(),
-      role: z.string(),
-      groups: z.array(z.string()),
-      createdAt: z.string(),
-    }),
-  ),
-  ui: z.object({
-    title: z.string(),
-    theme: z.string(),
-    features: z.object({
-      apiToMcp: z.boolean(),
-      debugging: z.boolean(),
-      monitoring: z.boolean(),
-    }),
-  }),
-  monitoring: z.object({
-    metricsEnabled: z.boolean(),
-    logLevel: z.string(),
-    retentionDays: z.number().min(1),
-  }),
-});
-
-const mcpConfigSchema = z.object({
-  mcpServers: z.record(
-    z.string(),
-    z.object({
-      command: z.string(),
-      args: z.array(z.string()).optional(),
-      env: z.record(z.string(), z.string()).optional(),
-      cwd: z.string().optional(),
-      transport: z
-        .object({
-          type: z.enum(['stdio', 'sse', 'websocket']),
-          url: z.string().optional(),
-          headers: z.record(z.string(), z.string()).optional(),
-        })
-        .optional(),
-    }),
-  ),
-});
-
-const groupConfigSchema = z.record(
-  z.string(),
-  z.object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string().optional(),
-    servers: z.array(z.string()),
-    tools: z.array(z.string()),
-    validation: z
-      .object({
-        enabled: z.boolean(),
-        validationKey: z.string().optional(),
-        createdAt: z.string().optional(),
-        lastUpdated: z.string().optional(),
-      })
-      .optional(),
-  }),
-);
+// Schema 引用（从 share 统一导入）
+const systemConfigSchema = SystemConfigSchema;
+const mcpConfigSchema = McpConfigSchema;
+const groupConfigSchema = GroupConfigSchema;
 
 export class ConfigService implements IConfigService {
   private readonly configDir: string;
@@ -302,13 +226,13 @@ export class ConfigService implements IConfigService {
 
     // 验证服务器配置
     for (const [serverId, serverConfig] of Object.entries(
-      mcpConfig.mcpServers || {},
+      mcpConfig.servers || {},
     )) {
       // 类型守卫：检查是否为 StdioServerConfig
       if ('command' in serverConfig) {
         if (!serverConfig.command) {
           errors.push({
-            path: `mcpServers.${serverId}.command`,
+            path: `servers.${serverId}.command`,
             message: '服务器命令不能为空',
             code: 'MISSING_COMMAND',
             severity: 'error',
@@ -323,7 +247,7 @@ export class ConfigService implements IConfigService {
         ).transport;
         if (transport?.type === 'sse' && !transport.url) {
           errors.push({
-            path: `mcpServers.${serverId}.transport.url`,
+            path: `servers.${serverId}.transport.url`,
             message: 'SSE传输类型需要指定URL',
             code: 'MISSING_SSE_URL',
             severity: 'error',
@@ -341,7 +265,7 @@ export class ConfigService implements IConfigService {
     const groupConfig = config as GroupConfig;
     const currentMcpConfig = await this.getCurrentConfig();
     const availableServers = Object.keys(
-      currentMcpConfig.mcps.mcpServers || {},
+      currentMcpConfig.mcps.servers || {},
     );
 
     // 验证组配置
@@ -844,7 +768,7 @@ export class ConfigService implements IConfigService {
 
     // 测试服务器配置
     for (const [serverId, serverConfig] of Object.entries(
-      mcpConfig.mcpServers || {},
+      mcpConfig.servers || {},
     )) {
       // 类型守卫：测试命令可执行性（仅 StdioServerConfig）
       if ('command' in serverConfig && serverConfig.command) {
@@ -946,7 +870,7 @@ export class ConfigService implements IConfigService {
   ): Promise<void> {
     const groupConfig = config as GroupConfig;
     const currentConfig = await this.getCurrentConfig();
-    const availableServers = Object.keys(currentConfig.mcps.mcpServers || {});
+    const availableServers = Object.keys(currentConfig.mcps.servers || {});
 
     // 测试组配置
     for (const [groupId, group] of Object.entries(groupConfig)) {

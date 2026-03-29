@@ -61,7 +61,7 @@ describe('ConfigService', () => {
             retentionDays: 30,
           },
         } as SystemConfig,
-        mcps: { mcpServers: {} } as McpConfig,
+        mcps: { servers: {} } as McpConfig,
         groups: {} as GroupConfig,
       };
 
@@ -172,7 +172,7 @@ describe('ConfigService', () => {
 
     it('应该成功验证有效的MCP配置', async () => {
       const validMcpConfig = {
-        mcpServers: {
+        servers: {
           'test-server': {
             command: 'node',
             args: ['server.js'],
@@ -192,7 +192,7 @@ describe('ConfigService', () => {
 
     it('应该检测到无效的MCP配置', async () => {
       const invalidMcpConfig = {
-        mcpServers: {
+        servers: {
           'invalid-server': {
             command: '', // 空命令
             transport: {
@@ -231,7 +231,7 @@ describe('ConfigService', () => {
       const mockCurrentConfig = {
         system: {} as SystemConfig,
         mcps: {
-          mcpServers: {
+          servers: {
             server1: { command: 'test' },
             server2: { command: 'test' },
           },
@@ -270,7 +270,7 @@ describe('ConfigService', () => {
       const mockCurrentConfig = {
         system: {} as SystemConfig,
         mcps: {
-          mcpServers: {
+          servers: {
             server1: { command: 'test' },
           },
         } as McpConfig,
@@ -339,7 +339,7 @@ describe('ConfigService', () => {
 
     it('应该正确分析MCP配置的影响', async () => {
       const mcpConfig = {
-        mcpServers: {
+        servers: {
           'new-server': {
             command: 'node',
             args: ['server.js'],
@@ -382,7 +382,7 @@ describe('ConfigService', () => {
       // Mock getCurrentConfig
       const mockConfig = {
         system: { server: { port: 3000, host: 'localhost' } } as SystemConfig,
-        mcps: { mcpServers: {} } as McpConfig,
+        mcps: { servers: {} } as McpConfig,
         groups: {} as GroupConfig,
       };
 
@@ -557,7 +557,7 @@ describe('ConfigService', () => {
 
     it('应该测试MCP配置', async () => {
       const mcpConfig = {
-        mcpServers: {
+        servers: {
           'test-server': {
             command: 'node',
             args: ['server.js'],
@@ -588,7 +588,7 @@ describe('ConfigService', () => {
         system: {
           server: { port: 3000, host: 'localhost' },
         } as SystemConfig,
-        mcps: { mcpServers: {} } as McpConfig,
+        mcps: { servers: {} } as McpConfig,
         groups: {} as GroupConfig,
       };
 
