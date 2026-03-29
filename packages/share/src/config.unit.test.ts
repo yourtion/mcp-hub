@@ -279,8 +279,7 @@ describe('Config Types', () => {
 
   describe('类型别名', () => {
     it('应该支持 GroupInfo 别名', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const group: any = {
+      const group: Group = {
         id: 'test',
         name: 'Test',
         servers: [],

@@ -89,7 +89,7 @@ export async function getAllConfig(): Promise<
   const system = await getSystemConfigInstance().read();
 
   const configDir = getConfigDir();
-  const systemPath = path.resolve(configDir, 'system.json');
+  const _systemPath = path.resolve(configDir, 'system.json');
   const apiToolsPath = getApiToolsPath();
 
   // 检查API工具配置文件是否存在

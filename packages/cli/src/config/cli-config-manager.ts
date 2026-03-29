@@ -186,7 +186,7 @@ export class CliConfigManager {
   private async checkFileExists(filePath: string): Promise<void> {
     try {
       await access(filePath);
-    } catch (error) {
+    } catch (_error) {
       throw this.createConfigError(
         CliErrorCode.CONFIG_FILE_NOT_FOUND,
         `配置文件不存在: ${filePath}`,

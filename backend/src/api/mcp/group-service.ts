@@ -37,7 +37,7 @@ const pkg = JSON.parse(
   readFileSync(join(process.cwd(), 'package.json'), 'utf-8'),
 );
 
-import type { Group, GroupConfig } from '@mcp-core/mcp-hub-share';
+import type { Group } from '@mcp-core/mcp-hub-share';
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 

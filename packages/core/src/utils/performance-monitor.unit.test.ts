@@ -7,7 +7,6 @@ import {
   DEFAULT_PERFORMANCE_CONFIG,
   PerformanceMonitor,
   type PerformanceMonitorConfig,
-  type RequestPerformance,
 } from './performance-monitor';
 
 // Mock Node.js modules
@@ -225,9 +224,9 @@ describe('PerformanceMonitor', () => {
 
       const metrics = monitor.getCurrentMetrics();
       expect(metrics).toBeDefined();
-      expect(metrics!.requestCount).toBe(2);
-      expect(metrics!.errorCount).toBe(1);
-      expect(metrics!.errorRate).toBe(0.5);
+      expect(metrics?.requestCount).toBe(2);
+      expect(metrics?.errorCount).toBe(1);
+      expect(metrics?.errorRate).toBe(0.5);
     });
   });
 

@@ -220,7 +220,7 @@ export class ConfigService implements IConfigService {
   private async validateMcpConfig(
     config: Record<string, unknown>,
     errors: ConfigValidationError[],
-    warnings: ConfigValidationWarning[],
+    _warnings: ConfigValidationWarning[],
   ): Promise<void> {
     const mcpConfig = config as unknown as McpConfig;
 
@@ -294,7 +294,7 @@ export class ConfigService implements IConfigService {
 
   async analyzeConfigImpact(
     configType: ConfigType,
-    config: Record<string, unknown>,
+    _config: Record<string, unknown>,
   ): Promise<ConfigImpactAnalysis> {
     const affectedServices: string[] = [];
     let requiresRestart = false;
@@ -549,7 +549,7 @@ export class ConfigService implements IConfigService {
           if (stats.mtime > latestTime) {
             latestTime = stats.mtime;
           }
-        } catch (error) {
+        } catch (_error) {
           // 文件不存在，跳过
         }
       }
@@ -980,7 +980,7 @@ export class ConfigService implements IConfigService {
 
   private generateRollbackPlan(
     configType: ConfigType,
-    changes: ConfigChange[],
+    _changes: ConfigChange[],
   ): string[] {
     const rollbackPlan: string[] = [];
 

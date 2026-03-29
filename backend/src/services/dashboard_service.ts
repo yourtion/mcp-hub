@@ -180,7 +180,7 @@ export class DashboardService {
           if (tools.length > 0) {
             healthyGroups++;
           }
-        } catch (error) {
+        } catch (_error) {
           // 组不健康
         }
       }

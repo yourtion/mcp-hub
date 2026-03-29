@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import { McpHubService } from '../../services/mcp_hub_service.js';
 import { logger } from '../../utils/logger.js';
 import { getHubService } from '../hub.js';
 

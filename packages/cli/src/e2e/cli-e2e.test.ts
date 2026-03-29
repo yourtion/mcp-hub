@@ -78,7 +78,7 @@ describe('CLI端到端测试', () => {
       if (coreService) {
         await coreService.shutdown();
       }
-    } catch (error) {
+    } catch (_error) {
       // 忽略清理错误
     }
   });

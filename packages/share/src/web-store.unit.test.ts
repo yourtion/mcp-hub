@@ -18,7 +18,6 @@ import type {
   GroupActions,
   GroupState,
   Notification,
-  RootStore,
   ServerActions,
   ServerState,
   TestResult,

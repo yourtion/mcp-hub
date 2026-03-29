@@ -2,7 +2,6 @@
  * API到MCP Web服务测试
  */
 
-import { promises as fs } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ApiToolConfig } from '../types/web-api.js';
 import { logger } from '../utils/logger.js';

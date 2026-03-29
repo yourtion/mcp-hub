@@ -474,7 +474,7 @@ describe('API转MCP服务性能测试', () => {
       // 执行少量测试并记录内存使用
       for (let round = 0; round < 2; round++) {
         // 执行一批请求
-        const promises = Array.from({ length: iterations }, (_, i) =>
+        const promises = Array.from({ length: iterations }, (_, _i) =>
           serviceManager.executeApiTool('memory-tool', {
             payload: largePayload,
             timestamp: new Date().toISOString(),
@@ -668,7 +668,7 @@ describe('API转MCP服务性能测试', () => {
       if (result.content[0].text) {
         try {
           responseData = JSON.parse(result.content[0].text);
-        } catch (e) {
+        } catch (_e) {
           // 如果不是有效的JSON，直接使用文本内容
           responseData = result.content[0].text;
         }
@@ -783,7 +783,7 @@ describe('API转MCP服务性能测试', () => {
       if (result.content[0].text) {
         try {
           responseData = JSON.parse(result.content[0].text);
-        } catch (e) {
+        } catch (_e) {
           // 如果不是有效的JSON，直接使用文本内容
           responseData = result.content[0].text;
         }

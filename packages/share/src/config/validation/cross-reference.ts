@@ -100,8 +100,8 @@ export function validateAllConfigs(
 
   // 交叉引用校验
   const crossRefResult = validateCrossReferences(
-    mcpResult.data!.servers as Record<string, unknown>,
-    groupResult.data!,
+    mcpResult.data?.servers as Record<string, unknown>,
+    groupResult.data as z.infer<typeof GroupConfigSchema>,
   );
   if (!crossRefResult.valid) {
     allErrors.push(...crossRefResult.errors.map((e) => `交叉引用错误: ${e}`));
@@ -124,8 +124,8 @@ export function validateAllConfigs(
   return {
     success: true,
     data: {
-      mcpConfig: mcpResult.data!,
-      groupConfig: groupResult.data!,
+      mcpConfig: mcpResult.data as z.infer<typeof McpConfigSchema>,
+      groupConfig: groupResult.data as z.infer<typeof GroupConfigSchema>,
       systemConfig: parsedSystemConfig,
     },
   };

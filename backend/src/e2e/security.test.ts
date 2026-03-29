@@ -257,7 +257,7 @@ describe('安全功能端到端测试', () => {
   });
 
   describe('API访问控制测试', () => {
-    let validToken: string;
+    let _validToken: string;
 
     beforeAll(async () => {
       const loginResponse = await fetch(`${baseUrl}/api/auth/login`, {
@@ -270,7 +270,7 @@ describe('安全功能端到端测试', () => {
       });
 
       const loginData = await loginResponse.json();
-      validToken = loginData.data.accessToken;
+      _validToken = loginData.data.accessToken;
     });
 
     it('应该允许访问公开端点', async () => {

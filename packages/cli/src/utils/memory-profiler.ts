@@ -66,7 +66,7 @@ export class CliMemoryProfiler {
 
     // 尝试获取文件描述符数量
     try {
-      const fs = require('fs');
+      const fs = require('node:fs');
       if (fs.existsSync('/proc/self/fd')) {
         snapshot.fileDescriptorsBefore = this.getFileDescriptorCount();
       }
@@ -183,7 +183,7 @@ export class CliMemoryProfiler {
    */
   private getFileDescriptorCount(): number {
     try {
-      const fs = require('fs');
+      const fs = require('node:fs');
       if (fs.existsSync('/proc/self/fd')) {
         const files = fs.readdirSync('/proc/self/fd');
         return files.length;

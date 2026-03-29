@@ -1,4 +1,5 @@
 import type { AxiosResponse } from 'axios';
+import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import api from '@/services/api';
 import { ApiToMcpService } from '@/services/api-to-mcp';
@@ -48,13 +49,13 @@ describe('ApiToMcpService', () => {
         ],
       };
 
-      (api.get as jest.MockedFunction<typeof api.get>).mockResolvedValue({
+      (api.get as unknown as Mock).mockResolvedValue({
         data: {
           success: true,
           data: mockResponse,
           timestamp: new Date().toISOString(),
         },
-      } as AxiosResponse);
+      } as unknown as AxiosResponse);
 
       const result = await apiToMcpService.getConfigs();
 
@@ -63,7 +64,9 @@ describe('ApiToMcpService', () => {
     });
 
     it('should throw error when API call fails', async () => {
-      (api.get as any).mockRejectedValue(new Error('Network error'));
+      (api.get as unknown as Mock).mockRejectedValue(
+        new Error('Network error'),
+      );
 
       await expect(apiToMcpService.getConfigs()).rejects.toThrow(
         'Network error',
@@ -81,7 +84,7 @@ describe('ApiToMcpService', () => {
         api: {
           url: 'https://api.example.com/test',
           method: 'GET',
-          headers: [],
+          headers: {},
           timeout: 10000,
         },
         parameters: {
@@ -98,7 +101,7 @@ describe('ApiToMcpService', () => {
         },
       };
 
-      (api.get as any).mockResolvedValue({
+      (api.get as unknown as Mock).mockResolvedValue({
         data: {
           success: true,
           data: mockConfig,
@@ -122,7 +125,7 @@ describe('ApiToMcpService', () => {
         api: {
           url: 'https://api.example.com/new',
           method: 'POST',
-          headers: [],
+          headers: {},
           timeout: 10000,
         },
         parameters: {
@@ -145,7 +148,7 @@ describe('ApiToMcpService', () => {
         config: mockConfig,
       };
 
-      (api.post as any).mockResolvedValue({
+      (api.post as unknown as Mock).mockResolvedValue({
         data: {
           success: true,
           data: mockResult,
@@ -171,7 +174,7 @@ describe('ApiToMcpService', () => {
         api: {
           url: 'https://api.example.com/updated',
           method: 'PUT',
-          headers: [],
+          headers: {},
           timeout: 15000,
         },
         parameters: {
@@ -194,7 +197,7 @@ describe('ApiToMcpService', () => {
         config: mockConfig,
       };
 
-      (api.put as any).mockResolvedValue({
+      (api.put as unknown as Mock).mockResolvedValue({
         data: {
           success: true,
           data: mockResult,
@@ -224,7 +227,7 @@ describe('ApiToMcpService', () => {
         message: 'Config deleted successfully',
       };
 
-      (api.delete as any).mockResolvedValue({
+      (api.delete as unknown as Mock).mockResolvedValue({
         data: {
           success: true,
           data: mockResult,
@@ -250,7 +253,7 @@ describe('ApiToMcpService', () => {
         executionTime: 150,
       };
 
-      (api.post as any).mockResolvedValue({
+      (api.post as unknown as Mock).mockResolvedValue({
         data: mockResponse,
       });
 
@@ -275,7 +278,7 @@ describe('ApiToMcpService', () => {
         type: 'application/json',
       });
       const mockImportConfig = {
-        format: 'openapi',
+        format: 'openapi' as const,
         source: mockFile,
         options: {
           includeParameters: true,
@@ -302,7 +305,7 @@ describe('ApiToMcpService', () => {
         message: 'Import successful',
       };
 
-      (api.post as any).mockResolvedValue({
+      (api.post as unknown as Mock).mockResolvedValue({
         data: {
           success: true,
           data: mockResult,
@@ -317,7 +320,7 @@ describe('ApiToMcpService', () => {
 
     it('should import config from URL successfully', async () => {
       const mockImportConfig = {
-        format: 'openapi',
+        format: 'openapi' as const,
         source: 'https://api.example.com/openapi.json',
         options: {
           includeParameters: true,
@@ -331,7 +334,7 @@ describe('ApiToMcpService', () => {
         message: 'Import successful',
       };
 
-      (api.post as any).mockResolvedValue({
+      (api.post as unknown as Mock).mockResolvedValue({
         data: {
           success: true,
           data: mockResult,
@@ -352,7 +355,7 @@ describe('ApiToMcpService', () => {
   describe('exportConfig', () => {
     it('should export config successfully', async () => {
       const mockExportConfig = {
-        format: 'json',
+        format: 'json' as const,
         configs: ['config-1', 'config-2'],
         options: {
           includeMetadata: true,
@@ -366,7 +369,7 @@ describe('ApiToMcpService', () => {
         message: 'Export successful',
       };
 
-      (api.post as any).mockResolvedValue({
+      (api.post as unknown as Mock).mockResolvedValue({
         data: {
           success: true,
           data: mockResult,
@@ -393,7 +396,7 @@ describe('ApiToMcpService', () => {
         api: {
           url: 'https://api.example.com/test',
           method: 'GET',
-          headers: [],
+          headers: {},
           timeout: 10000,
         },
         parameters: {
@@ -416,7 +419,7 @@ describe('ApiToMcpService', () => {
         warnings: [],
       };
 
-      (api.post as any).mockResolvedValue({
+      (api.post as unknown as Mock).mockResolvedValue({
         data: {
           success: true,
           data: mockResult,
@@ -450,7 +453,7 @@ describe('ApiToMcpService', () => {
         message: 'Tool preview generated',
       };
 
-      (api.post as any).mockResolvedValue({
+      (api.post as unknown as Mock).mockResolvedValue({
         data: {
           success: true,
           data: mockResult,
@@ -477,7 +480,7 @@ describe('ApiToMcpService', () => {
         lastUpdated: '2023-01-01T00:00:00Z',
       };
 
-      (api.get as any).mockResolvedValue({
+      (api.get as unknown as Mock).mockResolvedValue({
         data: {
           success: true,
           data: mockStats,

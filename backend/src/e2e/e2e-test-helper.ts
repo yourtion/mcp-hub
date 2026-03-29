@@ -325,7 +325,7 @@ export class E2ETestHelper {
     }> = [];
 
     const startTime = Date.now();
-    let lastSample = Date.now();
+    let _lastSample = Date.now();
 
     // 开始监控
     const monitorInterval = setInterval(() => {
@@ -335,7 +335,7 @@ export class E2ETestHelper {
         used: usage.heapUsed,
         total: usage.heapTotal,
       });
-      lastSample = Date.now();
+      _lastSample = Date.now();
     }, sampleInterval);
 
     try {
@@ -637,7 +637,7 @@ export class E2EScenarioHelper {
       });
 
       return { success: true, steps };
-    } catch (error) {
+    } catch (_error) {
       return { success: false, steps };
     }
   }
@@ -713,7 +713,7 @@ export class E2EScenarioHelper {
       });
 
       return { success: true, recoveryTime, steps };
-    } catch (error) {
+    } catch (_error) {
       return {
         success: false,
         recoveryTime: 0,

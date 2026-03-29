@@ -214,7 +214,7 @@ async function validateConfig(configPath: string): Promise<void> {
     const result = configManager.validateConfigDetailed(config);
 
     // 显示验证结果
-    console.log('\n' + configManager.formatValidationResult(result));
+    console.log(`\n${configManager.formatValidationResult(result)}`);
 
     if (!result.valid) {
       process.exit(1);
@@ -332,7 +332,7 @@ function setupLogging(verbose: boolean): void {
   if (verbose) {
     // 在详细模式下显示调试信息
     const originalLog = console.log;
-    const originalDebug = console.debug;
+    const _originalDebug = console.debug;
 
     console.debug = (...args: any[]) => {
       originalLog('[DEBUG]', ...args);

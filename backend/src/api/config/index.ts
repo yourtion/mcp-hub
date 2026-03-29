@@ -3,12 +3,8 @@ import { Hono } from 'hono';
 import { z } from 'zod/v4';
 import { ConfigService } from '../../services/config_service.js';
 import type {
-  ConfigBackupRequest,
   ConfigHistoryResponse,
   ConfigResponse,
-  ConfigRestoreRequest,
-  ConfigUpdateRequest,
-  ConfigValidationRequest,
   ConfigValidationResponse,
 } from '../../types/config.js';
 

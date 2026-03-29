@@ -93,7 +93,7 @@ describe('EnvironmentDetector', () => {
         VITEST_DEBUG: 'true',
         NODE_ENV: 'development', // 不是测试环境
       },
-    } as any;
+    } as typeof process;
 
     const level = EnvironmentDetector.getEnvironmentLogLevel();
     expect(level).toBe(LogLevel.DEBUG);

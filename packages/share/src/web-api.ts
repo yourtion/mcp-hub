@@ -3,16 +3,7 @@
  */
 
 // Import config types for internal use (these are exported via config/types/index.ts)
-import type {
-  ApiEndpointConfig,
-  ApiToolConfig,
-  AuthConfig,
-  CacheConfig,
-  Group,
-  HttpMethod,
-  ResponseConfig,
-  SecurityConfig,
-} from './config/types/index.js';
+import type { ApiToolConfig, Group } from './config/types/index.js';
 
 // Re-export Group for backward compatibility (was GroupInfo in legacy config.ts)
 export type { Group };

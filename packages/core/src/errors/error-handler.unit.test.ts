@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ConfigError,
   ConnectionError,
-  DEFAULT_RETRY_CONFIG,
   ErrorCategory,
   ErrorCode,
   type ErrorContext,

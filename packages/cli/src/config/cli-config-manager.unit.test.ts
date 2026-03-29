@@ -4,7 +4,7 @@
 
 import { mkdir, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { CliConfig } from '../types/index';
 import { CliConfigManager } from './cli-config-manager';
 
@@ -296,7 +296,7 @@ describe('CliConfigManager', () => {
 
       expect(mergedConfig.servers.server1).toEqual(baseConfig.servers.server1);
       expect(mergedConfig.servers.server2).toEqual(
-        overrideConfig.servers!.server2,
+        overrideConfig.servers?.server2,
       );
       expect(mergedConfig.logging.level).toBe('debug');
       expect(mergedConfig.transport.type).toBe('stdio');

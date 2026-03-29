@@ -467,7 +467,6 @@ export function createCacheKeyManager(strategyName?: string): CacheKeyManager {
     case 'hierarchical':
       strategy = hierarchicalCacheKeyStrategy;
       break;
-    case 'default':
     default:
       strategy = defaultCacheKeyStrategy;
       break;
