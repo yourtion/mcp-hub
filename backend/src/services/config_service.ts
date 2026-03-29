@@ -12,7 +12,7 @@ import {
   McpConfigSchema,
   SystemConfigSchema,
 } from '@mcp-core/mcp-hub-share/config';
-import { z } from 'zod/v4';
+import type { z } from 'zod/v4';
 import type {
   ConfigBackup,
   ConfigChange,
@@ -264,9 +264,7 @@ export class ConfigService implements IConfigService {
   ): Promise<void> {
     const groupConfig = config as GroupConfig;
     const currentMcpConfig = await this.getCurrentConfig();
-    const availableServers = Object.keys(
-      currentMcpConfig.mcps.servers || {},
-    );
+    const availableServers = Object.keys(currentMcpConfig.mcps.servers || {});
 
     // 验证组配置
     for (const [groupId, group] of Object.entries(groupConfig)) {

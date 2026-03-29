@@ -7,11 +7,7 @@ import { existsSync } from 'node:fs';
 import { access, mkdir, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ConfigError, ErrorCode } from '../errors/index.js';
-import type {
-  Group,
-  McpServerConfig,
-  ServerConfig,
-} from '../types/index.js';
+import type { Group, McpServerConfig, ServerConfig } from '../types/index.js';
 
 /**
  * 生成器选项

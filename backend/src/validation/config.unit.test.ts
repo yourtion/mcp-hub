@@ -57,9 +57,7 @@ describe('配置验证工具', () => {
       const result = validateMcpConfig(config);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.errors).toContain(
-          'servers: 至少需要配置一个MCP服务器',
-        );
+        expect(result.errors).toContain('servers: 至少需要配置一个MCP服务器');
       }
     });
 

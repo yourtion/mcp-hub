@@ -27,11 +27,15 @@ async function validateConfigurations() {
   try {
     const config = await getAllConfig();
 
-    // 验证所有配置
+    // 验证所有配置（仅当系统配置非空时验证）
+    const systemConfigToValidate =
+      config.system && Object.keys(config.system).length > 0
+        ? config.system
+        : undefined;
     const validationResult = validateAllConfigs(
       config.mcps,
       config.groups,
-      config.system,
+      systemConfigToValidate,
     );
 
     if (!validationResult.success) {
@@ -45,8 +49,7 @@ async function validateConfigurations() {
     }
 
     logger.info('配置验证成功', {
-      serverCount: Object.keys(validationResult.data.mcpConfig.servers)
-        .length,
+      serverCount: Object.keys(validationResult.data.mcpConfig.servers).length,
       groupCount: Object.keys(validationResult.data.groupConfig).length,
       hasSystemConfig: !!validationResult.data.systemConfig,
     });
