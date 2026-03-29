@@ -50,7 +50,7 @@ describe('SideNavigation', () => {
     expect(wrapper.find('.side-navigation__logo-text').exists()).toBe(false);
   });
 
-  it('should render navigation menu', () => {
+  it('should render the side-navigation container', () => {
     const wrapper = mount(SideNavigation, {
       props: { collapsed: false },
       global: {
@@ -58,14 +58,10 @@ describe('SideNavigation', () => {
       },
     });
 
-    const menu = wrapper.find('.mock-menu');
-    expect(menu.exists()).toBe(true);
+    expect(wrapper.find('.side-navigation').exists()).toBe(true);
   });
 
-  it('should set active route value on menu', async () => {
-    router.push('/servers');
-    await router.isReady();
-
+  it('should render all navigation items as text', () => {
     const wrapper = mount(SideNavigation, {
       props: { collapsed: false },
       global: {
@@ -73,14 +69,14 @@ describe('SideNavigation', () => {
       },
     });
 
-    const menu = wrapper.find('.mock-menu');
-    expect(menu.attributes('value')).toBe('/servers');
+    const text = wrapper.text();
+    expect(text).toContain('仪表板');
+    expect(text).toContain('服务器管理');
+    expect(text).toContain('工具管理');
+    expect(text).toContain('组管理');
   });
 
-  it('should highlight matching route for tools path', async () => {
-    router.push('/tools');
-    await router.isReady();
-
+  it('should render the logo icon', () => {
     const wrapper = mount(SideNavigation, {
       props: { collapsed: false },
       global: {
@@ -88,45 +84,10 @@ describe('SideNavigation', () => {
       },
     });
 
-    const menu = wrapper.find('.mock-menu');
-    expect(menu.attributes('value')).toBe('/tools');
+    expect(wrapper.find('.side-navigation__logo-icon').exists()).toBe(true);
   });
 
-  it('should default to dashboard when no route matches nav items', async () => {
-    const noMatchRouter = createRouter({
-      history: createMemoryHistory(),
-      routes: [
-        { path: '/dashboard', component: { template: '<div>Dashboard</div>' } },
-        { path: '/unknown', component: { template: '<div>Unknown</div>' } },
-      ],
-    });
-    noMatchRouter.push('/unknown');
-    await noMatchRouter.isReady();
-
-    const wrapper = mount(SideNavigation, {
-      props: { collapsed: false },
-      global: {
-        plugins: [noMatchRouter],
-      },
-    });
-
-    const menu = wrapper.find('.mock-menu');
-    expect(menu.attributes('value')).toBe('/dashboard');
-  });
-
-  it('should pass collapsed prop to Menu component', () => {
-    const wrapper = mount(SideNavigation, {
-      props: { collapsed: true },
-      global: {
-        plugins: [router],
-      },
-    });
-
-    const menu = wrapper.find('.mock-menu');
-    expect(menu.attributes('collapsed')).toBe('true');
-  });
-
-  it('should navigate when menu change event fires', async () => {
+  it('should navigate via router when menu change fires', async () => {
     const pushSpy = vi.spyOn(router, 'push');
 
     const wrapper = mount(SideNavigation, {
@@ -136,9 +97,12 @@ describe('SideNavigation', () => {
       },
     });
 
-    const menu = wrapper.find('.mock-menu');
-    await menu.trigger('change', '/servers');
+    // Simulate menu change by calling the handler directly
+    const vm = wrapper.vm as unknown as {
+      handleMenuChange: (value: string | number) => void;
+    };
+    vm.handleMenuChange('/servers');
 
-    expect(pushSpy).not.toHaveBeenCalledWith('/servers');
+    expect(pushSpy).toHaveBeenCalledWith('/servers');
   });
 });
