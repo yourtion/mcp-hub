@@ -52,17 +52,6 @@ export const useConfigStore = defineStore('config', () => {
     validationResult.value ? !validationResult.value.valid : false,
   );
 
-  // 过滤后的配置项
-  const filteredConfigData = computed(() => {
-    if (!configData.value || !searchFilter.value.keyword) {
-      return configData.value;
-    }
-
-    // 这里可以实现更复杂的搜索逻辑
-    // 简化实现，实际项目中可以使用更高效的搜索算法
-    return configData.value;
-  });
-
   // Actions
 
   /**
@@ -371,7 +360,6 @@ export const useConfigStore = defineStore('config', () => {
     hasConfigData,
     isFormDirty,
     hasValidationErrors,
-    filteredConfigData,
 
     // Actions
     fetchConfig,
