@@ -54,7 +54,6 @@ export interface UserConfig {
   id: string;
   username: string;
   password: string;
-  passwordHash: string;
   role: string;
   groups: string[];
   createdAt: string;

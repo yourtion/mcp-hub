@@ -231,6 +231,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   // 设置SSE事件监听器
   const setupSSEEventListeners = () => {
+    // 先清除旧监听器，防止重复注册
+    sseService.removeAllEventListeners();
     // 服务器状态变更
     sseService.onServerStatus((data) => {
       console.log('收到服务器状态事件:', data);
