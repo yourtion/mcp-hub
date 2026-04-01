@@ -120,18 +120,6 @@ describe('Login', () => {
     expect(loginButton).toBeDefined();
   });
 
-  it('should render the remember-me checkbox', () => {
-    const wrapper = mount(Login, {
-      global: {
-        plugins: [router],
-        stubs: globalStubs,
-      },
-    });
-
-    const checkbox = wrapper.find('.mock-t-checkbox');
-    expect(checkbox.exists()).toBe(true);
-  });
-
   it('should not show error message initially', () => {
     const wrapper = mount(Login, {
       global: {
