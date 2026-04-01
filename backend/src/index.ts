@@ -1,4 +1,5 @@
 import { serve } from '@hono/node-server';
+import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share/config';
 import {
   initializeDashboardServices,
   shutdownDashboardServices,
@@ -16,7 +17,7 @@ import { validateAllConfigs } from './validation/config.js';
 
 // 全局服务实例
 let hubService: McpHubService | null = null;
-let httpServer: any = null;
+let httpServer: ReturnType<typeof serve> | null = null;
 
 /**
  * 验证配置文件
@@ -64,7 +65,11 @@ async function validateConfigurations() {
 /**
  * 初始化 MCP Hub 服务
  */
-async function initializeHubService(validatedConfig: any) {
+async function initializeHubService(validatedConfig: {
+  mcpConfig: McpConfig;
+  groupConfig: GroupConfig;
+  systemConfig?: Record<string, unknown>;
+}) {
   logger.info('开始初始化 MCP Hub 服务...');
 
   try {

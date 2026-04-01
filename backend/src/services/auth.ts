@@ -24,6 +24,7 @@ export class AuthService {
   private loginAttempts = new Map<string, LoginAttempt[]>();
   private sessions = new Map<string, UserSession>();
   private blacklistedTokens = new Set<string>();
+  private passwordHashMap = new Map<string, string>();
 
   /**
    * 初始化认证服务
@@ -46,25 +47,22 @@ export class AuthService {
       // config.system 已经是 DeepReadonly<SystemConfig> 类型
       this.config = config.system as DeepReadonly<SystemConfig>;
 
-      // 确保所有用户都有密码哈希
-      await this.ensurePasswordHashes();
+      // 为所有用户生成密码哈希
+      await this.generatePasswordHashes();
     } catch (error) {
       throw new Error(`Failed to load system config: ${error}`);
     }
   }
 
   /**
-   * 确保所有用户都有密码哈希（仅在内存中）
+   * 为所有用户生成密码哈希（仅在内存中）
    */
-  private async ensurePasswordHashes(): Promise<void> {
+  private async generatePasswordHashes(): Promise<void> {
     if (!this.config) return;
 
-    // 只是在内存中补充缺失的密码哈希，不修改配置文件
-    for (const user of Object.values(this.config.users)) {
-      if (!user.passwordHash && user.password) {
-        // 在内存中生成哈希，但不保存到文件
-        (user as any).passwordHash = await bcrypt.hash(user.password, 10);
-      }
+    for (const [key, user] of Object.entries(this.config.users)) {
+      const hash = await bcrypt.hash(user.password, 10);
+      this.passwordHashMap.set(key, hash);
     }
   }
 
@@ -102,7 +100,14 @@ export class AuthService {
     }
 
     // 验证密码
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    const userKey = Object.keys(this.config.users).find(
+      (k) => this.config!.users[k].id === user.id,
+    );
+    const hash = userKey ? this.passwordHashMap.get(userKey) : undefined;
+    if (!hash) {
+      throw new Error('Password hash not found');
+    }
+    const isValidPassword = await bcrypt.compare(password, hash);
     if (!isValidPassword) {
       this.recordLoginAttempt(username, false, ip, userAgent);
       throw new Error('Invalid username or password');

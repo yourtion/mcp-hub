@@ -509,9 +509,9 @@ export class ToolManager implements IToolManager {
       // Validate property types if schema properties are defined
       if (schema.properties && typeof schema.properties === 'object') {
         for (const [argName, argValue] of Object.entries(args)) {
-          const propSchema = (schema.properties as Record<string, any>)[
-            argName
-          ];
+          const propSchema = (
+            schema.properties as Record<string, Record<string, unknown>>
+          )[argName];
           if (propSchema && typeof propSchema === 'object') {
             const typeValidation = this.validateArgumentType(
               argName,
@@ -574,7 +574,7 @@ export class ToolManager implements IToolManager {
   private validateArgumentType(
     argName: string,
     argValue: unknown,
-    propSchema: any,
+    propSchema: Record<string, unknown>,
   ): { isValid: boolean; error?: string } {
     if (!propSchema.type) {
       return { isValid: true }; // No type specified, allow any

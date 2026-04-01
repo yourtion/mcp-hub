@@ -105,7 +105,7 @@ function getDashboardService(): DashboardService {
       ],
       getServerHealth: () =>
         new Map([['test-server-1', { status: 'connected', isHealthy: true }]]),
-    } as any;
+    } as unknown as McpHubService;
 
     dashboardService = new DashboardService(mockHubService);
   }

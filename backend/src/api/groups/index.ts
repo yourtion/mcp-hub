@@ -9,13 +9,14 @@ import {
   createHash,
   randomBytes,
 } from 'node:crypto';
-import { McpServiceManager } from '@mcp-core/mcp-hub-core';
+import { McpServiceManager, type ToolInfo } from '@mcp-core/mcp-hub-core';
 import type {
   ConfigureGroupToolsRequest,
   CreateGroupRequest,
   GroupAvailableToolsResponse,
   GroupConfig,
   GroupValidationConfig,
+  ServerConfig,
   SetGroupValidationKeyRequest,
   UpdateGroupRequest,
 } from '@mcp-core/mcp-hub-share';
@@ -79,7 +80,7 @@ async function ensureCoreServiceInitialized(): Promise<void> {
 
     coreServiceManager = new McpServiceManager();
     const coreConfig = {
-      servers: config.mcps.servers as any,
+      servers: config.mcps.servers as Record<string, ServerConfig>,
       groups: config.groups as Record<string, GroupConfigItem>,
     };
     await coreServiceManager.initializeFromConfig(coreConfig);
@@ -122,7 +123,7 @@ groupsApi.get('/', async (c) => {
 
           // 获取组内工具数量和详细信息
           let toolCount = 0;
-          let availableTools: any[] = [];
+          let availableTools: ToolInfo[] = [];
           try {
             const allTools = await coreServiceManager?.getAllTools();
             availableTools =
@@ -345,7 +346,7 @@ groupsApi.get('/:groupId', async (c) => {
     });
 
     // 获取组内所有工具
-    let groupTools: any[] = [];
+    let groupTools: ToolInfo[] = [];
     try {
       const allTools = await coreServiceManager.getAllTools();
       groupTools = allTools
@@ -372,7 +373,7 @@ groupsApi.get('/:groupId', async (c) => {
     }
 
     const connectedServers = serverDetails.filter(
-      (s: any) => s.status === 'connected',
+      (s: { status: string }) => s.status === 'connected',
     );
 
     const response = {
@@ -496,7 +497,7 @@ groupsApi.get('/:groupId/health', async (c) => {
       };
     });
 
-    const healthyServers = serverHealth.filter((s: any) => s.healthy);
+    const healthyServers = serverHealth.filter((s) => s.healthy === true);
     const healthScore =
       groupServers.length > 0
         ? Math.round((healthyServers.length / groupServers.length) * 100)
@@ -631,7 +632,7 @@ groupsApi.get('/:groupId/tools', async (c) => {
         });
         return acc;
       },
-      {} as Record<string, any[]>,
+      {} as Record<string, Record<string, unknown>[]>,
     );
 
     const response = {
@@ -712,7 +713,7 @@ groupsApi.get('/:groupId/servers', async (c) => {
         const connection = serverConnections.get(serverId);
 
         // 获取服务器工具
-        let serverTools: any[] = [];
+        let serverTools: ToolInfo[] = [];
         try {
           serverTools =
             (await coreServiceManager?.getServerTools(serverId)) || [];
@@ -1799,28 +1800,29 @@ groupsApi.get('/:groupId/available-tools', async (c) => {
           description: tool.description || '',
           serverId: tool.serverId || '',
           serverName: tool.serverId || '',
-          inputSchema: { type: 'object', properties: {} },
+          inputSchema: { type: 'object' as const, properties: {} },
           status: 'available' as const,
         });
         return acc;
       },
-      {} as Record<string, any[]>,
+      {} as GroupAvailableToolsResponse['toolsByServer'],
     );
 
     // 构建响应
-    const response = {
+    const response: GroupAvailableToolsResponse = {
       groupId,
       tools: filteredTools.map((tool) => ({
         name: tool.name,
         description: tool.description || '',
         serverId: tool.serverId || '',
         serverName: tool.serverId || '',
-        inputSchema: { type: 'object', properties: {} },
+        inputSchema: { type: 'object' as const, properties: {} },
         status: 'available' as const,
       })),
       toolsByServer,
       totalTools: availableTools.length,
       filteredTools: filteredTools.length,
+      toolFilter: [...toolFilter],
       filtering: {
         isFilteringEnabled: toolFilter.length > 0,
         filterRatio:
@@ -1843,7 +1845,7 @@ groupsApi.get('/:groupId/available-tools', async (c) => {
             : 0,
       })),
       timestamp: new Date().toISOString(),
-    } as GroupAvailableToolsResponse;
+    };
 
     logger.info('组可用工具查询完成', {
       groupId,

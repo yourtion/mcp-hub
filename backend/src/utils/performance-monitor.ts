@@ -159,7 +159,7 @@ export const performanceMonitor = new PerformanceMonitor();
  * 性能监控中间件
  */
 export function createPerformanceMiddleware() {
-  return async (c: any, next: () => Promise<void>) => {
+  return async (c: import('hono').Context, next: () => Promise<void>) => {
     const startTime = Date.now();
     const method = c.req.method;
     const endpoint = c.req.path;

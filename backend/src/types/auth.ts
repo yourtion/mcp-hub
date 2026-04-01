@@ -24,10 +24,8 @@ export interface UserCredentials {
   id: string;
   /** 用户名 */
   username: string;
-  /** 明文密码（仅用于配置） */
+  /** 明文密码（仅用于配置，运行时自动生成哈希） */
   password: string;
-  /** 密码哈希 */
-  passwordHash: string;
   /** 用户角色 */
   role: string;
   /** 用户所属组 */

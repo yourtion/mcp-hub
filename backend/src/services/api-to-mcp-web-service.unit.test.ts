@@ -64,7 +64,9 @@ vi.mock('node:fs', async () => {
 });
 
 describe('ApiToMcpWebService', () => {
+  // biome-ignore lint/suspicious/noExplicitAny: dynamic import and mock
   let service: any;
+  // biome-ignore lint/suspicious/noExplicitAny: dynamic import
   let ApiToMcpWebService: any;
 
   beforeEach(async () => {
