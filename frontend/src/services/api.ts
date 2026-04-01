@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
+import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 import type { ApiResponse } from '@/types/api';
 
 // 创建axios实例
@@ -9,6 +9,24 @@ const api: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Token 刷新锁，防止多个 401 并发触发多次刷新
+let isRefreshing = false;
+let refreshSubscribers: Array<(token: string) => void> = [];
+
+function onTokenRefreshed(token: string): void {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+}
+
+function addRefreshSubscriber(callback: (token: string) => void): void {
+  refreshSubscribers.push(callback);
+}
+
+// 扩展 AxiosRequestConfig 以支持 _retry 标记
+interface RetryableConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
 
 // 请求拦截器 - 添加token
 api.interceptors.request.use(
@@ -24,36 +42,59 @@ api.interceptors.request.use(
   },
 );
 
-// 响应拦截器 - 处理token刷新
+// 响应拦截器 - 处理token刷新（防竞态）
 api.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
   },
   async (error) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as RetryableConfig;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (refreshToken) {
-          const response = await axios.post('/api/auth/refresh', {
-            refreshToken,
+      const storedRefreshToken = localStorage.getItem('refresh_token');
+      if (!storedRefreshToken) {
+        localStorage.removeItem('auth_token');
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
+      // 如果已经在刷新中，排队等待
+      if (isRefreshing) {
+        return new Promise<AxiosResponse>((resolve) => {
+          addRefreshSubscriber((newToken: string) => {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            resolve(api(originalRequest));
           });
+        });
+      }
 
-          const { token } = response.data;
-          localStorage.setItem('auth_token', token);
+      isRefreshing = true;
 
-          // 重试原始请求
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-          return api(originalRequest);
-        }
-      } catch (_refreshError) {
+      try {
+        const response = await axios.post('/api/auth/refresh', {
+          refreshToken: storedRefreshToken,
+        });
+
+        const { accessToken } = response.data.data || response.data;
+        localStorage.setItem('auth_token', accessToken);
+
+        // 通知所有排队的请求
+        onTokenRefreshed(accessToken);
+
+        // 重试原始请求
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return api(originalRequest);
+      } catch {
         // 刷新失败，清除token并跳转到登录页
         localStorage.removeItem('auth_token');
         localStorage.removeItem('refresh_token');
+        refreshSubscribers = [];
         window.location.href = '/login';
+        return Promise.reject(error);
+      } finally {
+        isRefreshing = false;
       }
     }
 
