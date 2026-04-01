@@ -428,16 +428,20 @@ export class ApiToMcpWebService {
   /**
    * 从工具schema中提取API URL
    */
-  private extractApiUrl(schema: any): string {
+  private extractApiUrl(schema: Record<string, unknown>): string {
     // 尝试从schema的description或其他字段中提取URL信息
     // 这是一个简化的实现，实际可能需要更复杂的逻辑
-    return schema.description?.match(/https?:\/\/[^\s]+/)?.[0] || '';
+    return (
+      (schema.description as string | undefined)?.match(
+        /https?:\/\/[^\s]+/,
+      )?.[0] || ''
+    );
   }
 
   /**
    * 从工具schema中提取HTTP方法
    */
-  private extractHttpMethod(_schema: any): string {
+  private extractHttpMethod(_schema: Record<string, unknown>): string {
     // 尝试从schema中提取HTTP方法信息
     // 这是一个简化的实现，实际可能需要更复杂的逻辑
     return 'GET';

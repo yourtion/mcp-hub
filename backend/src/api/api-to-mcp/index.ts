@@ -114,7 +114,7 @@ apiToMcpRoutes.post('/configs', requireAuth, async (c) => {
     // Check if it's a JSON parsing error
     if (
       error instanceof SyntaxError &&
-      (error as any).message?.includes('JSON')
+      (error as Error).message?.includes('JSON')
     ) {
       const response = {
         success: false,

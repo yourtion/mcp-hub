@@ -716,7 +716,7 @@ export class ConfigService implements IConfigService {
         const token = jwt.sign(testPayload, systemConfig.auth.jwt.secret, {
           expiresIn: systemConfig.auth.jwt.expiresIn,
           issuer: systemConfig.auth.jwt.issuer,
-        } as any);
+        } as Record<string, unknown>);
 
         jwt.verify(token, systemConfig.auth.jwt.secret);
 

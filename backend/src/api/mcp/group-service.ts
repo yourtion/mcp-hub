@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod/v4';
 
 // JSON Schema types
@@ -377,7 +378,7 @@ export class GroupMcpService {
 
           // 确保返回正确的格式
           if (result && typeof result === 'object' && 'content' in result) {
-            return result as any;
+            return result as unknown as CallToolResult;
           }
 
           // 转换结果格式
