@@ -5,10 +5,36 @@
 import { describe, expect, it } from 'vitest';
 import type { HttpResponse } from '../types/http-client.js';
 import {
+  type HttpError,
   McpError,
   McpErrorCode,
   ResponseProcessorImpl,
 } from './response-processor.js';
+
+/** 非JSON文本响应结果 */
+interface TextResponseResult {
+  _type: string;
+  content: string;
+}
+
+/** CSV响应结果 */
+interface CsvResponseResult {
+  _type: string;
+  rows: string[][];
+}
+
+/** 键值对响应结果 */
+interface KeyValueResponseResult {
+  _type: string;
+  parsed: Record<string, string>;
+}
+
+/** 降级响应结果 */
+interface FallbackResponseResult {
+  _fallback: boolean;
+  _data: unknown;
+  _originalError: string;
+}
 
 describe('ResponseProcessorImpl', () => {
   const processor = new ResponseProcessorImpl();
@@ -59,11 +85,14 @@ describe('ResponseProcessorImpl', () => {
       const result = (await processor.processWithJsonata(
         data,
         '{ "names": users.name, "total": $count(users) }',
-      )) as any;
+      )) as Record<string, unknown>;
 
       expect(result).toHaveProperty('names');
       expect(result).toHaveProperty('total');
-      expect(Array.from(result.names)).toEqual(['John', 'Jane']);
+      expect(Array.from(result.names as Iterable<unknown>)).toEqual([
+        'John',
+        'Jane',
+      ]);
       expect(result.total).toBe(2);
     });
 
@@ -125,8 +154,8 @@ describe('ResponseProcessorImpl', () => {
       const error = processor.processErrorResponse(response);
 
       expect(error.message).toBe('API调用失败: 404 Not Found');
-      expect((error as any).status).toBe(404);
-      expect((error as any).statusText).toBe('Not Found');
+      expect((error as HttpError).status).toBe(404);
+      expect((error as HttpError).statusText).toBe('Not Found');
     });
 
     it('应该使用错误路径提取错误信息', () => {
@@ -207,7 +236,9 @@ describe('ResponseProcessorImpl', () => {
 
     it('应该处理字符串响应', async () => {
       const response = createMockResponse(200, 'Hello World');
-      const result = (await processor.processResponse(response)) as any;
+      const result = (await processor.processResponse(
+        response,
+      )) as TextResponseResult;
 
       expect(result._type).toBe('text');
       expect(result.content).toBe('Hello World');
@@ -247,7 +278,9 @@ describe('ResponseProcessorImpl', () => {
 
     it('应该处理无效的JSON字符串', async () => {
       const response = createMockResponse(200, 'invalid json {');
-      const result = (await processor.processResponse(response)) as any;
+      const result = (await processor.processResponse(
+        response,
+      )) as TextResponseResult;
 
       expect(result._type).toBe('text');
       expect(result.content).toBe('invalid json {');
@@ -258,7 +291,9 @@ describe('ResponseProcessorImpl', () => {
         200,
         '<root><name>John</name></root>',
       );
-      const result = (await processor.processResponse(response)) as any;
+      const result = (await processor.processResponse(
+        response,
+      )) as TextResponseResult;
 
       expect(result._type).toBe('xml');
       expect(result.content).toBe('<root><name>John</name></root>');
@@ -267,7 +302,9 @@ describe('ResponseProcessorImpl', () => {
     it('应该处理CSV响应', async () => {
       const csvData = 'name,age\nJohn,30\nJane,25';
       const response = createMockResponse(200, csvData);
-      const result = (await processor.processResponse(response)) as any;
+      const result = (await processor.processResponse(
+        response,
+      )) as CsvResponseResult;
 
       expect(result._type).toBe('csv');
       expect(result.rows).toEqual([
@@ -280,7 +317,9 @@ describe('ResponseProcessorImpl', () => {
     it('应该处理键值对响应', async () => {
       const kvData = 'name=John\nage=30\ncity:Beijing';
       const response = createMockResponse(200, kvData);
-      const result = (await processor.processResponse(response)) as any;
+      const result = (await processor.processResponse(
+        response,
+      )) as KeyValueResponseResult;
 
       expect(result._type).toBe('key-value');
       expect(result.parsed).toEqual({
@@ -292,7 +331,9 @@ describe('ResponseProcessorImpl', () => {
 
     it('应该处理纯文本响应', async () => {
       const response = createMockResponse(200, 'Hello World');
-      const result = (await processor.processResponse(response)) as any;
+      const result = (await processor.processResponse(
+        response,
+      )) as TextResponseResult;
 
       expect(result._type).toBe('text');
       expect(result.content).toBe('Hello World');
@@ -343,7 +384,7 @@ describe('ResponseProcessorImpl', () => {
         response,
         'invalid[', // 无效表达式
         'alsoinvalid[', // 无效降级表达式
-      )) as any;
+      )) as FallbackResponseResult;
 
       expect(result._fallback).toBe(true);
       expect(result._data).toEqual({ name: 'John', age: 30 });
@@ -355,7 +396,7 @@ describe('ResponseProcessorImpl', () => {
       const result = (await processor.processWithFallback(
         response,
         'invalid[', // 无效表达式
-      )) as any;
+      )) as FallbackResponseResult;
 
       expect(result._fallback).toBe(true);
       expect(result._data).toEqual({ name: 'John', age: 30 });

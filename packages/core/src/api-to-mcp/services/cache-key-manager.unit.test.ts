@@ -115,11 +115,17 @@ describe('CacheKeyManagerImpl', () => {
 
     it('应该在参数不是对象时抛出错误', () => {
       expect(() => {
-        keyManager.generateKey('tool', null as any);
+        keyManager.generateKey(
+          'tool',
+          null as unknown as Record<string, unknown>,
+        );
       }).toThrow('参数必须是一个对象');
 
       expect(() => {
-        keyManager.generateKey('tool', 'invalid' as any);
+        keyManager.generateKey(
+          'tool',
+          'invalid' as unknown as Record<string, unknown>,
+        );
       }).toThrow('参数必须是一个对象');
     });
   });
@@ -140,11 +146,11 @@ describe('CacheKeyManagerImpl', () => {
 
     it('应该在设置无效策略时抛出错误', () => {
       expect(() => {
-        keyManager.setStrategy(null as any);
+        keyManager.setStrategy(null as unknown as CacheKeyStrategy);
       }).toThrow('无效的缓存键策略');
 
       expect(() => {
-        keyManager.setStrategy({} as any);
+        keyManager.setStrategy({} as CacheKeyStrategy);
       }).toThrow('无效的缓存键策略');
     });
 
@@ -172,8 +178,10 @@ describe('CacheKeyManagerImpl', () => {
 
     it('应该拒绝无效的键', () => {
       expect(keyManager.validateKey('')).toBe(false);
-      expect(keyManager.validateKey(null as any)).toBe(false);
-      expect(keyManager.validateKey(undefined as any)).toBe(false);
+      expect(keyManager.validateKey(null as unknown as string)).toBe(false);
+      expect(keyManager.validateKey(undefined as unknown as string)).toBe(
+        false,
+      );
     });
 
     it('应该使用策略的验证函数', () => {
@@ -261,7 +269,7 @@ describe('CacheKeyManagerImpl', () => {
         { param: 'value2' },
         undefined,
         'invalid',
-      ] as any[];
+      ] as unknown as Record<string, unknown>[];
 
       const keys = keyManager.generateKeysForTool(toolId, parametersList);
 
@@ -276,7 +284,10 @@ describe('CacheKeyManagerImpl', () => {
 
     it('应该在参数列表不是数组时抛出错误', () => {
       expect(() => {
-        keyManager.generateKeysForTool('tool', null as any);
+        keyManager.generateKeysForTool(
+          'tool',
+          null as unknown as Record<string, unknown>[],
+        );
       }).toThrow('参数列表必须是数组');
     });
   });
