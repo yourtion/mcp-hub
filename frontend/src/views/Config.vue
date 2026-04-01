@@ -60,11 +60,11 @@
         </div>
       </t-tab-panel>
 
-      <!-- Tab: User Management -->
-      <t-tab-panel value="users" label="用户管理">
+      <!-- Tab: Group Config -->
+      <t-tab-panel value="groups" label="组配置">
         <div class="mcp-card config-page__panel">
           <div class="config-page__editor-header">
-            <h3 class="config-page__editor-title">用户管理</h3>
+            <h3 class="config-page__editor-title">组配置</h3>
             <div class="config-page__editor-actions">
               <t-button size="small" variant="outline" @click="handleValidate('groups')">
                 <template #icon><CheckCircleIcon /></template>
@@ -77,10 +77,10 @@
             </div>
           </div>
           <t-textarea
-            v-model="usersConfigText"
+            v-model="groupsConfigText"
             :autosize="{ minRows: 12, maxRows: 30 }"
             class="config-page__textarea"
-            placeholder="用户配置 JSON"
+            placeholder="组配置 JSON"
           />
         </div>
       </t-tab-panel>
@@ -247,7 +247,7 @@ const backupLoading = ref(false);
 
 const mcpConfigText = ref('{}');
 const systemConfigText = ref('{}');
-const usersConfigText = ref('{}');
+const groupsConfigText = ref('{}');
 
 const backups = ref<ConfigBackup[]>([]);
 const validationResult = ref<ConfigValidationResponse | null>(null);
@@ -290,7 +290,7 @@ function getConfigTextByType(type: ConfigType): string {
     case 'system':
       return systemConfigText.value;
     case 'groups':
-      return usersConfigText.value;
+      return groupsConfigText.value;
     default:
       return '{}';
   }
@@ -302,7 +302,7 @@ async function loadConfig(): Promise<void> {
     const data: ConfigData = await configService.getCurrentConfig();
     mcpConfigText.value = JSON.stringify(data.mcp, null, 2);
     systemConfigText.value = JSON.stringify(data.system, null, 2);
-    usersConfigText.value = JSON.stringify(data.system.users ?? {}, null, 2);
+    groupsConfigText.value = JSON.stringify(data.groups, null, 2);
   } catch (err) {
     const message = err instanceof Error ? err.message : '加载配置失败';
     MessagePlugin.error(message);
