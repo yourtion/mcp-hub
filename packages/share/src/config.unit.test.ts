@@ -212,7 +212,6 @@ describe('Config Types', () => {
             id: '1',
             username: 'admin',
             password: 'password',
-            passwordHash: 'hash',
             role: 'admin',
             groups: ['group1'],
             createdAt: '2024-01-01T00:00:00Z',
