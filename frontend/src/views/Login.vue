@@ -42,10 +42,6 @@
           </t-input>
         </t-form-item>
 
-        <t-form-item>
-          <t-checkbox v-model="formData.remember">记住我</t-checkbox>
-        </t-form-item>
-
         <t-form-item v-if="errorMessage" class="login-error-item">
           <div class="login-error">{{ errorMessage }}</div>
         </t-form-item>
@@ -84,7 +80,6 @@ const errorMessage = ref('');
 const formData = reactive({
   username: '',
   password: '',
-  remember: false,
 });
 
 const formRules: Record<string, FormRule[]> = {
