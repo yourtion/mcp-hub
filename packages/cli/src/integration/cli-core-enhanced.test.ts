@@ -4,6 +4,8 @@
  */
 
 import { McpServiceManager } from '@mcp-core/mcp-hub-core';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CliConfigManager } from '../config/cli-config-manager.js';
 import { McpProtocolHandler } from '../protocol/mcp-protocol-handler.js';
@@ -262,9 +264,11 @@ describe('CLI与核心包交互集成测试', () => {
         '@modelcontextprotocol/sdk/server/stdio.js'
       );
 
-      vi.mocked(McpServer).mockImplementation(() => mockServer as any);
+      vi.mocked(McpServer).mockImplementation(
+        () => mockServer as unknown as McpServer,
+      );
       vi.mocked(StdioServerTransport).mockImplementation(
-        () => mockTransport as any,
+        () => mockTransport as unknown as StdioServerTransport,
       );
 
       vi.spyOn(coreService, 'initializeFromConfig').mockResolvedValue();
@@ -291,9 +295,11 @@ describe('CLI与核心包交互集成测试', () => {
         '@modelcontextprotocol/sdk/server/stdio.js'
       );
 
-      vi.mocked(McpServer).mockImplementation(() => mockServer as any);
+      vi.mocked(McpServer).mockImplementation(
+        () => mockServer as unknown as McpServer,
+      );
       vi.mocked(StdioServerTransport).mockImplementation(
-        () => mockTransport as any,
+        () => mockTransport as unknown as StdioServerTransport,
       );
 
       vi.spyOn(coreService, 'initializeFromConfig').mockResolvedValue();
@@ -333,9 +339,11 @@ describe('CLI与核心包交互集成测试', () => {
         '@modelcontextprotocol/sdk/server/stdio.js'
       );
 
-      vi.mocked(McpServer).mockImplementation(() => mockServer as any);
+      vi.mocked(McpServer).mockImplementation(
+        () => mockServer as unknown as McpServer,
+      );
       vi.mocked(StdioServerTransport).mockImplementation(
-        () => mockTransport as any,
+        () => mockTransport as unknown as StdioServerTransport,
       );
 
       vi.spyOn(coreService, 'initializeFromConfig').mockResolvedValue();

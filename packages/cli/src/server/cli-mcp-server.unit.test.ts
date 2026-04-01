@@ -5,6 +5,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CliConfig } from '../types';
 
+/**
+ * 用于访问 CliMcpServer 私有属性的接口
+ */
+interface CliMcpServerInternals {
+  createServiceManager: () => unknown;
+  registerTools: () => Promise<void>;
+  protocolHandler: unknown;
+  coreService: unknown;
+  server: unknown;
+}
+
 // 创建 mock 实例
 const mockServiceManager = {
   initializeFromConfig: vi.fn().mockResolvedValue(undefined),
@@ -29,31 +40,15 @@ const mockServiceManager = {
 };
 
 // Mock 核心包
-vi.mock('@mcp-core/mcp-hub-core', () => {
-  return {
-    McpServiceManager: vi.fn().mockImplementation(() => mockServiceManager),
-    performanceOptimizer: {
-      optimizeStartupTime: vi.fn().mockImplementation(async (fn) => fn()),
-      optimizeParallelInitialization: vi
-        .fn()
-        .mockImplementation(async (tasks) => {
-          return Promise.all(tasks.map((task: any) => task()));
-        }),
-      getMetrics: vi.fn().mockReturnValue({}),
-    },
-  };
-});
+vi.mock('@mcp-core/mcp-hub-core', () => ({
+  McpServiceManager: vi.fn().mockImplementation(() => mockServiceManager),
+}));
 
 // 创建 mock transport 实例
 const mockTransport = {
   start: vi.fn().mockResolvedValue(undefined),
   close: vi.fn().mockResolvedValue(undefined),
 };
-
-// Mock 核心包
-vi.mock('@mcp-core/mcp-hub-core', () => ({
-  McpServiceManager: vi.fn().mockImplementation(() => mockServiceManager),
-}));
 
 // 创建 mock MCP server 实例
 const mockMcpServer = {
@@ -94,16 +89,18 @@ describe('CliMcpServer', () => {
 
     server = new CliMcpServer();
 
+    const serverInternals = server as unknown as CliMcpServerInternals;
+
     // 直接 spy createServiceManager 方法
-    vi.spyOn(server as any, 'createServiceManager').mockReturnValue(
+    vi.spyOn(serverInternals, 'createServiceManager').mockReturnValue(
       mockServiceManager,
     );
 
     // Mock registerTools 方法以避免 registerTool 错误
-    vi.spyOn(server as any, 'registerTools').mockResolvedValue(undefined);
+    vi.spyOn(serverInternals, 'registerTools').mockResolvedValue(undefined);
 
     // 直接设置 server 属性以确保 mock 正确工作
-    (server as any).server = mockMcpServer;
+    serverInternals.server = mockMcpServer;
 
     mockConfig = {
       servers: {
@@ -161,7 +158,7 @@ describe('CliMcpServer', () => {
 
     it('应该在初始化失败时清理资源', async () => {
       // Mock核心服务初始化失败
-      const mockServiceManager = {
+      const failingMockServiceManager = {
         initializeFromConfig: vi
           .fn()
           .mockRejectedValue(new Error('初始化失败')),
@@ -175,10 +172,11 @@ describe('CliMcpServer', () => {
       // 创建一个新的服务器实例来测试失败情况
       const failingServer = new CliMcpServer();
 
-      // 使用反射或其他方式模拟失败
-      vi.spyOn(failingServer as any, 'createServiceManager').mockReturnValue(
-        mockServiceManager,
-      );
+      // 使用反射模拟失败
+      vi.spyOn(
+        failingServer as unknown as CliMcpServerInternals,
+        'createServiceManager',
+      ).mockReturnValue(failingMockServiceManager);
 
       await expect(failingServer.initialize(mockConfig)).rejects.toThrow(
         '初始化失败',
@@ -274,11 +272,13 @@ describe('CliMcpServer', () => {
       const status = server.getStatus();
       expect(status.initialized).toBe(true);
 
+      const serverInternals = server as unknown as CliMcpServerInternals;
+
       // 验证协议处理器已创建
-      expect((server as any).protocolHandler).toBeDefined();
+      expect(serverInternals.protocolHandler).toBeDefined();
 
       // 验证服务管理器已创建
-      expect((server as any).coreService).toBeDefined();
+      expect(serverInternals.coreService).toBeDefined();
     });
   });
 });

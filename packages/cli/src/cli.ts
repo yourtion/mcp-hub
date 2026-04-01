@@ -334,7 +334,7 @@ function setupLogging(verbose: boolean): void {
     const originalLog = console.log;
     const _originalDebug = console.debug;
 
-    console.debug = (...args: any[]) => {
+    console.debug = (...args: unknown[]) => {
       originalLog('[DEBUG]', ...args);
     };
   } else {

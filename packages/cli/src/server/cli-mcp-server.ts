@@ -12,6 +12,24 @@ import { McpProtocolHandler } from '../protocol/mcp-protocol-handler.js';
 import type { CliConfig } from '../types';
 
 /**
+ * McpServer 注册工具的接口
+ * 由于 SDK 使用 zod v3 而项目使用 zod v4，定义兼容的接口来避免类型不匹配。
+ * 返回类型使用 Record<string, unknown> 以兼容 SDK 内部的 zod v3 output 类型。
+ */
+interface McpServerRegisterTool {
+  registerTool: (
+    name: string,
+    config: {
+      description?: string;
+      inputSchema?: Record<string, z.ZodTypeAny>;
+    },
+    handler: (params: {
+      args?: Record<string, unknown>;
+    }) => Promise<Record<string, unknown>>,
+  ) => unknown;
+}
+
+/**
  * CLI MCP服务器类
  * 聚合多个MCP服务并通过stdio提供统一的MCP接口
  */
@@ -215,7 +233,7 @@ export class CliMcpServer {
       // 为每个工具注册处理器
       for (const toolInfo of toolInfos) {
         const toolHandler = this.createToolHandler(toolInfo.name);
-        (this.server as any).registerTool(
+        (this.server as unknown as McpServerRegisterTool).registerTool(
           toolInfo.name,
           {
             description:
