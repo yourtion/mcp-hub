@@ -34,6 +34,34 @@ export enum McpErrorCode {
 }
 
 /**
+ * 带有额外属性的HTTP错误类
+ */
+export class HttpError extends Error {
+  public readonly status: number;
+  public readonly statusText: string;
+  public readonly response: HttpResponse;
+  public readonly mcpCode: McpErrorCode;
+  public readonly mcpData: unknown;
+
+  constructor(
+    message: string,
+    status: number,
+    statusText: string,
+    response: HttpResponse,
+    mcpCode: McpErrorCode,
+    mcpData: unknown,
+  ) {
+    super(message);
+    this.name = 'HttpError';
+    this.status = status;
+    this.statusText = statusText;
+    this.response = response;
+    this.mcpCode = mcpCode;
+    this.mcpData = mcpData;
+  }
+}
+
+/**
  * MCP错误类
  */
 export class McpError extends Error {
@@ -240,15 +268,14 @@ export class ResponseProcessorImpl implements ResponseProcessor {
   processErrorResponse(response: HttpResponse, errorPath?: string): Error {
     const mcpError = this.processErrorResponseAsMcp(response, errorPath);
 
-    const error = new Error(mcpError.message);
-    // 添加额外的错误信息
-    (error as any).status = response.status;
-    (error as any).statusText = response.statusText;
-    (error as any).response = response;
-    (error as any).mcpCode = mcpError.code;
-    (error as any).mcpData = mcpError.data;
-
-    return error;
+    return new HttpError(
+      mcpError.message,
+      response.status,
+      response.statusText,
+      response,
+      mcpError.code,
+      mcpError.data,
+    );
   }
 
   /**

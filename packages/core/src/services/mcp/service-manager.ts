@@ -181,28 +181,36 @@ export class McpServiceManager implements McpServiceManagerInterface {
       const serverNames = serverEntries.map(([serverId]) => serverId);
 
       // 并发初始化所有服务器，但不因部分失败而整体失败
-      let results: any[];
+      let settledResults: PromiseSettledResult<void>[];
       try {
         // 尝试使用性能优化器进行并行初始化
-        results = await performanceOptimizer.optimizeParallelInitialization(
-          initTasks,
-          serverNames,
-        );
+        const initResults =
+          await performanceOptimizer.optimizeParallelInitialization(
+            initTasks,
+            serverNames,
+          );
         // 将成功结果转换为Promise.allSettled格式
-        results = results.map((result) => ({
-          status: 'fulfilled',
-          value: result,
-        }));
+        settledResults = initResults.map(
+          (result): PromiseSettledResult<void> => ({
+            status: 'fulfilled',
+            value: result,
+          }),
+        );
       } catch (_error) {
         // 如果并行初始化失败，回退到Promise.allSettled
-        results = await Promise.allSettled(initTasks.map((task) => task()));
+        settledResults = await Promise.allSettled(
+          initTasks.map((task) => task()),
+        );
       }
 
       // 检查是否有严重错误（所有服务器都失败）
-      const failures = results.filter(
-        (result: any) => result.status === 'rejected',
+      const failures = settledResults.filter(
+        (result) => result.status === 'rejected',
       );
-      if (failures.length === results.length && results.length > 0) {
+      if (
+        failures.length === settledResults.length &&
+        settledResults.length > 0
+      ) {
         // 如果所有服务器都失败了，抛出第一个错误
         const firstFailure = failures[0] as PromiseRejectedResult;
         throw firstFailure.reason;
