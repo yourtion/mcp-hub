@@ -117,7 +117,6 @@ export function setupTestConfig(enableAuth: boolean = true): string {
             id: 'admin-user-id',
             username: 'admin',
             password: 'admin123',
-            passwordHash: '', // 将由 AuthService 自动生成
             role: 'admin',
             groups: [],
             createdAt: new Date().toISOString(),
@@ -169,6 +168,7 @@ export function cleanupTestConfig(): void {
  * @param authToken 认证token
  * @returns 带认证的请求函数
  */
+// biome-ignore lint/suspicious/noExplicitAny: test utility for dynamic app
 export function createAuthenticatedRequest(testApp: any, authToken: string) {
   return async (path: string, init?: RequestInit) => {
     const headers = {
@@ -203,6 +203,7 @@ export class SilentLogger {
 /**
  * 安全地解析JSON响应，处理可能的解析错误
  */
+// biome-ignore lint/suspicious/noExplicitAny: dynamic JSON parsing
 export async function safeJsonParse(response: Response): Promise<any> {
   let text: string | null = null;
 
@@ -313,6 +314,7 @@ export function createMockServer(id: string, status: string = 'connected') {
  * 验证API响应的基本结构
  */
 export function validateApiResponse(
+  // biome-ignore lint/suspicious/noExplicitAny: dynamic validation
   data: any,
   requiredFields: string[],
 ): boolean {

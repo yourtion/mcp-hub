@@ -465,7 +465,6 @@ describe('ConfigService', () => {
             id: 'admin',
             username: 'admin',
             password: 'admin',
-            passwordHash: 'hash',
             role: 'admin',
             groups: [],
             createdAt: '2024-01-01T00:00:00.000Z',

@@ -16,7 +16,7 @@ import {
 } from './test-utils.js';
 
 describe('快速场景测试', () => {
-  let testApp: any;
+  let testApp: typeof app;
   let restoreConsole: () => void;
   let authToken: string;
   let authRequest: (path: string, init?: RequestInit) => Promise<Response>;
@@ -113,7 +113,7 @@ describe('快速场景测试', () => {
 
       // 2. 检查前几个组的状态（限制数量）
       const groupsToCheck = groupsData.data.groups.slice(0, 2);
-      const healthCheckPromises = groupsToCheck.map((group: any) =>
+      const healthCheckPromises = groupsToCheck.map((group: { id: string }) =>
         authRequest(`/api/groups/${group.id}/health`),
       );
 
@@ -138,7 +138,7 @@ describe('快速场景测试', () => {
 
       // 限制批量操作的数量
       const batchGroups = groupsData.data.groups.slice(0, 2);
-      const batchRequests = batchGroups.map((group: any) => ({
+      const batchRequests = batchGroups.map((group: { id: string }) => ({
         detail: authRequest(`/api/groups/${group.id}`),
         tools: authRequest(`/api/groups/${group.id}/tools`),
       }));
@@ -179,7 +179,7 @@ describe('快速场景测试', () => {
         const healthChecks = await Promise.all(
           groupsData.data.groups
             .slice(0, samplesToCheck)
-            .map((group: any) =>
+            .map((group: { id: string }) =>
               testApp.request(`/api/groups/${group.id}/health`),
             ),
         );

@@ -43,8 +43,6 @@ describe('认证API', () => {
           id: 'testuser',
           username: 'testuser',
           password: 'password',
-          passwordHash:
-            '$2b$10$JtpRHnVSEK5EvQ6I3nDlkexOkwU7OEIu3Ikz4VQjnOoZoQJDwgZ/O',
           role: 'user',
           groups: ['test-group'],
           createdAt: '2024-01-01T00:00:00.000Z',
@@ -53,8 +51,6 @@ describe('认证API', () => {
           id: 'admin',
           username: 'admin',
           password: 'admin123',
-          passwordHash:
-            '$2b$10$JN67DsG/StdNfpliX9M3EOt0qfp7jHD1CsL7zB76k3ygcJHuxHBEC',
           role: 'admin',
           groups: ['admin-group'],
           createdAt: '2024-01-01T00:00:00.000Z',

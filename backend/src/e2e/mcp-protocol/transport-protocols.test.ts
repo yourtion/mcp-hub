@@ -14,7 +14,7 @@ import {
 } from '../test-utils.js';
 
 describe('MCP传输协议端到端测试', () => {
-  let _testApp: any;
+  let _testApp: unknown;
   let restoreConsole: () => void;
 
   beforeAll(async () => {
@@ -414,7 +414,7 @@ describe('MCP传输协议端到端测试', () => {
             try {
               await client.callTool({
                 name: '',
-                arguments: null as any,
+                arguments: null as unknown as Record<string, unknown>,
               });
               return null;
             } catch (error) {

@@ -8,7 +8,7 @@ import { app } from '../app.js';
 import { logger } from '../utils/logger.js';
 
 export class TestServer {
-  private server: any = null;
+  private server: ReturnType<typeof serve> | null = null;
   private port: number;
 
   constructor(port: number = 3000) {

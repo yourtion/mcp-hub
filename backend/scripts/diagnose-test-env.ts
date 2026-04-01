@@ -108,7 +108,6 @@ try {
         id: 'admin-id',
         username: 'admin',
         password: 'admin123',
-        passwordHash: '',
         role: 'admin',
         groups: [],
         createdAt: new Date().toISOString(),

@@ -19,11 +19,12 @@ vi.mock('@mcp-core/mcp-hub-core/api-to-mcp', () => ({
 
 describe('ApiToolIntegrationService', () => {
   let service: ApiToolIntegrationService;
+  // biome-ignore lint/suspicious/noExplicitAny: test mock accessing private members
   let mockApiServiceManager: any;
 
   beforeEach(() => {
     service = new ApiToolIntegrationService();
-    // Get the mocked service manager
+    // biome-ignore lint/suspicious/noExplicitAny: test accessing private member
     mockApiServiceManager = (service as any).apiServiceManager;
   });
 

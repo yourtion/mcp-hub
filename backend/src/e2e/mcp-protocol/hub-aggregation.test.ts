@@ -14,7 +14,7 @@ import {
 } from '../test-utils.js';
 
 describe('MCP Hub聚合功能端到端测试', () => {
-  let _testApp: any;
+  let _testApp: typeof app;
   let restoreConsole: () => void;
 
   beforeAll(async () => {

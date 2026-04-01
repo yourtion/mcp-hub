@@ -14,7 +14,7 @@ import {
 } from '../test-utils.js';
 
 describe('错误处理和恢复场景端到端测试', () => {
-  let testApp: any;
+  let testApp: typeof app;
   let restoreConsole: () => void;
 
   beforeAll(async () => {
