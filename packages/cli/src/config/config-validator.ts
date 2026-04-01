@@ -157,8 +157,10 @@ export class ConfigValidator {
 
     // 检查是否所有服务器都被禁用
     const allDisabled = serverEntries.every(
-      ([, config]: [string, any]) =>
-        config && typeof config === 'object' && config.disabled === true,
+      ([, config]: [string, unknown]) =>
+        config &&
+        typeof config === 'object' &&
+        (config as Record<string, unknown>).disabled === true,
     );
 
     if (allDisabled) {
@@ -191,7 +193,7 @@ export class ConfigValidator {
       return;
     }
 
-    const config = serverConfig as any;
+    const config = serverConfig as Record<string, unknown>;
 
     // 验证必需字段
     if (
@@ -246,7 +248,11 @@ export class ConfigValidator {
     }
 
     // 添加警告
-    if (config.timeout && config.timeout < 5000) {
+    if (
+      config.timeout &&
+      typeof config.timeout === 'number' &&
+      config.timeout < 5000
+    ) {
       result.warnings.push({
         path: [...basePath, 'timeout'],
         message: '超时时间可能过短',
@@ -254,7 +260,11 @@ export class ConfigValidator {
       });
     }
 
-    if (config.timeout && config.timeout > 300000) {
+    if (
+      config.timeout &&
+      typeof config.timeout === 'number' &&
+      config.timeout > 300000
+    ) {
       result.warnings.push({
         path: [...basePath, 'timeout'],
         message: '超时时间可能过长',
@@ -283,12 +293,12 @@ export class ConfigValidator {
       return;
     }
 
-    const config = logging as any;
+    const config = logging as Record<string, unknown>;
 
     // 验证日志级别
     if (config.level !== undefined) {
       const validLevels = ['debug', 'info', 'warn', 'error'];
-      if (!validLevels.includes(config.level)) {
+      if (!validLevels.includes(config.level as string)) {
         result.valid = false;
         result.errors.push({
           path: ['logging', 'level'],
@@ -334,7 +344,7 @@ export class ConfigValidator {
       return;
     }
 
-    const config = transport as any;
+    const config = transport as Record<string, unknown>;
 
     // 验证传输类型
     if (config.type !== undefined && config.type !== 'stdio') {

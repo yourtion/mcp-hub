@@ -4,6 +4,8 @@
  */
 
 import { McpServiceManager } from '@mcp-core/mcp-hub-core';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CliConfigManager } from '../config/cli-config-manager.js';
 import { McpProtocolHandler } from '../protocol/mcp-protocol-handler.js';
@@ -100,9 +102,11 @@ describe('CLI端到端测试', () => {
         '@modelcontextprotocol/sdk/server/stdio.js'
       );
 
-      vi.mocked(McpServer).mockImplementation(() => mockServer as any);
+      vi.mocked(McpServer).mockImplementation(
+        () => mockServer as unknown as McpServer,
+      );
       vi.mocked(StdioServerTransport).mockImplementation(
-        () => mockTransport as any,
+        () => mockTransport as unknown as StdioServerTransport,
       );
 
       // Mock核心服务方法
@@ -184,16 +188,16 @@ describe('CLI端到端测试', () => {
   describe('CLI错误处理和恢复测试', () => {
     it('应该能够处理配置文件错误', async () => {
       // 测试无效配置
-      const invalidConfig = {
+      const invalidConfig: CliConfig = {
         servers: {
           'invalid-server': {
-            type: 'invalid-type' as any,
+            type: 'invalid-type' as unknown as CliConfig['servers'][string]['type'],
             command: '',
             enabled: true,
           },
         },
         logging: {
-          level: 'invalid-level' as any,
+          level: 'invalid-level' as unknown as CliConfig['logging']['level'],
           format: 'json',
           outputs: ['console'],
         },
@@ -227,9 +231,11 @@ describe('CLI端到端测试', () => {
         '@modelcontextprotocol/sdk/server/stdio.js'
       );
 
-      vi.mocked(McpServer).mockImplementation(() => mockServer as any);
+      vi.mocked(McpServer).mockImplementation(
+        () => mockServer as unknown as McpServer,
+      );
       vi.mocked(StdioServerTransport).mockImplementation(
-        () => mockTransport as any,
+        () => mockTransport as unknown as StdioServerTransport,
       );
 
       vi.spyOn(coreService, 'initializeFromConfig').mockRejectedValue(
@@ -266,9 +272,11 @@ describe('CLI端到端测试', () => {
         '@modelcontextprotocol/sdk/server/stdio.js'
       );
 
-      vi.mocked(McpServer).mockImplementation(() => mockServer as any);
+      vi.mocked(McpServer).mockImplementation(
+        () => mockServer as unknown as McpServer,
+      );
       vi.mocked(StdioServerTransport).mockImplementation(
-        () => mockTransport as any,
+        () => mockTransport as unknown as StdioServerTransport,
       );
 
       vi.spyOn(coreService, 'initializeFromConfig').mockResolvedValue();
@@ -296,7 +304,7 @@ describe('CLI端到端测试', () => {
       } catch (error) {
         // 如果抛出异常，验证是MCP协议错误
         expect(error).toBeInstanceOf(Error);
-        expect((error as any).code).toBeDefined();
+        expect((error as Error & { code: unknown }).code).toBeDefined();
       }
 
       await cliServer.shutdown();
@@ -319,9 +327,11 @@ describe('CLI端到端测试', () => {
         '@modelcontextprotocol/sdk/server/stdio.js'
       );
 
-      vi.mocked(McpServer).mockImplementation(() => mockServer as any);
+      vi.mocked(McpServer).mockImplementation(
+        () => mockServer as unknown as McpServer,
+      );
       vi.mocked(StdioServerTransport).mockImplementation(
-        () => mockTransport as any,
+        () => mockTransport as unknown as StdioServerTransport,
       );
 
       // Mock多个工具
@@ -377,9 +387,11 @@ describe('CLI端到端测试', () => {
         '@modelcontextprotocol/sdk/server/stdio.js'
       );
 
-      vi.mocked(McpServer).mockImplementation(() => mockServer as any);
+      vi.mocked(McpServer).mockImplementation(
+        () => mockServer as unknown as McpServer,
+      );
       vi.mocked(StdioServerTransport).mockImplementation(
-        () => mockTransport as any,
+        () => mockTransport as unknown as StdioServerTransport,
       );
 
       vi.spyOn(coreService, 'initializeFromConfig').mockResolvedValue();
@@ -435,7 +447,9 @@ describe('CLI端到端测试', () => {
       };
 
       // 配置管理器应该能够处理旧格式
-      const result = await configManager.validateConfig(legacyConfig as any);
+      const result = await configManager.validateConfig(
+        legacyConfig as unknown as CliConfig,
+      );
       expect(result).toBeDefined();
     });
 
@@ -454,9 +468,11 @@ describe('CLI端到端测试', () => {
         '@modelcontextprotocol/sdk/server/stdio.js'
       );
 
-      vi.mocked(McpServer).mockImplementation(() => mockServer as any);
+      vi.mocked(McpServer).mockImplementation(
+        () => mockServer as unknown as McpServer,
+      );
       vi.mocked(StdioServerTransport).mockImplementation(
-        () => mockTransport as any,
+        () => mockTransport as unknown as StdioServerTransport,
       );
 
       vi.spyOn(coreService, 'initializeFromConfig').mockResolvedValue();

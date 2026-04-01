@@ -314,7 +314,7 @@ describe('ConfigValidator', () => {
       for (const level of validLevels) {
         const config: CliConfig = {
           servers: { test: { command: 'node' } },
-          logging: { level: level as any },
+          logging: { level: level as CliConfig['logging']['level'] },
         };
 
         const result = validator.validateConfig(config);

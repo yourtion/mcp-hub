@@ -3,7 +3,7 @@
  * 处理MCP协议的请求和响应格式化
  */
 
-import type { McpServiceManager } from '@mcp-core/mcp-hub-core';
+import type { McpServiceManager, ToolResult } from '@mcp-core/mcp-hub-core';
 import { createCliLogger } from '@mcp-core/mcp-hub-share';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
@@ -127,7 +127,7 @@ export class McpProtocolHandler {
    * 格式化工具调用响应
    */
   private formatToolCallResponse(
-    result: any,
+    result: ToolResult,
     toolName: string,
   ): CallToolResult {
     if (result.success) {
@@ -207,7 +207,7 @@ export class McpProtocolHandler {
     return (
       error instanceof Error &&
       'code' in error &&
-      typeof (error as any).code === 'number'
+      typeof (error as Error & { code: unknown }).code === 'number'
     );
   }
 
@@ -249,7 +249,7 @@ export class McpProtocolHandler {
       );
     }
 
-    const { name, arguments: args } = params as any;
+    const { name, arguments: args } = params as Record<string, unknown>;
 
     if (!name || typeof name !== 'string') {
       throw this.createMcpError(
