@@ -19,12 +19,13 @@ function applyTheme(m: ThemeMode) {
   document.documentElement.setAttribute('data-theme', resolved);
 }
 
-export function useTheme() {
-  watch(mode, (val) => {
-    localStorage.setItem(STORAGE_KEY, val);
-    applyTheme(val);
-  });
+// 模块级只创建一次 watcher
+watch(mode, (val) => {
+  localStorage.setItem(STORAGE_KEY, val);
+  applyTheme(val);
+});
 
+export function useTheme() {
   const resolvedTheme = () => {
     return mode.value === 'auto' ? getSystemPreference() : mode.value;
   };
