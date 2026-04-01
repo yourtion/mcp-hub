@@ -253,7 +253,7 @@ const handleReset = () => {
     for (const [name, prop] of Object.entries(tool.value.inputSchema.properties)) {
       const p = prop as JsonSchemaProperty;
       if (p.default !== undefined) {
-        formData[name] = p.default;
+        formData[name] = typeof p.default === 'object' ? JSON.stringify(p.default, null, 2) : p.default;
       } else if (p.type === 'boolean') {
         formData[name] = false;
       } else {
@@ -278,7 +278,7 @@ onMounted(async () => {
       for (const [name, prop] of Object.entries(tool.value.inputSchema.properties)) {
         const p = prop as JsonSchemaProperty;
         if (p.default !== undefined) {
-          formData[name] = p.default;
+          formData[name] = typeof p.default === 'object' ? JSON.stringify(p.default, null, 2) : p.default;
         } else if (p.type === 'boolean') {
           formData[name] = false;
         } else {
