@@ -3,6 +3,8 @@
  * 使用简化的测试配置，确保基本功能正常工作
  */
 
+import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import type { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   cleanupTestEnvironment,
@@ -216,7 +218,10 @@ describe('基础MCP协议端到端测试', () => {
       }
 
       const clientCount = 3;
-      const connections: Array<{ client: any; transport: any }> = [];
+      const connections: Array<{
+        client: Client;
+        transport: SSEClientTransport;
+      }> = [];
 
       try {
         // 创建多个并发连接

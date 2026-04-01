@@ -15,7 +15,7 @@ import {
 } from './test-utils.js';
 
 describe('稳定的端到端测试', () => {
-  let testApp: any;
+  let testApp: typeof app;
   let restoreConsole: () => void;
   let authToken: string;
 

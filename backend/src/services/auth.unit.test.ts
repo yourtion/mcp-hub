@@ -40,8 +40,6 @@ describe('AuthService', () => {
           id: 'testuser',
           username: 'testuser',
           password: 'password',
-          passwordHash:
-            '$2b$10$JtpRHnVSEK5EvQ6I3nDlkexOkwU7OEIu3Ikz4VQjnOoZoQJDwgZ/O',
           role: 'user',
           groups: ['test-group'],
           createdAt: '2024-01-01T00:00:00.000Z',

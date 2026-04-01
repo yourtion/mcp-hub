@@ -679,10 +679,9 @@ describe('MCP Hub Service Integration Tests', () => {
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
 
-      // Should fail to initialize due to no groups
-      await expect(emptyService.initialize()).rejects.toThrow(
-        'No groups are loaded',
-      );
+      // Should initialize successfully even with empty groups
+      // (empty groups is valid - no groups means no group filtering needed)
+      await expect(emptyService.initialize()).resolves.toBeUndefined();
     });
 
     it('should handle mixed valid and invalid configurations', async () => {

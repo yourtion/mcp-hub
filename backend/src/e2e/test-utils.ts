@@ -125,7 +125,6 @@ export function setupTestConfig(enableAuth: boolean = true): string {
             id: 'admin-user-id',
             username: 'admin',
             password: 'admin123',
-            passwordHash: '', // 将由 AuthService 自动生成
             role: 'admin',
             groups: [],
             createdAt: new Date().toISOString(),
@@ -177,6 +176,8 @@ export function cleanupTestConfig(): void {
  * @param authToken 认证token
  * @returns 带认证的请求函数
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- e2e test utility, dynamic app type
+// biome-ignore lint/suspicious/noExplicitAny: test utility for dynamic app
 export function createAuthenticatedRequest(testApp: any, authToken: string) {
   return async (path: string, init?: RequestInit) => {
     const headers = {
@@ -211,6 +212,8 @@ export class SilentLogger {
 /**
  * 安全地解析JSON响应，处理可能的解析错误
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- e2e test utility, dynamic JSON parsing
+// biome-ignore lint/suspicious/noExplicitAny: dynamic JSON parsing
 export async function safeJsonParse(response: Response): Promise<any> {
   try {
     const text = await response.text();
@@ -304,7 +307,7 @@ export function createMockServer(id: string, status: string = 'connected') {
  * 验证API响应的基本结构
  */
 export function validateApiResponse(
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   requiredFields: string[],
 ): boolean {
   if (!data || typeof data !== 'object') {
@@ -432,6 +435,8 @@ export function generateTestReport(
 /**
  * 验证端到端测试结果
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- e2e test utility
+// biome-ignore lint/suspicious/noExplicitAny: e2e test utility
 export function validateE2EResult(
   result: any,
   expectedStatus: number,

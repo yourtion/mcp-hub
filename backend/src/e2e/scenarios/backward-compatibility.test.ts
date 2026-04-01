@@ -13,7 +13,7 @@ import {
 } from '../test-utils.js';
 
 describe('向后兼容性端到端测试', () => {
-  let testApp: any;
+  let testApp: typeof app;
   let restoreConsole: () => void;
 
   beforeAll(async () => {

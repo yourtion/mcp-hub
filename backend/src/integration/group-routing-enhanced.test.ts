@@ -16,6 +16,7 @@ import {
 } from './test-utils.js';
 
 describe('组路由功能集成测试', () => {
+  // biome-ignore lint/suspicious/noExplicitAny: dynamic test app
   let testApp: any;
   let restoreConsole: () => void;
   let authToken: string;
