@@ -31,7 +31,6 @@ export const SystemConfigSchema = z.object({
       id: z.string(),
       username: z.string(),
       password: z.string().min(1, { error: '密码不能为空' }),
-      passwordHash: z.string(),
       role: z.string(),
       groups: z.array(z.string()),
       createdAt: z.string(),
