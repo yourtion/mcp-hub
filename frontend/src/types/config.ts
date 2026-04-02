@@ -71,7 +71,7 @@ export interface McpServerConfig {
   env?: Record<string, string>;
   cwd?: string;
   transport?: {
-    type: 'stdio' | 'sse' | 'websocket';
+    type: 'stdio' | 'sse' | 'streaming';
     url?: string;
     headers?: Record<string, string>;
   };

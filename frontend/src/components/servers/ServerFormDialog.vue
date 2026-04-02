@@ -45,14 +45,14 @@
         />
       </t-form-item>
 
-      <t-form-item v-if="formData.type === 'sse' || formData.type === 'websocket'" label="URL" name="url">
+      <t-form-item v-if="formData.type === 'sse' || formData.type === 'streaming'" label="URL" name="url">
         <t-input
           v-model="formData.url"
           placeholder="例如: http://localhost:3000/sse"
         />
       </t-form-item>
 
-      <t-form-item v-if="formData.type === 'sse' || formData.type === 'websocket'" label="请求头 (Headers)" name="headers">
+      <t-form-item v-if="formData.type === 'sse' || formData.type === 'streaming'" label="请求头 (Headers)" name="headers">
         <t-textarea
           v-model="formData.headersText"
           placeholder='JSON 格式，例如: {"Authorization": "Bearer xxx"}'
@@ -106,7 +106,7 @@ const dialogTitle = computed(() =>
 const typeOptions = [
   { label: 'Stdio', value: 'stdio' },
   { label: 'SSE', value: 'sse' },
-  { label: 'WebSocket', value: 'websocket' },
+  { label: 'Streaming HTTP', value: 'streaming' },
 ];
 
 interface FormState {
@@ -184,7 +184,7 @@ function parseJsonField(text: string): Record<string, string> | undefined {
 
 function buildConfig() {
   const isStdio = formData.type === 'stdio';
-  const isRemote = formData.type === 'sse' || formData.type === 'websocket';
+  const isRemote = formData.type === 'sse' || formData.type === 'streaming';
 
   return {
     type: formData.type,

@@ -66,8 +66,8 @@ export class DefaultConfigGenerator {
       name: 'Fetch',
       description: 'Web fetching and HTTP requests',
       config: {
-        command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-fetch'],
+        command: 'uvx',
+        args: ['mcp-server-fetch'],
         disabled: false,
       },
     },
@@ -76,8 +76,8 @@ export class DefaultConfigGenerator {
       name: 'Time',
       description: 'Time and date functionality',
       config: {
-        command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-time'],
+        command: 'uvx',
+        args: ['mcp-server-time'],
         disabled: false,
       },
     },
@@ -89,6 +89,15 @@ export class DefaultConfigGenerator {
         command: 'npx',
         args: ['-y', '@modelcontextprotocol/server-sequential-thinking'],
         disabled: false,
+      },
+    },
+    context7: {
+      id: 'context7',
+      name: 'Context7',
+      description: 'Up-to-date documentation and code examples for any library',
+      config: {
+        type: 'streaming',
+        url: 'https://mcp.context7.com/mcp',
       },
     },
     filesystem: {
@@ -151,7 +160,12 @@ export class DefaultConfigGenerator {
   };
 
   // 默认使用的服务器预设（用于 --init）
-  private readonly defaultPresets = ['fetch', 'time', 'sequential-thinking'];
+  private readonly defaultPresets = [
+    'fetch',
+    'time',
+    'sequential-thinking',
+    'context7',
+  ];
 
   constructor(options: GeneratorOptions = {}) {
     this.options = {

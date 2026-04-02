@@ -88,22 +88,11 @@ export async function getAllConfig(): Promise<
   const groups = await getGroupConfigInstance().read();
   const system = await getSystemConfigInstance().read();
 
-  const configDir = getConfigDir();
-  const _systemPath = path.resolve(configDir, 'system.json');
   const apiToolsPath = getApiToolsPath();
 
-  // 检查API工具配置文件是否存在
-  let apiToolsConfigPath: string | undefined;
-  try {
-    const fs = await import('node:fs/promises');
-    await fs.access(apiToolsPath);
-    apiToolsConfigPath = apiToolsPath;
-  } catch {
-    // API工具配置文件不存在，这是可选的
-    apiToolsConfigPath = undefined;
-  }
-
-  return { mcps, groups, system, apiToolsConfigPath };
+  // API工具配置路径：始终返回路径，即使文件不存在
+  // 这样服务可以初始化并在创建配置时自动创建文件
+  return { mcps, groups, system, apiToolsConfigPath: apiToolsPath };
 }
 
 /**

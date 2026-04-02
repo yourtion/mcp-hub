@@ -6,7 +6,7 @@ export type ServerStatus =
   | 'connecting'
   | 'error';
 
-export type ServerType = 'stdio' | 'sse' | 'websocket';
+export type ServerType = 'stdio' | 'sse' | 'streaming';
 
 export interface ServerConfig {
   type: ServerType;

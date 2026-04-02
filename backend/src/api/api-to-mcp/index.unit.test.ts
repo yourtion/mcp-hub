@@ -442,4 +442,56 @@ describe('API to MCP API Routes', () => {
       expect(body.error.message).toBe('API配置 non-existent 不存在');
     });
   });
+
+  describe('服务不可用场景', () => {
+    it('服务未注入到上下文时应返回500错误', async () => {
+      // 创建一个没有注入服务的 app
+      const appWithoutService = new Hono();
+      appWithoutService.route('/api/api-to-mcp', apiToMcpRoutes);
+
+      const response = await appWithoutService.request(
+        '/api/api-to-mcp/configs',
+        {
+          method: 'GET' as const,
+          headers: {
+            Authorization: 'Bearer test-token',
+          },
+        },
+      );
+
+      expect(response.status).toBe(500);
+    });
+
+    it('创建配置缺少必填字段时应返回失败', async () => {
+      const incompleteConfig = {
+        config: {
+          id: '',
+          name: '',
+          description: '',
+          api: { url: '', method: '' },
+          parameters: { type: 'object' as const, properties: {} },
+          response: {},
+        },
+      };
+
+      vi.mocked(mockApiToMcpService.createConfig).mockResolvedValue({
+        success: false,
+        message: '创建配置失败: 配置ID不能为空',
+      });
+
+      const response = await app.request('/api/api-to-mcp/configs', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer test-token',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(incompleteConfig),
+      });
+
+      expect(response.status).toBe(400);
+      const body = await response.json();
+      expect(body.success).toBe(false);
+      expect(body.error.message).toContain('配置ID不能为空');
+    });
+  });
 });

@@ -7,6 +7,8 @@ import { ServerManager } from './server_manager.js';
 // Mock the MCP SDK
 vi.mock('@modelcontextprotocol/sdk/client/index.js');
 vi.mock('@modelcontextprotocol/sdk/client/stdio.js');
+vi.mock('@modelcontextprotocol/sdk/client/sse.js');
+vi.mock('@modelcontextprotocol/sdk/client/streamableHttp.js');
 vi.mock('../utils/logger.js');
 
 const MockClient = vi.mocked(Client);
@@ -348,6 +350,246 @@ describe('ServerManager', () => {
     });
   });
 
+  describe('SSE server connections', () => {
+    it('should connect to SSE server successfully', async () => {
+      const sseConfig: Record<string, ServerConfig> = {
+        'sse-server': {
+          type: 'sse',
+          url: 'http://localhost:8080/sse',
+          headers: { Authorization: 'Bearer test-token' },
+          enabled: true,
+        },
+      };
+
+      const sseManager = new ServerManager(sseConfig);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await sseManager.initialize();
+
+      const servers = sseManager.getAllServers();
+      const server = servers.get('sse-server');
+
+      expect(server?.status).toBe(ServerStatus.CONNECTED);
+      expect(mockClient.connect).toHaveBeenCalledTimes(1);
+
+      await sseManager.shutdown();
+    });
+
+    it('should handle SSE server connection failure', async () => {
+      const sseConfig: Record<string, ServerConfig> = {
+        'sse-fail': {
+          type: 'sse',
+          url: 'http://localhost:9999/sse',
+          enabled: true,
+        },
+      };
+
+      const sseManager = new ServerManager(sseConfig);
+      mockClient.connect.mockRejectedValue(new Error('SSE connection refused'));
+
+      await sseManager.initialize();
+
+      const servers = sseManager.getAllServers();
+      const server = servers.get('sse-fail');
+
+      expect(server?.status).toBe(ServerStatus.ERROR);
+      expect(server?.lastError?.message).toBe('SSE connection refused');
+
+      await sseManager.shutdown();
+    });
+
+    it('should discover tools from SSE server', async () => {
+      const sseConfig: Record<string, ServerConfig> = {
+        'sse-tools': {
+          type: 'sse',
+          url: 'http://localhost:8080/sse',
+          enabled: true,
+        },
+      };
+
+      const mockTools = [
+        { name: 'sse-tool', description: 'SSE tool', inputSchema: {} },
+      ];
+
+      const sseManager = new ServerManager(sseConfig);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: mockTools });
+
+      await sseManager.initialize();
+
+      const servers = sseManager.getAllServers();
+      const server = servers.get('sse-tools');
+
+      expect(server?.tools).toHaveLength(1);
+      expect(server?.tools[0].name).toBe('sse-tool');
+      expect(server?.tools[0].serverId).toBe('sse-tools');
+
+      await sseManager.shutdown();
+    });
+  });
+
+  describe('Streaming (Streamable HTTP) server connections', () => {
+    it('should connect to streaming server successfully', async () => {
+      const streamingConfig: Record<string, ServerConfig> = {
+        'streaming-server': {
+          type: 'streaming',
+          url: 'https://mcp.example.com/mcp',
+          headers: { 'X-API-Key': 'test-key' },
+          enabled: true,
+        },
+      };
+
+      const streamingManager = new ServerManager(streamingConfig);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await streamingManager.initialize();
+
+      const servers = streamingManager.getAllServers();
+      const server = servers.get('streaming-server');
+
+      expect(server?.status).toBe(ServerStatus.CONNECTED);
+      expect(mockClient.connect).toHaveBeenCalledTimes(1);
+
+      await streamingManager.shutdown();
+    });
+
+    it('should handle streaming server connection failure', async () => {
+      const streamingConfig: Record<string, ServerConfig> = {
+        'streaming-fail': {
+          type: 'streaming',
+          url: 'https://mcp.example.com/mcp',
+          enabled: true,
+        },
+      };
+
+      const streamingManager = new ServerManager(streamingConfig);
+      mockClient.connect.mockRejectedValue(
+        new Error('Streaming connection failed'),
+      );
+
+      await streamingManager.initialize();
+
+      const servers = streamingManager.getAllServers();
+      const server = servers.get('streaming-fail');
+
+      expect(server?.status).toBe(ServerStatus.ERROR);
+      expect(server?.lastError?.message).toBe('Streaming connection failed');
+
+      await streamingManager.shutdown();
+    });
+
+    it('should discover tools from streaming server', async () => {
+      const streamingConfig: Record<string, ServerConfig> = {
+        context7: {
+          type: 'streaming',
+          url: 'https://mcp.context7.com/mcp',
+          enabled: true,
+        },
+      };
+
+      const mockTools = [
+        {
+          name: 'resolve-library-id',
+          description: 'Resolve library ID',
+          inputSchema: {},
+        },
+        {
+          name: 'get-library-docs',
+          description: 'Get library docs',
+          inputSchema: {},
+        },
+      ];
+
+      const streamingManager = new ServerManager(streamingConfig);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: mockTools });
+
+      await streamingManager.initialize();
+
+      const servers = streamingManager.getAllServers();
+      const server = servers.get('context7');
+
+      expect(server?.tools).toHaveLength(2);
+      expect(server?.tools[0].name).toBe('resolve-library-id');
+      expect(server?.tools[1].name).toBe('get-library-docs');
+
+      await streamingManager.shutdown();
+    });
+
+    it('should execute tools on streaming server', async () => {
+      const streamingConfig: Record<string, ServerConfig> = {
+        'streaming-server': {
+          type: 'streaming',
+          url: 'https://mcp.example.com/mcp',
+          enabled: true,
+        },
+      };
+
+      const streamingManager = new ServerManager(streamingConfig);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await streamingManager.initialize();
+
+      const mockResult = { content: [{ type: 'text', text: 'docs result' }] };
+      mockClient.callTool.mockResolvedValue(mockResult);
+
+      const result = await streamingManager.executeToolOnServer(
+        'streaming-server',
+        'get-library-docs',
+        { query: 'react' },
+      );
+
+      expect(result).toEqual(mockResult);
+      expect(mockClient.callTool).toHaveBeenCalledWith({
+        name: 'get-library-docs',
+        arguments: { query: 'react' },
+      });
+
+      await streamingManager.shutdown();
+    });
+  });
+
+  describe('mixed server types', () => {
+    it('should initialize stdio, SSE, and streaming servers together', async () => {
+      const mixedConfig: Record<string, ServerConfig> = {
+        'stdio-server': {
+          type: 'stdio',
+          command: 'node',
+          args: ['server.js'],
+          enabled: true,
+        },
+        'sse-server': {
+          type: 'sse',
+          url: 'http://localhost:8080/sse',
+          enabled: true,
+        },
+        'streaming-server': {
+          type: 'streaming',
+          url: 'https://mcp.example.com/mcp',
+          enabled: true,
+        },
+      };
+
+      const mixedManager = new ServerManager(mixedConfig);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await mixedManager.initialize();
+
+      const servers = mixedManager.getAllServers();
+      expect(servers.size).toBe(3);
+
+      for (const [, server] of servers) {
+        expect(server.status).toBe(ServerStatus.CONNECTED);
+      }
+
+      await mixedManager.shutdown();
+    });
+  });
+
   describe('error handling and resilience', () => {
     it('should handle invalid server type', async () => {
       const invalidConfig = {
@@ -366,7 +608,7 @@ describe('ServerManager', () => {
       const server = servers.get('invalid-server');
 
       expect(server?.status).toBe(ServerStatus.ERROR);
-      expect(server?.lastError?.message).toContain('not yet implemented');
+      expect(server?.lastError?.message).toContain('Unsupported server type');
     });
 
     it('should continue initialization even if some servers fail', async () => {

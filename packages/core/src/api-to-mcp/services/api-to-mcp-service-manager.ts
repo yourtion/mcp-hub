@@ -4,13 +4,14 @@
  */
 
 import { logger } from '../../utils/logger.js';
+import type { ApiToolConfig } from '../types/api-config.js';
 import type {
   ApiToolResult,
   McpTool,
   ValidationResult,
 } from '../types/api-tool.js';
 import { ParameterValidatorImpl } from '../utils/parameter-validator.js';
-import { ApiConfigManagerImpl } from './api-config-manager.js';
+import { ApiConfigManagerImpl, ConfigLoadError } from './api-config-manager.js';
 import { ApiExecutorImpl } from './api-executor.js';
 import { ApiToolGenerator } from './api-tool-generator.js';
 import { ApiToolRegistry } from './api-tool-registry.js';
@@ -170,11 +171,15 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
       // 加载配置
       await this.loadAndRegisterTools();
 
-      // 设置配置文件监听
-      this.configManager.watchConfigFile(async () => {
-        logger.info('检测到配置文件变化，重新加载工具');
-        await this.reloadConfig();
-      });
+      // 设置配置文件监听（文件可能尚不存在，忽略监听失败）
+      try {
+        this.configManager.watchConfigFile(async () => {
+          logger.info('检测到配置文件变化，重新加载工具');
+          await this.reloadConfig();
+        });
+      } catch {
+        logger.info('配置文件尚不存在，跳过文件监听');
+      }
 
       this.status = ServiceStatus.RUNNING;
       this.initializationTime = new Date();
@@ -587,8 +592,21 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
       throw new Error('配置文件路径未设置');
     }
 
-    // 加载配置
-    const configs = await this.configManager.loadConfig(this.configPath);
+    // 加载配置，文件不存在时视为空配置
+    let configs: ApiToolConfig[];
+    try {
+      configs = await this.configManager.loadConfig(this.configPath);
+    } catch (error) {
+      if (
+        error instanceof ConfigLoadError &&
+        (error.cause as NodeJS.ErrnoException)?.code === 'ENOENT'
+      ) {
+        logger.info('API工具配置文件不存在，使用空配置');
+        configs = [];
+      } else {
+        throw error;
+      }
+    }
 
     // 生成工具
     const tools = this.toolGenerator.generateAllTools(configs);

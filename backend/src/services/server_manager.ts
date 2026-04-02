@@ -1,6 +1,8 @@
 import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import type {
   ServerManager as IServerManager,
   ServerConnection,
@@ -115,8 +117,12 @@ export class ServerManager implements IServerManager {
 
       if (config.type === 'stdio' || (!config.type && 'command' in config)) {
         await this.connectStdioServer(serverConnection);
+      } else if (config.type === 'sse') {
+        await this.connectSseServer(serverConnection);
+      } else if (config.type === 'streaming') {
+        await this.connectStreamingServer(serverConnection);
       } else {
-        throw new Error(`Server type ${config.type} not yet implemented`);
+        throw new Error(`Unsupported server type: ${config.type}`);
       }
 
       serverConnection.status = ServerStatus.CONNECTED;
@@ -162,6 +168,40 @@ export class ServerManager implements IServerManager {
     });
 
     // Connect the client
+    await client.connect(transport);
+  }
+
+  private async connectSseServer(
+    serverConnection: ServerConnection,
+  ): Promise<void> {
+    const { config, client } = serverConnection;
+
+    if (config.type !== 'sse' || !('url' in config)) {
+      throw new Error('Invalid server config for SSE connection');
+    }
+
+    const headers: Record<string, string> = { ...config.headers };
+    const transport = new SSEClientTransport(new URL(config.url), {
+      requestInit: { headers },
+    });
+
+    await client.connect(transport);
+  }
+
+  private async connectStreamingServer(
+    serverConnection: ServerConnection,
+  ): Promise<void> {
+    const { config, client } = serverConnection;
+
+    if (config.type !== 'streaming' || !('url' in config)) {
+      throw new Error('Invalid server config for streaming connection');
+    }
+
+    const headers: Record<string, string> = { ...config.headers };
+    const transport = new StreamableHTTPClientTransport(new URL(config.url), {
+      requestInit: { headers },
+    });
+
     await client.connect(transport);
   }
 

@@ -369,7 +369,7 @@ async function handleSaveConfig(): Promise<void> {
   dialogSaving.value = true;
   try {
     const configPayload = {
-      id: isEditing.value ? editingId.value : '',
+      id: isEditing.value ? editingId.value : `api-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       name: formData.name,
       description: formData.description,
       api: {

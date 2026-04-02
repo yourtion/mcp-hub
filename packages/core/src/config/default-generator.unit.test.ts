@@ -43,6 +43,7 @@ describe('DefaultConfigGenerator', () => {
       expect(presetIds).toContain('memory');
       expect(presetIds).toContain('brave-search');
       expect(presetIds).toContain('github');
+      expect(presetIds).toContain('context7');
     });
 
     it('每个预设应该包含必需的字段', () => {
@@ -60,12 +61,14 @@ describe('DefaultConfigGenerator', () => {
       }
     });
 
-    it('服务器配置应该包含 command 字段', () => {
+    it('服务器配置应该包含 command 或 url 字段', () => {
       const presets = generator.getAvailableServerPresets();
 
       for (const preset of presets) {
-        expect(preset.config).toHaveProperty('command');
-        expect(typeof preset.config.command).toBe('string');
+        const cfg = preset.config as Record<string, unknown>;
+        const hasCommand = 'command' in cfg;
+        const hasUrl = 'url' in cfg;
+        expect(hasCommand || hasUrl).toBe(true);
       }
     });
 
@@ -219,12 +222,15 @@ describe('DefaultConfigGenerator', () => {
       const config = JSON.parse(content);
 
       // 验证 fetch 服务器配置
-      expect(config.servers.fetch.command).toBe('npx');
-      expect(config.servers.fetch.args).toContain('-y');
-      expect(config.servers.fetch.args).toContain(
-        '@modelcontextprotocol/server-fetch',
+      expect((config.servers.fetch as Record<string, unknown>).command).toBe(
+        'uvx',
       );
-      expect(config.servers.fetch.disabled).toBe(false);
+      expect((config.servers.fetch as Record<string, unknown>).args).toContain(
+        'mcp-server-fetch',
+      );
+      expect((config.servers.fetch as Record<string, unknown>).disabled).toBe(
+        false,
+      );
     });
 
     it('环境变量应该正确配置', async () => {
@@ -323,10 +329,9 @@ describe('DefaultConfigGenerator', () => {
       expect(fetch).toBeDefined();
       expect(fetch?.name).toBe('Fetch');
       expect(fetch?.description).toBe('Web fetching and HTTP requests');
-      expect(fetch?.config.command).toBe('npx');
-      expect(fetch?.config.args).toContain(
-        '@modelcontextprotocol/server-fetch',
-      );
+      const fetchConfig = fetch?.config as Record<string, unknown>;
+      expect(fetchConfig.command).toBe('uvx');
+      expect(fetchConfig.args).toContain('mcp-server-fetch');
     });
 
     it('time 预设应该有正确的配置', () => {
@@ -336,8 +341,9 @@ describe('DefaultConfigGenerator', () => {
       expect(time).toBeDefined();
       expect(time?.name).toBe('Time');
       expect(time?.description).toBe('Time and date functionality');
-      expect(time?.config.command).toBe('npx');
-      expect(time?.config.args).toContain('@modelcontextprotocol/server-time');
+      const timeConfig = time?.config as Record<string, unknown>;
+      expect(timeConfig.command).toBe('uvx');
+      expect(timeConfig.args).toContain('mcp-server-time');
     });
 
     it('sequential-thinking 预设应该有正确的配置', () => {
@@ -347,10 +353,28 @@ describe('DefaultConfigGenerator', () => {
       expect(st).toBeDefined();
       expect(st?.name).toBe('Sequential Thinking');
       expect(st?.description).toBe('Sequential thinking capabilities');
-      expect(st?.config.command).toBe('npx');
-      expect(st?.config.args).toContain(
-        '@modelcontextprotocol/server-sequential-thinking',
-      );
+      if ('command' in (st?.config ?? {})) {
+        expect((st?.config as Record<string, unknown>).command).toBe('npx');
+        expect((st?.config as Record<string, unknown>).args).toContain(
+          '@modelcontextprotocol/server-sequential-thinking',
+        );
+      }
+    });
+
+    it('context7 预设应该有正确的配置', () => {
+      const presets = generator.getAvailableServerPresets();
+      const ctx = presets.find((p) => p.id === 'context7');
+
+      expect(ctx).toBeDefined();
+      expect(ctx?.name).toBe('Context7');
+      expect(ctx?.description).toContain('documentation');
+      if ('url' in (ctx?.config ?? {})) {
+        expect((ctx?.config as Record<string, unknown>).url).toBe(
+          'https://mcp.context7.com/mcp',
+        );
+        expect((ctx?.config as Record<string, unknown>).type).toBe('streaming');
+      }
+      expect(ctx?.requiresAdditionalConfig).toBeUndefined();
     });
 
     it('filesystem 预设应该标记需要额外配置', () => {

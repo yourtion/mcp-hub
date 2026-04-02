@@ -52,6 +52,9 @@ app.use('*', async (_c, next) => {
 
 // 初始化 API 到 MCP Web 服务
 app.use('*', async (c, next) => {
+  // 始终将服务实例注入到上下文，确保路由处理器可访问
+  c.set('apiToMcpWebService', apiToMcpWebService);
+
   try {
     const config = await getAllConfig();
     const configPath = config.apiToolsConfigPath;
@@ -62,9 +65,6 @@ app.use('*', async (c, next) => {
       await apiToMcpWebService.initialize(configPath);
       logger.info('API 到 MCP Web 服务初始化成功', { configPath });
     }
-
-    // 将服务实例注入到上下文
-    c.set('apiToMcpWebService', apiToMcpWebService);
   } catch (error) {
     logger.error('API 到 MCP Web 服务初始化失败', error as Error);
     // 不阻止请求继续，只是服务不可用

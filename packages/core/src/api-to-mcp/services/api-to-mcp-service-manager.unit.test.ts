@@ -95,15 +95,14 @@ describe('ApiToMcpServiceManagerImpl', () => {
       expect(health.toolStats.total).toBe(1);
     });
 
-    it('应该在配置文件不存在时抛出错误', async () => {
+    it('应该在配置文件不存在时使用空配置成功初始化', async () => {
       const nonExistentPath = join(tempDir, 'non-existent.json');
 
-      await expect(serviceManager.initialize(nonExistentPath)).rejects.toThrow(
-        '初始化失败',
-      );
+      await serviceManager.initialize(nonExistentPath);
 
       const health = serviceManager.getHealthStatus();
-      expect(health.status).toBe(ServiceStatus.ERROR);
+      expect(health.status).toBe(ServiceStatus.RUNNING);
+      expect(health.toolStats.total).toBe(0);
     });
 
     it('应该在重复初始化时发出警告', async () => {
