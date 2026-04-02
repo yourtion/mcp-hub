@@ -6,10 +6,13 @@
           v-model="searchText"
           placeholder="搜索工具名称或描述"
           clearable
-          :prefix-icon="SearchIcon"
           style="width: 260px"
           @change="handleSearch"
-        />
+        >
+          <template #prefixIcon>
+            <SearchIcon />
+          </template>
+        </t-input>
         <t-select
           v-model="statusFilter"
           placeholder="状态筛选"

@@ -27,10 +27,13 @@
             v-model="searchText"
             placeholder="搜索工具..."
             clearable
-            :prefix-icon="SearchIcon"
             style="width: 240px"
             @change="handleSearchChange"
-          />
+          >
+            <template #prefixIcon>
+              <SearchIcon />
+            </template>
+          </t-input>
           <t-select
             v-model="serverFilter"
             placeholder="服务器筛选"

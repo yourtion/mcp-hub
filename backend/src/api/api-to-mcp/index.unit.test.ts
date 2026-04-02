@@ -444,7 +444,7 @@ describe('API to MCP API Routes', () => {
   });
 
   describe('服务不可用场景', () => {
-    it('服务未注入到上下文时应返回500错误', async () => {
+    it('服务未注入到上下文时应返回503错误', async () => {
       // 创建一个没有注入服务的 app
       const appWithoutService = new Hono();
       appWithoutService.route('/api/api-to-mcp', apiToMcpRoutes);
@@ -459,7 +459,9 @@ describe('API to MCP API Routes', () => {
         },
       );
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(503);
+      const body = await response.json();
+      expect(body.error.code).toBe('SERVICE_UNAVAILABLE');
     });
 
     it('创建配置缺少必填字段时应返回失败', async () => {

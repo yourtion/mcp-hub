@@ -6,6 +6,7 @@
 import { Hono } from 'hono';
 import { requireAuth } from '../../middleware/simple-auth.js';
 import type { ApiToMcpWebService } from '../../services/api-to-mcp-web-service.js';
+import type { McpHubService } from '../../services/mcp_hub_service.js';
 import type {
   ApiConfigListResponse,
   ApiResponse,
@@ -23,8 +24,43 @@ declare module 'hono' {
   }
 }
 
+/**
+ * 重新加载Hub服务的API工具配置
+ * 确保McpHubService中的工具列表与ApiToMcpWebService同步
+ */
+async function reloadHubApiTools(): Promise<void> {
+  try {
+    const { getHubService } = await import('../tools/index.js');
+    const hubService: McpHubService = await getHubService();
+    await hubService.reloadApiToolConfig();
+    logger.info('Hub服务API工具配置同步完成');
+  } catch (error) {
+    logger.warn('Hub服务API工具配置同步失败，不影响配置管理操作', {
+      error: (error as Error).message,
+    });
+  }
+}
+
 // 创建API路由
 const apiToMcpRoutes = new Hono();
+
+// 服务可用性检查中间件
+apiToMcpRoutes.use('*', async (c, next) => {
+  const service = c.get('apiToMcpWebService');
+  if (!service) {
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: 'SERVICE_UNAVAILABLE',
+          message: 'API到MCP服务不可用',
+        },
+      },
+      503,
+    );
+  }
+  await next();
+});
 
 /**
  * 获取API配置列表
@@ -92,6 +128,9 @@ apiToMcpRoutes.post('/configs', requireAuth, async (c) => {
     }
 
     logger.info('API配置创建成功', { context: { configId: body.config.id } });
+
+    // 同步Hub服务的API工具配置
+    await reloadHubApiTools();
 
     const response: ApiResponse<{
       id: string;
@@ -197,6 +236,9 @@ apiToMcpRoutes.put('/configs/:id', requireAuth, async (c) => {
 
     logger.info('API配置更新成功', { context: { configId } });
 
+    // 同步Hub服务的API工具配置
+    await reloadHubApiTools();
+
     const response: ApiResponse<{
       id: string;
       message: string;
@@ -257,6 +299,9 @@ apiToMcpRoutes.delete('/configs/:id', requireAuth, async (c) => {
     }
 
     logger.info('API配置删除成功', { context: { configId } });
+
+    // 同步Hub服务的API工具配置
+    await reloadHubApiTools();
 
     const response: ApiResponse<{ id: string; message: string }> = {
       success: true,

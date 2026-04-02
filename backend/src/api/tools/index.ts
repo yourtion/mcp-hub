@@ -14,7 +14,7 @@ export const toolsApi = new Hono();
 let hubService: McpHubService | null = null;
 
 // 初始化hub服务
-async function getHubService(): Promise<McpHubService> {
+export async function getHubService(): Promise<McpHubService> {
   if (hubService) {
     return hubService;
   }
@@ -258,8 +258,11 @@ toolsApi.get('/:toolName', async (c) => {
     }
 
     // 获取服务器状态
+    const isApiTool = tool.serverId === 'api-tools';
     const serverHealth = service.getServerHealth();
-    const serverStatus = serverHealth.get(tool.serverId);
+    const serverStatus = isApiTool
+      ? 'available'
+      : (serverHealth.get(tool.serverId) ?? 'unknown');
 
     logger.info('获取工具详细信息', {
       toolName,
@@ -277,8 +280,8 @@ toolsApi.get('/:toolName', async (c) => {
         serverStatus,
         inputSchema: tool.inputSchema,
         groupId,
-        // 添加工具可用性状态
-        isAvailable: serverStatus === 'connected',
+        // 添加工具可用性状态（API工具始终可用）
+        isAvailable: isApiTool || serverStatus === 'connected',
       },
       timestamp: new Date().toISOString(),
     });
@@ -331,11 +334,12 @@ toolsApi.post('/:toolName/execute', async (c) => {
       );
     }
 
-    // 验证服务器状态
+    // 验证服务器状态（API工具跳过此检查，因为它们不是MCP服务器）
+    const isApiTool = tool.serverId === 'api-tools';
     const serverHealth = service.getServerHealth();
     const serverStatus = serverHealth.get(tool.serverId);
 
-    if (serverStatus !== 'connected') {
+    if (!isApiTool && serverStatus !== 'connected') {
       return c.json(
         {
           success: false,

@@ -44,8 +44,14 @@ export class AuthService {
     try {
       // 使用配置工具函数获取配置
       const config = await getAllConfig();
-      // config.system 已经是 DeepReadonly<SystemConfig> 类型
-      this.config = config.system as DeepReadonly<SystemConfig>;
+
+      // 合并默认配置，确保缺少的字段有默认值
+      const systemConfig = {
+        ...AuthService.defaultSystemConfig,
+        ...config.system,
+      } as DeepReadonly<SystemConfig>;
+
+      this.config = systemConfig;
 
       // 为所有用户生成密码哈希
       await this.generatePasswordHashes();
@@ -53,6 +59,54 @@ export class AuthService {
       throw new Error(`Failed to load system config: ${error}`);
     }
   }
+
+  /**
+   * 默认系统配置
+   */
+  private static readonly defaultSystemConfig: SystemConfig = {
+    server: {
+      port: 8181,
+      host: '0.0.0.0',
+    },
+    auth: {
+      jwt: {
+        secret: 'mcp-hub-default-jjwt-secret-key-change-in-production',
+        expiresIn: '24h',
+        refreshExpiresIn: '7d',
+        issuer: 'mcp-hub',
+      },
+      security: {
+        maxLoginAttempts: 5,
+        lockoutDuration: 900000,
+        passwordMinLength: 6,
+        requireStrongPassword: false,
+      },
+    },
+    users: {
+      admin: {
+        id: 'admin',
+        username: 'admin',
+        password: 'admin',
+        role: 'admin',
+        groups: ['default'],
+        createdAt: new Date().toISOString(),
+      },
+    },
+    monitoring: {
+      metricsEnabled: true,
+      logLevel: 'info',
+      retentionDays: 30,
+    },
+    ui: {
+      title: 'MCP Hub',
+      theme: 'light',
+      features: {
+        apiToMcp: true,
+        debugging: false,
+        monitoring: true,
+      },
+    },
+  };
 
   /**
    * 为所有用户生成密码哈希（仅在内存中）

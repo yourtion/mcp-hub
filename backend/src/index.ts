@@ -133,7 +133,7 @@ async function startServer() {
     httpServer = serve(
       {
         fetch: app.fetch,
-        port: validatedConfig.systemConfig?.server?.port || 3001,
+        port: validatedConfig.systemConfig?.server?.port || 8181,
       },
       (info) => {
         logger.info(`服务器启动成功`, {
