@@ -59,12 +59,20 @@ export class ConcurrentExecutor {
       const promise = (async () => {
         try {
           // 添加超时控制
+          let timeoutId: NodeJS.Timeout | undefined;
           const result = await Promise.race([
             operation(),
-            new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error('Operation timeout')), timeout),
-            ),
+            new Promise<never>((_, reject) => {
+              timeoutId = setTimeout(
+                () => reject(new Error('Operation timeout')),
+                timeout,
+              );
+              timeoutId.unref?.();
+            }),
           ]);
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
 
           results[i] = {
             index: i,

@@ -107,14 +107,13 @@ describe('AuthService', () => {
       await expect(authService.initialize()).resolves.not.toThrow();
     });
 
-    it('应该在配置文件不存在时抛出错误', async () => {
+    it('应该在配置文件不存在时使用默认配置初始化', async () => {
       // 删除配置文件
       const configPath = path.join(process.cwd(), 'config', 'system.json');
       await fs.unlink(configPath);
 
-      await expect(authService.initialize()).rejects.toThrow(
-        'Failed to load system config',
-      );
+      // JsonStorage 在文件不存在时会创建默认文件，所以初始化应该成功
+      await expect(authService.initialize()).resolves.not.toThrow();
     });
   });
 
@@ -266,11 +265,8 @@ describe('AuthService', () => {
     it('应该能够清理过期会话和黑名单token', async () => {
       await authService.login('testuser', 'password');
 
-      // 执行清理
-      await authService.cleanup();
-
-      // 清理功能应该正常执行而不抛出错误
-      expect(true).toBe(true);
+      // 执行清理应不抛出异常
+      await expect(authService.cleanup()).resolves.not.toThrow();
     });
   });
 });

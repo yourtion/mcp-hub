@@ -26,6 +26,12 @@ let mcpServerInstance: JsonStorage<McpConfig> | null = null;
 let groupConfigInstance: JsonStorage<GroupConfig> | null = null;
 let systemConfigInstance: JsonStorage<SystemConfig> | null = null;
 
+export function resetConfigInstances(): void {
+  mcpServerInstance = null;
+  groupConfigInstance = null;
+  systemConfigInstance = null;
+}
+
 /**
  * 获取或创建 MCP 服务器配置实例
  */

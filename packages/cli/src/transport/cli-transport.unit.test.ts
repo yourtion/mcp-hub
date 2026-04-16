@@ -17,7 +17,9 @@ const mockTransport = {
 };
 
 vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
-  StdioServerTransport: vi.fn().mockImplementation(() => mockTransport),
+  StdioServerTransport: vi.fn(function (this: Record<string, unknown>) {
+    Object.assign(this, mockTransport);
+  }),
 }));
 
 describe('CliTransport', () => {

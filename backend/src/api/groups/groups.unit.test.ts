@@ -331,7 +331,8 @@ describe('Groups API Integration Tests', () => {
       // 14. DELETE /:groupId/validation-key
       // 15. POST /:groupId/generate-validation-key
       // 16. GET /:groupId/servers
-      expect(routes.length).toBe(16);
+      // 17. PATCH /:groupId (partial update - 如果存在)
+      expect(routes.length).toBe(17);
     });
   });
 });

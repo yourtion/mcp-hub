@@ -177,31 +177,19 @@ describe('ToolManager', () => {
     });
 
     it('should refresh cache after TTL expires', async () => {
-      // Mock Date constructor to control cache timestamps
-      const originalDate = Date;
-      let mockTime = 1000;
-
-      // Mock both Date.now and Date constructor
-      vi.spyOn(Date, 'now').mockImplementation(() => mockTime);
-      vi.spyOn(global, 'Date').mockImplementation((...args: any[]) => {
-        if (args.length === 0) {
-          return new originalDate(mockTime);
-        }
-        return new originalDate(...(args as [number]));
-      });
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(1000));
 
       // First call
       await toolManager.getToolsForGroup('default');
 
       // Advance time beyond cache TTL (30 seconds)
-      mockTime += 31000;
+      vi.setSystemTime(new Date(32000));
 
       // Second call should refresh cache
       await toolManager.getToolsForGroup('default');
 
       expect(mockGroupManager.getGroupTools).toHaveBeenCalledTimes(2);
-
-      vi.restoreAllMocks();
     });
 
     it('should throw error for non-existent group', async () => {
@@ -285,21 +273,33 @@ describe('ToolManager', () => {
     });
 
     it('should retry on retryable errors', async () => {
+      // 使用 mockRejectedValueOnce 和 mockResolvedValueOnce 设置行为
+      // 第一次调用失败（retryable error），第二次调用成功
       vi.mocked(mockServerManager.executeToolOnServer)
         .mockRejectedValueOnce(new Error('Connection timeout'))
         .mockResolvedValueOnce({
           content: [{ type: 'text', text: 'Success on retry' }],
         });
 
-      const result = await toolManager.executeTool('default', 'tool1', {
+      // executeToolWithRetry 中有指数退避延迟，使用 vi.useFakeTimers 加速
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+
+      const resultPromise = toolManager.executeTool('default', 'tool1', {
         arg1: 'test',
       });
+
+      // 快速推进所有定时器
+      await vi.advanceTimersByTimeAsync(2000);
+
+      const result = await resultPromise;
 
       expect(result.isError).toBe(false);
       expect(result.content).toEqual([
         { type: 'text', text: 'Success on retry' },
       ]);
       expect(mockServerManager.executeToolOnServer).toHaveBeenCalledTimes(2);
+
+      vi.useRealTimers();
     });
 
     it('should not retry on non-retryable errors', async () => {

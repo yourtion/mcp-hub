@@ -437,6 +437,7 @@ export class SSEEventManager {
     this.pingInterval = setInterval(() => {
       this.pingClients();
     }, this.PING_INTERVAL_MS);
+    this.pingInterval.unref?.();
   }
 
   /**

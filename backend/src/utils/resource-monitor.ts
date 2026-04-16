@@ -109,6 +109,7 @@ export class ResourceMonitor {
       this.takeSnapshot();
       this.checkForAlerts();
     }, intervalMs);
+    this.monitorInterval.unref?.();
 
     logger.info('资源监控已启动');
   }

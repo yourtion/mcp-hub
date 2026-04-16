@@ -12,34 +12,37 @@ export default defineConfig({
     },
   },
   test: {
+    name: 'api-unit',
     globals: true,
     environment: 'node',
     watch: false,
+    setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.test.ts'],
     exclude: [
-      'node_modules',
-      'dist',
-      // 排除可能导致挂起的端到端测试
-      'src/e2e/scenarios/**',
-      'src/e2e/mcp-protocol/**',
+      'src/e2e/**',
+      'src/integration/**',
+      'src/mcp.test.ts',
+      'src/sse.test.ts',
     ],
 
-    testTimeout: 30000, // 增加到 30 秒
-    hookTimeout: 10000, // 增加到 10 秒
+    testTimeout: 30000,
+    hookTimeout: 10000,
     teardownTimeout: 5000,
-    // 强制退出配置
-    forceRerunTriggers: ['**/vitest.config.*', '**/vite.config.*'],
-    // 测试完成后强制退出
+
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    maxWorkers: 1,
+    fileParallelism: false,
+    maxConcurrency: 1,
+    clearMocks: true,
+    restoreMocks: true,
+    unstubGlobals: true,
+    unstubEnvs: true,
+
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'json-summary', 'html', 'lcov'],
       reportsDirectory: './coverage',
+      include: ['src/**/*.ts'],
       exclude: [
         'node_modules/',
         'dist/',
@@ -58,8 +61,6 @@ export default defineConfig({
           statements: 80,
         },
       },
-      all: true,
-      include: ['src/**/*.ts'],
     },
   },
 });

@@ -3,22 +3,26 @@
  */
 
 import fs from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AuthService } from '../../services/auth.js';
+import { resetConfigInstances } from '../../utils/config.js';
 import { createAuthApi } from './index.js';
 
 describe('认证API', () => {
   let app: Hono;
   let authService: AuthService;
-  let tempConfigPath: string;
+  let tempConfigDir: string;
 
   beforeEach(async () => {
-    authService = new AuthService();
+    resetConfigInstances();
+    tempConfigDir = await fs.mkdtemp(path.join(tmpdir(), 'mcp-hub-auth-'));
+    process.env.CONFIG_PATH = tempConfigDir;
 
     // 创建临时配置文件
-    tempConfigPath = path.join(process.cwd(), 'config', 'system.json.test');
+    const tempConfigPath = path.join(tempConfigDir, 'system.json');
     const testConfig = {
       server: {
         port: 3002,
@@ -74,23 +78,8 @@ describe('认证API', () => {
 
     await fs.writeFile(tempConfigPath, JSON.stringify(testConfig, null, 2));
 
-    // 临时替换配置文件路径
-    const originalConfigPath = path.join(
-      process.cwd(),
-      'config',
-      'system.json',
-    );
-    const backupPath = path.join(process.cwd(), 'config', 'system.json.backup');
-
-    try {
-      await fs.rename(originalConfigPath, backupPath);
-    } catch {
-      // 文件可能不存在，忽略错误
-    }
-
-    await fs.rename(tempConfigPath, originalConfigPath);
-
     // 初始化认证服务
+    authService = new AuthService();
     await authService.initialize();
 
     // 创建应用
@@ -99,25 +88,9 @@ describe('认证API', () => {
   });
 
   afterEach(async () => {
-    // 恢复原始配置文件
-    const originalConfigPath = path.join(
-      process.cwd(),
-      'config',
-      'system.json',
-    );
-    const backupPath = path.join(process.cwd(), 'config', 'system.json.backup');
-
-    try {
-      await fs.unlink(originalConfigPath);
-    } catch {
-      // 忽略错误
-    }
-
-    try {
-      await fs.rename(backupPath, originalConfigPath);
-    } catch {
-      // 备份文件可能不存在，忽略错误
-    }
+    delete process.env.CONFIG_PATH;
+    resetConfigInstances();
+    await fs.rm(tempConfigDir, { recursive: true, force: true });
   });
 
   describe('POST /auth/login', () => {

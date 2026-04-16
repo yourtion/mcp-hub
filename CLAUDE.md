@@ -12,7 +12,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm build:production` - Build all packages for production deployment
 
 ### Testing & Quality
-- `pnpm test` - Run all tests across packages
+- `pnpm test` - Run all tests (uses vitest 4.x with projects)
+- `pnpm test:watch` - Run tests in watch mode
+- `pnpm test:e2e` - Run E2E tests only
 - `pnpm test:coverage` - Run tests with coverage reports
 - `pnpm test:debug` - Run tests in debug mode (VITEST_DEBUG=true)
 - `pnpm check` - Run linting and formatting with Biome
@@ -123,12 +125,20 @@ Configuration is handled through multiple layers:
 
 ### Testing Strategy
 
-The project uses a comprehensive testing approach:
+The project uses Vitest 4.x with a centralized configuration:
 
-- **Unit Tests**: Individual component testing with Vitest
+- **Root Config**: `vitest.config.ts` defines all projects (share/core/cli/api-unit/api-integration/api-e2e/frontend)
+- **TestContext**: `test/context/test-context.ts` provides resource lifecycle management via `useTestContext()`
+- **Unit Tests**: Individual component testing (`.unit.test.ts` suffix)
 - **Integration Tests**: Service interaction testing
-- **E2E Tests**: Full MCP protocol testing with mock servers
-- **Coverage Reports**: Code coverage tracking and reporting
+- **E2E Tests**: Full MCP protocol testing with mock servers (6 files in `backend/src/e2e/`)
+- **Coverage Reports**: Code coverage tracking with V8 provider
+
+Testing conventions:
+- Use `function` keyword (not arrow functions) for `vi.fn().mockImplementation()` to support `new` calls
+- Use `useTestContext()` for managing test resources that need cleanup
+- Never use `expect(true).toBe(true)` - always assert actual behavior
+- Never use `any` type in test files
 
 ## 开发习惯（必须遵循）
 

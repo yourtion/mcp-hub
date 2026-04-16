@@ -562,15 +562,17 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
         logger.error('定期健康检查失败', error as Error);
       }
     }, this.HEALTH_CHECK_INTERVAL_MS);
+    this.healthCheckInterval.unref?.();
 
     // 立即执行一次健康检查
-    setImmediate(async () => {
+    const initialCheck = setImmediate(async () => {
       try {
         await this.performHealthCheck();
       } catch (error) {
         logger.error('初始健康检查失败', error as Error);
       }
     });
+    initialCheck.unref?.();
   }
 
   /**

@@ -8,17 +8,16 @@ export default defineConfig({
     },
   },
   test: {
+    name: 'core',
     globals: true,
     environment: 'node',
     watch: false,
+    include: ['src/**/*.test.ts'],
+    setupFiles: ['./vitest.setup.ts'],
 
     // 修复 vitest 不退出问题
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    maxWorkers: 1,
 
     // 测试超时配置
     testTimeout: 10000,
@@ -28,18 +27,23 @@ export default defineConfig({
     // 限制并发
     maxConcurrency: 1,
     fileParallelism: false,
+    clearMocks: true,
+    restoreMocks: true,
+    unstubGlobals: true,
+    unstubEnvs: true,
 
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'json-summary', 'html', 'lcov'],
       reportsDirectory: './coverage',
+      include: ['src/**/*.ts'],
       exclude: [
         'node_modules/',
         'dist/',
         '**/*.d.ts',
         '**/*.test.ts',
         'vitest.config.ts',
-        'src/test-utils/', // 排除测试工具
+        'src/test-utils/',
       ],
       thresholds: {
         global: {
@@ -49,8 +53,6 @@ export default defineConfig({
           statements: 85,
         },
       },
-      all: true,
-      include: ['src/**/*.ts'],
     },
   },
 });

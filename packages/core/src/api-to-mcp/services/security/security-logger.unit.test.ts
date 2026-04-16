@@ -3,7 +3,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SecurityEvent } from '../../types/security.js';
+import { type SecurityEvent, SecurityEventType } from '../../types/security.js';
 import { SecurityLoggerImpl } from './security-logger.js';
 
 // Mock日志记录器
@@ -35,7 +35,7 @@ describe('SecurityLoggerImpl', () => {
   });
 
   describe('API调用日志记录', () => {
-    it('应该记录成功的API调用', () => {
+    it('应该记录成功的API调用', async () => {
       const log = {
         toolId: 'test-tool',
         clientId: 'client-123',
@@ -48,11 +48,13 @@ describe('SecurityLoggerImpl', () => {
 
       securityLogger.logApiCall(log);
 
-      // 验证日志被记录（通过统计信息验证）
-      expect(true).toBe(true); // 基本验证，实际验证通过getSecurityStats
+      const stats = await securityLogger.getSecurityStats(3600);
+      expect(stats.totalRequests).toBe(1);
+      expect(stats.successfulRequests).toBe(1);
+      expect(stats.failedRequests).toBe(0);
     });
 
-    it('应该记录失败的API调用', () => {
+    it('应该记录失败的API调用', async () => {
       const log = {
         toolId: 'test-tool',
         clientId: 'client-123',
@@ -65,11 +67,13 @@ describe('SecurityLoggerImpl', () => {
 
       securityLogger.logApiCall(log);
 
-      // 验证日志被记录
-      expect(true).toBe(true);
+      const stats = await securityLogger.getSecurityStats(3600);
+      expect(stats.totalRequests).toBe(1);
+      expect(stats.successfulRequests).toBe(0);
+      expect(stats.failedRequests).toBe(1);
     });
 
-    it('应该脱敏敏感数据', () => {
+    it('应该脱敏敏感数据', async () => {
       const log = {
         toolId: 'test-tool',
         timestamp: new Date(),
@@ -84,13 +88,15 @@ describe('SecurityLoggerImpl', () => {
 
       securityLogger.logApiCall(log);
 
-      // 敏感数据应该被脱敏（通过内部实现验证）
-      expect(true).toBe(true);
+      // 验证调用被记录且成功
+      const stats = await securityLogger.getSecurityStats(3600);
+      expect(stats.totalRequests).toBe(1);
+      expect(stats.successfulRequests).toBe(1);
     });
   });
 
   describe('安全事件记录', () => {
-    it('应该记录认证失败事件', () => {
+    it('应该记录认证失败事件', async () => {
       const error = new Error('认证失败');
 
       securityLogger.logAuthFailure(
@@ -100,11 +106,11 @@ describe('SecurityLoggerImpl', () => {
         '192.168.1.1',
       );
 
-      // 验证事件被记录
-      expect(true).toBe(true);
+      const stats = await securityLogger.getSecurityStats(3600);
+      expect(stats.authFailures).toBe(1);
     });
 
-    it('应该记录访问被拒绝事件', () => {
+    it('应该记录访问被拒绝事件', async () => {
       securityLogger.logAccessDenied(
         'test-tool',
         'client-123',
@@ -112,13 +118,13 @@ describe('SecurityLoggerImpl', () => {
         '192.168.1.1',
       );
 
-      // 验证事件被记录
-      expect(true).toBe(true);
+      const stats = await securityLogger.getSecurityStats(3600);
+      expect(stats.accessDenied).toBe(1);
     });
 
-    it('应该记录自定义安全事件', () => {
+    it('应该记录自定义安全事件', async () => {
       const event: SecurityEvent = {
-        type: 'SUSPICIOUS_ACTIVITY',
+        type: SecurityEventType.SUSPICIOUS_ACTIVITY,
         toolId: 'test-tool',
         clientId: 'client-123',
         timestamp: new Date(),
@@ -131,8 +137,8 @@ describe('SecurityLoggerImpl', () => {
 
       securityLogger.logSecurityEvent(event);
 
-      // 验证事件被记录
-      expect(true).toBe(true);
+      const stats = await securityLogger.getSecurityStats(3600);
+      expect(stats.suspiciousActivities).toBe(1);
     });
   });
 
@@ -249,7 +255,7 @@ describe('SecurityLoggerImpl', () => {
 
     it('应该在可疑活动时触发告警', () => {
       const event: SecurityEvent = {
-        type: 'SUSPICIOUS_ACTIVITY',
+        type: SecurityEventType.SUSPICIOUS_ACTIVITY,
         toolId: 'test-tool',
         clientId: 'client-123',
         timestamp: new Date(),
@@ -270,7 +276,7 @@ describe('SecurityLoggerImpl', () => {
       // 连续记录多次频率限制违规
       for (let i = 0; i < 12; i++) {
         const event: SecurityEvent = {
-          type: 'RATE_LIMIT_EXCEEDED',
+          type: SecurityEventType.RATE_LIMIT_EXCEEDED,
           toolId: 'test-tool',
           clientId: 'client-123',
           timestamp: new Date(),
@@ -293,7 +299,7 @@ describe('SecurityLoggerImpl', () => {
   });
 
   describe('敏感数据脱敏', () => {
-    it('应该脱敏密码字段', () => {
+    it('应该脱敏密码字段', async () => {
       const log = {
         toolId: 'test-tool',
         timestamp: new Date(),
@@ -305,11 +311,13 @@ describe('SecurityLoggerImpl', () => {
 
       securityLogger.logApiCall(log);
 
-      // 密码应该被脱敏（通过内部实现验证）
-      expect(true).toBe(true);
+      // 验证调用被记录且日志不抛出异常
+      const stats = await securityLogger.getSecurityStats(3600);
+      expect(stats.totalRequests).toBe(1);
+      expect(stats.successfulRequests).toBe(1);
     });
 
-    it('应该脱敏API密钥', () => {
+    it('应该脱敏API密钥', async () => {
       const log = {
         toolId: 'test-tool',
         timestamp: new Date(),
@@ -321,11 +329,13 @@ describe('SecurityLoggerImpl', () => {
 
       securityLogger.logApiCall(log);
 
-      // API密钥应该被脱敏
-      expect(true).toBe(true);
+      // 验证调用被记录且日志不抛出异常
+      const stats = await securityLogger.getSecurityStats(3600);
+      expect(stats.totalRequests).toBe(1);
+      expect(stats.successfulRequests).toBe(1);
     });
 
-    it('应该脱敏Bearer token', () => {
+    it('应该脱敏Bearer token', async () => {
       const log = {
         toolId: 'test-tool',
         timestamp: new Date(),
@@ -337,11 +347,13 @@ describe('SecurityLoggerImpl', () => {
 
       securityLogger.logApiCall(log);
 
-      // Bearer token应该被脱敏
-      expect(true).toBe(true);
+      // 验证调用被记录且日志不抛出异常
+      const stats = await securityLogger.getSecurityStats(3600);
+      expect(stats.totalRequests).toBe(1);
+      expect(stats.successfulRequests).toBe(1);
     });
 
-    it('应该处理嵌套对象中的敏感数据', () => {
+    it('应该处理嵌套对象中的敏感数据', async () => {
       const log = {
         toolId: 'test-tool',
         timestamp: new Date(),
@@ -359,11 +371,13 @@ describe('SecurityLoggerImpl', () => {
 
       securityLogger.logApiCall(log);
 
-      // 嵌套对象中的敏感数据应该被脱敏
-      expect(true).toBe(true);
+      // 验证调用被记录且日志不抛出异常
+      const stats = await securityLogger.getSecurityStats(3600);
+      expect(stats.totalRequests).toBe(1);
+      expect(stats.successfulRequests).toBe(1);
     });
 
-    it('应该处理数组中的敏感数据', () => {
+    it('应该处理数组中的敏感数据', async () => {
       const log = {
         toolId: 'test-tool',
         timestamp: new Date(),
@@ -378,13 +392,15 @@ describe('SecurityLoggerImpl', () => {
 
       securityLogger.logApiCall(log);
 
-      // 数组中的敏感数据应该被脱敏
-      expect(true).toBe(true);
+      // 验证调用被记录且日志不抛出异常
+      const stats = await securityLogger.getSecurityStats(3600);
+      expect(stats.totalRequests).toBe(1);
+      expect(stats.successfulRequests).toBe(1);
     });
   });
 
   describe('配置选项', () => {
-    it('应该使用自定义敏感字段配置', () => {
+    it('应该使用自定义敏感字段配置', async () => {
       const customLogger = new SecurityLoggerImpl({
         sensitiveFields: ['customSecret', 'privateKey'],
         maskChar: '#',
@@ -403,8 +419,11 @@ describe('SecurityLoggerImpl', () => {
 
       customLogger.logApiCall(log);
 
-      // 自定义敏感字段应该被脱敏
-      expect(true).toBe(true);
+      // 验证自定义配置的 logger 能正常处理调用
+      const stats = await customLogger.getSecurityStats(3600);
+      expect(stats.totalRequests).toBe(1);
+      expect(stats.successfulRequests).toBe(1);
+      customLogger.dispose();
     });
 
     it('应该使用自定义监控配置', async () => {

@@ -13,38 +13,31 @@ export default defineConfig({
     },
   },
   test: {
+    name: 'cli',
     globals: true,
     environment: 'node',
     watch: false,
     include: ['src/**/*.test.ts'],
+    exclude: ['src/e2e/**', 'src/integration/**'],
+    setupFiles: ['./vitest.setup.ts'],
 
     // 修复 vitest 不退出问题
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    maxWorkers: 1,
 
     // 测试超时配置
-    testTimeout: 10000,
-    hookTimeout: 5000,
-    teardownTimeout: 10000,
+    testTimeout: 5000,
+    hookTimeout: 2000,
+    teardownTimeout: 1000,
 
     // 限制并发
     maxConcurrency: 1,
     fileParallelism: false,
+    clearMocks: true,
+    restoreMocks: true,
+    unstubGlobals: true,
+    unstubEnvs: true,
 
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'dist/',
-        '**/*.d.ts',
-        '**/*.test.ts',
-        'src/test-utils/', // 排除测试工具
-      ],
-    },
+    reporters: ['verbose'],
   },
 });

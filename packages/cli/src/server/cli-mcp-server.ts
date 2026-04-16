@@ -177,12 +177,20 @@ export class CliMcpServer {
     const SHUTDOWN_TIMEOUT = 5000; // 5 秒超时
 
     try {
+      let timeoutId: NodeJS.Timeout | undefined;
       await Promise.race([
         this.performShutdown(),
-        new Promise<void>((_, reject) =>
-          setTimeout(() => reject(new Error('关闭超时')), SHUTDOWN_TIMEOUT),
-        ),
+        new Promise<void>((_, reject) => {
+          timeoutId = setTimeout(
+            () => reject(new Error('关闭超时')),
+            SHUTDOWN_TIMEOUT,
+          );
+          timeoutId.unref?.();
+        }),
       ]);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
 
       this.logger.info('CLI MCP服务器关闭完成');
     } catch (error) {

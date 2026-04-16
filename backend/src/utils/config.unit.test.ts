@@ -7,9 +7,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock JsonStorage
 vi.mock('./json_storage.js', () => ({
-  JsonStorage: vi.fn().mockImplementation(() => ({
-    read: vi.fn().mockResolvedValue({}),
-  })),
+  JsonStorage: vi.fn(
+    class MockJsonStorage {
+      read = vi.fn().mockResolvedValue({});
+    },
+  ),
 }));
 
 describe('getAllConfig', () => {

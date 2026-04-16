@@ -12,6 +12,18 @@ import type {
 import type { ToolInfo } from '../../types/tool.js';
 
 /**
+ * Mock 客户端接口类型，避免 vi.fn() 返回类型引用 @vitest/spy
+ */
+interface MockClientMethods {
+  connect: (transport?: unknown) => Promise<void>;
+  close: () => Promise<void>;
+  listTools: () => Promise<{ tools: Array<{ name: string; description: string; inputSchema: Record<string, unknown> }> }>;
+  callTool: (name: string, args?: Record<string, unknown>) => Promise<{ content: Array<{ type: string; text: string }> }>;
+  isConnected: () => boolean;
+  getStatus: () => string;
+}
+
+/**
  * Mock 配置工厂
  */
 export class MockConfigFactory {
@@ -221,8 +233,8 @@ export class MockMcpClientFactory {
   /**
    * 创建已连接的客户端
    */
-  static createConnectedClient() {
-    const client = {
+  static createConnectedClient(): MockClientMethods {
+    const client: MockClientMethods = {
       connect: vi.fn().mockResolvedValue(undefined),
       close: vi.fn().mockResolvedValue(undefined),
       listTools: vi.fn().mockResolvedValue({
@@ -252,8 +264,8 @@ export class MockMcpClientFactory {
   /**
    * 创建会失败的客户端
    */
-  static createFailingClient() {
-    const client = {
+  static createFailingClient(): MockClientMethods {
+    const client: MockClientMethods = {
       connect: vi.fn().mockRejectedValue(new Error('Connection failed')),
       close: vi.fn().mockResolvedValue(undefined),
       listTools: vi.fn().mockRejectedValue(new Error('Failed to list tools')),
@@ -268,33 +280,39 @@ export class MockMcpClientFactory {
   /**
    * 创建超时客户端
    */
-  static createTimeoutClient() {
-    const client = {
-      connect: vi
-        .fn()
-        .mockImplementation(
-          () =>
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Connection timeout')), 100),
-            ),
-        ),
+  static createTimeoutClient(): MockClientMethods {
+    const client: MockClientMethods = {
+      connect: vi.fn().mockImplementation(
+        () =>
+          new Promise((_, reject) => {
+            const timer = setTimeout(
+              () => reject(new Error('Connection timeout')),
+              100,
+            );
+            timer.unref?.();
+          }),
+      ),
       close: vi.fn().mockResolvedValue(undefined),
-      listTools: vi
-        .fn()
-        .mockImplementation(
-          () =>
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('List tools timeout')), 100),
-            ),
-        ),
-      callTool: vi
-        .fn()
-        .mockImplementation(
-          () =>
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Call tool timeout')), 100),
-            ),
-        ),
+      listTools: vi.fn().mockImplementation(
+        () =>
+          new Promise((_, reject) => {
+            const timer = setTimeout(
+              () => reject(new Error('List tools timeout')),
+              100,
+            );
+            timer.unref?.();
+          }),
+      ),
+      callTool: vi.fn().mockImplementation(
+        () =>
+          new Promise((_, reject) => {
+            const timer = setTimeout(
+              () => reject(new Error('Call tool timeout')),
+              100,
+            );
+            timer.unref?.();
+          }),
+      ),
       isConnected: vi.fn().mockReturnValue(false),
       getStatus: vi.fn().mockReturnValue('timeout'),
     };
@@ -310,7 +328,7 @@ export class MockMcpClientFactory {
     toolResult?: unknown;
     delay?: number;
     shouldFail?: boolean;
-  }) {
+  }): MockClientMethods {
     const tools =
       config.tools ||
       [
@@ -321,7 +339,7 @@ export class MockMcpClientFactory {
         inputSchema: { type: 'object', properties: {} },
       }));
 
-    const client = {
+    const client: MockClientMethods = {
       connect: vi.fn().mockImplementation(async () => {
         if (config.delay) {
           await new Promise((resolve) => setTimeout(resolve, config.delay));

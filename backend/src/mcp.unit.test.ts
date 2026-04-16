@@ -3,47 +3,49 @@ import { mcp, shutdownMcpService } from './mcp.js';
 
 // Mock所有依赖
 vi.mock('@mcp-core/mcp-hub-core', () => ({
-  McpServiceManager: vi.fn().mockImplementation(() => ({
-    initializeFromConfig: vi.fn().mockResolvedValue(undefined),
-    getServiceStatus: vi.fn().mockReturnValue({
-      initialized: true,
-      serverCount: 2,
-      activeConnections: 1,
-    }),
-    getServerConnections: vi.fn().mockReturnValue(
-      new Map([
-        [
-          'server1',
-          {
-            status: 'connected',
-            lastConnected: new Date(),
-            tools: [{ name: 'tool1' }],
-            lastError: null,
-          },
-        ],
+  McpServiceManager: vi.fn(function (this: Record<string, unknown>) {
+    Object.assign(this, {
+      initializeFromConfig: vi.fn().mockResolvedValue(undefined),
+      getServiceStatus: vi.fn().mockReturnValue({
+        initialized: true,
+        serverCount: 2,
+        activeConnections: 1,
+      }),
+      getServerConnections: vi.fn().mockReturnValue(
+        new Map([
+          [
+            'server1',
+            {
+              status: 'connected',
+              lastConnected: new Date(),
+              tools: [{ name: 'tool1' }],
+              lastError: null,
+            },
+          ],
+        ]),
+      ),
+      getAllTools: vi.fn().mockResolvedValue([
+        {
+          name: 'test_tool',
+          description: '测试工具',
+          serverId: 'server1',
+          parameters: {},
+        },
       ]),
-    ),
-    getAllTools: vi.fn().mockResolvedValue([
-      {
-        name: 'test_tool',
-        description: '测试工具',
-        serverId: 'server1',
-        parameters: {},
-      },
-    ]),
-    getServerTools: vi.fn().mockResolvedValue([
-      {
-        name: 'test_tool',
-        description: '测试工具',
-        parameters: {},
-      },
-    ]),
-    executeToolCall: vi.fn().mockResolvedValue({
-      success: true,
-      data: 'test result',
-    }),
-    shutdown: vi.fn().mockResolvedValue(undefined),
-  })),
+      getServerTools: vi.fn().mockResolvedValue([
+        {
+          name: 'test_tool',
+          description: '测试工具',
+          parameters: {},
+        },
+      ]),
+      executeToolCall: vi.fn().mockResolvedValue({
+        success: true,
+        data: 'test result',
+      }),
+      shutdown: vi.fn().mockResolvedValue(undefined),
+    });
+  }),
   performanceMonitor: {
     startRequest: vi.fn(),
     endRequest: vi.fn(),
@@ -59,11 +61,15 @@ vi.mock('@mcp-core/mcp-hub-core', () => ({
 }));
 
 vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', () => ({
-  StreamableHTTPServerTransport: vi.fn().mockImplementation(() => ({
-    handleRequest: vi.fn().mockResolvedValue(undefined),
-    close: vi.fn(),
-    onerror: null,
-  })),
+  StreamableHTTPServerTransport: vi.fn(function (
+    this: Record<string, unknown>,
+  ) {
+    Object.assign(this, {
+      handleRequest: vi.fn().mockResolvedValue(undefined),
+      close: vi.fn(),
+      onerror: null,
+    });
+  }),
 }));
 
 vi.mock('fetch-to-node', () => ({

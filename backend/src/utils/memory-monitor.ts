@@ -69,6 +69,7 @@ export class MemoryMonitor {
       this.takeSnapshot();
       this.checkForAlerts();
     }, intervalMs);
+    this.snapshotInterval.unref?.();
 
     logger.info('内存监控已启动');
   }

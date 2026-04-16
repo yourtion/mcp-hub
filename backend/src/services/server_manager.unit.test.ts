@@ -5,10 +5,27 @@ import { ServerStatus } from '../types/mcp-hub.js';
 import { ServerManager } from './server_manager.js';
 
 // Mock the MCP SDK
-vi.mock('@modelcontextprotocol/sdk/client/index.js');
-vi.mock('@modelcontextprotocol/sdk/client/stdio.js');
-vi.mock('@modelcontextprotocol/sdk/client/sse.js');
-vi.mock('@modelcontextprotocol/sdk/client/streamableHttp.js');
+// 使用一个工厂函数来创建 mock Client，支持 vitest 4.x 的 new 调用
+let _mockClientInstance: Record<string, ReturnType<typeof vi.fn>> | null = null;
+
+vi.mock('@modelcontextprotocol/sdk/client/index.js', () => {
+  return {
+    Client: vi.fn(function (this: Record<string, unknown>) {
+      Object.assign(this, _mockClientInstance);
+    }),
+  };
+});
+vi.mock('@modelcontextprotocol/sdk/client/stdio.js', () => ({
+  StdioClientTransport: vi.fn(function (this: Record<string, unknown>) {}),
+}));
+vi.mock('@modelcontextprotocol/sdk/client/sse.js', () => ({
+  SSEClientTransport: vi.fn(function (this: Record<string, unknown>) {}),
+}));
+vi.mock('@modelcontextprotocol/sdk/client/streamableHttp.js', () => ({
+  StreamableHTTPClientTransport: vi.fn(function (
+    this: Record<string, unknown>,
+  ) {}),
+}));
 vi.mock('../utils/logger.js');
 
 const MockClient = vi.mocked(Client);
@@ -29,7 +46,8 @@ describe('ServerManager', () => {
       callTool: vi.fn(),
     };
 
-    MockClient.mockImplementation(() => mockClient);
+    // 设置全局 mockClient 实例，供 vi.mock 工厂中的构造函数使用
+    _mockClientInstance = mockClient;
 
     // Setup test server configurations
     mockServerConfigs = {
@@ -631,17 +649,9 @@ describe('ServerManager', () => {
     });
 
     it('should handle transport creation failures', async () => {
-      // Mock transport creation to fail
-      const { StdioClientTransport } = await import(
-        '@modelcontextprotocol/sdk/client/stdio.js'
-      );
-      vi.doMock('@modelcontextprotocol/sdk/client/stdio.js', () => ({
-        StdioClientTransport: vi.fn().mockImplementation(() => {
-          throw new Error('Transport creation failed');
-        }),
-      }));
-
-      mockClient.connect.mockRejectedValue(
+      // 直接在 serverManager 内部模拟 transport 创建失败
+      // 通过 mock connect 方法来模拟底层连接失败
+      mockClient.connect.mockRejectedValueOnce(
         new Error('Transport creation failed'),
       );
 

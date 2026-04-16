@@ -81,14 +81,19 @@ async function initializeHubService(validatedConfig: {
 
     // 设置初始化超时
     const initPromise = hubService.initialize();
+    let timeoutId: NodeJS.Timeout | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(
+      timeoutId = setTimeout(
         () => reject(new Error('MCP Hub 服务初始化超时 (60秒)')),
         60000,
       );
+      timeoutId.unref?.();
     });
 
     await Promise.race([initPromise, timeoutPromise]);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
 
     logger.info('MCP Hub 服务初始化成功');
     return hubService;

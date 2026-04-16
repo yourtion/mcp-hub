@@ -7,14 +7,16 @@ import { ApiToolIntegrationService } from './api_tool_integration_service.js';
 
 // Mock the core module
 vi.mock('@mcp-core/mcp-hub-core/api-to-mcp', () => ({
-  ApiToMcpServiceManagerImpl: vi.fn().mockImplementation(() => ({
-    initialize: vi.fn(),
-    getApiTools: vi.fn(),
-    executeApiTool: vi.fn(),
-    getToolDefinition: vi.fn(),
-    reloadConfig: vi.fn(),
-    shutdown: vi.fn(),
-  })),
+  ApiToMcpServiceManagerImpl: vi.fn(
+    class MockApiToMcpServiceManagerImpl {
+      initialize = vi.fn();
+      getApiTools = vi.fn();
+      executeApiTool = vi.fn();
+      getToolDefinition = vi.fn();
+      reloadConfig = vi.fn();
+      shutdown = vi.fn();
+    },
+  ),
 }));
 
 describe('ApiToolIntegrationService', () => {

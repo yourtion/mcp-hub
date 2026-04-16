@@ -30,8 +30,12 @@ declare module 'hono' {
  */
 async function reloadHubApiTools(): Promise<void> {
   try {
-    const { getHubService } = await import('../tools/index.js');
-    const hubService: McpHubService = await getHubService();
+    const { getExistingHubService } = await import('../tools/index.js');
+    const hubService = getExistingHubService();
+    if (!hubService) {
+      logger.debug('Hub服务尚未初始化，跳过API工具同步');
+      return;
+    }
     await hubService.reloadApiToolConfig();
     logger.info('Hub服务API工具配置同步完成');
   } catch (error) {

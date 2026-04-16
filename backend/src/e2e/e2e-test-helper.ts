@@ -370,12 +370,22 @@ export class E2ETestHelper {
 
     const results = await Promise.allSettled(
       cleanupFns.map((fn) =>
-        Promise.race([
-          fn(),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Cleanup timeout')), timeout),
-          ),
-        ]),
+        (() => {
+          let timeoutId: NodeJS.Timeout | undefined;
+          const timeoutPromise = new Promise((_, reject) => {
+            timeoutId = setTimeout(
+              () => reject(new Error('Cleanup timeout')),
+              timeout,
+            );
+            timeoutId.unref?.();
+          });
+
+          return Promise.race([fn(), timeoutPromise]).finally(() => {
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+            }
+          });
+        })(),
       ),
     );
 

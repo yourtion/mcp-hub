@@ -442,11 +442,19 @@ export class McpHubService implements IMcpHubService {
 
       // Graceful shutdown with timeout
       const shutdownPromise = this.performGracefulShutdown();
+      let timeoutId: NodeJS.Timeout | undefined;
       const timeoutPromise = new Promise<void>((_, reject) => {
-        setTimeout(() => reject(new Error('Shutdown timeout')), 10000); // 10 second timeout
+        timeoutId = setTimeout(
+          () => reject(new Error('Shutdown timeout')),
+          10000,
+        ); // 10 second timeout
+        timeoutId.unref?.();
       });
 
       await Promise.race([shutdownPromise, timeoutPromise]);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     } catch (error) {
       const shutdownError = error as Error;
       logger.error('Error during graceful shutdown', shutdownError);
@@ -1093,6 +1101,7 @@ export class McpHubService implements IMcpHubService {
         logger.error('Health check failed', error as Error);
       }
     }, this.HEALTH_CHECK_INTERVAL_MS);
+    this.healthCheckInterval.unref?.();
 
     // 追踪主定时器
     this.healthCheckTimers.push(this.healthCheckInterval);
@@ -1105,6 +1114,7 @@ export class McpHubService implements IMcpHubService {
         logger.error('Initial health check failed', error as Error);
       }
     });
+    initialCheck.unref?.();
 
     // 追踪 setImmediate 定时器
     this.healthCheckTimers.push(initialCheck);
@@ -1388,15 +1398,20 @@ export class McpHubService implements IMcpHubService {
         async (server) => {
           try {
             if (server.client && typeof server.client.close === 'function') {
+              let timeoutId: NodeJS.Timeout | undefined;
               await Promise.race([
                 server.client.close(),
-                new Promise((_, reject) =>
-                  setTimeout(
+                new Promise((_, reject) => {
+                  timeoutId = setTimeout(
                     () => reject(new Error('Force close timeout')),
                     2000,
-                  ),
-                ),
+                  );
+                  timeoutId.unref?.();
+                }),
               ]);
+              if (timeoutId) {
+                clearTimeout(timeoutId);
+              }
             }
           } catch (error) {
             logger.debug('Force close server connection failed', {

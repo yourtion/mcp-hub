@@ -20,9 +20,9 @@ const mockApiToolIntegrationService = {
 
 // Mock API工具集成服务
 vi.mock('./api_tool_integration_service.js', () => ({
-  ApiToolIntegrationService: vi
-    .fn()
-    .mockImplementation(() => mockApiToolIntegrationService),
+  ApiToolIntegrationService: vi.fn(function (this: Record<string, unknown>) {
+    Object.assign(this, mockApiToolIntegrationService);
+  }),
 }));
 
 // Mock API配置管理器
@@ -37,7 +37,9 @@ const mockConfigManager = {
 };
 
 vi.mock('@mcp-core/mcp-hub-core/api-to-mcp', () => ({
-  ApiConfigManagerImpl: vi.fn().mockImplementation(() => mockConfigManager),
+  ApiConfigManagerImpl: vi.fn(function (this: Record<string, unknown>) {
+    Object.assign(this, mockConfigManager);
+  }),
   ConfigLoadError: class ConfigLoadError extends Error {
     constructor(
       message: string,

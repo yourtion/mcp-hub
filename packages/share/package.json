@@ -35,9 +35,7 @@
   "packageManager": "pnpm@10.6.4",
   "devDependencies": {
     "@types/node": "^20.11.17",
-    "@vitest/ui": "^2.1.8",
-    "typescript": "^5.8.3",
-    "vitest": "^4.0.16"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "zod": "^4.3.6"

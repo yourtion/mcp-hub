@@ -144,11 +144,13 @@ export class PerformanceMonitor extends EventEmitter {
     this.collectTimer = setInterval(() => {
       this.collectMetrics();
     }, this.config.collectInterval);
+    this.collectTimer.unref?.();
 
     // 启动清理定时器
     this.cleanupTimer = setInterval(() => {
       this.cleanup();
     }, this.config.retentionPeriod / 10); // 每10%保留期清理一次
+    this.cleanupTimer.unref?.();
 
     this.emit('started');
   }

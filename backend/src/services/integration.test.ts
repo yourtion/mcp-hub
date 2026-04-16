@@ -1,14 +1,19 @@
 import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { McpHubService } from './mcp_hub_service.js';
 
 // Mock external dependencies
-vi.mock('@modelcontextprotocol/sdk/client/index.js');
+let _mockClientInstance: Record<string, ReturnType<typeof vi.fn>> | null = null;
+
+vi.mock('@modelcontextprotocol/sdk/client/index.js', () => {
+  return {
+    Client: vi.fn(function (this: unknown) {
+      return _mockClientInstance;
+    }),
+  };
+});
 vi.mock('@modelcontextprotocol/sdk/client/stdio.js');
 vi.mock('../utils/logger.js');
-
-const MockClient = vi.mocked(Client);
 
 describe('MCP Hub Service Integration Tests', () => {
   let mcpHubService: McpHubService;
@@ -27,7 +32,8 @@ describe('MCP Hub Service Integration Tests', () => {
       callTool: vi.fn(),
     };
 
-    MockClient.mockImplementation(() => mockClient);
+    // 设置全局 mockClient 实例，供 vi.mock 工厂中的构造函数使用
+    _mockClientInstance = mockClient;
 
     // Setup test configurations
     serverConfigs = {

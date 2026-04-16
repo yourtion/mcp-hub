@@ -13,6 +13,10 @@ export const toolsApi = new Hono();
 // 全局hub服务实例
 let hubService: McpHubService | null = null;
 
+export function getExistingHubService(): McpHubService | null {
+  return hubService;
+}
+
 // 初始化hub服务
 export async function getHubService(): Promise<McpHubService> {
   if (hubService) {
@@ -34,11 +38,16 @@ export async function getHubService(): Promise<McpHubService> {
 
     // 初始化服务
     const initPromise = hubService.initialize();
+    let timeoutId: NodeJS.Timeout | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('服务初始化超时')), 30000);
+      timeoutId = setTimeout(() => reject(new Error('服务初始化超时')), 30000);
+      timeoutId.unref?.();
     });
 
     await Promise.race([initPromise, timeoutPromise]);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
 
     logger.info('工具管理API的MCP Hub服务初始化成功');
     return hubService;

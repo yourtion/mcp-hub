@@ -40,14 +40,19 @@ async function getHubService(): Promise<McpHubService> {
 
     // Initialize the service with timeout
     const initPromise = hubService.initialize();
+    let timeoutId: NodeJS.Timeout | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(
+      timeoutId = setTimeout(
         () => reject(new Error('Service initialization timeout')),
         30000,
       );
+      timeoutId.unref?.();
     });
 
     await Promise.race([initPromise, timeoutPromise]);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
 
     logger.info('MCP Hub Service initialized successfully for API');
     return hubService;

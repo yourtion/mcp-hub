@@ -5,8 +5,8 @@ import { sse } from './sse.js';
 vi.mock('hono/streaming', () => ({
   streamSSE: vi.fn().mockImplementation((_c, callback) => {
     const mockStream = {
-      onAbort: vi.fn().mockImplementation((fn) => {
-        // 模拟立即调用abort回调
+      onAbort: vi.fn().mockImplementation((fn: () => void) => {
+        // 模拟立即调用abort回调（使用 setTimeout 确保在 async callback 中的 await 之后执行）
         setTimeout(fn, 0);
       }),
       writeSSE: vi.fn(),
@@ -14,7 +14,9 @@ vi.mock('hono/streaming', () => ({
     };
 
     // 异步执行回调函数（因为实际回调是async的）
-    Promise.resolve(callback(mockStream)).catch(() => {
+    // 注意：不能使用 Promise.resolve，因为 async callback 返回的 Promise
+    // 在 await 处会暂停，需要在微任务中继续执行
+    callback(mockStream).catch(() => {
       // 忽略错误
     });
 
@@ -28,14 +30,18 @@ vi.mock('hono/streaming', () => ({
   }),
 }));
 
-vi.mock('./services/mcp_service', () => ({
+vi.mock('./services/mcp_service.js', () => ({
   mcpServer: {
     connect: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
 vi.mock('./utils/sse.js', () => ({
-  SSETransport: vi.fn().mockImplementation((_path, _stream) => {
+  SSETransport: vi.fn().mockImplementation(function (
+    this: unknown,
+    _path: string,
+    _stream: unknown,
+  ) {
     // 返回一个实际的mock对象
     const mockInstance = {
       sessionId: 'test-session-id',
@@ -78,8 +84,8 @@ describe('SSE Router', () => {
 
       await sse.request('http://localhost/sse');
 
-      // 等待异步操作完成
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      // 等待异步操作完成（mcpServer.connect 微任务 + onAbort setTimeout）
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       expect(consoleSpy).toHaveBeenCalledWith('SSE connection closed');
     });

@@ -177,6 +177,7 @@ export class SecurityLoggerImpl implements SecurityLogger {
   private sensitiveConfig: SensitiveDataConfig;
   private monitoringConfig: SecurityMonitoringConfig;
   private alertCallback?: (alert: SecurityAlert) => void;
+  private cleanupInterval?: NodeJS.Timeout;
 
   constructor(
     sensitiveConfig?: Partial<SensitiveDataConfig>,
@@ -207,12 +208,20 @@ export class SecurityLoggerImpl implements SecurityLogger {
     };
 
     // 定期清理旧日志（保留24小时）
-    setInterval(
+    this.cleanupInterval = setInterval(
       () => {
         this.cleanupOldLogs();
       },
       60 * 60 * 1000,
     ); // 每小时清理一次
+    this.cleanupInterval.unref?.();
+  }
+
+  dispose(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
+    }
   }
 
   logApiCall(log: ApiCallLog): void {

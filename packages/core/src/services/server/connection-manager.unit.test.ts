@@ -25,9 +25,6 @@ const mockConsole = {
   dir: vi.fn(),
 };
 
-// 替换全局console
-vi.stubGlobal('console', mockConsole);
-
 describe('ServerConnectionManager', () => {
   let connectionManager: ServerConnectionManager;
   let mockServerConfig: ServerConfig;
@@ -35,6 +32,10 @@ describe('ServerConnectionManager', () => {
   beforeEach(() => {
     // 重置所有模拟
     vi.clearAllMocks();
+
+    // 在每个测试前重新替换全局console
+    // （因为 unstubGlobals: true 会在每个测试后恢复 console）
+    vi.stubGlobal('console', mockConsole);
 
     // 创建模拟服务器配置
     mockServerConfig = {

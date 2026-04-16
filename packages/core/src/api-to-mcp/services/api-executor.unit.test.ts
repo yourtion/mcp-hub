@@ -9,30 +9,40 @@ import { ApiExecutorImpl, createApiExecutor } from './api-executor.js';
 import type { AuthenticationManager } from './authentication.js';
 import type { HttpClient } from './http-client.js';
 
+const mockBuildRequest = vi.fn().mockImplementation((apiConfig, _context) => ({
+  success: true,
+  request: {
+    url: apiConfig.url,
+    method: apiConfig.method,
+    headers: apiConfig.headers,
+    params: apiConfig.queryParams,
+    data: apiConfig.body,
+    timeout: apiConfig.timeout,
+    retries: apiConfig.retries,
+  },
+  usedVariables: [],
+}));
+
+const mockValidateParameters = vi
+  .fn()
+  .mockReturnValue({ valid: true, errors: [] });
+
 // Mock依赖
 vi.mock('./http-client.js');
 vi.mock('./authentication.js');
 vi.mock('../utils/http-request-builder.js', () => ({
-  HttpRequestBuilderImpl: vi.fn().mockImplementation(() => ({
-    buildRequest: vi.fn().mockImplementation((apiConfig, _context) => ({
-      success: true,
-      request: {
-        url: apiConfig.url,
-        method: apiConfig.method,
-        headers: apiConfig.headers,
-        params: apiConfig.queryParams,
-        data: apiConfig.body,
-        timeout: apiConfig.timeout,
-        retries: apiConfig.retries,
-      },
-      usedVariables: [],
-    })),
-  })),
+  HttpRequestBuilderImpl: vi.fn(
+    class MockHttpRequestBuilderImpl {
+      buildRequest = mockBuildRequest;
+    },
+  ),
 }));
 vi.mock('../utils/parameter-validator.js', () => ({
-  ParameterValidatorImpl: vi.fn().mockImplementation(() => ({
-    validate: vi.fn().mockReturnValue({ valid: true, errors: [] }),
-  })),
+  ParameterValidatorImpl: vi.fn(
+    class MockParameterValidatorImpl {
+      validate = mockValidateParameters;
+    },
+  ),
 }));
 
 describe('ApiExecutorImpl', () => {

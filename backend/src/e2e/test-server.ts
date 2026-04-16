@@ -26,12 +26,14 @@ export class TestServer {
           fetch: app.fetch,
           port: this.port,
         });
+        (this.server as { unref?: () => void } | null)?.unref?.();
 
         // 等待服务器启动
-        setTimeout(() => {
+        const startupTimer = setTimeout(() => {
           logger.info(`测试服务器已启动在端口 ${this.port}`);
           resolve();
         }, 1000);
+        startupTimer.unref?.();
       } catch (error) {
         logger.error('测试服务器启动失败', error as Error);
         reject(error);
@@ -42,7 +44,12 @@ export class TestServer {
   async stop(): Promise<void> {
     if (this.server) {
       try {
-        // Hono服务器没有直接的close方法，我们需要处理这个
+        const server = this.server as { close?: (cb?: () => void) => void };
+        if (typeof server.close === 'function') {
+          await new Promise<void>((resolve) => {
+            server.close?.(() => resolve());
+          });
+        }
         this.server = null;
         logger.info('测试服务器已停止');
       } catch (error) {
@@ -126,7 +133,10 @@ export async function waitForServer(
     }
 
     if (attempt < maxAttempts) {
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      await new Promise((resolve) => {
+        const timer = setTimeout(resolve, delay);
+        timer.unref?.();
+      });
     }
   }
 

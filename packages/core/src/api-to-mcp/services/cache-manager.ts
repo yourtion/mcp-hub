@@ -303,6 +303,7 @@ export class CacheManagerImpl implements CacheManager {
         logger.error('定期清理缓存时出错:', error);
       });
     }, 60000);
+    this.cleanupInterval.unref?.();
   }
 
   /**

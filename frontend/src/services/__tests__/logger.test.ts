@@ -22,14 +22,13 @@ describe('FrontendLogger Integration', () => {
     expect(logger).toBeInstanceOf(FrontendLogger);
     expect(logger.getLevel()).toBe(LogLevel.DEBUG);
 
-    // 测试日志记录功能
-    logger.debug('测试调试消息');
-    logger.info('测试信息消息');
-    logger.warn('测试警告消息');
-    logger.error('测试错误消息');
-
-    // 测试应该不会抛出异常
-    expect(true).toBe(true);
+    // 测试日志记录功能不应抛出异常
+    expect(() => {
+      logger.debug('测试调试消息');
+      logger.info('测试信息消息');
+      logger.warn('测试警告消息');
+      logger.error('测试错误消息');
+    }).not.toThrow();
   });
 
   it('应该正确检测环境', () => {

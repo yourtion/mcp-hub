@@ -357,15 +357,20 @@ export class ServerManager implements IServerManager {
         try {
           if (server.status === ServerStatus.CONNECTED) {
             // 使用 Promise.race 添加超时保护
+            let timeoutId: NodeJS.Timeout | undefined;
             await Promise.race([
               server.client.close(),
-              new Promise<void>((_, reject) =>
-                setTimeout(
+              new Promise<void>((_, reject) => {
+                timeoutId = setTimeout(
                   () => reject(new Error('关闭超时')),
                   SHUTDOWN_TIMEOUT,
-                ),
-              ),
+                );
+                timeoutId.unref?.();
+              }),
             ]);
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+            }
             logger.logServerConnection(server.id, 'disconnected');
           }
         } catch (error) {

@@ -41,7 +41,9 @@ const mockServiceManager = {
 
 // Mock 核心包
 vi.mock('@mcp-core/mcp-hub-core', () => ({
-  McpServiceManager: vi.fn().mockImplementation(() => mockServiceManager),
+  McpServiceManager: vi.fn(function (this: Record<string, unknown>) {
+    Object.assign(this, mockServiceManager);
+  }),
 }));
 
 // 创建 mock transport 实例
@@ -60,11 +62,15 @@ const mockMcpServer = {
 
 // Mock MCP SDK
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => ({
-  McpServer: vi.fn().mockImplementation(() => mockMcpServer),
+  McpServer: vi.fn(function (this: Record<string, unknown>) {
+    Object.assign(this, mockMcpServer);
+  }),
 }));
 
 vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
-  StdioServerTransport: vi.fn().mockImplementation(() => mockTransport),
+  StdioServerTransport: vi.fn(function (this: Record<string, unknown>) {
+    Object.assign(this, mockTransport);
+  }),
 }));
 
 // 导入要测试的类

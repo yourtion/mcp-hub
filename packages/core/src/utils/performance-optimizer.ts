@@ -466,6 +466,7 @@ export class PerformanceOptimizer extends EventEmitter {
     this.cacheCleanupTimer = setInterval(() => {
       this.cleanupExpiredCache();
     }, this.config.cacheTtl / 10); // 每10%TTL清理一次
+    this.cacheCleanupTimer.unref?.();
   }
 
   /**
@@ -475,6 +476,7 @@ export class PerformanceOptimizer extends EventEmitter {
     this.gcTimer = setInterval(() => {
       this.optimizeMemory();
     }, this.config.gcInterval);
+    this.gcTimer.unref?.();
   }
 
   /**
