@@ -1,19 +1,17 @@
 import path from 'node:path';
 import vue from '@vitejs/plugin-vue';
-import { defineConfig } from 'vitest/config';
+import { mergeConfig } from 'vitest/config';
+import configShared from '../vitest.shared.js';
 
-export default defineConfig({
+export default mergeConfig(configShared, {
   plugins: [vue()],
   test: {
     name: 'frontend',
     environment: 'jsdom',
-    globals: true,
-    watch: false,
     setupFiles: ['./src/test-setup.ts'],
     include: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
-    pool: 'forks',
-    maxWorkers: 1,
-    fileParallelism: false,
+    // jsdom 环境下 localStorage 等全局状态不支持并行
+    maxConcurrency: 1,
   },
   resolve: {
     alias: {

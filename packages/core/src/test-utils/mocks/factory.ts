@@ -17,8 +17,17 @@ import type { ToolInfo } from '../../types/tool.js';
 interface MockClientMethods {
   connect: (transport?: unknown) => Promise<void>;
   close: () => Promise<void>;
-  listTools: () => Promise<{ tools: Array<{ name: string; description: string; inputSchema: Record<string, unknown> }> }>;
-  callTool: (name: string, args?: Record<string, unknown>) => Promise<{ content: Array<{ type: string; text: string }> }>;
+  listTools: () => Promise<{
+    tools: Array<{
+      name: string;
+      description: string;
+      inputSchema: Record<string, unknown>;
+    }>;
+  }>;
+  callTool: (
+    name: string,
+    args?: Record<string, unknown>,
+  ) => Promise<{ content: Array<{ type: string; text: string }> }>;
   isConnected: () => boolean;
   getStatus: () => string;
 }

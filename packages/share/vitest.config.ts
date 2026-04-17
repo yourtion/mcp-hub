@@ -1,29 +1,10 @@
-import { defineConfig } from 'vitest/config';
+import { mergeConfig } from 'vitest/config';
+import configShared from '../../vitest.shared.js';
 
-export default defineConfig({
+export default mergeConfig(configShared, {
   test: {
     name: 'share',
-    globals: true,
-    environment: 'node',
-    watch: false,
     include: ['src/**/*.test.ts'],
-
-    // 修复 vitest 不退出问题
-    pool: 'forks',
-    maxWorkers: 1,
-
-    // 测试超时配置
-    testTimeout: 10000,
-    hookTimeout: 5000,
-    teardownTimeout: 10000,
-
-    // 限制并发
-    maxConcurrency: 1,
-    fileParallelism: false,
-    clearMocks: true,
-    restoreMocks: true,
-    unstubGlobals: true,
-    unstubEnvs: true,
 
     coverage: {
       provider: 'v8',

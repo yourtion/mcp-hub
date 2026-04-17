@@ -388,17 +388,27 @@ describe('MCP Hub Service Integration Tests', () => {
           content: [{ type: 'text', text: 'Success on retry' }],
         });
 
-      const result = await mcpHubService.callTool(
+      // 使用 vi.useFakeTimers 加速重试延迟
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+
+      const resultPromise = mcpHubService.callTool(
         'add',
         { a: 3, b: 4 },
         'default',
       );
+
+      // 快速推进所有定时器
+      await vi.advanceTimersByTimeAsync(2000);
+
+      const result = await resultPromise;
 
       expect(result.isError).toBe(false);
       expect(result.content).toEqual([
         { type: 'text', text: 'Success on retry' },
       ]);
       expect(mockClient.callTool).toHaveBeenCalledTimes(2);
+
+      vi.useRealTimers();
     });
 
     it('should handle different result formats', async () => {
@@ -643,7 +653,7 @@ describe('MCP Hub Service Integration Tests', () => {
                 resolve({
                   content: [{ type: 'text', text: 'Delayed result' }],
                 }),
-              100,
+              5,
             ),
           ),
       );

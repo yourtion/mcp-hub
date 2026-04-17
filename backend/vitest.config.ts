@@ -1,7 +1,8 @@
 import path from 'node:path';
-import { defineConfig } from 'vitest/config';
+import { mergeConfig } from 'vitest/config';
+import configShared from '../vitest.shared.js';
 
-export default defineConfig({
+export default mergeConfig(configShared, {
   resolve: {
     alias: {
       '@mcp-core/mcp-hub-core': path.resolve(__dirname, '../packages/core/src'),
@@ -13,9 +14,6 @@ export default defineConfig({
   },
   test: {
     name: 'api-unit',
-    globals: true,
-    environment: 'node',
-    watch: false,
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.test.ts'],
     exclude: [
@@ -24,19 +22,9 @@ export default defineConfig({
       'src/mcp.test.ts',
       'src/sse.test.ts',
     ],
-
     testTimeout: 30000,
     hookTimeout: 10000,
     teardownTimeout: 5000,
-
-    pool: 'forks',
-    maxWorkers: 1,
-    fileParallelism: false,
-    maxConcurrency: 1,
-    clearMocks: true,
-    restoreMocks: true,
-    unstubGlobals: true,
-    unstubEnvs: true,
 
     coverage: {
       provider: 'v8',

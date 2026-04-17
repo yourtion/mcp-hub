@@ -17,7 +17,7 @@ describe('安全功能端到端测试', () => {
     setupTestConfig(true); // 启用认证以测试安全功能
 
     // 2. 等待文件系统同步
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 5));
 
     // 3. 启动服务器
     const port = 3101;
@@ -29,7 +29,7 @@ describe('安全功能端到端测试', () => {
     });
 
     // 4. 等待服务器完全启动
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 10));
   });
 
   afterAll(async () => {

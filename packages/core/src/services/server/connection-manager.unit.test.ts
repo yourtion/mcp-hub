@@ -415,6 +415,8 @@ describe('ServerConnectionManager', () => {
     });
 
     it('应该成功重新连接服务器', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+
       await connectionManager.createConnection('test-server', mockServerConfig);
 
       // 模拟连接断开
@@ -424,7 +426,11 @@ describe('ServerConnectionManager', () => {
         connection.lastError = new Error('连接断开');
       }
 
-      await connectionManager.reconnectServer('test-server');
+      const reconnectPromise = connectionManager.reconnectServer('test-server');
+      await vi.advanceTimersByTimeAsync(2000);
+      await reconnectPromise;
+
+      vi.useRealTimers();
 
       const status = connectionManager.getConnectionStatus('test-server');
       expect(status.connected).toBe(true);

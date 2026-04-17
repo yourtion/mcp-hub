@@ -18,7 +18,7 @@ describe('Web UI 集成端到端测试', () => {
     setupTestConfig();
 
     // 2. 等待文件系统同步
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 5));
 
     // 3. 启动服务器
     const port = 3100;
@@ -30,7 +30,7 @@ describe('Web UI 集成端到端测试', () => {
     });
 
     // 4. 等待服务器完全启动
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
     // 5. 登录获取token供所有测试使用
     const loginResponse = await fetch(`${baseUrl}/api/auth/login`, {

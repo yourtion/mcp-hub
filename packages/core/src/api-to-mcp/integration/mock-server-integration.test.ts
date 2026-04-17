@@ -416,8 +416,8 @@ describe('Mock服务器集成测试', () => {
     });
 
     it('应该处理网络超时', async () => {
-      // 设置延迟端点（5秒延迟，超过1秒超时）
-      mockServer.simulateDelay('/slow', 'GET', 5000, {
+      // 设置延迟端点（100ms延迟，超过30ms超时）
+      mockServer.simulateDelay('/slow', 'GET', 100, {
         message: 'slow response',
       });
 
@@ -431,7 +431,8 @@ describe('Mock服务器集成测试', () => {
             api: {
               url: `${serverBaseUrl}/slow`,
               method: 'GET',
-              timeout: 1000, // 1秒超时
+              timeout: 30, // 30ms超时
+              retries: 0, // 不重试，避免指数退避累积时间
             },
             parameters: {
               type: 'object',
@@ -449,7 +450,7 @@ describe('Mock服务器集成测试', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Network timeout');
-    }, 15000); // 设置测试超时时间为15秒
+    }, 10000); // 设置测试超时时间为10秒
   });
 
   describe('JSONata响应处理测试', () => {

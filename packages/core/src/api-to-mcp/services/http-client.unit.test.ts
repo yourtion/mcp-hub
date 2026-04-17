@@ -81,6 +81,8 @@ describe('HttpClient', () => {
     });
 
     it('应该处理请求失败并重试', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+
       const error = new Error('Network Error');
       mockFetch
         .mockRejectedValueOnce(error)
@@ -101,14 +103,20 @@ describe('HttpClient', () => {
         retries: 2,
       };
 
-      const response = await httpClient.request(config);
+      const promise = httpClient.request(config);
+      await vi.advanceTimersByTimeAsync(5000);
+      const response = await promise;
 
       expect(response.status).toBe(200);
       expect(response.data).toEqual({ message: 'success after retry' });
       expect(mockFetch).toHaveBeenCalledTimes(3);
+
+      vi.useRealTimers();
     });
 
     it('应该在所有重试失败后抛出错误', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+
       const error = new Error('Network Error');
       mockFetch.mockRejectedValue(error);
 
@@ -118,8 +126,12 @@ describe('HttpClient', () => {
         retries: 1,
       };
 
-      await expect(httpClient.request(config)).rejects.toThrow('Network Error');
+      const promise = httpClient.request(config);
+      await vi.advanceTimersByTimeAsync(3000);
+      await expect(promise).rejects.toThrow('Network Error');
       expect(mockFetch).toHaveBeenCalledTimes(2); // 1 + 1 retry
+
+      vi.useRealTimers();
     });
 
     it('应该支持POST请求和请求体', async () => {

@@ -452,6 +452,7 @@ describe('API转MCP服务集成测试', () => {
             api: {
               url: 'https://nonexistent.example.com/api',
               method: 'GET',
+              retries: 0, // 不重试，避免重试时的真实网络请求
             },
             parameters: {
               type: 'object',
@@ -463,9 +464,6 @@ describe('API转MCP服务集成测试', () => {
       };
 
       await fs.writeFile(configPath, JSON.stringify(config, null, 2));
-
-      // Mock网络错误
-      vi.mocked(fetch).mockRejectedValueOnce(new Error('Network timeout'));
 
       await serviceManager.initialize(configPath);
 
@@ -551,7 +549,7 @@ describe('API转MCP服务集成测试', () => {
 
       // Mock延迟响应
       vi.mocked(fetch).mockImplementation(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 5));
         return {
           ok: true,
           status: 200,
@@ -657,7 +655,7 @@ describe('API转MCP服务集成测试', () => {
       await serviceManager.initialize(configPath);
 
       // 添加小延迟确保uptime大于0
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 1));
 
       const health = await serviceManager.performHealthCheck();
 
@@ -688,6 +686,8 @@ describe('API转MCP服务集成测试', () => {
 
   describe('服务生命周期测试', () => {
     it('应该正确处理服务重启', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+
       const config: ApiToolsConfig = {
         version: '1.0',
         tools: [
@@ -714,8 +714,12 @@ describe('API转MCP服务集成测试', () => {
       const initialHealth = serviceManager.getHealthStatus();
       expect(initialHealth.healthy).toBe(true);
 
-      // 重启服务
-      await serviceManager.restart();
+      // 重启服务（restart 内部有 1s 延迟，用 fake timers 跳过）
+      const restartPromise = serviceManager.restart();
+      await vi.advanceTimersByTimeAsync(1500);
+      await restartPromise;
+
+      vi.useRealTimers();
 
       const restartedHealth = serviceManager.getHealthStatus();
       expect(restartedHealth.healthy).toBe(true);

@@ -411,7 +411,7 @@ describe('ApiConfigManagerImpl', () => {
       );
 
       // 等待可能的文件系统事件
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // 回调不应该被调用
       expect(mockCallback).not.toHaveBeenCalled();

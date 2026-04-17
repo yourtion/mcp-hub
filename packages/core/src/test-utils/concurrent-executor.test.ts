@@ -51,18 +51,18 @@ describe('ConcurrentExecutor', () => {
     it('应该支持超时控制', async () => {
       const operations = [
         async () => {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 10));
           return 'fast';
         },
         async () => {
-          await new Promise((resolve) => setTimeout(resolve, 5000)); // 会超时
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // 会超时
           return 'slow';
         },
       ];
 
       const results = await ConcurrentExecutor.execute(operations, {
         concurrency: 2,
-        timeout: 200, // 200ms 超时
+        timeout: 50, // 50ms 超时
       });
 
       expect(results[0].success).toBe(true);

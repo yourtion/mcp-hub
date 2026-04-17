@@ -4,8 +4,21 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from './auth.js';
+
+// Mock bcryptjs 以消除哈希计算时间
+vi.mock('bcryptjs', () => ({
+  default: {
+    hash: vi.fn().mockResolvedValue('$2a$10$mockedhashvalue'),
+    compare: vi
+      .fn()
+      .mockImplementation(async (password: string, _hash: string) => {
+        // 简单判断：如果密码匹配测试配置中的密码则返回 true
+        return password === 'password' || password === 'admin123';
+      }),
+  },
+}));
 
 describe('AuthService', () => {
   let authService: AuthService;

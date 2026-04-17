@@ -1,7 +1,8 @@
 import path from 'node:path';
-import { defineConfig } from 'vitest/config';
+import { mergeConfig } from 'vitest/config';
+import configShared from '../../vitest.shared.js';
 
-export default defineConfig({
+export default mergeConfig(configShared, {
   resolve: {
     alias: {
       '@mcp-core/mcp-hub-core': path.resolve(__dirname, '../core/src'),
@@ -14,30 +15,12 @@ export default defineConfig({
   },
   test: {
     name: 'cli',
-    globals: true,
-    environment: 'node',
-    watch: false,
     include: ['src/**/*.test.ts'],
     exclude: ['src/e2e/**', 'src/integration/**'],
     setupFiles: ['./vitest.setup.ts'],
-
-    // 修复 vitest 不退出问题
-    pool: 'forks',
-    maxWorkers: 1,
-
-    // 测试超时配置
     testTimeout: 5000,
     hookTimeout: 2000,
     teardownTimeout: 1000,
-
-    // 限制并发
-    maxConcurrency: 1,
-    fileParallelism: false,
-    clearMocks: true,
-    restoreMocks: true,
-    unstubGlobals: true,
-    unstubEnvs: true,
-
     reporters: ['verbose'],
   },
 });

@@ -12,6 +12,10 @@ import {
   ServiceStatus,
 } from './api-to-mcp-service-manager.js';
 
+// Mock fetch
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
+
 // Mock日志记录器
 vi.mock('../../utils/logger.js', () => ({
   logger: {
@@ -42,6 +46,9 @@ describe('ApiToMcpServiceManagerImpl', () => {
   });
 
   afterEach(async () => {
+    // 恢复真实定时器
+    vi.useRealTimers();
+
     // 关闭服务管理器
     try {
       await serviceManager.shutdown();
@@ -137,6 +144,8 @@ describe('ApiToMcpServiceManagerImpl', () => {
     });
 
     it('应该成功重启服务管理器', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+
       const validConfig: ApiToolsConfig = {
         version: '1.0',
         tools: [
@@ -163,11 +172,15 @@ describe('ApiToMcpServiceManagerImpl', () => {
       const initialHealth = serviceManager.getHealthStatus();
       expect(initialHealth.status).toBe(ServiceStatus.RUNNING);
 
-      await serviceManager.restart();
+      const restartPromise = serviceManager.restart();
+      await vi.advanceTimersByTimeAsync(1500);
+      await restartPromise;
 
       const restartedHealth = serviceManager.getHealthStatus();
       expect(restartedHealth.status).toBe(ServiceStatus.RUNNING);
       expect(restartedHealth.toolStats.total).toBe(1);
+
+      vi.useRealTimers();
     });
   });
 
@@ -532,18 +545,30 @@ describe('ApiToMcpServiceManagerImpl', () => {
     });
 
     it('应该在没有配置路径时拒绝重启', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+
       // 创建一个没有配置路径的服务管理器
       const manager = new ApiToMcpServiceManagerImpl();
       await manager.shutdown(); // 设置为关闭状态
 
-      await expect(manager.restart()).rejects.toThrow(
+      // restart() 内部有 1s 延迟，用 fake timers 跳过
+      const restartPromise = manager.restart();
+      await vi.advanceTimersByTimeAsync(1500);
+      await expect(restartPromise).rejects.toThrow(
         '无法重启：配置文件路径未设置',
       );
+
+      vi.useRealTimers();
     });
   });
 
   describe('并发和资源管理', () => {
     it('应该处理并发的工具执行请求', async () => {
+      // Mock fetch 以避免真实网络请求
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ result: 'ok' }), { status: 200 }),
+      );
+
       const config: ApiToolsConfig = {
         version: '1.0',
         tools: [
@@ -552,7 +577,7 @@ describe('ApiToMcpServiceManagerImpl', () => {
             name: '并发工具',
             description: '用于并发测试的工具',
             api: {
-              url: 'http://localhost:3001/api/test',
+              url: 'https://api.example.com/test',
               method: 'GET',
             },
             parameters: {

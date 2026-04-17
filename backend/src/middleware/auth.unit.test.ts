@@ -5,7 +5,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Hono } from 'hono';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../services/auth.js';
 import {
   corsMiddleware,
@@ -14,6 +14,18 @@ import {
   createRoleMiddleware,
   errorHandlerMiddleware,
 } from './auth.js';
+
+// Mock bcryptjs 以消除哈希计算时间
+vi.mock('bcryptjs', () => ({
+  default: {
+    hash: vi.fn().mockResolvedValue('$2a$10$mockedhashvalue'),
+    compare: vi
+      .fn()
+      .mockImplementation(async (password: string, _hash: string) => {
+        return password === 'password' || password === 'admin123';
+      }),
+  },
+}));
 
 describe('认证中间件', () => {
   let app: Hono;

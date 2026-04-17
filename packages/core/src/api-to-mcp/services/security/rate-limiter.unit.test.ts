@@ -2,7 +2,7 @@
  * 频率限制器测试
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RateLimitConfig } from '../../types/api-config.js';
 import type { SecurityEvent } from '../../types/security.js';
 import { RateLimiterImpl } from './rate-limiter.js';
@@ -27,6 +27,10 @@ describe('RateLimiterImpl', () => {
     rateLimiter.setSecurityEventCallback((event) => {
       securityEvents.push(event);
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('基本频率限制', () => {
@@ -74,6 +78,8 @@ describe('RateLimiterImpl', () => {
     });
 
     it('应该在时间窗口重置后允许新请求', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+
       const config: RateLimitConfig = {
         windowSeconds: 0.1,
         maxRequests: 2,
@@ -91,10 +97,12 @@ describe('RateLimiterImpl', () => {
       expect(await rateLimiterWithConfig.checkLimit('test-tool')).toBe(false);
 
       // 等待时间窗口重置
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await vi.advanceTimersByTimeAsync(150);
 
       // 现在应该被允许
       expect(await rateLimiterWithConfig.checkLimit('test-tool')).toBe(true);
+
+      vi.useRealTimers();
     });
 
     it('应该在禁用时允许所有请求', async () => {

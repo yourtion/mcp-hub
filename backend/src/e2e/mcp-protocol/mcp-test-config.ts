@@ -133,7 +133,7 @@ export async function createResilientMcpClient(
       );
 
       if (attempt < config.retries) {
-        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+        await new Promise((resolve) => setTimeout(resolve, 10 * attempt));
       }
     }
   }

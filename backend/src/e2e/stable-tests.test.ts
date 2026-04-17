@@ -24,7 +24,7 @@ describe('稳定的端到端测试', () => {
     restoreConsole = setupTestEnvironment();
     setupTestConfig();
     // 减少等待时间
-    await sleep(1000);
+    await sleep(10);
 
     // 登录获取认证token
     const loginResponse = await testApp.request('/api/auth/login', {

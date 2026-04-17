@@ -2,7 +2,7 @@
  * 缓存管理器测试
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CacheManagerImpl } from './cache-manager.js';
 
 // Mock日志记录器
@@ -20,6 +20,10 @@ describe('CacheManagerImpl', () => {
 
   beforeEach(() => {
     cacheManager = new CacheManagerImpl();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('基本缓存操作', () => {
@@ -65,6 +69,8 @@ describe('CacheManagerImpl', () => {
 
   describe('TTL（生存时间）', () => {
     it('应该在TTL过期后删除缓存项', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+
       const key = 'ttl-test';
       const value = 'test-value';
       const ttl = 0.1; // 0.1秒
@@ -73,12 +79,16 @@ describe('CacheManagerImpl', () => {
       expect(await cacheManager.get(key)).toBe(value);
 
       // 等待TTL过期
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await vi.advanceTimersByTimeAsync(150);
 
       expect(await cacheManager.get(key)).toBeNull();
+
+      vi.useRealTimers();
     });
 
     it('应该在TTL未过期时返回缓存值', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+
       const key = 'ttl-valid-test';
       const value = 'test-value';
       const ttl = 1; // 1秒
@@ -89,8 +99,10 @@ describe('CacheManagerImpl', () => {
       expect(await cacheManager.get(key)).toBe(value);
 
       // 等待一小段时间后再检查
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await vi.advanceTimersByTimeAsync(5);
       expect(await cacheManager.get(key)).toBe(value);
+
+      vi.useRealTimers();
     });
   });
 
@@ -226,6 +238,8 @@ describe('CacheManagerImpl', () => {
 
   describe('内存管理', () => {
     it('应该清理过期的缓存项', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+
       const key1 = 'expire-test-1';
       const key2 = 'expire-test-2';
 
@@ -233,10 +247,12 @@ describe('CacheManagerImpl', () => {
       await cacheManager.set(key2, 'value2', 1); // 1秒 TTL
 
       // 等待第一个项目过期
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await vi.advanceTimersByTimeAsync(150);
 
       expect(await cacheManager.get(key1)).toBeNull();
       expect(await cacheManager.get(key2)).toBe('value2');
+
+      vi.useRealTimers();
     });
   });
 

@@ -18,12 +18,13 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
 };
-vi.stubGlobal('localStorage', localStorageMock);
 
 describe('Auth Store', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    // 每个测试前重新 stub localStorage，因为 restoreMocks 会在 afterEach 中恢复
+    vi.stubGlobal('localStorage', localStorageMock);
   });
 
   it('应该正确初始化状态', () => {
