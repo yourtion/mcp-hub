@@ -21,6 +21,5 @@ export type {
   McpServerConfig,
 } from './config.js';
 export * from './connection.js';
-export * from './error.js';
 export * from './service.js';
 export * from './tool.js';

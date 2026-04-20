@@ -9,7 +9,6 @@ import { shutdownGroupMcpRouter } from './api/mcp/group-router.js';
 import { shutdownServersApi } from './api/servers/index.js';
 import { app } from './app.js';
 import { shutdownMcpService } from './mcp.js';
-import { initConfig } from './services/config.js';
 import { McpHubService } from './services/mcp_hub_service.js';
 import { getAllConfig } from './utils/config.js';
 import { logger } from './utils/logger.js';
@@ -118,22 +117,17 @@ async function startServer() {
     // 1. 验证配置
     const validatedConfig = await validateConfigurations();
 
-    // 2. 初始化传统配置系统（向后兼容）
-    logger.info('初始化传统配置系统...');
-    await initConfig();
-    logger.info('传统配置系统初始化完成');
-
-    // 3. 初始化 MCP Hub 服务
+    // 2. 初始化 MCP Hub 服务
     await initializeHubService(validatedConfig);
 
-    // 4. 初始化仪表板服务
+    // 3. 初始化仪表板服务
     if (hubService) {
       logger.info('初始化仪表板服务...');
       initializeDashboardServices(hubService);
       logger.info('仪表板服务初始化完成');
     }
 
-    // 5. 创建 HTTP 服务器
+    // 4. 创建 HTTP 服务器
     logger.info('创建 HTTP 服务器...');
     httpServer = serve(
       {
