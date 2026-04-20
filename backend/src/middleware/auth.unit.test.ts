@@ -2,8 +2,6 @@
  * 认证中间件测试
  */
 
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../services/auth.js';
@@ -27,26 +25,17 @@ vi.mock('bcryptjs', () => ({
   },
 }));
 
-describe('认证中间件', () => {
-  let app: Hono;
-  let authService: AuthService;
-  let tempConfigPath: string;
-  let accessToken: string;
-  let adminToken: string;
-
-  beforeEach(async () => {
-    authService = new AuthService();
-
-    // 创建临时配置文件
-    tempConfigPath = path.join(process.cwd(), 'config', 'system.json.test');
-    const testConfig = {
-      server: {
-        port: 3000,
-        host: 'localhost',
-      },
+// Mock getAllConfig to return in-memory config
+// Note: vi.mock factory is hoisted, so config must be inlined (not referenced via top-level variable)
+vi.mock('../utils/config.js', () => ({
+  getAllConfig: vi.fn().mockResolvedValue({
+    mcps: { servers: {} },
+    groups: {},
+    system: {
+      server: { port: 3000, host: 'localhost' },
       auth: {
         jwt: {
-          secret: 'test-secret-key-for-middleware',
+          secret: 'test-secret-key',
           expiresIn: '15m',
           refreshExpiresIn: '7d',
           issuer: 'mcp-hub-test',
@@ -79,36 +68,23 @@ describe('认证中间件', () => {
       ui: {
         title: 'Test MCP Hub',
         theme: 'light',
-        features: {
-          apiToMcp: true,
-          debugging: true,
-          monitoring: true,
-        },
+        features: { apiToMcp: true, debugging: true, monitoring: true },
       },
-      monitoring: {
-        metricsEnabled: true,
-        logLevel: 'info',
-        retentionDays: 30,
-      },
-    };
+      monitoring: { metricsEnabled: true, logLevel: 'info', retentionDays: 30 },
+    },
+    apiToolsConfigPath: undefined,
+  }),
+  resetConfigInstances: vi.fn(),
+}));
 
-    await fs.writeFile(tempConfigPath, JSON.stringify(testConfig, null, 2));
+describe('认证中间件', () => {
+  let app: Hono;
+  let authService: AuthService;
+  let accessToken: string;
+  let adminToken: string;
 
-    // 临时替换配置文件路径
-    const originalConfigPath = path.join(
-      process.cwd(),
-      'config',
-      'system.json',
-    );
-    const backupPath = path.join(process.cwd(), 'config', 'system.json.backup');
-
-    try {
-      await fs.rename(originalConfigPath, backupPath);
-    } catch {
-      // 文件可能不存在，忽略错误
-    }
-
-    await fs.rename(tempConfigPath, originalConfigPath);
+  beforeEach(async () => {
+    authService = new AuthService();
 
     // 初始化认证服务
     await authService.initialize();
@@ -124,26 +100,8 @@ describe('认证中间件', () => {
     app = new Hono();
   });
 
-  afterEach(async () => {
-    // 恢复原始配置文件
-    const originalConfigPath = path.join(
-      process.cwd(),
-      'config',
-      'system.json',
-    );
-    const backupPath = path.join(process.cwd(), 'config', 'system.json.backup');
-
-    try {
-      await fs.unlink(originalConfigPath);
-    } catch {
-      // 忽略错误
-    }
-
-    try {
-      await fs.rename(backupPath, originalConfigPath);
-    } catch {
-      // 备份文件可能不存在，忽略错误
-    }
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   describe('createAuthMiddleware', () => {

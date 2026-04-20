@@ -2,8 +2,6 @@
  * 认证服务测试
  */
 
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from './auth.js';
 
@@ -20,20 +18,14 @@ vi.mock('bcryptjs', () => ({
   },
 }));
 
-describe('AuthService', () => {
-  let authService: AuthService;
-  let tempConfigPath: string;
-
-  beforeEach(async () => {
-    authService = new AuthService();
-
-    // 创建临时配置文件
-    tempConfigPath = path.join(process.cwd(), 'config', 'system.json.test');
-    const testConfig = {
-      server: {
-        port: 3000,
-        host: 'localhost',
-      },
+// Mock getAllConfig to return in-memory config
+// Note: vi.mock factory is hoisted, so config must be inlined (not referenced via top-level variable)
+vi.mock('../utils/config.js', () => ({
+  getAllConfig: vi.fn().mockResolvedValue({
+    mcps: { servers: {} },
+    groups: {},
+    system: {
+      server: { port: 3000, host: 'localhost' },
       auth: {
         jwt: {
           secret: 'test-secret-key',
@@ -61,58 +53,24 @@ describe('AuthService', () => {
       ui: {
         title: 'Test MCP Hub',
         theme: 'light',
-        features: {
-          apiToMcp: true,
-          debugging: true,
-          monitoring: true,
-        },
+        features: { apiToMcp: true, debugging: true, monitoring: true },
       },
-      monitoring: {
-        metricsEnabled: true,
-        logLevel: 'info',
-        retentionDays: 30,
-      },
-    };
+      monitoring: { metricsEnabled: true, logLevel: 'info', retentionDays: 30 },
+    },
+    apiToolsConfigPath: undefined,
+  }),
+  resetConfigInstances: vi.fn(),
+}));
 
-    await fs.writeFile(tempConfigPath, JSON.stringify(testConfig, null, 2));
+describe('AuthService', () => {
+  let authService: AuthService;
 
-    // 临时替换配置文件路径
-    const originalConfigPath = path.join(
-      process.cwd(),
-      'config',
-      'system.json',
-    );
-    const backupPath = path.join(process.cwd(), 'config', 'system.json.backup');
-
-    try {
-      await fs.rename(originalConfigPath, backupPath);
-    } catch {
-      // 文件可能不存在，忽略错误
-    }
-
-    await fs.rename(tempConfigPath, originalConfigPath);
+  beforeEach(() => {
+    authService = new AuthService();
   });
 
-  afterEach(async () => {
-    // 恢复原始配置文件
-    const originalConfigPath = path.join(
-      process.cwd(),
-      'config',
-      'system.json',
-    );
-    const backupPath = path.join(process.cwd(), 'config', 'system.json.backup');
-
-    try {
-      await fs.unlink(originalConfigPath);
-    } catch {
-      // 忽略错误
-    }
-
-    try {
-      await fs.rename(backupPath, originalConfigPath);
-    } catch {
-      // 备份文件可能不存在，忽略错误
-    }
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   describe('初始化', () => {
@@ -121,9 +79,18 @@ describe('AuthService', () => {
     });
 
     it('应该在配置文件不存在时使用默认配置初始化', async () => {
-      // 删除配置文件
-      const configPath = path.join(process.cwd(), 'config', 'system.json');
-      await fs.unlink(configPath);
+      const { getAllConfig } = await import('../utils/config.js');
+
+      // Mock getAllConfig to return empty system config for this test
+      // biome-ignore lint/suspicious/noExplicitAny: mock requires flexible return type
+      (vi.mocked(getAllConfig) as any).mockImplementationOnce(async () =>
+        Promise.resolve({
+          mcps: { servers: {} },
+          groups: {},
+          system: {},
+          apiToolsConfigPath: undefined,
+        }),
+      );
 
       // JsonStorage 在文件不存在时会创建默认文件，所以初始化应该成功
       await expect(authService.initialize()).resolves.not.toThrow();

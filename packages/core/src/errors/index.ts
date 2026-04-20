@@ -548,7 +548,11 @@ export class UnifiedErrorHandler implements ErrorHandler {
     }
   }
 
-  formatErrorResponse(error: Error, context?: ErrorContext, requestId?: string): ErrorResponse {
+  formatErrorResponse(
+    error: Error,
+    context?: ErrorContext,
+    requestId?: string,
+  ): ErrorResponse {
     if (error instanceof McpHubCoreError) {
       return {
         success: false,
