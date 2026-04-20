@@ -1,6 +1,7 @@
 import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 import { Hono } from 'hono';
 import { McpHubService } from '../services/mcp_hub_service.js';
+import { errorResponse, successResponse } from '../utils/api-response.js';
 import { getAllConfig } from '../utils/config.js';
 import { logger } from '../utils/logger.js';
 import { shutdownGroupsApi } from './groups/index.js';
@@ -77,19 +78,6 @@ async function getHubServiceSafe(): Promise<McpHubService | null> {
   }
 }
 
-// Error handler middleware
-const handleApiError = (error: Error) => {
-  logger.error('API error', error);
-
-  const errorResponse = McpHubService.formatErrorResponse(error);
-
-  return {
-    success: false,
-    error: errorResponse.error,
-    timestamp: new Date().toISOString(),
-  };
-};
-
 // GET /api/groups - List all available groups
 // POST /api/tools/:toolName/execute - Execute a tool (default group)
 // GET /api/health - Get server health status
@@ -98,6 +86,7 @@ hubApi.get('/health', async (c) => {
     const service = await getHubServiceSafe();
 
     if (!service) {
+      const requestId = c.get('requestId');
       return c.json(
         {
           success: false,
@@ -110,6 +99,7 @@ hubApi.get('/health', async (c) => {
             },
             timestamp: new Date().toISOString(),
           },
+          requestId,
         },
         { status: 503 },
       );
@@ -145,18 +135,15 @@ hubApi.get('/health', async (c) => {
       apiTools: serviceStatus.apiTools,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        ...healthData,
-        service: {
-          ...healthData.service,
-          status: overallStatus,
-        },
+    return successResponse(c, {
+      ...healthData,
+      service: {
+        ...healthData.service,
+        status: overallStatus,
       },
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -173,13 +160,9 @@ hubApi.get('/diagnostics', async (c) => {
       apiTools: diagnostics.apiTools.totalTools,
     });
 
-    return c.json({
-      success: true,
-      data: diagnostics,
-      timestamp: new Date().toISOString(),
-    });
+    return successResponse(c, diagnostics);
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -194,13 +177,9 @@ hubApi.get('/api-tools/health', async (c) => {
       initialized: health.initialized,
     });
 
-    return c.json({
-      success: true,
-      data: health,
-      timestamp: new Date().toISOString(),
-    });
+    return successResponse(c, health);
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -212,15 +191,11 @@ hubApi.post('/api-tools/reload', async (c) => {
 
     logger.info('API tool configuration reloaded successfully');
 
-    return c.json({
-      success: true,
-      data: {
-        message: 'API工具配置重新加载完成',
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      message: 'API工具配置重新加载完成',
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 

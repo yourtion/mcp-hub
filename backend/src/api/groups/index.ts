@@ -21,6 +21,7 @@ import type {
   UpdateGroupRequest,
 } from '@mcp-core/mcp-hub-share';
 import { Hono } from 'hono';
+import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { getAllConfig, saveConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 
@@ -268,35 +269,23 @@ groupsApi.get('/', async (c) => {
     });
 
     // 统一响应格式，添加 success 和 data 包装
-    return c.json({
-      success: true,
-      data: {
-        groups: response.groups,
-        totalGroups: response.totalGroups,
-        healthyGroups: response.healthyGroups,
-        unhealthyGroups: response.totalGroups - response.healthyGroups,
-        totalServers: response.totalServers,
-        connectedServers: response.connectedServers,
-        totalTools: response.totalTools,
-        filteredTools: response.filteredTools,
-        averageHealthScore: response.averageHealthScore,
-        groupsWithValidation: response.groupsWithValidation,
-        groupsWithToolFilter: response.groupsWithToolFilter,
-        summary: response.summary,
-      },
-      timestamp: response.timestamp,
+    return successResponse(c, {
+      groups: response.groups,
+      totalGroups: response.totalGroups,
+      healthyGroups: response.healthyGroups,
+      unhealthyGroups: response.totalGroups - response.healthyGroups,
+      totalServers: response.totalServers,
+      connectedServers: response.connectedServers,
+      totalTools: response.totalTools,
+      filteredTools: response.filteredTools,
+      averageHealthScore: response.averageHealthScore,
+      groupsWithValidation: response.groupsWithValidation,
+      groupsWithToolFilter: response.groupsWithToolFilter,
+      summary: response.summary,
     });
   } catch (error) {
     logger.error('获取组列表失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'GROUPS_LIST_ERROR',
-          message: `获取组列表失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -315,10 +304,12 @@ groupsApi.get('/:groupId', async (c) => {
     if (!groupConfig) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_NOT_FOUND',
             message: `组 '${groupId}' 不存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -434,18 +425,10 @@ groupsApi.get('/:groupId', async (c) => {
       toolCount: response.toolCount,
     });
 
-    return c.json(response);
+    return successResponse(c, response);
   } catch (error) {
     logger.error('获取组详细信息失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'GROUP_DETAIL_ERROR',
-          message: `获取组详细信息失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -464,10 +447,12 @@ groupsApi.get('/:groupId/health', async (c) => {
     if (!groupConfig) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_NOT_FOUND',
             message: `组 '${groupId}' 不存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -541,7 +526,6 @@ groupsApi.get('/:groupId/health', async (c) => {
         ...(toolHealth.available === 0 ? ['没有可用的工具'] : []),
         ...(healthScore < 50 ? [`服务器健康度较低: ${healthScore}%`] : []),
       ],
-      timestamp: new Date().toISOString(),
     };
 
     logger.info('组健康检查完成', {
@@ -552,21 +536,10 @@ groupsApi.get('/:groupId/health', async (c) => {
       totalServers: groupServers.length,
     });
 
-    return c.json(response, { status: statusCode });
+    return successResponse(c, response, statusCode);
   } catch (error) {
     logger.error('组健康检查失败', error as Error);
-    return c.json(
-      {
-        groupId: c.req.param('groupId'),
-        healthy: false,
-        error: {
-          code: 'HEALTH_CHECK_ERROR',
-          message: `组健康检查失败: ${(error as Error).message}`,
-        },
-        timestamp: new Date().toISOString(),
-      },
-      { status: 503 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -585,10 +558,12 @@ groupsApi.get('/:groupId/tools', async (c) => {
     if (!groupConfig) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_NOT_FOUND',
             message: `组 '${groupId}' 不存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -650,7 +625,6 @@ groupsApi.get('/:groupId/tools', async (c) => {
       totalTools: groupTools.length,
       serverCount: Object.keys(toolsByServer).length,
       toolFilter: groupConfig.tools || [],
-      timestamp: new Date().toISOString(),
     };
 
     logger.info('组工具列表查询完成', {
@@ -659,18 +633,10 @@ groupsApi.get('/:groupId/tools', async (c) => {
       serverCount: response.serverCount,
     });
 
-    return c.json(response);
+    return successResponse(c, response);
   } catch (error) {
     logger.error('获取组工具列表失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'GROUP_TOOLS_ERROR',
-          message: `获取组工具列表失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -689,10 +655,12 @@ groupsApi.get('/:groupId/servers', async (c) => {
     if (!groupConfig) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_NOT_FOUND',
             message: `组 '${groupId}' 不存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -753,7 +721,6 @@ groupsApi.get('/:groupId/servers', async (c) => {
         serverDetails.length > 0
           ? Math.round((connectedServers.length / serverDetails.length) * 100)
           : 0,
-      timestamp: new Date().toISOString(),
     };
 
     logger.info('组服务器列表查询完成', {
@@ -763,18 +730,10 @@ groupsApi.get('/:groupId/servers', async (c) => {
       totalTools: response.totalTools,
     });
 
-    return c.json(response);
+    return successResponse(c, response);
   } catch (error) {
     logger.error('获取组服务器列表失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'GROUP_SERVERS_ERROR',
-          message: `获取组服务器列表失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -1148,11 +1107,13 @@ groupsApi.post('/', async (c) => {
     if (!validation.isValid) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'VALIDATION_ERROR',
             message: '请求数据验证失败',
             details: validation.errors,
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -1163,10 +1124,12 @@ groupsApi.post('/', async (c) => {
     if (!idValidation.isValid) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'INVALID_GROUP_ID',
             message: idValidation.error,
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -1179,10 +1142,12 @@ groupsApi.post('/', async (c) => {
     if (groups[body.id]) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_ALREADY_EXISTS',
             message: `组 '${body.id}' 已存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 409 },
       );
@@ -1239,46 +1204,34 @@ groupsApi.post('/', async (c) => {
       toolCount: body.tools.length,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        id: body.id,
-        name: body.name,
-        description: body.description || '',
-        servers: body.servers || [],
-        tools: body.tools || [],
-        toolFilterMode:
-          body.tools && body.tools.length > 0 ? 'whitelist' : 'none',
-        validation: {
-          enabled: false,
-          hasKey: false,
-        },
-        stats: {
-          totalServers: body.servers.length,
-          availableServers: 0, // 需要连接后重新计算
-          totalTools: body.tools.length,
-          filteredTools: body.tools.length,
-          healthPercentage: 0, // 需要连接后重新计算
-        },
-        accessControl: {
-          requiresValidation: false,
-          toolAccessRestricted: body.tools && body.tools.length > 0,
-        },
-        lastUpdated: new Date().toISOString(),
+    return successResponse(c, {
+      id: body.id,
+      name: body.name,
+      description: body.description || '',
+      servers: body.servers || [],
+      tools: body.tools || [],
+      toolFilterMode:
+        body.tools && body.tools.length > 0 ? 'whitelist' : 'none',
+      validation: {
+        enabled: false,
+        hasKey: false,
       },
-      timestamp: new Date().toISOString(),
+      stats: {
+        totalServers: body.servers.length,
+        availableServers: 0, // 需要连接后重新计算
+        totalTools: body.tools.length,
+        filteredTools: body.tools.length,
+        healthPercentage: 0, // 需要连接后重新计算
+      },
+      accessControl: {
+        requiresValidation: false,
+        toolAccessRestricted: body.tools && body.tools.length > 0,
+      },
+      lastUpdated: new Date().toISOString(),
     });
   } catch (error) {
     logger.error('创建组失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'GROUP_CREATE_ERROR',
-          message: `创建组失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -1296,10 +1249,12 @@ groupsApi.put('/:groupId', async (c) => {
     if (!idValidation.isValid) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'INVALID_GROUP_ID',
             message: idValidation.error,
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -1310,11 +1265,13 @@ groupsApi.put('/:groupId', async (c) => {
     if (!validation.isValid) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'VALIDATION_ERROR',
             message: '请求数据验证失败',
             details: validation.errors,
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -1328,10 +1285,12 @@ groupsApi.put('/:groupId', async (c) => {
     if (!existingGroup) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_NOT_FOUND',
             message: `组 '${groupId}' 不存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -1390,51 +1349,39 @@ groupsApi.put('/:groupId', async (c) => {
       toolCount: updatedGroup.tools.length,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        id: groupId,
-        name: updatedGroup.name,
-        description: updatedGroup.description || '',
-        servers: updatedGroup.servers || [],
-        tools: updatedGroup.tools || [],
-        toolFilterMode:
-          updatedGroup.tools && updatedGroup.tools.length > 0
-            ? 'whitelist'
-            : 'none',
-        validation: {
-          enabled: updatedGroup.validation?.enabled || false,
-          hasKey: !!updatedGroup.validation?.validationKey,
-          createdAt: updatedGroup.validation?.createdAt,
-          lastUpdated: updatedGroup.validation?.lastUpdated,
-        },
-        stats: {
-          totalServers: updatedGroup.servers.length,
-          availableServers: 0, // 需要重新计算
-          totalTools: updatedGroup.tools.length,
-          filteredTools: updatedGroup.tools.length,
-          healthPercentage: 0, // 需要重新计算
-        },
-        accessControl: {
-          requiresValidation: updatedGroup.validation?.enabled || false,
-          toolAccessRestricted:
-            updatedGroup.tools && updatedGroup.tools.length > 0,
-        },
-        lastUpdated: new Date().toISOString(),
+    return successResponse(c, {
+      id: groupId,
+      name: updatedGroup.name,
+      description: updatedGroup.description || '',
+      servers: updatedGroup.servers || [],
+      tools: updatedGroup.tools || [],
+      toolFilterMode:
+        updatedGroup.tools && updatedGroup.tools.length > 0
+          ? 'whitelist'
+          : 'none',
+      validation: {
+        enabled: updatedGroup.validation?.enabled || false,
+        hasKey: !!updatedGroup.validation?.validationKey,
+        createdAt: updatedGroup.validation?.createdAt,
+        lastUpdated: updatedGroup.validation?.lastUpdated,
       },
-      timestamp: new Date().toISOString(),
+      stats: {
+        totalServers: updatedGroup.servers.length,
+        availableServers: 0, // 需要重新计算
+        totalTools: updatedGroup.tools.length,
+        filteredTools: updatedGroup.tools.length,
+        healthPercentage: 0, // 需要重新计算
+      },
+      accessControl: {
+        requiresValidation: updatedGroup.validation?.enabled || false,
+        toolAccessRestricted:
+          updatedGroup.tools && updatedGroup.tools.length > 0,
+      },
+      lastUpdated: new Date().toISOString(),
     });
   } catch (error) {
     logger.error('更新组失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'GROUP_UPDATE_ERROR',
-          message: `更新组失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -1451,10 +1398,12 @@ groupsApi.delete('/:groupId', async (c) => {
     if (!idValidation.isValid) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'INVALID_GROUP_ID',
             message: idValidation.error,
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -1468,10 +1417,12 @@ groupsApi.delete('/:groupId', async (c) => {
     if (!existingGroup) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_NOT_FOUND',
             message: `组 '${groupId}' 不存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -1481,10 +1432,12 @@ groupsApi.delete('/:groupId', async (c) => {
     if (groupId === 'default') {
       return c.json(
         {
+          success: false,
           error: {
             code: 'CANNOT_DELETE_DEFAULT_GROUP',
             message: '不能删除默认组',
           },
+          requestId: c.get('requestId'),
         },
         { status: 403 },
       );
@@ -1514,26 +1467,14 @@ groupsApi.delete('/:groupId', async (c) => {
       groupName: existingGroup.name,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        id: groupId,
-        name: existingGroup.name,
-        deleted: true,
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      id: groupId,
+      name: existingGroup.name,
+      deleted: true,
     });
   } catch (error) {
     logger.error('删除组失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'GROUP_DELETE_ERROR',
-          message: `删除组失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -1551,10 +1492,12 @@ groupsApi.post('/:groupId/tools', async (c) => {
     if (!idValidation.isValid) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'INVALID_GROUP_ID',
             message: idValidation.error,
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -1564,10 +1507,12 @@ groupsApi.post('/:groupId/tools', async (c) => {
     if (!Array.isArray(body.tools)) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'VALIDATION_ERROR',
             message: '工具列表必须是数组',
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -1579,10 +1524,12 @@ groupsApi.post('/:groupId/tools', async (c) => {
       if (!toolName || typeof toolName !== 'string') {
         return c.json(
           {
+            success: false,
             error: {
               code: 'VALIDATION_ERROR',
               message: `工具列表[${i}]必须是非空字符串`,
             },
+            requestId: c.get('requestId'),
           },
           { status: 400 },
         );
@@ -1594,10 +1541,12 @@ groupsApi.post('/:groupId/tools', async (c) => {
     if (uniqueTools.size !== body.tools.length) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'VALIDATION_ERROR',
             message: '工具列表包含重复的工具名称',
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -1611,10 +1560,12 @@ groupsApi.post('/:groupId/tools', async (c) => {
     if (!existingGroup) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_NOT_FOUND',
             message: `组 '${groupId}' 不存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -1684,43 +1635,31 @@ groupsApi.post('/:groupId/tools', async (c) => {
       tools: body.tools,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        groupId,
-        tools: body.tools,
-        toolCount: body.tools.length,
-        filterMode: body.filterMode || 'whitelist',
-        validation: {
-          enabled: existingGroup.validation?.enabled || false,
-          requiresKey:
-            existingGroup.validation?.enabled &&
-            !!existingGroup.validation?.validationKey,
-        },
-        impact: {
-          previouslyFilteredTools: existingGroup.tools?.length || 0,
-          newlyFilteredTools: body.tools.length,
-          change: body.tools.length - (existingGroup.tools?.length || 0),
-        },
-        accessControl: {
-          toolAccessRestricted: body.tools.length > 0,
-          unrestrictedAccess: body.tools.length === 0,
-        },
-        lastUpdated: new Date().toISOString(),
+    return successResponse(c, {
+      groupId,
+      tools: body.tools,
+      toolCount: body.tools.length,
+      filterMode: body.filterMode || 'whitelist',
+      validation: {
+        enabled: existingGroup.validation?.enabled || false,
+        requiresKey:
+          existingGroup.validation?.enabled &&
+          !!existingGroup.validation?.validationKey,
       },
-      timestamp: new Date().toISOString(),
+      impact: {
+        previouslyFilteredTools: existingGroup.tools?.length || 0,
+        newlyFilteredTools: body.tools.length,
+        change: body.tools.length - (existingGroup.tools?.length || 0),
+      },
+      accessControl: {
+        toolAccessRestricted: body.tools.length > 0,
+        unrestrictedAccess: body.tools.length === 0,
+      },
+      lastUpdated: new Date().toISOString(),
     });
   } catch (error) {
     logger.error('配置组工具过滤失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'GROUP_TOOLS_CONFIG_ERROR',
-          message: `配置组工具过滤失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -1737,10 +1676,12 @@ groupsApi.get('/:groupId/available-tools', async (c) => {
     if (!idValidation.isValid) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'INVALID_GROUP_ID',
             message: idValidation.error,
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -1754,10 +1695,12 @@ groupsApi.get('/:groupId/available-tools', async (c) => {
     if (!groupConfig) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_NOT_FOUND',
             message: `组 '${groupId}' 不存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -1854,18 +1797,10 @@ groupsApi.get('/:groupId/available-tools', async (c) => {
       serverCount: Object.keys(toolsByServer).length,
     });
 
-    return c.json(response);
+    return successResponse(c, response);
   } catch (error) {
     logger.error('获取组可用工具失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'GROUP_AVAILABLE_TOOLS_ERROR',
-          message: `获取组可用工具失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -1883,10 +1818,12 @@ groupsApi.post('/:groupId/validate-tool-access', async (c) => {
     if (!idValidation.isValid) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'INVALID_GROUP_ID',
             message: idValidation.error,
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -1896,10 +1833,12 @@ groupsApi.post('/:groupId/validate-tool-access', async (c) => {
     if (!body.toolName || typeof body.toolName !== 'string') {
       return c.json(
         {
+          success: false,
           error: {
             code: 'VALIDATION_ERROR',
             message: '工具名称不能为空',
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -1913,10 +1852,12 @@ groupsApi.post('/:groupId/validate-tool-access', async (c) => {
     if (!groupConfig) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_NOT_FOUND',
             message: `组 '${groupId}' 不存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -1939,16 +1880,12 @@ groupsApi.post('/:groupId/validate-tool-access', async (c) => {
     );
 
     if (!tool) {
-      return c.json({
-        success: true,
-        data: {
-          groupId,
-          toolName: body.toolName,
-          hasAccess: false,
-          reason: 'TOOL_NOT_FOUND_IN_GROUP',
-          message: '工具在组中不可用',
-        },
-        timestamp: new Date().toISOString(),
+      return successResponse(c, {
+        groupId,
+        toolName: body.toolName,
+        hasAccess: false,
+        reason: 'TOOL_NOT_FOUND_IN_GROUP',
+        message: '工具在组中不可用',
       });
     }
 
@@ -1974,57 +1911,45 @@ groupsApi.post('/:groupId/validate-tool-access', async (c) => {
       reason,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        groupId,
-        toolName: body.toolName,
-        hasAccess,
-        reason,
-        message,
-        validation: {
-          groupHasValidation: groupConfig.validation?.enabled || false,
-          toolInFilterList:
-            toolFilter.length > 0 ? toolFilter.includes(body.toolName) : true,
-          filterMode: toolFilter.length > 0 ? 'whitelist' : 'none',
-        },
-        toolInfo: hasAccess
-          ? {
-              name: tool.name,
-              description: tool.description,
-              serverId: tool.serverId,
-              serverName: tool.serverId || '',
-              category: tool.category || 'general',
-              version: tool.version || '1.0.0',
-              deprecated: tool.deprecated || false,
-              inputSchema: { type: 'object', properties: {} },
-              estimatedComplexity: estimateToolComplexity({
-                type: 'object',
-                properties: {},
-              }),
-            }
-          : undefined,
-        alternatives:
-          !hasAccess && toolFilter.length > 0
-            ? allTools
-                .filter((t) => toolFilter.includes(t.name))
-                .slice(0, 5)
-                .map((t) => ({ name: t.name, description: t.description }))
-            : undefined,
+    return successResponse(c, {
+      groupId,
+      toolName: body.toolName,
+      hasAccess,
+      reason,
+      message,
+      validation: {
+        groupHasValidation: groupConfig.validation?.enabled || false,
+        toolInFilterList:
+          toolFilter.length > 0 ? toolFilter.includes(body.toolName) : true,
+        filterMode: toolFilter.length > 0 ? 'whitelist' : 'none',
       },
-      timestamp: new Date().toISOString(),
+      toolInfo: hasAccess
+        ? {
+            name: tool.name,
+            description: tool.description,
+            serverId: tool.serverId,
+            serverName: tool.serverId || '',
+            category: tool.category || 'general',
+            version: tool.version || '1.0.0',
+            deprecated: tool.deprecated || false,
+            inputSchema: { type: 'object', properties: {} },
+            estimatedComplexity: estimateToolComplexity({
+              type: 'object',
+              properties: {},
+            }),
+          }
+        : undefined,
+      alternatives:
+        !hasAccess && toolFilter.length > 0
+          ? allTools
+              .filter((t) => toolFilter.includes(t.name))
+              .slice(0, 5)
+              .map((t) => ({ name: t.name, description: t.description }))
+          : undefined,
     });
   } catch (error) {
     logger.error('验证工具访问权限失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'TOOL_ACCESS_VALIDATION_ERROR',
-          message: `验证工具访问权限失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -2042,10 +1967,12 @@ groupsApi.post('/:groupId/validation-key', async (c) => {
     if (!idValidation.isValid) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'INVALID_GROUP_ID',
             message: idValidation.error,
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -2056,10 +1983,12 @@ groupsApi.post('/:groupId/validation-key', async (c) => {
     if (!keyValidation.isValid) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'INVALID_VALIDATION_KEY',
             message: keyValidation.error,
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -2073,10 +2002,12 @@ groupsApi.post('/:groupId/validation-key', async (c) => {
     if (!existingGroup) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_NOT_FOUND',
             message: `组 '${groupId}' 不存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -2117,30 +2048,18 @@ groupsApi.post('/:groupId/validation-key', async (c) => {
       timestamp: now,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        groupId,
-        validation: {
-          enabled: validationConfig.enabled,
-          hasKey: true,
-          createdAt: validationConfig.createdAt,
-          lastUpdated: validationConfig.lastUpdated,
-        },
+    return successResponse(c, {
+      groupId,
+      validation: {
+        enabled: validationConfig.enabled,
+        hasKey: true,
+        createdAt: validationConfig.createdAt,
+        lastUpdated: validationConfig.lastUpdated,
       },
-      timestamp: now,
     });
   } catch (error) {
     logger.error('设置组验证密钥失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'VALIDATION_KEY_SET_ERROR',
-          message: `设置组验证密钥失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -2157,10 +2076,12 @@ groupsApi.get('/:groupId/validation-key', async (c) => {
     if (!idValidation.isValid) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'INVALID_GROUP_ID',
             message: idValidation.error,
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -2174,10 +2095,12 @@ groupsApi.get('/:groupId/validation-key', async (c) => {
     if (!groupConfig) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_NOT_FOUND',
             message: `组 '${groupId}' 不存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -2190,30 +2113,18 @@ groupsApi.get('/:groupId/validation-key', async (c) => {
       lastUpdated: undefined,
     };
 
-    return c.json({
-      success: true,
-      data: {
-        groupId,
-        validation: {
-          enabled: validation.enabled || false,
-          hasKey: !!validation.validationKey,
-          createdAt: validation.createdAt,
-          lastUpdated: validation.lastUpdated,
-        },
+    return successResponse(c, {
+      groupId,
+      validation: {
+        enabled: validation.enabled || false,
+        hasKey: !!validation.validationKey,
+        createdAt: validation.createdAt,
+        lastUpdated: validation.lastUpdated,
       },
-      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     logger.error('获取组验证密钥状态失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'VALIDATION_KEY_STATUS_ERROR',
-          message: `获取组验证密钥状态失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -2231,10 +2142,12 @@ groupsApi.post('/:groupId/validate-key', async (c) => {
     if (!idValidation.isValid) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'INVALID_GROUP_ID',
             message: idValidation.error,
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -2244,10 +2157,12 @@ groupsApi.post('/:groupId/validate-key', async (c) => {
     if (!body.validationKey || typeof body.validationKey !== 'string') {
       return c.json(
         {
+          success: false,
           error: {
             code: 'VALIDATION_ERROR',
             message: '验证密钥不能为空',
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -2261,10 +2176,12 @@ groupsApi.post('/:groupId/validate-key', async (c) => {
     if (!groupConfig) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_NOT_FOUND',
             message: `组 '${groupId}' 不存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -2279,29 +2196,21 @@ groupsApi.post('/:groupId/validate-key', async (c) => {
 
     // 检查是否启用了验证
     if (!validation.enabled) {
-      return c.json({
-        success: true,
-        data: {
-          groupId,
-          valid: true,
-          reason: 'VALIDATION_DISABLED',
-          message: '组未启用验证',
-        },
-        timestamp: new Date().toISOString(),
+      return successResponse(c, {
+        groupId,
+        valid: true,
+        reason: 'VALIDATION_DISABLED',
+        message: '组未启用验证',
       });
     }
 
     // 检查是否设置了密钥
     if (!validation.validationKey) {
-      return c.json({
-        success: true,
-        data: {
-          groupId,
-          valid: false,
-          reason: 'NO_KEY_SET',
-          message: '组未设置验证密钥',
-        },
-        timestamp: new Date().toISOString(),
+      return successResponse(c, {
+        groupId,
+        valid: false,
+        reason: 'NO_KEY_SET',
+        message: '组未设置验证密钥',
       });
     }
 
@@ -2332,27 +2241,15 @@ groupsApi.post('/:groupId/validate-key', async (c) => {
       timestamp: new Date().toISOString(),
     });
 
-    return c.json({
-      success: true,
-      data: {
-        groupId,
-        valid: isValid,
-        reason,
-        message,
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      groupId,
+      valid: isValid,
+      reason,
+      message,
     });
   } catch (error) {
     logger.error('验证组密钥失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'KEY_VALIDATION_ERROR',
-          message: `验证组密钥失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -2369,10 +2266,12 @@ groupsApi.delete('/:groupId/validation-key', async (c) => {
     if (!idValidation.isValid) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'INVALID_GROUP_ID',
             message: idValidation.error,
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -2386,10 +2285,12 @@ groupsApi.delete('/:groupId/validation-key', async (c) => {
     if (!existingGroup) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_NOT_FOUND',
             message: `组 '${groupId}' 不存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -2412,29 +2313,17 @@ groupsApi.delete('/:groupId/validation-key', async (c) => {
       timestamp: new Date().toISOString(),
     });
 
-    return c.json({
-      success: true,
-      data: {
-        groupId,
-        validation: {
-          enabled: false,
-          hasKey: false,
-        },
-        deleted: true,
+    return successResponse(c, {
+      groupId,
+      validation: {
+        enabled: false,
+        hasKey: false,
       },
-      timestamp: new Date().toISOString(),
+      deleted: true,
     });
   } catch (error) {
     logger.error('删除组验证密钥失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'VALIDATION_KEY_DELETE_ERROR',
-          message: `删除组验证密钥失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -2451,10 +2340,12 @@ groupsApi.post('/:groupId/generate-validation-key', async (c) => {
     if (!idValidation.isValid) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'INVALID_GROUP_ID',
             message: idValidation.error,
           },
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -2468,10 +2359,12 @@ groupsApi.post('/:groupId/generate-validation-key', async (c) => {
     if (!existingGroup) {
       return c.json(
         {
+          success: false,
           error: {
             code: 'GROUP_NOT_FOUND',
             message: `组 '${groupId}' 不存在`,
           },
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -2509,43 +2402,31 @@ groupsApi.post('/:groupId/generate-validation-key', async (c) => {
       timestamp: now,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        groupId,
-        validationKey: newKey, // 返回明文密钥供用户保存
-        validation: {
-          enabled: true,
-          hasKey: true,
-          createdAt: validationConfig.createdAt,
-          lastUpdated: validationConfig.lastUpdated,
-        },
-        security: {
-          keyComplexity: assessKeyComplexity(newKey),
-          keyLength: newKey.length,
-          entropy: calculateEntropy(newKey),
-          recommendations: generateSecurityRecommendations(newKey),
-        },
-        warnings: [
-          ...(assessKeyComplexity(newKey) === 'weak'
-            ? ['密钥强度较弱，建议使用更复杂的密钥']
-            : []),
-          ...(newKey.length < 16 ? ['密钥长度较短，建议至少16个字符'] : []),
-        ],
+    return successResponse(c, {
+      groupId,
+      validationKey: newKey, // 返回明文密钥供用户保存
+      validation: {
+        enabled: true,
+        hasKey: true,
+        createdAt: validationConfig.createdAt,
+        lastUpdated: validationConfig.lastUpdated,
       },
-      timestamp: now,
+      security: {
+        keyComplexity: assessKeyComplexity(newKey),
+        keyLength: newKey.length,
+        entropy: calculateEntropy(newKey),
+        recommendations: generateSecurityRecommendations(newKey),
+      },
+      warnings: [
+        ...(assessKeyComplexity(newKey) === 'weak'
+          ? ['密钥强度较弱，建议使用更复杂的密钥']
+          : []),
+        ...(newKey.length < 16 ? ['密钥长度较短，建议至少16个字符'] : []),
+      ],
     });
   } catch (error) {
     logger.error('生成组验证密钥失败', error as Error);
-    return c.json(
-      {
-        error: {
-          code: 'VALIDATION_KEY_GENERATE_ERROR',
-          message: `生成组验证密钥失败: ${(error as Error).message}`,
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 

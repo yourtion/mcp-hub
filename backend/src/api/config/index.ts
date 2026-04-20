@@ -2,11 +2,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod/v4';
 import { ConfigService } from '../../services/config_service.js';
-import type {
-  ConfigHistoryResponse,
-  ConfigResponse,
-  ConfigValidationResponse,
-} from '../../types/config.js';
+import { errorResponse, successResponse } from '../../utils/api-response.js';
 
 // 创建配置服务实例
 const configService = new ConfigService();
@@ -45,31 +41,16 @@ configApi.get('/', async (c) => {
   try {
     const config = await configService.getCurrentConfig();
 
-    const response: ConfigResponse = {
-      success: true,
-      data: {
-        system: config.system,
-        mcp: config.mcps,
-        groups: config.groups,
-        lastUpdated: await configService.getLastUpdatedTime(),
-        version: await configService.getConfigVersion(),
-      },
-    };
-
-    return c.json(response);
+    return successResponse(c, {
+      system: config.system,
+      mcp: config.mcps,
+      groups: config.groups,
+      lastUpdated: await configService.getLastUpdatedTime(),
+      version: await configService.getConfigVersion(),
+    });
   } catch (error) {
     console.error('获取配置失败:', error);
-    return c.json(
-      {
-        success: false,
-        error: {
-          code: 'CONFIG_READ_ERROR',
-          message: '获取配置失败',
-          details: error instanceof Error ? error.message : '未知错误',
-        },
-      },
-      500,
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -94,6 +75,7 @@ configApi.put('/', zValidator('json', configUpdateSchema), async (c) => {
             message: '配置验证失败',
             details: validationResult.errors,
           },
+          requestId: c.get('requestId'),
         },
         400,
       );
@@ -102,23 +84,10 @@ configApi.put('/', zValidator('json', configUpdateSchema), async (c) => {
     // 更新配置
     await configService.updateConfig(configType, config, description);
 
-    return c.json({
-      success: true,
-      message: '配置更新成功',
-    });
+    return successResponse(c, { message: '配置更新成功' });
   } catch (error) {
     console.error('更新配置失败:', error);
-    return c.json(
-      {
-        success: false,
-        error: {
-          code: 'CONFIG_UPDATE_ERROR',
-          message: '更新配置失败',
-          details: error instanceof Error ? error.message : '未知错误',
-        },
-      },
-      500,
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -141,30 +110,15 @@ configApi.post(
         config,
       );
 
-      const response: ConfigValidationResponse = {
-        success: true,
-        data: {
-          valid: validationResult.valid,
-          errors: validationResult.errors,
-          warnings: validationResult.warnings,
-          impact: impactAnalysis,
-        },
-      };
-
-      return c.json(response);
+      return successResponse(c, {
+        valid: validationResult.valid,
+        errors: validationResult.errors,
+        warnings: validationResult.warnings,
+        impact: impactAnalysis,
+      });
     } catch (error) {
       console.error('配置验证失败:', error);
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'CONFIG_VALIDATION_ERROR',
-            message: '配置验证失败',
-            details: error instanceof Error ? error.message : '未知错误',
-          },
-        },
-        500,
-      );
+      return errorResponse(c, error as Error, 500);
     }
   },
 );
@@ -188,30 +142,15 @@ configApi.get('/history', async (c) => {
       configType,
     );
 
-    const response: ConfigHistoryResponse = {
-      success: true,
-      data: {
-        history,
-        total: await configService.getConfigHistoryCount(configType),
-        limit,
-        offset,
-      },
-    };
-
-    return c.json(response);
+    return successResponse(c, {
+      history,
+      total: await configService.getConfigHistoryCount(configType),
+      limit,
+      offset,
+    });
   } catch (error) {
     console.error('获取配置历史失败:', error);
-    return c.json(
-      {
-        success: false,
-        error: {
-          code: 'CONFIG_HISTORY_ERROR',
-          message: '获取配置历史失败',
-          details: error instanceof Error ? error.message : '未知错误',
-        },
-      },
-      500,
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -227,26 +166,13 @@ configApi.post('/backup', zValidator('json', configBackupSchema), async (c) => {
       includeTypes,
     );
 
-    return c.json({
-      success: true,
-      data: {
-        backupId,
-        message: '配置备份创建成功',
-      },
+    return successResponse(c, {
+      backupId,
+      message: '配置备份创建成功',
     });
   } catch (error) {
     console.error('创建配置备份失败:', error);
-    return c.json(
-      {
-        success: false,
-        error: {
-          code: 'CONFIG_BACKUP_ERROR',
-          message: '创建配置备份失败',
-          details: error instanceof Error ? error.message : '未知错误',
-        },
-      },
-      500,
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -262,23 +188,10 @@ configApi.post(
 
       await configService.restoreFromBackup(backupId, configTypes);
 
-      return c.json({
-        success: true,
-        message: '配置恢复成功',
-      });
+      return successResponse(c, { message: '配置恢复成功' });
     } catch (error) {
       console.error('恢复配置失败:', error);
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'CONFIG_RESTORE_ERROR',
-            message: '恢复配置失败',
-            details: error instanceof Error ? error.message : '未知错误',
-          },
-        },
-        500,
-      );
+      return errorResponse(c, error as Error, 500);
     }
   },
 );
@@ -295,23 +208,10 @@ configApi.post(
 
       const testResult = await configService.testConfig(configType, config);
 
-      return c.json({
-        success: true,
-        data: testResult,
-      });
+      return successResponse(c, testResult);
     } catch (error) {
       console.error('配置测试失败:', error);
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'CONFIG_TEST_ERROR',
-            message: '配置测试失败',
-            details: error instanceof Error ? error.message : '未知错误',
-          },
-        },
-        500,
-      );
+      return errorResponse(c, error as Error, 500);
     }
   },
 );
@@ -331,23 +231,10 @@ configApi.post(
         config,
       );
 
-      return c.json({
-        success: true,
-        data: preview,
-      });
+      return successResponse(c, preview);
     } catch (error) {
       console.error('配置预览失败:', error);
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'CONFIG_PREVIEW_ERROR',
-            message: '配置预览失败',
-            details: error instanceof Error ? error.message : '未知错误',
-          },
-        },
-        500,
-      );
+      return errorResponse(c, error as Error, 500);
     }
   },
 );
@@ -362,27 +249,14 @@ configApi.get('/backups', async (c) => {
 
     const backups = await configService.getBackupList(limit, offset);
 
-    return c.json({
-      success: true,
-      data: {
-        backups,
-        total: await configService.getBackupCount(),
-        limit,
-        offset,
-      },
+    return successResponse(c, {
+      backups,
+      total: await configService.getBackupCount(),
+      limit,
+      offset,
     });
   } catch (error) {
     console.error('获取备份列表失败:', error);
-    return c.json(
-      {
-        success: false,
-        error: {
-          code: 'CONFIG_BACKUP_LIST_ERROR',
-          message: '获取备份列表失败',
-          details: error instanceof Error ? error.message : '未知错误',
-        },
-      },
-      500,
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });

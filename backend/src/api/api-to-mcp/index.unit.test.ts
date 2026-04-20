@@ -90,9 +90,7 @@ describe('API to MCP API Routes', () => {
       const body = await response.json();
 
       expect(body.success).toBe(false);
-      expect(body.error.code).toBe('GET_API_CONFIGS_FAILED');
-      expect(body.error.message).toBe('获取API配置列表失败');
-      expect(body.error.details).toBe('获取失败');
+      expect(body.error.message).toBe('获取失败');
     });
   });
 

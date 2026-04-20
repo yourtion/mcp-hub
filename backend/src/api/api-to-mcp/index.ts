@@ -7,13 +7,12 @@ import { Hono } from 'hono';
 import { requireAuth } from '../../middleware/simple-auth.js';
 import type { ApiToMcpWebService } from '../../services/api-to-mcp-web-service.js';
 import type {
-  ApiConfigListResponse,
-  ApiResponse,
   ApiToolConfig,
   CreateApiConfigRequest,
   TestApiConfigRequest,
   TestApiConfigResponse,
 } from '../../types/web-api.js';
+import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { logger } from '../../utils/logger.js';
 
 // 扩展Hono的Context类型以包含API到MCP服务
@@ -58,6 +57,7 @@ apiToMcpRoutes.use('*', async (c, next) => {
           code: 'SERVICE_UNAVAILABLE',
           message: 'API到MCP服务不可用',
         },
+        requestId: c.get('requestId'),
       },
       503,
     );
@@ -79,26 +79,10 @@ apiToMcpRoutes.get('/configs', requireAuth, async (c) => {
     // 获取API配置列表
     const configs = await apiToMcpService.getConfigs();
 
-    const response: ApiResponse<ApiConfigListResponse> = {
-      success: true,
-      data: configs,
-      timestamp: new Date().toISOString(),
-    };
-
-    return c.json(response);
+    return successResponse(c, configs);
   } catch (error) {
     logger.error('获取API配置列表失败', error as Error);
-
-    const response = {
-      success: false,
-      error: {
-        code: 'GET_API_CONFIGS_FAILED',
-        message: '获取API配置列表失败',
-        details: (error as Error).message,
-      },
-    };
-
-    return c.json(response, 500);
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -125,6 +109,7 @@ apiToMcpRoutes.post('/configs', requireAuth, async (c) => {
           code: 'CREATE_API_CONFIG_FAILED',
           message: result.message,
         },
+        requestId: c.get('requestId'),
       };
 
       return c.json(response, 400);
@@ -135,21 +120,15 @@ apiToMcpRoutes.post('/configs', requireAuth, async (c) => {
     // 同步Hub服务的API工具配置
     await reloadHubApiTools();
 
-    const response: ApiResponse<{
-      id: string;
-      message: string;
-      config?: ApiToolConfig;
-    }> = {
-      success: true,
-      data: {
+    return successResponse(
+      c,
+      {
         id: body.config.id,
         message: result.message,
         config: result.config,
       },
-      timestamp: new Date().toISOString(),
-    };
-
-    return c.json(response, 201);
+      201,
+    );
   } catch (error) {
     logger.error('创建API配置失败', error as Error);
 
@@ -164,21 +143,13 @@ apiToMcpRoutes.post('/configs', requireAuth, async (c) => {
           code: 'INVALID_JSON',
           message: '请求体包含无效的JSON格式',
         },
+        requestId: c.get('requestId'),
       };
 
       return c.json(response, 400);
     }
 
-    const response = {
-      success: false,
-      error: {
-        code: 'CREATE_API_CONFIG_FAILED',
-        message: '创建API配置失败',
-        details: (error as Error).message,
-      },
-    };
-
-    return c.json(response, 500);
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -201,6 +172,7 @@ apiToMcpRoutes.put('/configs/:id', requireAuth, async (c) => {
           code: 'INVALID_CONFIG',
           message: '配置数据无效：缺少必要字段',
         },
+        requestId: c.get('requestId'),
       };
 
       return c.json(response, 400);
@@ -214,6 +186,7 @@ apiToMcpRoutes.put('/configs/:id', requireAuth, async (c) => {
           code: 'UPDATE_API_CONFIG_FAILED',
           message: '配置ID不匹配',
         },
+        requestId: c.get('requestId'),
       };
 
       return c.json(response, 400);
@@ -232,6 +205,7 @@ apiToMcpRoutes.put('/configs/:id', requireAuth, async (c) => {
           code: 'UPDATE_API_CONFIG_FAILED',
           message: result.message,
         },
+        requestId: c.get('requestId'),
       };
 
       return c.json(response, 400);
@@ -242,34 +216,14 @@ apiToMcpRoutes.put('/configs/:id', requireAuth, async (c) => {
     // 同步Hub服务的API工具配置
     await reloadHubApiTools();
 
-    const response: ApiResponse<{
-      id: string;
-      message: string;
-      config?: ApiToolConfig;
-    }> = {
-      success: true,
-      data: {
-        id: configId,
-        message: result.message,
-        config: result.config,
-      },
-      timestamp: new Date().toISOString(),
-    };
-
-    return c.json(response);
+    return successResponse(c, {
+      id: configId,
+      message: result.message,
+      config: result.config,
+    });
   } catch (error) {
     logger.error('更新API配置失败', error as Error);
-
-    const response = {
-      success: false,
-      error: {
-        code: 'UPDATE_API_CONFIG_FAILED',
-        message: '更新API配置失败',
-        details: (error as Error).message,
-      },
-    };
-
-    return c.json(response, 500);
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -296,6 +250,7 @@ apiToMcpRoutes.delete('/configs/:id', requireAuth, async (c) => {
           code: 'DELETE_API_CONFIG_FAILED',
           message: result.message,
         },
+        requestId: c.get('requestId'),
       };
 
       return c.json(response, 400);
@@ -306,29 +261,13 @@ apiToMcpRoutes.delete('/configs/:id', requireAuth, async (c) => {
     // 同步Hub服务的API工具配置
     await reloadHubApiTools();
 
-    const response: ApiResponse<{ id: string; message: string }> = {
-      success: true,
-      data: {
-        id: configId,
-        message: result.message,
-      },
-      timestamp: new Date().toISOString(),
-    };
-
-    return c.json(response);
+    return successResponse(c, {
+      id: configId,
+      message: result.message,
+    });
   } catch (error) {
     logger.error('删除API配置失败', error as Error);
-
-    const response = {
-      success: false,
-      error: {
-        code: 'DELETE_API_CONFIG_FAILED',
-        message: '删除API配置失败',
-        details: (error as Error).message,
-      },
-    };
-
-    return c.json(response, 500);
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -391,31 +330,16 @@ apiToMcpRoutes.get('/configs/:id', requireAuth, async (c) => {
           code: 'API_CONFIG_NOT_FOUND',
           message: `API配置 ${configId} 不存在`,
         },
+        requestId: c.get('requestId'),
       };
 
       return c.json(response, 404);
     }
 
-    const response: ApiResponse<ApiToolConfig> = {
-      success: true,
-      data: config,
-      timestamp: new Date().toISOString(),
-    };
-
-    return c.json(response);
+    return successResponse(c, config);
   } catch (error) {
     logger.error('获取API配置详情失败', error as Error);
-
-    const response = {
-      success: false,
-      error: {
-        code: 'GET_API_CONFIG_DETAIL_FAILED',
-        message: '获取API配置详情失败',
-        details: (error as Error).message,
-      },
-    };
-
-    return c.json(response, 500);
+    return errorResponse(c, error as Error, 500);
   }
 });
 

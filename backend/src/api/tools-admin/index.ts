@@ -5,6 +5,7 @@
 
 import { Hono } from 'hono';
 import { McpHubService } from '../../services/mcp_hub_service.js';
+import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 
@@ -54,20 +55,7 @@ async function getHubService(): Promise<McpHubService> {
   }
 }
 
-// 错误处理中间件
-const handleApiError = (error: Error) => {
-  logger.error('工具管理API错误', error);
-
-  const errorResponse = McpHubService.formatErrorResponse(error);
-
-  return {
-    success: false,
-    error: errorResponse.error,
-    timestamp: new Date().toISOString(),
-  };
-};
-
-// 工具执行历史记录存储
+// GET /api/tools/history - 获取工具执行历史记录
 export interface ToolExecutionRecord {
   id: string;
   toolName: string;
@@ -143,30 +131,26 @@ toolsAdminApi.get('/history', async (c) => {
       filters: { toolName, serverId, groupId },
     });
 
-    return c.json({
-      success: true,
-      data: {
-        history: paginatedHistory.map((record) => ({
-          id: record.id,
-          toolName: record.toolName,
-          serverId: record.serverId,
-          groupId: record.groupId,
-          isError: record.isError,
-          executionTime: record.executionTime,
-          timestamp: record.timestamp,
-          // 不包含完整的参数和结果以减少响应大小
-        })),
-        pagination: {
-          total,
-          limit,
-          offset,
-          hasMore: offset + limit < total,
-        },
+    return successResponse(c, {
+      history: paginatedHistory.map((record) => ({
+        id: record.id,
+        toolName: record.toolName,
+        serverId: record.serverId,
+        groupId: record.groupId,
+        isError: record.isError,
+        executionTime: record.executionTime,
+        timestamp: record.timestamp,
+        // 不包含完整的参数和结果以减少响应大小
+      })),
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
       },
-      timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 toolsAdminApi.get('/monitoring', async (c) => {
@@ -242,26 +226,22 @@ toolsAdminApi.get('/monitoring', async (c) => {
       connectedServers,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        overview: {
-          totalTools,
-          availableTools,
-          unavailableTools: totalTools - availableTools,
-          totalServers,
-          connectedServers,
-          disconnectedServers: totalServers - connectedServers,
-          availabilityRate:
-            totalTools > 0 ? (availableTools / totalTools) * 100 : 0,
-        },
-        toolsByServer: Object.fromEntries(toolsByServer),
-        groupId,
+    return successResponse(c, {
+      overview: {
+        totalTools,
+        availableTools,
+        unavailableTools: totalTools - availableTools,
+        totalServers,
+        connectedServers,
+        disconnectedServers: totalServers - connectedServers,
+        availabilityRate:
+          totalTools > 0 ? (availableTools / totalTools) * 100 : 0,
       },
-      timestamp: new Date().toISOString(),
+      toolsByServer: Object.fromEntries(toolsByServer),
+      groupId,
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 toolsAdminApi.get('/health', async (c) => {
@@ -338,24 +318,20 @@ toolsAdminApi.get('/health', async (c) => {
       overallHealthy,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        overall: {
-          isHealthy: overallHealthy,
-          totalTools,
-          healthyTools,
-          unhealthyTools: totalTools - healthyTools,
-          healthRate: totalTools > 0 ? (healthyTools / totalTools) * 100 : 0,
-        },
-        tools: toolHealthChecks,
-        groupId,
-        serverDiagnostics: diagnostics.servers,
+    return successResponse(c, {
+      overall: {
+        isHealthy: overallHealthy,
+        totalTools,
+        healthyTools,
+        unhealthyTools: totalTools - healthyTools,
+        healthRate: totalTools > 0 ? (healthyTools / totalTools) * 100 : 0,
       },
-      timestamp: new Date().toISOString(),
+      tools: toolHealthChecks,
+      groupId,
+      serverDiagnostics: diagnostics.servers,
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 toolsAdminApi.get('/performance', async (c) => {
@@ -529,60 +505,56 @@ toolsAdminApi.get('/performance', async (c) => {
       filters: { groupId, serverId },
     });
 
-    return c.json({
-      success: true,
-      data: {
-        timeRange,
-        period: {
-          startTime: startTime.toISOString(),
-          endTime: now.toISOString(),
-        },
-        overview: {
-          totalExecutions,
-          successfulExecutions,
-          failedExecutions,
-          successRate:
-            totalExecutions > 0
-              ? (successfulExecutions / totalExecutions) * 100
-              : 0,
-          averageExecutionTime: Math.round(averageExecutionTime),
-          minExecutionTime,
-          maxExecutionTime,
-        },
-        percentiles: {
-          p50: Math.round(p50),
-          p95: Math.round(p95),
-          p99: Math.round(p99),
-        },
-        toolPerformance: Object.fromEntries(
-          Array.from(toolPerformance.entries()).map(([toolName, perf]) => [
-            toolName,
-            {
-              ...perf,
-              averageTime: Math.round(perf.averageTime),
-              successRate:
-                perf.executions > 0
-                  ? (perf.successes / perf.executions) * 100
-                  : 0,
-            },
-          ]),
-        ),
-        timeSeries: Array.from(timeSeriesData.entries())
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([timestamp, data]) => ({
-            timestamp,
-            executions: data.executions,
-            errors: data.errors,
-            averageTime: Math.round(data.averageTime),
-            errorRate:
-              data.executions > 0 ? (data.errors / data.executions) * 100 : 0,
-          })),
-        filters: { groupId, serverId },
+    return successResponse(c, {
+      timeRange,
+      period: {
+        startTime: startTime.toISOString(),
+        endTime: now.toISOString(),
       },
-      timestamp: new Date().toISOString(),
+      overview: {
+        totalExecutions,
+        successfulExecutions,
+        failedExecutions,
+        successRate:
+          totalExecutions > 0
+            ? (successfulExecutions / totalExecutions) * 100
+            : 0,
+        averageExecutionTime: Math.round(averageExecutionTime),
+        minExecutionTime,
+        maxExecutionTime,
+      },
+      percentiles: {
+        p50: Math.round(p50),
+        p95: Math.round(p95),
+        p99: Math.round(p99),
+      },
+      toolPerformance: Object.fromEntries(
+        Array.from(toolPerformance.entries()).map(([toolName, perf]) => [
+          toolName,
+          {
+            ...perf,
+            averageTime: Math.round(perf.averageTime),
+            successRate:
+              perf.executions > 0
+                ? (perf.successes / perf.executions) * 100
+                : 0,
+          },
+        ]),
+      ),
+      timeSeries: Array.from(timeSeriesData.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([timestamp, data]) => ({
+          timestamp,
+          executions: data.executions,
+          errors: data.errors,
+          averageTime: Math.round(data.averageTime),
+          errorRate:
+            data.executions > 0 ? (data.errors / data.executions) * 100 : 0,
+        })),
+      filters: { groupId, serverId },
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 toolsAdminApi.get('/errors', async (c) => {
@@ -700,32 +672,28 @@ toolsAdminApi.get('/errors', async (c) => {
       filters: { toolName, serverId, groupId, severity },
     });
 
-    return c.json({
-      success: true,
-      data: {
-        errors: paginatedErrors.map((record) => ({
-          executionId: record.id,
-          toolName: record.toolName,
-          serverId: record.serverId,
-          groupId: record.groupId,
-          timestamp: record.timestamp,
-          executionTime: record.executionTime,
-          arguments: record.arguments,
-          result: record.result,
-        })),
-        errorSummary,
-        pagination: {
-          total,
-          limit,
-          offset,
-          hasMore: offset + limit < total,
-        },
-        filters: { toolName, serverId, groupId, severity },
+    return successResponse(c, {
+      errors: paginatedErrors.map((record) => ({
+        executionId: record.id,
+        toolName: record.toolName,
+        serverId: record.serverId,
+        groupId: record.groupId,
+        timestamp: record.timestamp,
+        executionTime: record.executionTime,
+        arguments: record.arguments,
+        result: record.result,
+      })),
+      errorSummary,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
       },
-      timestamp: new Date().toISOString(),
+      filters: { toolName, serverId, groupId, severity },
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 toolsAdminApi.get('/stats', async (c) => {
@@ -812,26 +780,22 @@ toolsAdminApi.get('/stats', async (c) => {
       filters: { groupId, serverId },
     });
 
-    return c.json({
-      success: true,
-      data: {
-        overview: {
-          totalExecutions,
-          successfulExecutions,
-          failedExecutions,
-          successRate:
-            totalExecutions > 0
-              ? (successfulExecutions / totalExecutions) * 100
-              : 0,
-          averageExecutionTime: Math.round(averageExecutionTime),
-        },
-        topTools,
-        filters: { groupId, serverId },
+    return successResponse(c, {
+      overview: {
+        totalExecutions,
+        successfulExecutions,
+        failedExecutions,
+        successRate:
+          totalExecutions > 0
+            ? (successfulExecutions / totalExecutions) * 100
+            : 0,
+        averageExecutionTime: Math.round(averageExecutionTime),
       },
-      timestamp: new Date().toISOString(),
+      topTools,
+      filters: { groupId, serverId },
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 

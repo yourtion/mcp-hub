@@ -4,6 +4,7 @@
  */
 
 import { Hono } from 'hono';
+import { successResponse } from '../../utils/api-response.js';
 import { performanceMonitor } from '../../utils/performance-monitor.js';
 
 export const performanceApi = new Hono();
@@ -17,10 +18,7 @@ performanceApi.get('/stats', (c) => {
 
   const stats = performanceMonitor.getStats(window);
 
-  return c.json({
-    success: true,
-    data: stats,
-  });
+  return successResponse(c, stats);
 });
 
 /**
@@ -29,10 +27,7 @@ performanceApi.get('/stats', (c) => {
 performanceApi.get('/stats/by-endpoint', (c) => {
   const stats = performanceMonitor.getStatsByEndpoint();
 
-  return c.json({
-    success: true,
-    data: stats,
-  });
+  return successResponse(c, stats);
 });
 
 /**
@@ -44,13 +39,10 @@ performanceApi.get('/slow-requests', (c) => {
 
   const slowRequests = performanceMonitor.getSlowRequests(threshold);
 
-  return c.json({
-    success: true,
-    data: {
-      threshold,
-      count: slowRequests.length,
-      requests: slowRequests,
-    },
+  return successResponse(c, {
+    threshold,
+    count: slowRequests.length,
+    requests: slowRequests,
   });
 });
 
@@ -63,12 +55,9 @@ performanceApi.get('/recent-errors', (c) => {
 
   const errors = performanceMonitor.getRecentErrors(limit);
 
-  return c.json({
-    success: true,
-    data: {
-      count: errors.length,
-      errors,
-    },
+  return successResponse(c, {
+    count: errors.length,
+    errors,
   });
 });
 
@@ -78,12 +67,9 @@ performanceApi.get('/recent-errors', (c) => {
 performanceApi.get('/metrics', (c) => {
   const metrics = performanceMonitor.getMetrics();
 
-  return c.json({
-    success: true,
-    data: {
-      count: metrics.length,
-      metrics,
-    },
+  return successResponse(c, {
+    count: metrics.length,
+    metrics,
   });
 });
 
@@ -93,10 +79,7 @@ performanceApi.get('/metrics', (c) => {
 performanceApi.delete('/metrics', (c) => {
   performanceMonitor.clear();
 
-  return c.json({
-    success: true,
-    message: '性能指标已清除',
-  });
+  return successResponse(c, { message: '性能指标已清除' });
 });
 
 /**
@@ -108,20 +91,17 @@ performanceApi.get('/report', (c) => {
   const slowRequests = performanceMonitor.getSlowRequests(1000);
   const recentErrors = performanceMonitor.getRecentErrors(10);
 
-  return c.json({
-    success: true,
-    data: {
-      overview: stats,
-      byEndpoint: statsByEndpoint,
-      slowRequests: {
-        count: slowRequests.length,
-        requests: slowRequests.slice(0, 10), // 只返回前10个
-      },
-      recentErrors: {
-        count: recentErrors.length,
-        errors: recentErrors,
-      },
-      generatedAt: new Date().toISOString(),
+  return successResponse(c, {
+    overview: stats,
+    byEndpoint: statsByEndpoint,
+    slowRequests: {
+      count: slowRequests.length,
+      requests: slowRequests.slice(0, 10), // 只返回前10个
     },
+    recentErrors: {
+      count: recentErrors.length,
+      errors: recentErrors,
+    },
+    generatedAt: new Date().toISOString(),
   });
 });

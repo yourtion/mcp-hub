@@ -6,6 +6,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod/v4';
 import type { AuthService } from '../../services/auth.js';
+import { successResponse } from '../../utils/api-response.js';
 
 /**
  * 登录请求验证模式
@@ -49,14 +50,10 @@ export function createAuthApi(authService: AuthService) {
       // 记录成功登录日志
       console.log(`[AUTH] 用户登录成功: ${username} (${ip})`);
 
-      return c.json({
-        success: true,
-        data: {
-          user: result.user,
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-        },
-        timestamp: new Date().toISOString(),
+      return successResponse(c, {
+        user: result.user,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '登录失败';
@@ -92,7 +89,7 @@ export function createAuthApi(authService: AuthService) {
             code: errorCode,
             message: errorMessage,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
           path: c.req.path,
         },
         statusCode,
@@ -111,13 +108,9 @@ export function createAuthApi(authService: AuthService) {
 
       console.log('[AUTH] Token刷新成功');
 
-      return c.json({
-        success: true,
-        data: {
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-        },
-        timestamp: new Date().toISOString(),
+      return successResponse(c, {
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
       });
     } catch (error) {
       const errorMessage =
@@ -137,7 +130,7 @@ export function createAuthApi(authService: AuthService) {
             code: errorCode,
             message: errorMessage,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
           path: c.req.path,
         },
         401,
@@ -160,7 +153,7 @@ export function createAuthApi(authService: AuthService) {
               code: 'AUTH_MISSING_TOKEN',
               message: 'Authorization header is required',
             },
-            timestamp: new Date().toISOString(),
+            requestId: c.get('requestId'),
             path: c.req.path,
           },
           401,
@@ -176,7 +169,7 @@ export function createAuthApi(authService: AuthService) {
               code: 'AUTH_INVALID_FORMAT',
               message: 'Authorization header must be in format: Bearer <token>',
             },
-            timestamp: new Date().toISOString(),
+            requestId: c.get('requestId'),
             path: c.req.path,
           },
           401,
@@ -192,7 +185,7 @@ export function createAuthApi(authService: AuthService) {
               code: 'AUTH_MISSING_TOKEN',
               message: 'Token is required',
             },
-            timestamp: new Date().toISOString(),
+            requestId: c.get('requestId'),
             path: c.req.path,
           },
           401,
@@ -204,11 +197,7 @@ export function createAuthApi(authService: AuthService) {
 
       console.log('[AUTH] 用户登出成功');
 
-      return c.json({
-        success: true,
-        message: '登出成功',
-        timestamp: new Date().toISOString(),
-      });
+      return successResponse(c, { message: '登出成功' });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '登出失败';
 
@@ -221,7 +210,7 @@ export function createAuthApi(authService: AuthService) {
             code: 'AUTH_LOGOUT_FAILED',
             message: errorMessage,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
           path: c.req.path,
         },
         500,
@@ -244,7 +233,7 @@ export function createAuthApi(authService: AuthService) {
               code: 'AUTH_MISSING_TOKEN',
               message: 'Authorization header is required',
             },
-            timestamp: new Date().toISOString(),
+            requestId: c.get('requestId'),
             path: c.req.path,
           },
           401,
@@ -260,7 +249,7 @@ export function createAuthApi(authService: AuthService) {
               code: 'AUTH_INVALID_FORMAT',
               message: 'Authorization header must be in format: Bearer <token>',
             },
-            timestamp: new Date().toISOString(),
+            requestId: c.get('requestId'),
             path: c.req.path,
           },
           401,
@@ -276,7 +265,7 @@ export function createAuthApi(authService: AuthService) {
               code: 'AUTH_MISSING_TOKEN',
               message: 'Token is required',
             },
-            timestamp: new Date().toISOString(),
+            requestId: c.get('requestId'),
             path: c.req.path,
           },
           401,
@@ -295,25 +284,21 @@ export function createAuthApi(authService: AuthService) {
               code: 'AUTH_USER_NOT_FOUND',
               message: 'User not found',
             },
-            timestamp: new Date().toISOString(),
+            requestId: c.get('requestId'),
             path: c.req.path,
           },
           404,
         );
       }
 
-      return c.json({
-        success: true,
-        data: {
-          user: {
-            id: user.id,
-            username: user.username,
-            role: user.role,
-            groups: user.groups,
-            createdAt: user.createdAt,
-          },
+      return successResponse(c, {
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          groups: user.groups,
+          createdAt: user.createdAt,
         },
-        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       const errorMessage =
@@ -335,7 +320,7 @@ export function createAuthApi(authService: AuthService) {
             code: errorCode,
             message: errorMessage,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
           path: c.req.path,
         },
         statusCode,

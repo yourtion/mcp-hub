@@ -4,6 +4,7 @@ import { EventIntegrationService } from '../../services/event_integration_servic
 import type { McpHubService } from '../../services/mcp_hub_service.js';
 import { SSEEventManager } from '../../services/sse_event_manager.js';
 import type { LogQuery } from '../../types/dashboard.js';
+import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { logger } from '../../utils/logger.js';
 
 export const dashboardApi = new Hono();
@@ -156,22 +157,6 @@ function getEventIntegrationService(): EventIntegrationService {
   return eventIntegrationService;
 }
 
-/**
- * 错误处理中间件
- */
-const handleApiError = (error: Error) => {
-  logger.error('仪表板API错误', error);
-
-  return {
-    success: false,
-    error: {
-      code: 'DASHBOARD_ERROR',
-      message: error.message,
-    },
-    timestamp: new Date().toISOString(),
-  };
-};
-
 // GET /api/dashboard/stats - 获取仪表板统计信息
 dashboardApi.get('/stats', async (c) => {
   try {
@@ -187,13 +172,9 @@ dashboardApi.get('/stats', async (c) => {
       recentActivityCount: stats.recentActivity.length,
     });
 
-    return c.json({
-      success: true,
-      data: stats,
-      timestamp: new Date().toISOString(),
-    });
+    return successResponse(c, stats);
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -210,13 +191,9 @@ dashboardApi.get('/health', async (c) => {
       issueCount: health.issues.length,
     });
 
-    return c.json({
-      success: true,
-      data: health,
-      timestamp: new Date().toISOString(),
-    });
+    return successResponse(c, health);
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -250,17 +227,13 @@ dashboardApi.get('/logs', async (c) => {
       query,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        logs: result.logs,
-        total: result.total,
-        query,
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      logs: result.logs,
+      total: result.total,
+      query,
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -281,16 +254,12 @@ dashboardApi.get('/activities', async (c) => {
       limit,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        activities,
-        total: activities.length,
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      activities,
+      total: activities.length,
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -308,13 +277,9 @@ dashboardApi.get('/performance', async (c) => {
       errorRate: stats.errorRate,
     });
 
-    return c.json({
-      success: true,
-      data: stats,
-      timestamp: new Date().toISOString(),
-    });
+    return successResponse(c, stats);
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -341,7 +306,7 @@ dashboardApi.get('/events', async (c) => {
     return response;
   } catch (error) {
     logger.error('创建SSE连接失败', error as Error);
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -358,13 +323,9 @@ dashboardApi.get('/sse-stats', async (c) => {
       eventHistoryCount: stats.eventHistoryCount,
     });
 
-    return c.json({
-      success: true,
-      data: stats,
-      timestamp: new Date().toISOString(),
-    });
+    return successResponse(c, stats);
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -388,17 +349,13 @@ dashboardApi.post('/test-alert', async (c) => {
       severity,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        message: '测试告警已发送',
-        severity,
-        category,
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      message: '测试告警已发送',
+      severity,
+      category,
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -436,20 +393,16 @@ dashboardApi.post('/test-tool-execution', async (c) => {
     const service = getDashboardService();
     service.recordToolExecution(toolName, executionTime, success);
 
-    return c.json({
-      success: true,
-      data: {
-        message: '测试工具执行事件已发送',
-        toolName,
-        serverId,
-        groupId,
-        success,
-        executionTime,
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      message: '测试工具执行事件已发送',
+      toolName,
+      serverId,
+      groupId,
+      success,
+      executionTime,
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -485,18 +438,14 @@ dashboardApi.post('/test-server-status', async (c) => {
             : 'warning',
     });
 
-    return c.json({
-      success: true,
-      data: {
-        message: '测试服务器状态事件已发送',
-        serverId,
-        status,
-        previousStatus,
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      message: '测试服务器状态事件已发送',
+      serverId,
+      status,
+      previousStatus,
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -538,13 +487,9 @@ dashboardApi.get('/system-info', async (c) => {
       memoryUsed: systemInfo.memory.heapUsed,
     });
 
-    return c.json({
-      success: true,
-      data: systemInfo,
-      timestamp: new Date().toISOString(),
-    });
+    return successResponse(c, systemInfo);
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -569,17 +514,13 @@ dashboardApi.post('/add-log', async (c) => {
       metadata,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        message: '日志条目已添加',
-        level,
-        category,
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      message: '日志条目已添加',
+      level,
+      category,
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -593,15 +534,11 @@ dashboardApi.delete('/logs', async (c) => {
 
     logger.info('日志清理完成');
 
-    return c.json({
-      success: true,
-      data: {
-        message: '日志已清理',
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      message: '日志已清理',
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -651,13 +588,9 @@ dashboardApi.get('/health-detailed', async (c) => {
       issueCount: detailedHealth.issues.length,
     });
 
-    return c.json({
-      success: true,
-      data: detailedHealth,
-      timestamp: new Date().toISOString(),
-    });
+    return successResponse(c, detailedHealth);
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -674,29 +607,25 @@ dashboardApi.get('/memory', async (c) => {
       rss: currentMemory.rss,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        memory: {
-          rss: Math.round(currentMemory.rss / 1024 / 1024), // MB
-          heapTotal: Math.round(currentMemory.heapTotal / 1024 / 1024),
-          heapUsed: Math.round(currentMemory.heapUsed / 1024 / 1024),
-          external: Math.round(currentMemory.external / 1024 / 1024),
-          arrayBuffers: Math.round(currentMemory.arrayBuffers / 1024 / 1024),
-          heapUsageRatio:
-            currentMemory.heapTotal > 0
-              ? (
-                  (currentMemory.heapUsed / currentMemory.heapTotal) *
-                  100
-                ).toFixed(1)
-              : '0.0',
-        },
-        timestamp: new Date(currentMemory.timestamp).toISOString(),
+    return successResponse(c, {
+      memory: {
+        rss: Math.round(currentMemory.rss / 1024 / 1024), // MB
+        heapTotal: Math.round(currentMemory.heapTotal / 1024 / 1024),
+        heapUsed: Math.round(currentMemory.heapUsed / 1024 / 1024),
+        external: Math.round(currentMemory.external / 1024 / 1024),
+        arrayBuffers: Math.round(currentMemory.arrayBuffers / 1024 / 1024),
+        heapUsageRatio:
+          currentMemory.heapTotal > 0
+            ? (
+                (currentMemory.heapUsed / currentMemory.heapTotal) *
+                100
+              ).toFixed(1)
+            : '0.0',
       },
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(currentMemory.timestamp).toISOString(),
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -714,13 +643,9 @@ dashboardApi.get('/memory/trend', async (c) => {
     const trend = memoryMonitor.analyzeTrend(durationMs);
 
     if (!trend) {
-      return c.json({
-        success: true,
-        data: {
-          message: '内存趋势数据不足，请稍后再试',
-          trend: null,
-        },
-        timestamp: new Date().toISOString(),
+      return successResponse(c, {
+        message: '内存趋势数据不足，请稍后再试',
+        trend: null,
       });
     }
 
@@ -730,23 +655,18 @@ dashboardApi.get('/memory/trend', async (c) => {
       trend: trend.trend,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        trend: {
-          duration: trend.duration,
-          growthRate: Math.round((trend.growthRate / 1024 / 1024) * 100) / 100, // MB/min
-          totalGrowth:
-            Math.round((trend.totalGrowth / 1024 / 1024) * 100) / 100, // MB
-          direction: trend.trend,
-          snapshotCount: trend.snapshots.length,
-        },
-        timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      trend: {
+        duration: trend.duration,
+        growthRate: Math.round((trend.growthRate / 1024 / 1024) * 100) / 100, // MB/min
+        totalGrowth: Math.round((trend.totalGrowth / 1024 / 1024) * 100) / 100, // MB
+        direction: trend.trend,
+        snapshotCount: trend.snapshots.length,
       },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -763,23 +683,19 @@ dashboardApi.get('/resources', async (c) => {
       activeHandles: stats.current.activeHandles,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        resources: {
-          activeTimers: stats.current.activeTimers,
-          activeHandles: stats.current.activeHandles,
-          fileDescriptors: stats.current.fileDescriptors,
-          heapUsed: Math.round(stats.current.heapUsed / 1024 / 1024), // MB
-          trend: stats.trend,
-          snapshotCount: stats.snapshotCount,
-        },
-        timestamp: new Date(stats.current.timestamp).toISOString(),
+    return successResponse(c, {
+      resources: {
+        activeTimers: stats.current.activeTimers,
+        activeHandles: stats.current.activeHandles,
+        fileDescriptors: stats.current.fileDescriptors,
+        heapUsed: Math.round(stats.current.heapUsed / 1024 / 1024), // MB
+        trend: stats.trend,
+        snapshotCount: stats.snapshotCount,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(stats.current.timestamp).toISOString(),
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -796,22 +712,18 @@ dashboardApi.post('/memory/snapshot', async (c) => {
       rss: snapshot.rss,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        snapshot: {
-          timestamp: new Date(snapshot.timestamp).toISOString(),
-          rss: Math.round(snapshot.rss / 1024 / 1024),
-          heapTotal: Math.round(snapshot.heapTotal / 1024 / 1024),
-          heapUsed: Math.round(snapshot.heapUsed / 1024 / 1024),
-          external: Math.round(snapshot.external / 1024 / 1024),
-        },
-        message: '内存快照已记录',
+    return successResponse(c, {
+      snapshot: {
+        timestamp: new Date(snapshot.timestamp).toISOString(),
+        rss: Math.round(snapshot.rss / 1024 / 1024),
+        heapTotal: Math.round(snapshot.heapTotal / 1024 / 1024),
+        heapUsed: Math.round(snapshot.heapUsed / 1024 / 1024),
+        external: Math.round(snapshot.external / 1024 / 1024),
       },
-      timestamp: new Date().toISOString(),
+      message: '内存快照已记录',
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -825,13 +737,9 @@ dashboardApi.post('/memory/gc', async (c) => {
 
     if (triggered) {
       logger.info('手动触发垃圾回收成功');
-      return c.json({
-        success: true,
-        data: {
-          message: '垃圾回收已触发',
-          note: '需要使用 --expose-gc 标志启动进程才能使用此功能',
-        },
-        timestamp: new Date().toISOString(),
+      return successResponse(c, {
+        message: '垃圾回收已触发',
+        note: '需要使用 --expose-gc 标志启动进程才能使用此功能',
       });
     } else {
       logger.warn('垃圾回收不可用');
@@ -845,7 +753,7 @@ dashboardApi.post('/memory/gc', async (c) => {
       });
     }
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 

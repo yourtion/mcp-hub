@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { McpHubService } from '../../services/mcp_hub_service.js';
+import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 import type { GroupToolInfo } from '../mcp/group-service.js';
@@ -68,19 +69,6 @@ async function _getHubServiceSafe(): Promise<McpHubService | null> {
   }
 }
 
-// 错误处理中间件
-const handleApiError = (error: Error) => {
-  logger.error('工具API错误', error);
-
-  const errorResponse = McpHubService.formatErrorResponse(error);
-
-  return {
-    success: false,
-    error: errorResponse.error,
-    timestamp: new Date().toISOString(),
-  };
-};
-
 // GET /api/tools - 获取所有工具列表
 toolsApi.get('/', async (c) => {
   try {
@@ -141,35 +129,31 @@ toolsApi.get('/', async (c) => {
       toolsByServer.get(tool.serverId)?.push(tool);
     });
 
-    return c.json({
-      success: true,
-      data: {
-        tools: toolsWithStatus.map((tool) => ({
-          name: tool.name,
-          description: tool.description,
-          serverId: tool.serverId,
-          status: tool.status,
-          inputSchema: tool.inputSchema,
-        })),
-        toolsByServer: Object.fromEntries(
-          Array.from(toolsByServer.entries()).map(([serverId, serverTools]) => [
-            serverId,
-            serverTools.map((tool) => ({
-              name: tool.name,
-              description: tool.description,
-              status: tool.status ?? 'unavailable',
-              inputSchema: tool.inputSchema,
-            })),
-          ]),
-        ),
-        total: toolsWithStatus.length,
-        groupId,
-        serverId: serverId || null,
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      tools: toolsWithStatus.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        serverId: tool.serverId,
+        status: tool.status,
+        inputSchema: tool.inputSchema,
+      })),
+      toolsByServer: Object.fromEntries(
+        Array.from(toolsByServer.entries()).map(([serverId, serverTools]) => [
+          serverId,
+          serverTools.map((tool) => ({
+            name: tool.name,
+            description: tool.description,
+            status: tool.status ?? 'unavailable',
+            inputSchema: tool.inputSchema,
+          })),
+        ]),
+      ),
+      total: toolsWithStatus.length,
+      groupId,
+      serverId: serverId || null,
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -197,7 +181,7 @@ toolsApi.get('/server/:serverId', async (c) => {
             code: 'SERVER_NOT_FOUND',
             message: `服务器 '${serverId}' 未找到`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -219,24 +203,20 @@ toolsApi.get('/server/:serverId', async (c) => {
       serverStatus,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        serverId,
-        serverStatus,
-        groupId,
-        tools: toolsWithStatus.map((tool) => ({
-          name: tool.name,
-          description: tool.description,
-          status: tool.status,
-          inputSchema: tool.inputSchema,
-        })),
-        total: tools.length,
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      serverId,
+      serverStatus,
+      groupId,
+      tools: toolsWithStatus.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        status: tool.status,
+        inputSchema: tool.inputSchema,
+      })),
+      total: tools.length,
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -260,7 +240,7 @@ toolsApi.get('/:toolName', async (c) => {
             code: 'TOOL_NOT_FOUND',
             message: `工具 '${toolName}' 在组 '${groupId}' 中未找到`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -280,22 +260,18 @@ toolsApi.get('/:toolName', async (c) => {
       serverStatus,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        name: tool.name,
-        description: tool.description,
-        serverId: tool.serverId,
-        serverStatus,
-        inputSchema: tool.inputSchema,
-        groupId,
-        // 添加工具可用性状态（API工具始终可用）
-        isAvailable: isApiTool || serverStatus === 'connected',
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      name: tool.name,
+      description: tool.description,
+      serverId: tool.serverId,
+      serverStatus,
+      inputSchema: tool.inputSchema,
+      groupId,
+      // 添加工具可用性状态（API工具始终可用）
+      isAvailable: isApiTool || serverStatus === 'connected',
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -322,7 +298,7 @@ toolsApi.post('/:toolName/execute', async (c) => {
             code: 'TOOL_NOT_FOUND',
             message: `工具 '${toolName}' 在组 '${groupId}' 中未找到`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -337,7 +313,7 @@ toolsApi.post('/:toolName/execute', async (c) => {
             code: 'TOOL_SERVER_MISMATCH',
             message: `工具 '${toolName}' 不在服务器 '${serverId}' 上，实际在服务器 '${tool.serverId}' 上`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -356,7 +332,7 @@ toolsApi.post('/:toolName/execute', async (c) => {
             code: 'SERVER_UNAVAILABLE',
             message: `服务器 '${tool.serverId}' 不可用，状态: ${serverStatus || 'unknown'}`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 503 },
       );
@@ -422,7 +398,7 @@ toolsApi.post('/:toolName/execute', async (c) => {
     logger.error('工具执行失败', error as Error, {
       toolName: c.req.param('toolName'),
     });
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -448,7 +424,7 @@ toolsApi.post('/:toolName/test', async (c) => {
             code: 'TOOL_NOT_FOUND',
             message: `工具 '${toolName}' 在组 '${groupId}' 中未找到`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -487,16 +463,12 @@ toolsApi.post('/:toolName/test', async (c) => {
       canExecute: testResult.canExecute,
     });
 
-    return c.json({
-      success: true,
-      data: testResult,
-      timestamp: new Date().toISOString(),
-    });
+    return successResponse(c, testResult);
   } catch (error) {
     logger.error('工具测试失败', error as Error, {
       toolName: c.req.param('toolName'),
     });
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 

@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { z } from 'zod/v4';
 import { ServerManager } from '../../services/server_manager.js';
 import { ServerStatus } from '../../types/mcp-hub.js';
+import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { getAllConfig, saveConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 
@@ -76,20 +77,6 @@ const UpdateServerRequestSchema = z.object({
   config: ServerConfigSchema,
 });
 
-// 错误处理函数
-const handleApiError = (error: Error) => {
-  logger.error('服务器管理API错误', error);
-
-  return {
-    success: false,
-    error: {
-      code: 'SERVER_API_ERROR',
-      message: error.message,
-    },
-    timestamp: new Date().toISOString(),
-  };
-};
-
 // GET /api/servers - 获取服务器列表
 serversApi.get('/', async (c) => {
   try {
@@ -120,30 +107,24 @@ serversApi.get('/', async (c) => {
       ).length,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        servers: serverList,
+    return successResponse(c, {
+      servers: serverList,
+      total: serverList.length,
+      summary: {
         total: serverList.length,
-        summary: {
-          total: serverList.length,
-          connected: serverList.filter(
-            (s) => s.status === ServerStatus.CONNECTED,
-          ).length,
-          connecting: serverList.filter(
-            (s) => s.status === ServerStatus.CONNECTING,
-          ).length,
-          disconnected: serverList.filter(
-            (s) => s.status === ServerStatus.DISCONNECTED,
-          ).length,
-          error: serverList.filter((s) => s.status === ServerStatus.ERROR)
-            .length,
-        },
+        connected: serverList.filter((s) => s.status === ServerStatus.CONNECTED)
+          .length,
+        connecting: serverList.filter(
+          (s) => s.status === ServerStatus.CONNECTING,
+        ).length,
+        disconnected: serverList.filter(
+          (s) => s.status === ServerStatus.DISCONNECTED,
+        ).length,
+        error: serverList.filter((s) => s.status === ServerStatus.ERROR).length,
       },
-      timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -163,7 +144,7 @@ serversApi.get('/:id', async (c) => {
             code: 'SERVER_NOT_FOUND',
             message: `服务器 '${serverId}' 未找到`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -188,13 +169,9 @@ serversApi.get('/:id', async (c) => {
       toolCount: serverConnection.tools.length,
     });
 
-    return c.json({
-      success: true,
-      data: serverInfo,
-      timestamp: new Date().toISOString(),
-    });
+    return successResponse(c, serverInfo);
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -214,7 +191,7 @@ serversApi.post('/', async (c) => {
             message: '请求数据验证失败',
             details: validationResult.error.issues,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -232,7 +209,7 @@ serversApi.post('/', async (c) => {
             code: 'SERVER_EXISTS',
             message: `服务器 '${serverId}' 已存在`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 409 },
       );
@@ -263,20 +240,17 @@ serversApi.post('/', async (c) => {
       enabled: config.enabled,
     });
 
-    return c.json(
+    return successResponse(
+      c,
       {
-        success: true,
-        data: {
-          id: serverId,
-          config,
-          message: `服务器 '${serverId}' 创建成功`,
-        },
-        timestamp: new Date().toISOString(),
+        id: serverId,
+        config,
+        message: `服务器 '${serverId}' 创建成功`,
       },
-      { status: 201 },
+      201,
     );
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -297,7 +271,7 @@ serversApi.put('/:id', async (c) => {
             message: '请求数据验证失败',
             details: validationResult.error.issues,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -315,7 +289,7 @@ serversApi.put('/:id', async (c) => {
             code: 'SERVER_NOT_FOUND',
             message: `服务器 '${serverId}' 未找到`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -346,17 +320,13 @@ serversApi.put('/:id', async (c) => {
       enabled: config.enabled,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        id: serverId,
-        config,
-        message: `服务器 '${serverId}' 配置更新成功`,
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      id: serverId,
+      config,
+      message: `服务器 '${serverId}' 配置更新成功`,
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -375,7 +345,7 @@ serversApi.delete('/:id', async (c) => {
             code: 'SERVER_NOT_FOUND',
             message: `服务器 '${serverId}' 未找到`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -404,16 +374,12 @@ serversApi.delete('/:id', async (c) => {
       type: removedServer.type,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        id: serverId,
-        message: `服务器 '${serverId}' 删除成功`,
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      id: serverId,
+      message: `服务器 '${serverId}' 删除成功`,
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -433,7 +399,7 @@ serversApi.get('/:id/status', async (c) => {
             code: 'SERVER_NOT_FOUND',
             message: `服务器 '${serverId}' 未找到`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -456,13 +422,9 @@ serversApi.get('/:id/status', async (c) => {
       status: serverConnection.status,
     });
 
-    return c.json({
-      success: true,
-      data: statusInfo,
-      timestamp: new Date().toISOString(),
-    });
+    return successResponse(c, statusInfo);
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -482,7 +444,7 @@ serversApi.post('/:id/connect', async (c) => {
             code: 'SERVER_NOT_FOUND',
             message: `服务器 '${serverId}' 未找到`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -497,7 +459,7 @@ serversApi.post('/:id/connect', async (c) => {
             code: 'SERVER_ALREADY_CONNECTED',
             message: `服务器 '${serverId}' 已经连接`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 409 },
       );
@@ -511,7 +473,7 @@ serversApi.post('/:id/connect', async (c) => {
             code: 'SERVER_CONNECTING',
             message: `服务器 '${serverId}' 正在连接中`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 409 },
       );
@@ -526,17 +488,13 @@ serversApi.post('/:id/connect', async (c) => {
       serverId,
     });
 
-    return c.json({
-      success: true,
-      data: {
-        id: serverId,
-        message: `服务器 '${serverId}' 连接请求已发送`,
-        status: 'connecting',
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      id: serverId,
+      message: `服务器 '${serverId}' 连接请求已发送`,
+      status: 'connecting',
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -556,7 +514,7 @@ serversApi.post('/:id/disconnect', async (c) => {
             code: 'SERVER_NOT_FOUND',
             message: `服务器 '${serverId}' 未找到`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 404 },
       );
@@ -571,7 +529,7 @@ serversApi.post('/:id/disconnect', async (c) => {
             code: 'SERVER_ALREADY_DISCONNECTED',
             message: `服务器 '${serverId}' 已经断开连接`,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 409 },
       );
@@ -600,17 +558,13 @@ serversApi.post('/:id/disconnect', async (c) => {
       serverConnection.tools = [];
     }
 
-    return c.json({
-      success: true,
-      data: {
-        id: serverId,
-        message: `服务器 '${serverId}' 已断开连接`,
-        status: 'disconnected',
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      id: serverId,
+      message: `服务器 '${serverId}' 已断开连接`,
+      status: 'disconnected',
     });
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -630,7 +584,7 @@ serversApi.post('/test', async (c) => {
             message: '服务器配置验证失败',
             details: validationResult.error.issues,
           },
-          timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
         },
         { status: 400 },
       );
@@ -746,7 +700,7 @@ serversApi.post('/test', async (c) => {
       { status: testResult.success ? 200 : 400 },
     );
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -897,13 +851,9 @@ serversApi.post('/validate', async (c) => {
       warningCount: validationResponse.warnings.length,
     });
 
-    return c.json({
-      success: true,
-      data: validationResponse,
-      timestamp: new Date().toISOString(),
-    });
+    return successResponse(c, validationResponse);
   } catch (error) {
-    return c.json(handleApiError(error as Error), { status: 500 });
+    return errorResponse(c, error as Error, 500);
   }
 });
 

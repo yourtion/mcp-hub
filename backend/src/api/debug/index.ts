@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { logger } from '../../utils/logger.js';
 import { getHubService } from '../hub.js';
 
@@ -19,28 +20,10 @@ debugApi.get('/mcp-messages', async (c) => {
     // Get MCP messages from the service
     const messages = service.getMcpMessages(limit, serverId, type);
 
-    return c.json({
-      success: true,
-      data: {
-        messages,
-      },
-      timestamp: new Date().toISOString(),
-    });
+    return successResponse(c, { messages });
   } catch (error) {
     logger.error('Failed to get MCP messages', error as Error);
-    return c.json(
-      {
-        success: false,
-        error: {
-          code: 'DEBUG_ERROR',
-          message: 'Failed to get MCP messages',
-          details: (error as Error).message,
-        },
-        timestamp: new Date().toISOString(),
-        path: c.req.path,
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -61,6 +44,7 @@ debugApi.post('/tool-test', async (c) => {
             message: 'toolName is required',
           },
           timestamp: new Date().toISOString(),
+          requestId: c.get('requestId'),
           path: c.req.path,
         },
         { status: 400 },
@@ -72,33 +56,17 @@ debugApi.post('/tool-test', async (c) => {
     const result = await service.callTool(toolName, args || {}, groupId);
     const executionTime = Date.now() - startTime;
 
-    return c.json({
-      success: true,
-      data: {
-        toolName,
-        serverId,
-        groupId,
-        arguments: args,
-        result,
-        executionTime,
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      toolName,
+      serverId,
+      groupId,
+      arguments: args,
+      result,
+      executionTime,
     });
   } catch (error) {
     logger.error('Failed to test tool', error as Error);
-    return c.json(
-      {
-        success: false,
-        error: {
-          code: 'DEBUG_ERROR',
-          message: 'Failed to test tool',
-          details: (error as Error).message,
-        },
-        timestamp: new Date().toISOString(),
-        path: c.req.path,
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -110,28 +78,10 @@ debugApi.get('/performance-stats', async (c) => {
     // Get performance stats from the service
     const stats = service.getPerformanceStats();
 
-    return c.json({
-      success: true,
-      data: {
-        stats,
-      },
-      timestamp: new Date().toISOString(),
-    });
+    return successResponse(c, { stats });
   } catch (error) {
     logger.error('Failed to get performance stats', error as Error);
-    return c.json(
-      {
-        success: false,
-        error: {
-          code: 'DEBUG_ERROR',
-          message: 'Failed to get performance stats',
-          details: (error as Error).message,
-        },
-        timestamp: new Date().toISOString(),
-        path: c.req.path,
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
 
@@ -169,28 +119,12 @@ debugApi.get('/error-analysis', async (c) => {
       recentErrors: errorMessages.slice(0, 10),
     };
 
-    return c.json({
-      success: true,
-      data: {
-        errors: errorMessages,
-        analysis: errorAnalysis,
-      },
-      timestamp: new Date().toISOString(),
+    return successResponse(c, {
+      errors: errorMessages,
+      analysis: errorAnalysis,
     });
   } catch (error) {
     logger.error('Failed to analyze errors', error as Error);
-    return c.json(
-      {
-        success: false,
-        error: {
-          code: 'DEBUG_ERROR',
-          message: 'Failed to analyze errors',
-          details: (error as Error).message,
-        },
-        timestamp: new Date().toISOString(),
-        path: c.req.path,
-      },
-      { status: 500 },
-    );
+    return errorResponse(c, error as Error, 500);
   }
 });
