@@ -553,6 +553,8 @@ describe('ApiToMcpServiceManagerImpl', () => {
 
       // restart() 内部有 1s 延迟，用 fake timers 跳过
       const restartPromise = manager.restart();
+      // 防止 fake timer 推进期间 promise 无 handler 导致 unhandled rejection
+      restartPromise.catch(() => {});
       await vi.advanceTimersByTimeAsync(1500);
       await expect(restartPromise).rejects.toThrow(
         '无法重启：配置文件路径未设置',

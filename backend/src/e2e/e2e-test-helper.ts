@@ -6,6 +6,7 @@
 /**
  * E2E 测试辅助类
  */
+// biome-ignore lint/complexity/noStaticOnlyClass: test utility grouping
 export class E2ETestHelper {
   /**
    * 等待条件满足
@@ -19,22 +20,22 @@ export class E2ETestHelper {
     } = {},
   ): Promise<void> {
     const {
-      timeout = 10000,
-      interval = 100,
+      timeout: _timeout = 10000,
+      interval: _interval = 100,
       message = 'Condition not met',
     } = options;
 
     const startTime = Date.now();
 
-    while (Date.now() - startTime < timeout) {
+    while (Date.now() - startTime < _timeout) {
       if (await condition()) {
         return;
       }
 
-      await E2ETestHelper.delay(interval);
+      await E2ETestHelper.delay(_interval);
     }
 
-    throw new Error(`${message} (timeout: ${timeout}ms)`);
+    throw new Error(`${message} (timeout: ${_timeout}ms)`);
   }
 
   /**
@@ -104,7 +105,7 @@ export class E2ETestHelper {
     args: Record<string, unknown>,
     options: { timeout?: number; interval?: number } = {},
   ): Promise<{ success: boolean; result?: unknown; error?: string }> {
-    const { timeout = 30000, interval = 500 } = options;
+    const { timeout: _timeout = 30000, interval: _interval = 500 } = options;
 
     try {
       const response = await fetch(`${baseUrl}/api/tools/execute`, {
@@ -152,7 +153,7 @@ export class E2ETestHelper {
     const {
       iterations = 100,
       warmupIterations = 10,
-      concurrency = 10,
+      concurrency: _concurrency = 10,
     } = options;
 
     // 预热
@@ -556,6 +557,7 @@ export class E2ETestHelper {
 /**
  * E2E 测试场景辅助类
  */
+// biome-ignore lint/complexity/noStaticOnlyClass: test utility grouping
 export class E2EScenarioHelper {
   /**
    * 创建完整用户流程场景

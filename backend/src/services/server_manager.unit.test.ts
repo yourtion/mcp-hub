@@ -33,7 +33,7 @@ const MockClient = vi.mocked(Client);
 describe('ServerManager', () => {
   let serverManager: ServerManager;
   let mockServerConfigs: Record<string, ServerConfig>;
-  let mockClient: any;
+  let mockClient: Record<string, ReturnType<typeof vi.fn>>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -612,7 +612,7 @@ describe('ServerManager', () => {
     it('should handle invalid server type', async () => {
       const invalidConfig = {
         'invalid-server': {
-          type: 'invalid' as any,
+          type: 'invalid' as unknown as string,
           command: 'node',
           args: ['test.js'],
           enabled: true,

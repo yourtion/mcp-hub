@@ -1,5 +1,6 @@
 import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ServerManager } from '../types/mcp-hub.js';
 import { McpHubService } from './mcp_hub_service.js';
 
 // Mock external dependencies
@@ -17,7 +18,7 @@ vi.mock('../utils/logger.js');
 
 describe('MCP Hub Service Integration Tests', () => {
   let mcpHubService: McpHubService;
-  let mockClient: any;
+  let mockClient: Record<string, ReturnType<typeof vi.fn>>;
   let serverConfigs: Record<string, ServerConfig>;
   let groupConfigs: GroupConfig;
 
@@ -158,7 +159,8 @@ describe('MCP Hub Service Integration Tests', () => {
       await mcpHubService.initialize();
 
       // Mock shutdown failure by replacing the method temporarily
-      const serverManager = (mcpHubService as any).serverManager;
+      const serverManager = (mcpHubService as { serverManager: ServerManager })
+        .serverManager;
       const originalShutdown = serverManager.shutdown.bind(serverManager);
       Object.defineProperty(serverManager, 'shutdown', {
         value: vi.fn().mockRejectedValue(new Error('Shutdown failed')),
@@ -459,7 +461,7 @@ describe('MCP Hub Service Integration Tests', () => {
           // Missing required fields
           servers: ['non-existent-server'],
           tools: [],
-        } as any,
+        } as unknown as GroupConfig,
       };
 
       const invalidService = new McpHubService(
@@ -704,7 +706,7 @@ describe('MCP Hub Service Integration Tests', () => {
       const mixedServerConfigs = {
         ...serverConfigs,
         'invalid-server': {
-          type: 'invalid-type' as any,
+          type: 'invalid-type' as unknown as string,
           command: 'invalid-command',
           enabled: true,
         },

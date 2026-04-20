@@ -387,7 +387,13 @@ export class ServerManager implements IServerManager {
 
             // 尝试访问并杀死子进程
             try {
-              const transport = (server.client as any).transport;
+              const transport = (
+                server.client as {
+                  transport?: {
+                    process?: { kill: (sig: string) => void; pid?: number };
+                  };
+                }
+              ).transport;
               if (transport?.process) {
                 transport.process.kill('SIGKILL');
                 logger.warn('已强制杀死服务器进程', {

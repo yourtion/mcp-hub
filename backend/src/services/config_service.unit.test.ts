@@ -11,9 +11,19 @@ import { ConfigService } from './config_service.js';
 vi.mock('node:fs/promises');
 vi.mock('../utils/config.js');
 
+interface MockFs {
+  readJson: ReturnType<typeof vi.fn>;
+  writeJson: ReturnType<typeof vi.fn>;
+  pathExists: ReturnType<typeof vi.fn>;
+  ensureDir: ReturnType<typeof vi.fn>;
+  mkdir: ReturnType<typeof vi.fn>;
+  writeFile: ReturnType<typeof vi.fn>;
+  stat: ReturnType<typeof vi.fn>;
+}
+
 describe('ConfigService', () => {
   let configService: ConfigService;
-  let mockFs: any;
+  let mockFs: MockFs;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -497,7 +507,7 @@ describe('ConfigService', () => {
 
       // 检查是否包含模式验证测试
       const schemaTest = result.tests.find(
-        (test: any) => test.name === 'schema_validation',
+        (test: { name: string }) => test.name === 'schema_validation',
       );
       expect(schemaTest).toBeDefined();
       expect(schemaTest?.status).toBe('passed');
@@ -547,7 +557,7 @@ describe('ConfigService', () => {
 
       // 检查是否包含模式验证失败
       const schemaTest = result.tests.find(
-        (test: any) => test.name === 'schema_validation',
+        (test: { name: string }) => test.name === 'schema_validation',
       );
       expect(schemaTest).toBeDefined();
       expect(schemaTest?.status).toBe('failed');
@@ -573,7 +583,7 @@ describe('ConfigService', () => {
       expect(result.summary.total).toBeGreaterThan(0);
 
       // 检查是否包含服务器配置测试
-      const serverTests = result.tests.filter((test: any) =>
+      const serverTests = result.tests.filter((test: { name: string }) =>
         test.name.includes('server_test-server'),
       );
       expect(serverTests.length).toBeGreaterThan(0);

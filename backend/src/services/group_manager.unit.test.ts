@@ -22,7 +22,7 @@ describe('GroupManager', () => {
         {
           id: 'server1',
           config: { type: 'stdio', command: 'node', args: ['server1.js'] },
-          client: {} as any,
+          client: {} as Record<string, unknown>,
           status: ServerStatus.CONNECTED,
           tools: [
             {
@@ -46,7 +46,7 @@ describe('GroupManager', () => {
         {
           id: 'server2',
           config: { type: 'stdio', command: 'node', args: ['server2.js'] },
-          client: {} as any,
+          client: {} as Record<string, unknown>,
           status: ServerStatus.CONNECTED,
           tools: [
             {
@@ -70,7 +70,7 @@ describe('GroupManager', () => {
         {
           id: 'server3',
           config: { type: 'stdio', command: 'node', args: ['server3.js'] },
-          client: {} as any,
+          client: {} as Record<string, unknown>,
           status: ServerStatus.DISCONNECTED,
           tools: [],
           reconnectAttempts: 0,
@@ -155,10 +155,13 @@ describe('GroupManager', () => {
           // Missing required fields
           servers: ['server1'],
           tools: [],
-        } as any,
+        } as Record<string, unknown>,
       };
 
-      const invalidManager = new GroupManager(invalidConfig, mockServerManager);
+      const invalidManager = new GroupManager(
+        invalidConfig as unknown as GroupConfig,
+        mockServerManager,
+      );
       await invalidManager.initialize();
 
       const groups = invalidManager.getAllGroups();
@@ -541,7 +544,7 @@ describe('GroupManager', () => {
           'invalid-servers': {
             id: 'invalid-servers',
             name: 'Invalid Servers',
-            servers: 'not-an-array' as any,
+            servers: 'not-an-array' as unknown as string[],
             tools: [],
           },
         },
@@ -550,14 +553,14 @@ describe('GroupManager', () => {
             id: 'invalid-tools',
             name: 'Invalid Tools',
             servers: ['server1'],
-            tools: 'not-an-array' as any,
+            tools: 'not-an-array' as unknown as string[],
           },
         },
       ];
 
       for (const config of invalidConfigs) {
         const invalidManager = new GroupManager(
-          config as any,
+          config as unknown as GroupConfig,
           mockServerManager,
         );
         await invalidManager.initialize();
@@ -641,10 +644,13 @@ describe('GroupManager', () => {
           // Missing required fields
           servers: ['server1'],
           tools: [],
-        } as any,
+        } as Record<string, unknown>,
       };
 
-      const mixedManager = new GroupManager(mixedConfig, mockServerManager);
+      const mixedManager = new GroupManager(
+        mixedConfig as unknown as GroupConfig,
+        mockServerManager,
+      );
       await mixedManager.initialize();
 
       const groups = mixedManager.getAllGroups();

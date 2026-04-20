@@ -6,7 +6,6 @@
 import { Hono } from 'hono';
 import { requireAuth } from '../../middleware/simple-auth.js';
 import type { ApiToMcpWebService } from '../../services/api-to-mcp-web-service.js';
-import type { McpHubService } from '../../services/mcp_hub_service.js';
 import type {
   ApiConfigListResponse,
   ApiResponse,

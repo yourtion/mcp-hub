@@ -53,6 +53,13 @@ export enum ErrorCode {
   MEMORY_LIMIT_EXCEEDED = 5002,
   TIMEOUT_ERROR = 5003,
   UNKNOWN_ERROR = 5999,
+
+  // 认证错误 (6000-6999)
+  AUTH_INVALID_CREDENTIALS = 6001,
+  AUTH_TOKEN_EXPIRED = 6002,
+  AUTH_TOKEN_INVALID = 6003,
+  AUTH_ACCESS_DENIED = 6004,
+  AUTH_ACCOUNT_LOCKED = 6005,
 }
 
 /**
@@ -94,6 +101,13 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.MEMORY_LIMIT_EXCEEDED]: '内存限制超出',
   [ErrorCode.TIMEOUT_ERROR]: '操作超时',
   [ErrorCode.UNKNOWN_ERROR]: '未知错误',
+
+  // 认证错误
+  [ErrorCode.AUTH_INVALID_CREDENTIALS]: '用户名或密码无效',
+  [ErrorCode.AUTH_TOKEN_EXPIRED]: '认证令牌已过期',
+  [ErrorCode.AUTH_TOKEN_INVALID]: '认证令牌无效',
+  [ErrorCode.AUTH_ACCESS_DENIED]: '访问被拒绝',
+  [ErrorCode.AUTH_ACCOUNT_LOCKED]: '账户已被锁定',
 };
 
 /**
@@ -145,6 +159,13 @@ export const ERROR_SEVERITY: Record<ErrorCode, ErrorSeverity> = {
   [ErrorCode.MEMORY_LIMIT_EXCEEDED]: ErrorSeverity.CRITICAL,
   [ErrorCode.TIMEOUT_ERROR]: ErrorSeverity.MEDIUM,
   [ErrorCode.UNKNOWN_ERROR]: ErrorSeverity.HIGH,
+
+  // 认证错误 - 中等到高严重程度
+  [ErrorCode.AUTH_INVALID_CREDENTIALS]: ErrorSeverity.MEDIUM,
+  [ErrorCode.AUTH_TOKEN_EXPIRED]: ErrorSeverity.LOW,
+  [ErrorCode.AUTH_TOKEN_INVALID]: ErrorSeverity.MEDIUM,
+  [ErrorCode.AUTH_ACCESS_DENIED]: ErrorSeverity.HIGH,
+  [ErrorCode.AUTH_ACCOUNT_LOCKED]: ErrorSeverity.MEDIUM,
 };
 
 /**
@@ -174,6 +195,7 @@ export class McpHubCoreError extends Error {
     if (code >= 2000 && code < 3000) return ErrorCategory.CONNECTION;
     if (code >= 3000 && code < 4000) return ErrorCategory.RUNTIME;
     if (code >= 4000 && code < 5000) return ErrorCategory.VALIDATION;
+    if (code >= 6000 && code < 7000) return ErrorCategory.RUNTIME;
     return ErrorCategory.SYSTEM;
   }
 
@@ -271,6 +293,21 @@ export class ValidationError extends McpHubCoreError {
 }
 
 /**
+ * 认证错误
+ */
+export class AuthError extends McpHubCoreError {
+  constructor(
+    code: ErrorCode,
+    message?: string,
+    details?: unknown,
+    context?: Record<string, unknown>,
+  ) {
+    super(code, message, details, context);
+    this.name = 'AuthError';
+  }
+}
+
+/**
  * 错误处理上下文
  */
 export interface ErrorContext {
@@ -318,6 +355,7 @@ export interface ErrorResponse {
     details?: unknown;
     context?: Record<string, unknown>;
   };
+  requestId?: string;
 }
 
 /**
@@ -327,6 +365,7 @@ export interface SuccessResponse<T = unknown> {
   success: true;
   data: T;
   timestamp: string;
+  requestId?: string;
 }
 
 /**
@@ -509,7 +548,7 @@ export class UnifiedErrorHandler implements ErrorHandler {
     }
   }
 
-  formatErrorResponse(error: Error, context?: ErrorContext): ErrorResponse {
+  formatErrorResponse(error: Error, context?: ErrorContext, requestId?: string): ErrorResponse {
     if (error instanceof McpHubCoreError) {
       return {
         success: false,
@@ -522,6 +561,7 @@ export class UnifiedErrorHandler implements ErrorHandler {
           details: error.details,
           context: error.context,
         },
+        requestId,
       };
     }
 
@@ -538,14 +578,16 @@ export class UnifiedErrorHandler implements ErrorHandler {
           ? { operation: context.operation, component: context.component }
           : undefined,
       },
+      requestId,
     };
   }
 
-  formatSuccessResponse<T>(data: T): SuccessResponse<T> {
+  formatSuccessResponse<T>(data: T, requestId?: string): SuccessResponse<T> {
     return {
       success: true,
       data,
       timestamp: new Date().toISOString(),
+      requestId,
     };
   }
 
@@ -616,6 +658,18 @@ export const ErrorFactory = {
     context?: Record<string, unknown>,
   ): ValidationError {
     return new ValidationError(code, message, details, context);
+  },
+
+  /**
+   * 创建认证错误
+   */
+  createAuthError(
+    code: ErrorCode,
+    message?: string,
+    details?: unknown,
+    context?: Record<string, unknown>,
+  ): AuthError {
+    return new AuthError(code, message, details, context);
   },
 };
 

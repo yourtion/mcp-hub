@@ -294,7 +294,9 @@ export class McpHubService implements IMcpHubService {
         executionId,
         durationMs: duration,
         resultSize: JSON.stringify(result.content).length,
-        contentTypes: result.content.map((c: any) => c.type || 'unknown'),
+        contentTypes: result.content.map(
+          (c: { type: string }) => c.type || 'unknown',
+        ),
       });
 
       // Additional error logging for failed executions
@@ -951,7 +953,7 @@ export class McpHubService implements IMcpHubService {
       errors: string[];
     };
     performance: {
-      cacheStats: any;
+      cacheStats: Record<string, unknown>;
     };
   }> {
     this.ensureInitialized();
@@ -1005,7 +1007,7 @@ export class McpHubService implements IMcpHubService {
       );
 
       // Performance diagnostics
-      const cacheStats = (this.toolManager as any).getCacheStats?.() || {};
+      const cacheStats = this.toolManager.getCacheStats();
 
       // API tool diagnostics
       let apiToolDiagnostics = {
@@ -1332,9 +1334,9 @@ export class McpHubService implements IMcpHubService {
       // Clear tool cache to ensure stale data is removed
       if (
         this.toolManager &&
-        typeof (this.toolManager as any).clearCache === 'function'
+        typeof this.toolManager.clearCache === 'function'
       ) {
-        (this.toolManager as any).clearCache();
+        this.toolManager.clearCache();
         logger.debug('Tool cache cleared due to server disconnections');
       }
 
@@ -1502,7 +1504,7 @@ export class McpHubService implements IMcpHubService {
     content: unknown,
   ): void {
     const message = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
       timestamp: new Date().toISOString(),
       serverId,
       type,

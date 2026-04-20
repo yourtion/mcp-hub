@@ -362,8 +362,8 @@ describe('ToolManager', () => {
             'server3',
             {
               id: 'server3',
-              config: {} as any,
-              client: {} as any,
+              config: {} as Record<string, unknown>,
+              client: {} as Record<string, unknown>,
               status: ServerStatus.DISCONNECTED,
               tools: [{ name: 'tool4', serverId: 'server3', inputSchema: {} }],
               reconnectAttempts: 0,
@@ -617,9 +617,9 @@ describe('ToolManager', () => {
       };
 
       // Mock finding this tool by replacing the private method temporarily
-      const originalFindTool = (toolManager as any).findToolDefinition.bind(
-        toolManager,
-      );
+      const originalFindTool = (
+        toolManager as { findToolDefinition: (...args: unknown[]) => unknown }
+      ).findToolDefinition.bind(toolManager);
       Object.defineProperty(toolManager, 'findToolDefinition', {
         value: vi.fn().mockReturnValue(toolWithStrictSchema),
         writable: true,

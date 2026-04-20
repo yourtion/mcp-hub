@@ -155,7 +155,7 @@ export class AuthService {
 
     // 验证密码
     const userKey = Object.keys(this.config.users).find(
-      (k) => this.config!.users[k].id === user.id,
+      (k) => this.config?.users[k].id === user.id,
     );
     const hash = userKey ? this.passwordHashMap.get(userKey) : undefined;
     if (!hash) {
@@ -362,7 +362,7 @@ export class AuthService {
    * 生成会话ID
    */
   private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   }
 
   /**

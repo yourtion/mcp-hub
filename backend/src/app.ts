@@ -13,6 +13,7 @@ import { toolsApi } from './api/tools/index.js';
 import { toolsAdminApi } from './api/tools-admin/index.js';
 import { mcp } from './mcp.js';
 import { createAuthMiddleware } from './middleware/auth.js';
+import { requestIdMiddleware } from './middleware/request-id.js';
 import { secureHeadersMiddleware } from './middleware/security.js';
 import { ApiToMcpWebService } from './services/api-to-mcp-web-service.js';
 import { AuthService } from './services/auth.js';
@@ -31,6 +32,9 @@ export const app = new Hono();
 
 // 安全头中间件（在所有路由之前）
 app.use('*', secureHeadersMiddleware());
+
+// Request ID 中间件（在安全头之后）
+app.use('*', requestIdMiddleware);
 
 // 性能监控中间件（在所有路由之前）
 app.use('*', createPerformanceMiddleware());

@@ -8,6 +8,7 @@ export * from './config/index.js';
 export type { ErrorHandler } from './errors/index.js';
 // 导出错误处理（避免与types中的ErrorContext和ErrorResponse冲突）
 export {
+  AuthError,
   ConfigError,
   ConnectionError,
   defaultErrorHandler,
@@ -18,6 +19,9 @@ export {
   McpHubCoreError,
   ServiceError,
   ToolExecutionError,
+  type ErrorResponse,
+  type SuccessResponse,
+  type ApiResponse,
   UnifiedErrorHandler,
   ValidationError,
 } from './errors/index.js';

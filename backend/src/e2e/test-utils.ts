@@ -435,10 +435,8 @@ export function generateTestReport(
 /**
  * 验证端到端测试结果
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- e2e test utility
-// biome-ignore lint/suspicious/noExplicitAny: e2e test utility
 export function validateE2EResult(
-  result: any,
+  result: Record<string, unknown>,
   expectedStatus: number,
   requiredFields?: string[],
 ) {

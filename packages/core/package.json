@@ -70,6 +70,10 @@
     "./api-to-mcp": {
       "types": "./dist/api-to-mcp/index.d.ts",
       "import": "./dist/api-to-mcp/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "import": "./dist/errors/index.js"
     }
   }
 }

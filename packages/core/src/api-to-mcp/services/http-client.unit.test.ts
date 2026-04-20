@@ -127,6 +127,8 @@ describe('HttpClient', () => {
       };
 
       const promise = httpClient.request(config);
+      // 防止 fake timer 推进期间 promise 无 handler 导致 unhandled rejection
+      promise.catch(() => {});
       await vi.advanceTimersByTimeAsync(3000);
       await expect(promise).rejects.toThrow('Network Error');
       expect(mockFetch).toHaveBeenCalledTimes(2); // 1 + 1 retry
