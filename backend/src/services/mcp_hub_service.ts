@@ -13,6 +13,8 @@ import { ServerStatus } from '../types/mcp-hub.js';
 import { logger } from '../utils/logger.js';
 import { ApiToolIntegrationService } from './api_tool_integration_service.js';
 import { GroupManager } from './group_manager.js';
+import { HealthMonitorService } from './health-monitor-service.js';
+import { MessageAuditService } from './message-audit-service.js';
 import { ServerManager } from './server_manager.js';
 import { ToolManager } from './tool_manager.js';
 
@@ -68,43 +70,25 @@ export class McpHubService implements IMcpHubService {
   private groupManager: GroupManager;
   private toolManager: ToolManager;
   private apiToolService: ApiToolIntegrationService;
+  private messageAudit: MessageAuditService;
+  private healthMonitor: HealthMonitorService;
   private isInitialized = false;
   private readonly DEFAULT_GROUP = 'default';
-
-  // Message tracking for debugging
-  private mcpMessages: Array<{
-    id: string;
-    timestamp: string;
-    serverId: string;
-    type: 'request' | 'response' | 'notification';
-    method: string;
-    content: unknown;
-  }> = [];
-
-  // Lifecycle management properties
-  private healthCheckInterval?: NodeJS.Timeout;
-  private healthCheckTimers: Array<NodeJS.Timeout | NodeJS.Immediate> = []; // 追踪所有定时器
-  private readonly HEALTH_CHECK_INTERVAL_MS = 30000; // 30 seconds
   private shutdownInProgress = false;
   private serverConfigs: Record<string, ServerConfig> = {} as Record<
     string,
     ServerConfig
   >;
   private groupConfigs: GroupConfig = {} as GroupConfig;
-  private initializationTime?: Date;
-  private lastHealthCheck?: Date;
-  private healthCheckEnabled = true;
 
   constructor(
     serverConfigs: DeepReadonly<Record<string, ServerConfig>>,
     groupConfigs: DeepReadonly<GroupConfig>,
     private apiToolConfigPath?: string,
   ) {
-    // 创建深拷贝以避免修改原始配置
-    // 注意：这里使用 JSON.parse/stringify 来创建可变副本
     this.serverConfigs = JSON.parse(JSON.stringify(serverConfigs));
     this.groupConfigs = JSON.parse(JSON.stringify(groupConfigs));
-    // Initialize managers
+
     this.serverManager = new ServerManager(this.serverConfigs);
     this.groupManager = new GroupManager(this.groupConfigs, this.serverManager);
     this.apiToolService = new ApiToolIntegrationService();
@@ -113,12 +97,29 @@ export class McpHubService implements IMcpHubService {
       this.groupManager,
       this.apiToolService,
     );
+    this.messageAudit = new MessageAuditService();
+    this.healthMonitor = new HealthMonitorService(
+      this.serverManager,
+      this.groupManager,
+      async () => {
+        // 健康检查回调：清理工具缓存
+        if (
+          this.toolManager &&
+          typeof this.toolManager.clearCache === 'function'
+        ) {
+          this.toolManager.clearCache();
+          logger.debug('Tool cache cleared due to server disconnections');
+        }
+      },
+    );
 
     // Set up message tracking
     this.serverManager.setMessageTracker((serverId, type, method, content) => {
-      this.addMcpMessage(serverId, type, method, content);
+      this.messageAudit.addMessage(serverId, type, method, content);
     });
   }
+
+  // ========== Lifecycle ==========
 
   async initialize(): Promise<void> {
     if (this.isInitialized) {
@@ -136,7 +137,6 @@ export class McpHubService implements IMcpHubService {
     });
 
     try {
-      // Initialize components in order: servers first, then groups, then tools
       logger.debug('Initializing server manager');
       await this.serverManager.initialize();
 
@@ -158,7 +158,6 @@ export class McpHubService implements IMcpHubService {
         failedGroups: Object.keys(this.groupConfigs).length - loadedGroups,
       });
 
-      // Initialize API tool service if config path is provided
       logger.debug('Initializing API tool integration service');
       await this.apiToolService.initialize(this.apiToolConfigPath);
 
@@ -168,14 +167,11 @@ export class McpHubService implements IMcpHubService {
         totalApiTools: apiToolStats.totalApiTools,
       });
 
-      // Validate service health after initialization
       await this.validateServiceHealth();
 
       this.isInitialized = true;
-      this.initializationTime = new Date();
-
-      // Start health monitoring
-      this.startHealthMonitoring();
+      this.healthMonitor.markInitialized();
+      this.healthMonitor.start();
 
       const initDuration = Date.now() - initStartTime;
       logger.info('MCP Hub Service initialization completed successfully', {
@@ -183,7 +179,6 @@ export class McpHubService implements IMcpHubService {
         loadedGroups,
         initializationTimeMs: initDuration,
         timestamp: new Date().toISOString(),
-        healthMonitoringEnabled: this.healthCheckEnabled,
       });
     } catch (error) {
       const initDuration = Date.now() - initStartTime;
@@ -193,7 +188,6 @@ export class McpHubService implements IMcpHubService {
         groupCount: Object.keys(this.groupConfigs).length,
       });
 
-      // Attempt cleanup on failed initialization
       await this.cleanupFailedInitialization();
 
       throw new ServiceInitializationError(
@@ -202,6 +196,135 @@ export class McpHubService implements IMcpHubService {
       );
     }
   }
+
+  async shutdown(): Promise<void> {
+    if (!this.isInitialized) {
+      logger.warn('MCP Hub Service not initialized, skipping shutdown');
+      return;
+    }
+
+    if (this.shutdownInProgress) {
+      logger.warn('Shutdown already in progress, waiting for completion');
+      return;
+    }
+
+    this.shutdownInProgress = true;
+    const shutdownStartTime = Date.now();
+
+    logger.info('Starting graceful MCP Hub Service shutdown', {
+      timestamp: new Date().toISOString(),
+      connectedServers: this.getConnectedServerCount(),
+    });
+
+    const errors: Error[] = [];
+
+    try {
+      this.healthMonitor.stop();
+      this.messageAudit.clearMessages();
+
+      const shutdownPromise = this.performGracefulShutdown();
+      let timeoutId: NodeJS.Timeout | undefined;
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error('Shutdown timeout')),
+          10000,
+        );
+        timeoutId.unref?.();
+      });
+
+      await Promise.race([shutdownPromise, timeoutPromise]);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    } catch (error) {
+      const shutdownError = error as Error;
+      logger.error('Error during graceful shutdown', shutdownError);
+      errors.push(shutdownError);
+
+      try {
+        logger.warn(
+          'Attempting force shutdown due to graceful shutdown failure',
+        );
+        await this.performForceShutdown();
+      } catch (forceError) {
+        logger.error('Force shutdown also failed', forceError as Error);
+        errors.push(forceError as Error);
+      }
+    }
+
+    this.isInitialized = false;
+    this.shutdownInProgress = false;
+
+    const shutdownDuration = Date.now() - shutdownStartTime;
+
+    if (errors.length > 0) {
+      logger.error(
+        'MCP Hub Service shutdown completed with errors',
+        new Error('Shutdown errors occurred'),
+        {
+          shutdownTimeMs: shutdownDuration,
+          errorCount: errors.length,
+          errors: errors.map((e) => e.message),
+        },
+      );
+
+      throw new McpHubError(
+        `Shutdown completed with ${errors.length} errors: ${errors.map((e) => e.message).join(', ')}`,
+        'SHUTDOWN_ERRORS',
+        { errorCount: errors.length, shutdownTimeMs: shutdownDuration },
+      );
+    }
+    logger.info('MCP Hub Service shutdown completed successfully', {
+      shutdownTimeMs: shutdownDuration,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // ========== Group Routing ==========
+
+  getAllGroups(): Map<string, Group> {
+    this.ensureInitialized();
+    return this.groupManager.getAllGroups();
+  }
+
+  getGroupInfo(groupId: string): Group | undefined {
+    this.ensureInitialized();
+
+    try {
+      const group = this.groupManager.getGroup(groupId);
+
+      if (group) {
+        const availableServers = this.groupManager.getGroupServers(groupId);
+        const connectedServers = availableServers.filter((serverId) => {
+          const server = this.serverManager.getAllServers().get(serverId);
+          return server?.status === ServerStatus.CONNECTED;
+        });
+
+        logger.debug('Group information retrieved successfully', {
+          groupId,
+          groupName: group.name,
+          configuredServers: group.servers.length,
+          availableServers: availableServers.length,
+          connectedServers: connectedServers.length,
+          configuredTools: group.tools.length,
+        });
+      } else {
+        logger.warn('Group information request for non-existent group', {
+          groupId,
+          availableGroups: Array.from(this.groupManager.getAllGroups().keys()),
+        });
+      }
+
+      return group;
+    } catch (error) {
+      logger.error('Error retrieving group information', error as Error, {
+        groupId,
+      });
+      return undefined;
+    }
+  }
+
+  // ========== Tool Execution ==========
 
   async listTools(groupId?: string): Promise<Tool[]> {
     this.ensureInitialized();
@@ -216,7 +339,6 @@ export class McpHubService implements IMcpHubService {
     });
 
     try {
-      // Validate group exists
       if (!this.groupManager.getGroup(targetGroupId)) {
         const error = new GroupNotFoundError(targetGroupId);
         logger.warn('Tool listing failed: group not found', {
@@ -247,7 +369,6 @@ export class McpHubService implements IMcpHubService {
         errorType: (error as Error).constructor.name,
       });
 
-      // Re-throw known errors, wrap unknown ones
       if (error instanceof McpHubError) {
         throw error;
       }
@@ -277,7 +398,6 @@ export class McpHubService implements IMcpHubService {
     });
 
     try {
-      // Pre-execution validation
       await this.validateToolExecution(toolName, targetGroupId, executionId);
 
       const startTime = Date.now();
@@ -288,7 +408,6 @@ export class McpHubService implements IMcpHubService {
       );
       const duration = Date.now() - startTime;
 
-      // Log execution result
       const status = result.isError ? 'failed' : 'completed';
       logger.logToolExecution(toolName, targetGroupId, status, {
         executionId,
@@ -299,7 +418,6 @@ export class McpHubService implements IMcpHubService {
         ),
       });
 
-      // Additional error logging for failed executions
       if (result.isError) {
         logger.warn('Tool execution completed with error result', {
           executionId,
@@ -317,7 +435,6 @@ export class McpHubService implements IMcpHubService {
         errorType: (error as Error).constructor.name,
       });
 
-      // Enhanced error context for debugging
       logger.error('Tool execution failed with exception', error as Error, {
         executionId,
         toolName,
@@ -326,7 +443,6 @@ export class McpHubService implements IMcpHubService {
         serviceHealth: this.getServiceHealthSummary(),
       });
 
-      // Re-throw known errors, wrap unknown ones
       if (error instanceof McpHubError) {
         throw error;
       }
@@ -344,55 +460,47 @@ export class McpHubService implements IMcpHubService {
     }
   }
 
-  getGroupInfo(groupId: string): Group | undefined {
+  async isToolAvailable(toolName: string, groupId?: string): Promise<boolean> {
     this.ensureInitialized();
 
-    logger.debug('Retrieving group information', {
-      groupId,
-      timestamp: new Date().toISOString(),
-    });
+    const targetGroupId = groupId || this.DEFAULT_GROUP;
 
     try {
-      const group = this.groupManager.getGroup(groupId);
-
-      if (group) {
-        // Get additional runtime information
-        const availableServers = this.groupManager.getGroupServers(groupId);
-        const connectedServers = availableServers.filter((serverId) => {
-          const server = this.serverManager.getAllServers().get(serverId);
-          return server?.status === ServerStatus.CONNECTED;
-        });
-
-        logger.debug('Group information retrieved successfully', {
-          groupId,
-          groupName: group.name,
-          configuredServers: group.servers.length,
-          availableServers: availableServers.length,
-          connectedServers: connectedServers.length,
-          configuredTools: group.tools.length,
-        });
-      } else {
-        logger.warn('Group information request for non-existent group', {
-          groupId,
-          availableGroups: Array.from(this.groupManager.getAllGroups().keys()),
-        });
-      }
-
-      return group;
+      const tools = await this.listTools(targetGroupId);
+      return tools.some((tool) => tool.name === toolName);
     } catch (error) {
-      logger.error('Error retrieving group information', error as Error, {
-        groupId,
+      logger.error('Error checking tool availability', error as Error, {
+        toolName,
+        groupId: targetGroupId,
       });
-
-      // Don't throw for group info retrieval, return undefined
-      return undefined;
+      return false;
     }
   }
 
-  getServerHealth(): Map<string, ServerStatus> {
+  async getToolDetails(
+    toolName: string,
+    groupId?: string,
+  ): Promise<Tool | null> {
     this.ensureInitialized();
 
-    logger.debug('Getting server health status');
+    const targetGroupId = groupId || this.DEFAULT_GROUP;
+
+    try {
+      const tools = await this.listTools(targetGroupId);
+      return tools.find((tool) => tool.name === toolName) || null;
+    } catch (error) {
+      logger.error('Error getting tool details', error as Error, {
+        toolName,
+        groupId: targetGroupId,
+      });
+      return null;
+    }
+  }
+
+  // ========== Health & Status ==========
+
+  getServerHealth(): Map<string, ServerStatus> {
+    this.ensureInitialized();
 
     const healthMap = new Map<string, ServerStatus>();
     const allServers = this.serverManager.getAllServers();
@@ -401,123 +509,9 @@ export class McpHubService implements IMcpHubService {
       healthMap.set(serverId, server.status);
     }
 
-    logger.debug('Server health retrieved', {
-      totalServers: healthMap.size,
-      connectedServers: Array.from(healthMap.values()).filter(
-        (status) => status === ServerStatus.CONNECTED,
-      ).length,
-    });
-
     return healthMap;
   }
 
-  async shutdown(): Promise<void> {
-    if (!this.isInitialized) {
-      logger.warn('MCP Hub Service not initialized, skipping shutdown');
-      return;
-    }
-
-    if (this.shutdownInProgress) {
-      logger.warn('Shutdown already in progress, waiting for completion');
-      return;
-    }
-
-    this.shutdownInProgress = true;
-    const shutdownStartTime = Date.now();
-
-    logger.info('Starting graceful MCP Hub Service shutdown', {
-      timestamp: new Date().toISOString(),
-      connectedServers: this.getConnectedServerCount(),
-      uptime: this.getServiceUptime(),
-    });
-
-    const errors: Error[] = [];
-
-    try {
-      // Stop health monitoring first
-      logger.debug('Stopping health monitoring');
-      this.stopHealthMonitoring();
-
-      // Clear message tracking to free memory
-      logger.debug('Clearing message tracking');
-      this.mcpMessages = [];
-
-      // Graceful shutdown with timeout
-      const shutdownPromise = this.performGracefulShutdown();
-      let timeoutId: NodeJS.Timeout | undefined;
-      const timeoutPromise = new Promise<void>((_, reject) => {
-        timeoutId = setTimeout(
-          () => reject(new Error('Shutdown timeout')),
-          10000,
-        ); // 10 second timeout
-        timeoutId.unref?.();
-      });
-
-      await Promise.race([shutdownPromise, timeoutPromise]);
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    } catch (error) {
-      const shutdownError = error as Error;
-      logger.error('Error during graceful shutdown', shutdownError);
-      errors.push(shutdownError);
-
-      // Attempt force shutdown
-      try {
-        logger.warn(
-          'Attempting force shutdown due to graceful shutdown failure',
-        );
-        await this.performForceShutdown();
-      } catch (forceError) {
-        logger.error('Force shutdown also failed', forceError as Error);
-        errors.push(forceError as Error);
-      }
-    }
-
-    // Mark as not initialized even if there were errors
-    this.isInitialized = false;
-    this.shutdownInProgress = false;
-
-    const shutdownDuration = Date.now() - shutdownStartTime;
-
-    if (errors.length > 0) {
-      logger.error(
-        'MCP Hub Service shutdown completed with errors',
-        new Error('Shutdown errors occurred'),
-        {
-          shutdownTimeMs: shutdownDuration,
-          errorCount: errors.length,
-          errors: errors.map((e) => e.message),
-        },
-      );
-
-      // Throw aggregated error
-      throw new McpHubError(
-        `Shutdown completed with ${errors.length} errors: ${errors.map((e) => e.message).join(', ')}`,
-        'SHUTDOWN_ERRORS',
-        { errorCount: errors.length, shutdownTimeMs: shutdownDuration },
-      );
-    } else {
-      logger.info('MCP Hub Service shutdown completed successfully', {
-        shutdownTimeMs: shutdownDuration,
-        timestamp: new Date().toISOString(),
-      });
-    }
-  }
-
-  // Additional utility methods for service management
-
-  /**
-   * Get all available groups
-   */
-  getAllGroups(): Map<string, Group> {
-    this.ensureInitialized();
-    return this.groupManager.getAllGroups();
-  }
-
-  /**
-   * Get detailed service status (synchronous version for backward compatibility)
-   */
   getServiceStatus(): {
     isInitialized: boolean;
     serverCount: number;
@@ -539,13 +533,10 @@ export class McpHubService implements IMcpHubService {
       groupCount: this.isInitialized
         ? this.groupManager.getAllGroups().size
         : 0,
-      totalTools: 0, // 保持简单的同步版本
+      totalTools: 0,
     };
   }
 
-  /**
-   * Get detailed service status with API tools information (async version)
-   */
   async getDetailedServiceStatus(): Promise<{
     isInitialized: boolean;
     serverCount: number;
@@ -561,7 +552,6 @@ export class McpHubService implements IMcpHubService {
       (status) => status === ServerStatus.CONNECTED,
     ).length;
 
-    // 获取API工具统计
     let apiToolCount = 0;
     if (this.isInitialized) {
       try {
@@ -574,13 +564,11 @@ export class McpHubService implements IMcpHubService {
       }
     }
 
-    // 计算总工具数（包括MCP工具和API工具）
     let totalMcpTools = 0;
     if (this.isInitialized) {
       try {
-        // 获取默认组的工具数量作为总数的估算
         const tools = await this.listTools();
-        totalMcpTools = tools.length - apiToolCount; // 减去API工具数量避免重复计算
+        totalMcpTools = tools.length - apiToolCount;
       } catch (error) {
         logger.warn('获取MCP工具统计失败', {
           error: (error as Error).message,
@@ -600,52 +588,6 @@ export class McpHubService implements IMcpHubService {
     };
   }
 
-  /**
-   * Check if a specific tool is available in a group
-   */
-  async isToolAvailable(toolName: string, groupId?: string): Promise<boolean> {
-    this.ensureInitialized();
-
-    const targetGroupId = groupId || this.DEFAULT_GROUP;
-
-    try {
-      const tools = await this.listTools(targetGroupId);
-      return tools.some((tool) => tool.name === toolName);
-    } catch (error) {
-      logger.error('Error checking tool availability', error as Error, {
-        toolName,
-        groupId: targetGroupId,
-      });
-      return false;
-    }
-  }
-
-  /**
-   * Get tool details for a specific tool in a group
-   */
-  async getToolDetails(
-    toolName: string,
-    groupId?: string,
-  ): Promise<Tool | null> {
-    this.ensureInitialized();
-
-    const targetGroupId = groupId || this.DEFAULT_GROUP;
-
-    try {
-      const tools = await this.listTools(targetGroupId);
-      return tools.find((tool) => tool.name === toolName) || null;
-    } catch (error) {
-      logger.error('Error getting tool details', error as Error, {
-        toolName,
-        groupId: targetGroupId,
-      });
-      return null;
-    }
-  }
-
-  /**
-   * Get API tool service health status
-   */
   getApiToolServiceHealth(): {
     initialized: boolean;
     healthy: boolean;
@@ -666,9 +608,6 @@ export class McpHubService implements IMcpHubService {
     }
   }
 
-  /**
-   * Perform API tool service health check
-   */
   async performApiToolHealthCheck(): Promise<{
     initialized: boolean;
     healthy: boolean;
@@ -689,12 +628,8 @@ export class McpHubService implements IMcpHubService {
     }
   }
 
-  /**
-   * Reload API tool configuration
-   */
   async reloadApiToolConfig(): Promise<void> {
     this.ensureInitialized();
-
     logger.info('重新加载API工具配置');
 
     try {
@@ -706,217 +641,6 @@ export class McpHubService implements IMcpHubService {
     }
   }
 
-  private ensureInitialized(): void {
-    if (!this.isInitialized) {
-      throw new Error('McpHubService must be initialized before use');
-    }
-  }
-
-  private getConnectedServerCount(): number {
-    const allServers = this.serverManager.getAllServers();
-    return Array.from(allServers.values()).filter(
-      (server) => server.status === ServerStatus.CONNECTED,
-    ).length;
-  }
-
-  /**
-   * Validate service health after initialization
-   */
-  private async validateServiceHealth(): Promise<void> {
-    logger.debug('Validating service health after initialization');
-
-    const issues: string[] = [];
-    const warnings: string[] = [];
-
-    // Check server connectivity
-    const connectedServers = this.getConnectedServerCount();
-    const totalServers = Object.keys(this.serverConfigs).length;
-
-    if (connectedServers === 0) {
-      warnings.push(
-        'No servers are connected - service will have limited functionality',
-      );
-    } else if (connectedServers < totalServers) {
-      warnings.push(
-        `Only ${connectedServers} of ${totalServers} servers are connected`,
-      );
-    }
-
-    // Check group validity
-    const loadedGroups = this.groupManager.getAllGroups().size;
-    const totalGroups = Object.keys(this.groupConfigs).length;
-
-    if (loadedGroups === 0 && totalGroups > 0) {
-      issues.push('No groups are loaded');
-    } else if (loadedGroups < totalGroups) {
-      warnings.push(`Only ${loadedGroups} of ${totalGroups} groups are loaded`);
-    }
-
-    // Log health status
-    if (issues.length > 0) {
-      logger.error(
-        'Service health validation failed',
-        new Error('Critical health issues detected'),
-        {
-          issues,
-          warnings,
-          connectedServers,
-          totalServers,
-          loadedGroups,
-          totalGroups,
-        },
-      );
-      throw new ServiceInitializationError(
-        `Critical health issues: ${issues.join(', ')}`,
-      );
-    }
-
-    if (warnings.length > 0) {
-      logger.warn('Service health validation completed with warnings', {
-        warnings,
-        connectedServers,
-        totalServers,
-        loadedGroups,
-        totalGroups,
-      });
-    } else {
-      logger.info('Service health validation passed', {
-        connectedServers,
-        totalServers,
-        loadedGroups,
-        totalGroups,
-      });
-    }
-  }
-
-  /**
-   * Clean up resources after failed initialization
-   */
-  private async cleanupFailedInitialization(): Promise<void> {
-    logger.debug('Cleaning up after failed initialization');
-
-    try {
-      // Attempt to shutdown any partially initialized components
-      if (this.serverManager) {
-        await this.serverManager.shutdown();
-      }
-      logger.debug('Cleanup completed successfully');
-    } catch (cleanupError) {
-      logger.error(
-        'Error during initialization cleanup',
-        cleanupError as Error,
-      );
-      // Don't throw cleanup errors, just log them
-    }
-  }
-
-  /**
-   * Validate tool execution prerequisites
-   */
-  private async validateToolExecution(
-    toolName: string,
-    groupId: string,
-    executionId: string,
-  ): Promise<void> {
-    logger.debug('Validating tool execution prerequisites', {
-      executionId,
-      toolName,
-      groupId,
-    });
-
-    // Check if group exists
-    const group = this.groupManager.getGroup(groupId);
-    if (!group) {
-      throw new GroupNotFoundError(groupId);
-    }
-
-    // Check if tool is available in group
-    const isAvailable = await this.isToolAvailable(toolName, groupId);
-    if (!isAvailable) {
-      throw new ToolNotFoundError(toolName, groupId);
-    }
-
-    // Check if any servers in the group are connected
-    const availableServers = this.groupManager.getGroupServers(groupId);
-    const connectedServers = availableServers.filter((serverId) => {
-      const server = this.serverManager.getAllServers().get(serverId);
-      return server?.status === ServerStatus.CONNECTED;
-    });
-
-    if (connectedServers.length === 0) {
-      throw new McpHubError(
-        `No servers are available in group '${groupId}'`,
-        'NO_SERVERS_AVAILABLE',
-        { groupId, availableServers, connectedServers },
-      );
-    }
-
-    logger.debug('Tool execution validation passed', {
-      executionId,
-      toolName,
-      groupId,
-      availableServers: availableServers.length,
-      connectedServers: connectedServers.length,
-    });
-  }
-
-  /**
-   * Get a summary of service health for error context
-   */
-  private getServiceHealthSummary(): Record<string, unknown> {
-    try {
-      const serverHealth = this.getServerHealth();
-      const connectedServers = Array.from(serverHealth.values()).filter(
-        (status) => status === ServerStatus.CONNECTED,
-      ).length;
-
-      return {
-        isInitialized: this.isInitialized,
-        totalServers: serverHealth.size,
-        connectedServers,
-        totalGroups: this.groupManager.getAllGroups().size,
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      return {
-        error: 'Failed to get health summary',
-        message: (error as Error).message,
-      };
-    }
-  }
-
-  /**
-   * Format error responses for API consumers
-   */
-  public static formatErrorResponse(error: Error): {
-    error: {
-      code: string;
-      message: string;
-      context?: Record<string, unknown>;
-    };
-  } {
-    if (error instanceof McpHubError) {
-      return {
-        error: {
-          code: error.code,
-          message: error.message,
-          context: error.context,
-        },
-      };
-    }
-
-    // Generic error formatting
-    return {
-      error: {
-        code: 'INTERNAL_ERROR',
-        message: error.message,
-      },
-    };
-  }
-
-  /**
-   * Get comprehensive service diagnostics
-   */
   async getServiceDiagnostics(): Promise<{
     service: {
       isInitialized: boolean;
@@ -958,13 +682,10 @@ export class McpHubService implements IMcpHubService {
   }> {
     this.ensureInitialized();
 
-    logger.debug('Generating service diagnostics');
-
     try {
       const allServers = this.serverManager.getAllServers();
       const allGroups = this.groupManager.getAllGroups();
 
-      // Server diagnostics
       const serverDetails = Array.from(allServers.entries()).map(
         ([id, server]) => ({
           id,
@@ -982,7 +703,6 @@ export class McpHubService implements IMcpHubService {
         (s) => s.status === ServerStatus.ERROR,
       ).length;
 
-      // Group diagnostics
       const groupDetails = await Promise.all(
         Array.from(allGroups.entries()).map(async ([id, group]) => {
           try {
@@ -1006,10 +726,8 @@ export class McpHubService implements IMcpHubService {
         }),
       );
 
-      // Performance diagnostics
       const cacheStats = this.toolManager.getCacheStats();
 
-      // API tool diagnostics
       let apiToolDiagnostics = {
         initialized: false,
         healthy: false,
@@ -1036,7 +754,7 @@ export class McpHubService implements IMcpHubService {
         service: {
           isInitialized: this.isInitialized,
           uptime: process.uptime(),
-          version: '1.0.0', // TODO: Get from package.json
+          version: '1.0.0',
         },
         servers: {
           total: allServers.size,
@@ -1072,308 +790,260 @@ export class McpHubService implements IMcpHubService {
     }
   }
 
-  // Lifecycle Management Methods
-
-  /**
-   * Start health monitoring for the service
-   */
-  private startHealthMonitoring(): void {
-    if (!this.healthCheckEnabled) {
-      logger.debug('Health monitoring disabled, skipping start');
-      return;
-    }
-
-    if (this.healthCheckInterval) {
-      logger.debug('Health monitoring already running');
-      return;
-    }
-
-    // 防御性清理：确保之前没有遗留定时器
-    this.stopHealthMonitoring();
-
-    logger.info('Starting service health monitoring', {
-      intervalMs: this.HEALTH_CHECK_INTERVAL_MS,
-    });
-
-    // 创建主健康检查定时器
-    this.healthCheckInterval = setInterval(async () => {
-      try {
-        await this.performHealthCheck();
-      } catch (error) {
-        logger.error('Health check failed', error as Error);
-      }
-    }, this.HEALTH_CHECK_INTERVAL_MS);
-    this.healthCheckInterval.unref?.();
-
-    // 追踪主定时器
-    this.healthCheckTimers.push(this.healthCheckInterval);
-
-    // 执行初始健康检查并追踪
-    const initialCheck = setImmediate(async () => {
-      try {
-        await this.performHealthCheck();
-      } catch (error) {
-        logger.error('Initial health check failed', error as Error);
-      }
-    });
-    initialCheck.unref?.();
-
-    // 追踪 setImmediate 定时器
-    this.healthCheckTimers.push(initialCheck);
-
-    logger.debug('Health monitoring timers registered', {
-      timerCount: this.healthCheckTimers.length,
-    });
+  setHealthMonitoring(enabled: boolean): void {
+    this.healthMonitor.setEnabled(enabled);
   }
 
-  /**
-   * Stop health monitoring（清理所有定时器）
-   */
-  private stopHealthMonitoring(): void {
-    let clearedCount = 0;
+  getLifecycleStatus(): {
+    isInitialized: boolean;
+    shutdownInProgress: boolean;
+    healthMonitoringEnabled: boolean;
+    uptime: number;
+    lastHealthCheck?: string;
+    initializationTime?: string;
+  } {
+    const lifecycle = this.healthMonitor.getLifecycleStatus();
+    return {
+      ...lifecycle,
+      shutdownInProgress: this.shutdownInProgress,
+    };
+  }
 
-    // 清理所有追踪的定时器
-    this.healthCheckTimers.forEach((timer) => {
-      try {
-        // 使用类型守卫来判断是 Timeout 还是 Immediate
-        if ('_onTimeout' in timer) {
-          // 这是一个 Timeout 对象
-          clearInterval(timer as NodeJS.Timeout);
-        } else if ('_onImmediate' in timer) {
-          // 这是一个 Immediate 对象
-          clearImmediate(timer as NodeJS.Immediate);
-        }
-        clearedCount++;
-      } catch (error) {
-        logger.error('清理定时器失败', error as Error, {
-          timerType:
-            timer === this.healthCheckInterval ? 'interval' : 'immediate',
-        });
-      }
-    });
+  async triggerHealthCheck(): Promise<void> {
+    this.ensureInitialized();
+    await this.healthMonitor.triggerCheck();
+  }
 
-    // 清空定时器数组
-    this.healthCheckTimers = [];
-    this.healthCheckInterval = undefined;
+  // ========== Message Audit (delegated) ==========
 
-    if (clearedCount > 0) {
-      logger.info('Health monitoring stopped', {
-        clearedTimers: clearedCount,
+  addMcpMessage(
+    serverId: string,
+    type: 'request' | 'response' | 'notification',
+    method: string,
+    content: unknown,
+  ): void {
+    this.messageAudit.addMessage(serverId, type, method, content);
+  }
+
+  getMcpMessages(
+    limit?: number,
+    serverId?: string,
+    type?: 'request' | 'response' | 'notification',
+  ): Array<{
+    id: string;
+    timestamp: string;
+    serverId: string;
+    type: 'request' | 'response' | 'notification';
+    method: string;
+    content: unknown;
+  }> {
+    return this.messageAudit.getMessages(limit, serverId, type);
+  }
+
+  clearMcpMessages(): void {
+    this.messageAudit.clearMessages();
+  }
+
+  getPerformanceStats(): {
+    totalRequests: number;
+    averageResponseTime: number;
+    errorRate: number;
+    topTools: Array<{ name: string; calls: number; avgTime: number }>;
+  } {
+    return this.messageAudit.getPerformanceStats();
+  }
+
+  // ========== Utility ==========
+
+  public static formatErrorResponse(error: Error): {
+    error: {
+      code: string;
+      message: string;
+      context?: Record<string, unknown>;
+    };
+  } {
+    if (error instanceof McpHubError) {
+      return {
+        error: {
+          code: error.code,
+          message: error.message,
+          context: error.context,
+        },
+      };
+    }
+
+    return {
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: error.message,
+      },
+    };
+  }
+
+  // ========== Private Helpers ==========
+
+  private ensureInitialized(): void {
+    if (!this.isInitialized) {
+      throw new Error('McpHubService must be initialized before use');
+    }
+  }
+
+  private getConnectedServerCount(): number {
+    const allServers = this.serverManager.getAllServers();
+    return Array.from(allServers.values()).filter(
+      (server) => server.status === ServerStatus.CONNECTED,
+    ).length;
+  }
+
+  private async validateServiceHealth(): Promise<void> {
+    logger.debug('Validating service health after initialization');
+
+    const issues: string[] = [];
+    const warnings: string[] = [];
+
+    const connectedServers = this.getConnectedServerCount();
+    const totalServers = Object.keys(this.serverConfigs).length;
+
+    if (connectedServers === 0) {
+      warnings.push(
+        'No servers are connected - service will have limited functionality',
+      );
+    } else if (connectedServers < totalServers) {
+      warnings.push(
+        `Only ${connectedServers} of ${totalServers} servers are connected`,
+      );
+    }
+
+    const loadedGroups = this.groupManager.getAllGroups().size;
+    const totalGroups = Object.keys(this.groupConfigs).length;
+
+    if (loadedGroups === 0 && totalGroups > 0) {
+      issues.push('No groups are loaded');
+    } else if (loadedGroups < totalGroups) {
+      warnings.push(`Only ${loadedGroups} of ${totalGroups} groups are loaded`);
+    }
+
+    if (issues.length > 0) {
+      logger.error(
+        'Service health validation failed',
+        new Error('Critical health issues detected'),
+        {
+          issues,
+          warnings,
+          connectedServers,
+          totalServers,
+          loadedGroups,
+          totalGroups,
+        },
+      );
+      throw new ServiceInitializationError(
+        `Critical health issues: ${issues.join(', ')}`,
+      );
+    }
+
+    if (warnings.length > 0) {
+      logger.warn('Service health validation completed with warnings', {
+        warnings,
+        connectedServers,
+        totalServers,
+        loadedGroups,
+        totalGroups,
+      });
+    } else {
+      logger.info('Service health validation passed', {
+        connectedServers,
+        totalServers,
+        loadedGroups,
+        totalGroups,
       });
     }
   }
 
-  /**
-   * Perform a comprehensive health check
-   */
-  private async performHealthCheck(): Promise<void> {
-    this.lastHealthCheck = new Date();
-
-    logger.debug('Performing service health check', {
-      timestamp: this.lastHealthCheck.toISOString(),
-    });
+  private async cleanupFailedInitialization(): Promise<void> {
+    logger.debug('Cleaning up after failed initialization');
 
     try {
-      const healthReport = await this.generateHealthReport();
-
-      // Log health status
-      if (healthReport.critical.length > 0) {
-        logger.error(
-          'Critical health issues detected',
-          new Error('Service health critical'),
-          {
-            criticalIssues: healthReport.critical,
-            warnings: healthReport.warnings,
-            healthScore: healthReport.healthScore,
-          },
-        );
-      } else if (healthReport.warnings.length > 0) {
-        logger.warn('Service health warnings detected', {
-          warnings: healthReport.warnings,
-          healthScore: healthReport.healthScore,
-        });
-      } else {
-        logger.debug('Service health check passed', {
-          healthScore: healthReport.healthScore,
-          connectedServers: healthReport.servers.connected,
-          totalServers: healthReport.servers.total,
-        });
+      if (this.serverManager) {
+        await this.serverManager.shutdown();
       }
-
-      // Handle server disconnections
-      await this.handleServerDisconnections(healthReport);
-    } catch (error) {
-      logger.error('Health check execution failed', error as Error);
+      logger.debug('Cleanup completed successfully');
+    } catch (cleanupError) {
+      logger.error(
+        'Error during initialization cleanup',
+        cleanupError as Error,
+      );
     }
   }
 
-  /**
-   * Generate comprehensive health report
-   */
-  private async generateHealthReport(): Promise<{
-    healthScore: number;
-    critical: string[];
-    warnings: string[];
-    servers: {
-      total: number;
-      connected: number;
-      disconnected: number;
-      failed: number;
-    };
-    groups: {
-      total: number;
-      healthy: number;
-      unhealthy: number;
-    };
-    uptime: number;
-  }> {
-    const critical: string[] = [];
-    const warnings: string[] = [];
+  private async validateToolExecution(
+    toolName: string,
+    groupId: string,
+    executionId: string,
+  ): Promise<void> {
+    logger.debug('Validating tool execution prerequisites', {
+      executionId,
+      toolName,
+      groupId,
+    });
 
-    // Server health analysis
-    const allServers = this.serverManager.getAllServers();
-    const serverStats = {
-      total: allServers.size,
-      connected: 0,
-      disconnected: 0,
-      failed: 0,
-    };
-
-    for (const server of allServers.values()) {
-      switch (server.status) {
-        case ServerStatus.CONNECTED:
-          serverStats.connected++;
-          break;
-        case ServerStatus.DISCONNECTED:
-          serverStats.disconnected++;
-          break;
-        case ServerStatus.ERROR:
-          serverStats.failed++;
-          break;
-      }
+    const group = this.groupManager.getGroup(groupId);
+    if (!group) {
+      throw new GroupNotFoundError(groupId);
     }
 
-    // Analyze server health
-    if (serverStats.connected === 0) {
-      critical.push('No servers are connected');
-    } else if (serverStats.connected < serverStats.total * 0.5) {
-      warnings.push(
-        `Only ${serverStats.connected} of ${serverStats.total} servers are connected`,
+    const isAvailable = await this.isToolAvailable(toolName, groupId);
+    if (!isAvailable) {
+      throw new ToolNotFoundError(toolName, groupId);
+    }
+
+    const availableServers = this.groupManager.getGroupServers(groupId);
+    const connectedServers = availableServers.filter((serverId) => {
+      const server = this.serverManager.getAllServers().get(serverId);
+      return server?.status === ServerStatus.CONNECTED;
+    });
+
+    if (connectedServers.length === 0) {
+      throw new McpHubError(
+        `No servers are available in group '${groupId}'`,
+        'NO_SERVERS_AVAILABLE',
+        { groupId, availableServers, connectedServers },
       );
     }
 
-    if (serverStats.failed > 0) {
-      warnings.push(`${serverStats.failed} servers are in error state`);
-    }
-
-    // Group health analysis
-    const allGroups = this.groupManager.getAllGroups();
-    const groupStats = {
-      total: allGroups.size,
-      healthy: 0,
-      unhealthy: 0,
-    };
-
-    for (const [groupId] of allGroups) {
-      try {
-        const availableServers = this.groupManager.getGroupServers(groupId);
-        const connectedServers = availableServers.filter((serverId) => {
-          const server = allServers.get(serverId);
-          return server?.status === ServerStatus.CONNECTED;
-        });
-
-        if (connectedServers.length > 0) {
-          groupStats.healthy++;
-        } else {
-          groupStats.unhealthy++;
-          warnings.push(`Group '${groupId}' has no connected servers`);
-        }
-      } catch (error) {
-        groupStats.unhealthy++;
-        warnings.push(
-          `Group '${groupId}' health check failed: ${(error as Error).message}`,
-        );
-      }
-    }
-
-    // Calculate health score (0-100)
-    let healthScore = 100;
-    healthScore -= critical.length * 30; // Critical issues heavily impact score
-    healthScore -= warnings.length * 10; // Warnings moderately impact score
-    healthScore = Math.max(0, healthScore);
-
-    return {
-      healthScore,
-      critical,
-      warnings,
-      servers: serverStats,
-      groups: groupStats,
-      uptime: this.getServiceUptime(),
-    };
-  }
-
-  /**
-   * Handle server disconnections gracefully
-   */
-  private async handleServerDisconnections(healthReport: {
-    servers: { disconnected: number; failed: number };
-  }): Promise<void> {
-    if (
-      healthReport.servers.disconnected === 0 &&
-      healthReport.servers.failed === 0
-    ) {
-      return; // No disconnections to handle
-    }
-
-    logger.info('Handling server disconnections', {
-      disconnectedServers: healthReport.servers.disconnected,
-      failedServers: healthReport.servers.failed,
+    logger.debug('Tool execution validation passed', {
+      executionId,
+      toolName,
+      groupId,
+      availableServers: availableServers.length,
+      connectedServers: connectedServers.length,
     });
+  }
 
+  private getServiceHealthSummary(): Record<string, unknown> {
     try {
-      // Clear tool cache to ensure stale data is removed
-      if (
-        this.toolManager &&
-        typeof this.toolManager.clearCache === 'function'
-      ) {
-        this.toolManager.clearCache();
-        logger.debug('Tool cache cleared due to server disconnections');
-      }
+      const serverHealth = this.getServerHealth();
+      const connectedServers = Array.from(serverHealth.values()).filter(
+        (status) => status === ServerStatus.CONNECTED,
+      ).length;
 
-      // Log affected groups
-      const allGroups = this.groupManager.getAllGroups();
-      const affectedGroups: string[] = [];
-
-      for (const [groupId] of allGroups) {
-        const availableServers = this.groupManager.getGroupServers(groupId);
-        const connectedServers = availableServers.filter((serverId) => {
-          const server = this.serverManager.getAllServers().get(serverId);
-          return server?.status === ServerStatus.CONNECTED;
-        });
-
-        if (connectedServers.length === 0) {
-          affectedGroups.push(groupId);
-        }
-      }
-
-      if (affectedGroups.length > 0) {
-        logger.warn('Groups affected by server disconnections', {
-          affectedGroups,
-          totalGroups: allGroups.size,
-        });
-      }
+      return {
+        isInitialized: this.isInitialized,
+        totalServers: serverHealth.size,
+        connectedServers,
+        totalGroups: this.groupManager.getAllGroups().size,
+        timestamp: new Date().toISOString(),
+      };
     } catch (error) {
-      logger.error('Error handling server disconnections', error as Error);
+      return {
+        error: 'Failed to get health summary',
+        message: (error as Error).message,
+      };
     }
   }
 
-  /**
-   * Perform graceful shutdown
-   */
   private async performGracefulShutdown(): Promise<void> {
     logger.debug('Performing graceful shutdown');
 
-    // Shutdown API tool service
     try {
       await this.apiToolService.shutdown();
       logger.debug('API tool service shutdown completed');
@@ -1381,20 +1051,14 @@ export class McpHubService implements IMcpHubService {
       logger.error('API tool service shutdown failed', error as Error);
     }
 
-    // Shutdown server manager with proper cleanup
     await this.serverManager.shutdown();
-
     logger.debug('Graceful shutdown completed');
   }
 
-  /**
-   * Perform force shutdown when graceful shutdown fails
-   */
   private async performForceShutdown(): Promise<void> {
     logger.debug('Performing force shutdown');
 
     try {
-      // Force close all server connections
       const allServers = this.serverManager.getAllServers();
       const forceClosePromises = Array.from(allServers.values()).map(
         async (server) => {
@@ -1430,166 +1094,5 @@ export class McpHubService implements IMcpHubService {
       logger.error('Force shutdown failed', error as Error);
       throw error;
     }
-  }
-
-  /**
-   * Get service uptime in seconds
-   */
-  private getServiceUptime(): number {
-    if (!this.initializationTime) {
-      return 0;
-    }
-    return Math.floor((Date.now() - this.initializationTime.getTime()) / 1000);
-  }
-
-  /**
-   * Enable or disable health monitoring
-   */
-  public setHealthMonitoring(enabled: boolean): void {
-    this.healthCheckEnabled = enabled;
-
-    if (enabled && this.isInitialized && !this.healthCheckInterval) {
-      this.startHealthMonitoring();
-    } else if (!enabled && this.healthCheckInterval) {
-      this.stopHealthMonitoring();
-    }
-
-    logger.info('Health monitoring setting changed', { enabled });
-  }
-
-  /**
-   * Get current service lifecycle status
-   */
-  public getLifecycleStatus(): {
-    isInitialized: boolean;
-    shutdownInProgress: boolean;
-    healthMonitoringEnabled: boolean;
-    uptime: number;
-    lastHealthCheck?: string;
-    initializationTime?: string;
-  } {
-    return {
-      isInitialized: this.isInitialized,
-      shutdownInProgress: this.shutdownInProgress,
-      healthMonitoringEnabled: this.healthCheckEnabled,
-      uptime: this.getServiceUptime(),
-      lastHealthCheck: this.lastHealthCheck?.toISOString(),
-      initializationTime: this.initializationTime?.toISOString(),
-    };
-  }
-
-  /**
-   * Manually trigger a health check
-   */
-  public async triggerHealthCheck(): Promise<void> {
-    this.ensureInitialized();
-
-    logger.info('Manual health check triggered');
-    await this.performHealthCheck();
-  }
-
-  // Debug and Message Tracking Methods
-
-  /**
-   * Add an MCP message to the tracking log
-   * @param serverId The server ID
-   * @param type The message type
-   * @param method The method name
-   * @param content The message content
-   */
-  public addMcpMessage(
-    serverId: string,
-    type: 'request' | 'response' | 'notification',
-    method: string,
-    content: unknown,
-  ): void {
-    const message = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-      timestamp: new Date().toISOString(),
-      serverId,
-      type,
-      method,
-      content,
-    };
-
-    // Add to the beginning of the array
-    this.mcpMessages.unshift(message);
-
-    // Keep only the last 500 messages to prevent memory issues
-    if (this.mcpMessages.length > 500) {
-      this.mcpMessages = this.mcpMessages.slice(0, 500);
-    }
-
-    logger.debug('MCP message tracked', {
-      serverId,
-      type,
-      method,
-      messageId: message.id,
-    });
-  }
-
-  /**
-   * Get recent MCP messages
-   * @param limit Maximum number of messages to return (default: 50)
-   * @param serverId Filter by server ID (optional)
-   * @param type Filter by message type (optional)
-   */
-  public getMcpMessages(
-    limit: number = 50,
-    serverId?: string,
-    type?: 'request' | 'response' | 'notification',
-  ): Array<{
-    id: string;
-    timestamp: string;
-    serverId: string;
-    type: 'request' | 'response' | 'notification';
-    method: string;
-    content: unknown;
-  }> {
-    let messages = this.mcpMessages;
-
-    // Apply filters
-    if (serverId) {
-      messages = messages.filter((msg) => msg.serverId === serverId);
-    }
-
-    if (type) {
-      messages = messages.filter((msg) => msg.type === type);
-    }
-
-    // Return limited results
-    return messages.slice(0, Math.min(limit, messages.length));
-  }
-
-  /**
-   * Clear all tracked MCP messages
-   */
-  public clearMcpMessages(): void {
-    this.mcpMessages = [];
-    logger.info('MCP message tracking cleared');
-  }
-
-  /**
-   * Get performance statistics
-   */
-  public getPerformanceStats(): {
-    totalRequests: number;
-    averageResponseTime: number;
-    errorRate: number;
-    topTools: Array<{
-      name: string;
-      calls: number;
-      avgTime: number;
-    }>;
-  } {
-    // For now, return basic stats
-    // In a real implementation, we would track execution times and calculate proper stats
-    return {
-      totalRequests: this.mcpMessages.filter((msg) => msg.type === 'request')
-        .length,
-      averageResponseTime: 0,
-      errorRate: 0,
-      topTools: [],
-    };
   }
 }

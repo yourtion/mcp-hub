@@ -1,14 +1,14 @@
 import { Hono } from 'hono';
+import { getHubService } from '../../services/service-registry.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { logger } from '../../utils/logger.js';
-import { getHubService } from '../hub.js';
 
 export const debugApi = new Hono();
 
 // GET /api/debug/mcp-messages - Get MCP protocol messages
 debugApi.get('/mcp-messages', async (c) => {
   try {
-    const service = await getHubService();
+    const service = getHubService();
 
     // Get query parameters for filtering
     const limit = parseInt(c.req.query('limit') || '50');
@@ -30,7 +30,7 @@ debugApi.get('/mcp-messages', async (c) => {
 // POST /api/debug/tool-test - Test tool execution
 debugApi.post('/tool-test', async (c) => {
   try {
-    const service = await getHubService();
+    const service = getHubService();
     const body = await c.req.json();
 
     const { toolName, serverId, groupId, arguments: args } = body;
@@ -73,7 +73,7 @@ debugApi.post('/tool-test', async (c) => {
 // GET /api/debug/performance-stats - Get performance statistics
 debugApi.get('/performance-stats', async (c) => {
   try {
-    const service = await getHubService();
+    const service = getHubService();
 
     // Get performance stats from the service
     const stats = service.getPerformanceStats();
@@ -88,7 +88,7 @@ debugApi.get('/performance-stats', async (c) => {
 // GET /api/debug/error-analysis - Get error analysis
 debugApi.get('/error-analysis', async (c) => {
   try {
-    const service = await getHubService();
+    const service = getHubService();
 
     // Get error messages from the tracked messages
     const allMessages = service.getMcpMessages(1000);

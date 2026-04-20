@@ -18,7 +18,6 @@ import { secureHeadersMiddleware } from './middleware/security.js';
 import { ApiToMcpWebService } from './services/api-to-mcp-web-service.js';
 import { AuthService } from './services/auth.js';
 import { sse } from './sse.js';
-import { getAllConfig } from './utils/config.js';
 import { logger } from './utils/logger.js';
 import { createPerformanceMiddleware } from './utils/performance-monitor.js';
 
@@ -39,14 +38,11 @@ app.use('*', requestIdMiddleware);
 // 性能监控中间件（在所有路由之前）
 app.use('*', createPerformanceMiddleware());
 
-// 认证服务初始化中间件（不阻止请求，只是确保服务已初始化）
+// 认证服务初始化（服务在 index.ts 启动时已初始化，此处仅确保就绪）
 app.use('*', async (_c, next) => {
   try {
     await authService.initialize();
   } catch (error) {
-    // 初始化失败不阻止请求，只记录错误
-    // 公开端点（如登录）仍然可以工作
-    // 受保护的端点会在认证中间件中处理初始化失败
     logger.warn('认证服务初始化失败，某些功能可能不可用', {
       error: error instanceof Error ? error.message : String(error),
     } as Record<string, unknown>);
@@ -54,25 +50,9 @@ app.use('*', async (_c, next) => {
   await next();
 });
 
-// 初始化 API 到 MCP Web 服务
+// 注入 API 到 MCP Web 服务到请求上下文（初始化在 index.ts 启动时完成）
 app.use('*', async (c, next) => {
-  // 始终将服务实例注入到上下文，确保路由处理器可访问
   c.set('apiToMcpWebService', apiToMcpWebService);
-
-  try {
-    const config = await getAllConfig();
-    const configPath = config.apiToolsConfigPath;
-
-    // 检查服务是否已初始化
-    const healthStatus = await apiToMcpWebService.getHealthStatus();
-    if (!healthStatus.initialized && configPath) {
-      await apiToMcpWebService.initialize(configPath);
-      logger.info('API 到 MCP Web 服务初始化成功', { configPath });
-    }
-  } catch (error) {
-    logger.error('API 到 MCP Web 服务初始化失败', error as Error);
-    // 不阻止请求继续，只是服务不可用
-  }
   await next();
 });
 

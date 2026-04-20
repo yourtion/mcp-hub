@@ -4,56 +4,11 @@
  */
 
 import { Hono } from 'hono';
-import { McpHubService } from '../../services/mcp_hub_service.js';
+import { getHubService } from '../../services/service-registry.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
-import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 
 export const toolsAdminApi = new Hono();
-
-// 全局hub服务实例
-let hubService: McpHubService | null = null;
-
-// 初始化hub服务
-async function getHubService(): Promise<McpHubService> {
-  if (hubService) {
-    return hubService;
-  }
-
-  try {
-    logger.info('初始化工具管理API的MCP Hub服务');
-
-    // 加载配置
-    const config = await getAllConfig();
-
-    // 创建hub服务实例
-    hubService = new McpHubService(
-      config.mcps.servers,
-      config.groups,
-      config.apiToolsConfigPath,
-    );
-
-    // 初始化服务
-    const initPromise = hubService.initialize();
-    let timeoutId: NodeJS.Timeout | undefined;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => reject(new Error('服务初始化超时')), 30000);
-      timeoutId.unref?.();
-    });
-
-    await Promise.race([initPromise, timeoutPromise]);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-
-    logger.info('工具管理API的MCP Hub服务初始化成功');
-    return hubService;
-  } catch (error) {
-    logger.error('工具管理API的MCP Hub服务初始化失败', error as Error);
-    hubService = null;
-    throw error;
-  }
-}
 
 // GET /api/tools/history - 获取工具执行历史记录
 export interface ToolExecutionRecord {
@@ -68,15 +23,14 @@ export interface ToolExecutionRecord {
   timestamp: string;
 }
 
-// 内存中的执行历史记录（生产环境中应使用持久化存储）
+// 内存中的执行历史记录
 const executionHistory: ToolExecutionRecord[] = [];
-const MAX_HISTORY_SIZE = 1000; // 最大历史记录数量
+const MAX_HISTORY_SIZE = 1000;
 
 // 添加执行记录
 function addExecutionRecord(record: ToolExecutionRecord): void {
   executionHistory.unshift(record);
 
-  // 保持历史记录大小限制
   if (executionHistory.length > MAX_HISTORY_SIZE) {
     executionHistory.splice(MAX_HISTORY_SIZE);
   }
@@ -102,7 +56,6 @@ toolsAdminApi.get('/history', async (c) => {
 
     let filteredHistory = [...executionHistory];
 
-    // 应用过滤器
     if (toolName) {
       filteredHistory = filteredHistory.filter(
         (record) => record.toolName === toolName,
@@ -119,7 +72,6 @@ toolsAdminApi.get('/history', async (c) => {
       );
     }
 
-    // 分页
     const total = filteredHistory.length;
     const paginatedHistory = filteredHistory.slice(offset, offset + limit);
 
@@ -140,7 +92,6 @@ toolsAdminApi.get('/history', async (c) => {
         isError: record.isError,
         executionTime: record.executionTime,
         timestamp: record.timestamp,
-        // 不包含完整的参数和结果以减少响应大小
       })),
       pagination: {
         total,
@@ -153,18 +104,15 @@ toolsAdminApi.get('/history', async (c) => {
     return errorResponse(c, error as Error, 500);
   }
 });
+
 toolsAdminApi.get('/monitoring', async (c) => {
   try {
     const groupId = c.req.query('groupId') || 'default';
-    const service = await getHubService();
+    const service = getHubService();
 
-    // 获取所有工具
     const allTools = await service.listTools(groupId);
-
-    // 获取服务器健康状态
     const serverHealth = service.getServerHealth();
 
-    // 按服务器分组工具
     const toolsByServer = new Map<
       string,
       {
@@ -180,7 +128,6 @@ toolsAdminApi.get('/monitoring', async (c) => {
       }
     >();
 
-    // 初始化服务器分组
     allTools.forEach((tool) => {
       if (!toolsByServer.has(tool.serverId)) {
         toolsByServer.set(tool.serverId, {
@@ -191,7 +138,6 @@ toolsAdminApi.get('/monitoring', async (c) => {
       }
     });
 
-    // 添加工具信息（使用标准 ToolInfo 格式）
     allTools.forEach((tool) => {
       const serverGroup = toolsByServer.get(tool.serverId);
       if (!serverGroup) return;
@@ -208,7 +154,6 @@ toolsAdminApi.get('/monitoring', async (c) => {
       });
     });
 
-    // 计算总体监控统计
     const totalTools = allTools.length;
     const availableTools = allTools.filter(
       (tool) => serverHealth.get(tool.serverId) === 'connected',
@@ -244,18 +189,15 @@ toolsAdminApi.get('/monitoring', async (c) => {
     return errorResponse(c, error as Error, 500);
   }
 });
+
 toolsAdminApi.get('/health', async (c) => {
   try {
     const groupId = c.req.query('groupId') || 'default';
-    const service = await getHubService();
+    const service = getHubService();
 
-    // 获取服务诊断信息
     const diagnostics = await service.getServiceDiagnostics();
-
-    // 获取所有工具
     const allTools = await service.listTools(groupId);
 
-    // 计算工具健康状态
     const toolHealthChecks = allTools.map((tool) => {
       const serverDetail = diagnostics.servers.details.find(
         (s) => s.id === tool.serverId,
@@ -263,13 +205,12 @@ toolsAdminApi.get('/health', async (c) => {
       const serverStatus = serverDetail?.status || 'unknown';
       const isHealthy = serverStatus === 'connected';
 
-      // 从执行历史中获取最近的错误信息
       const recentExecutions = executionHistory
         .filter(
           (record) =>
             record.toolName === tool.name && record.serverId === tool.serverId,
         )
-        .slice(0, 10); // 最近10次执行
+        .slice(0, 10);
 
       const recentErrors = recentExecutions.filter((record) => record.isError);
       const errorRate =
@@ -304,12 +245,11 @@ toolsAdminApi.get('/health', async (c) => {
       };
     });
 
-    // 计算总体健康状态
     const healthyTools = toolHealthChecks.filter(
       (check) => check.isHealthy,
     ).length;
     const totalTools = toolHealthChecks.length;
-    const overallHealthy = totalTools > 0 && healthyTools / totalTools >= 0.8; // 80%以上工具健康才算整体健康
+    const overallHealthy = totalTools > 0 && healthyTools / totalTools >= 0.8;
 
     logger.info('获取工具健康检查信息', {
       groupId,
@@ -334,13 +274,13 @@ toolsAdminApi.get('/health', async (c) => {
     return errorResponse(c, error as Error, 500);
   }
 });
+
 toolsAdminApi.get('/performance', async (c) => {
   try {
     const groupId = c.req.query('groupId');
     const serverId = c.req.query('serverId');
-    const timeRange = c.req.query('timeRange') || '1h'; // 1h, 6h, 24h, 7d
+    const timeRange = c.req.query('timeRange') || '1h';
 
-    // 计算时间范围
     const now = new Date();
     let startTime: Date;
 
@@ -361,13 +301,11 @@ toolsAdminApi.get('/performance', async (c) => {
         startTime = new Date(now.getTime() - 60 * 60 * 1000);
     }
 
-    // 过滤执行历史
     let filteredHistory = executionHistory.filter((record) => {
       const recordTime = new Date(record.timestamp);
       return recordTime >= startTime && recordTime <= now;
     });
 
-    // 应用额外过滤器
     if (groupId) {
       filteredHistory = filteredHistory.filter(
         (record) => record.groupId === groupId,
@@ -379,14 +317,12 @@ toolsAdminApi.get('/performance', async (c) => {
       );
     }
 
-    // 计算性能指标
     const totalExecutions = filteredHistory.length;
     const successfulExecutions = filteredHistory.filter(
       (r) => !r.isError,
     ).length;
     const failedExecutions = filteredHistory.filter((r) => r.isError).length;
 
-    // 执行时间统计
     const executionTimes = filteredHistory.map((r) => r.executionTime);
     const averageExecutionTime =
       executionTimes.length > 0
@@ -399,7 +335,6 @@ toolsAdminApi.get('/performance', async (c) => {
     const maxExecutionTime =
       executionTimes.length > 0 ? Math.max(...executionTimes) : 0;
 
-    // 计算百分位数
     const sortedTimes = [...executionTimes].sort((a, b) => a - b);
     const p50 =
       sortedTimes.length > 0
@@ -414,7 +349,6 @@ toolsAdminApi.get('/performance', async (c) => {
         ? sortedTimes[Math.floor(sortedTimes.length * 0.99)]
         : 0;
 
-    // 按工具分组性能数据
     const toolPerformance = new Map<
       string,
       {
@@ -453,7 +387,6 @@ toolsAdminApi.get('/performance', async (c) => {
       perf.maxTime = Math.max(perf.maxTime, record.executionTime);
     });
 
-    // 计算平均时间
     toolPerformance.forEach((perf, toolName) => {
       const toolExecutions = filteredHistory.filter(
         (r) => r.toolName === toolName,
@@ -464,7 +397,6 @@ toolsAdminApi.get('/performance', async (c) => {
       if (perf.minTime === Number.MAX_VALUE) perf.minTime = 0;
     });
 
-    // 时间序列数据（按小时分组）
     const timeSeriesData = new Map<
       string,
       { executions: number; errors: number; averageTime: number }
@@ -482,7 +414,6 @@ toolsAdminApi.get('/performance', async (c) => {
       if (record.isError) data.errors++;
     });
 
-    // 计算每小时平均执行时间
     timeSeriesData.forEach((data, hour) => {
       const hourExecutions = filteredHistory.filter(
         (r) =>
@@ -557,6 +488,7 @@ toolsAdminApi.get('/performance', async (c) => {
     return errorResponse(c, error as Error, 500);
   }
 });
+
 toolsAdminApi.get('/errors', async (c) => {
   try {
     const limit = parseInt(c.req.query('limit') || '50');
@@ -564,9 +496,8 @@ toolsAdminApi.get('/errors', async (c) => {
     const toolName = c.req.query('toolName');
     const serverId = c.req.query('serverId');
     const groupId = c.req.query('groupId');
-    const severity = c.req.query('severity'); // 'error', 'warning'
+    const severity = c.req.query('severity');
 
-    // 过滤错误记录
     let errorRecords = executionHistory.filter((record) => record.isError);
 
     if (toolName) {
@@ -585,7 +516,6 @@ toolsAdminApi.get('/errors', async (c) => {
       );
     }
 
-    // 分析错误类型和频率
     const errorAnalysis = new Map<
       string,
       {
@@ -602,7 +532,6 @@ toolsAdminApi.get('/errors', async (c) => {
     >();
 
     errorRecords.forEach((record) => {
-      // 尝试从结果中提取错误信息
       let errorMessage = '未知错误';
       if (record.result && Array.isArray(record.result)) {
         const textContent = (
@@ -613,7 +542,6 @@ toolsAdminApi.get('/errors', async (c) => {
         }
       }
 
-      // 简化错误消息用于分组
       const errorKey =
         errorMessage.length > 100
           ? `${errorMessage.substring(0, 100)}...`
@@ -648,14 +576,12 @@ toolsAdminApi.get('/errors', async (c) => {
       }
     });
 
-    // 分页错误记录
     const total = errorRecords.length;
     const paginatedErrors = errorRecords.slice(offset, offset + limit);
 
-    // 转换错误分析结果
     const errorSummary = Array.from(errorAnalysis.entries())
-      .sort((a, b) => b[1].count - a[1].count) // 按频率排序
-      .slice(0, 20) // 只返回前20个最常见的错误
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 20)
       .map(([errorMessage, analysis]) => ({
         errorMessage,
         count: analysis.count,
@@ -696,6 +622,7 @@ toolsAdminApi.get('/errors', async (c) => {
     return errorResponse(c, error as Error, 500);
   }
 });
+
 toolsAdminApi.get('/stats', async (c) => {
   try {
     const groupId = c.req.query('groupId');
@@ -703,7 +630,6 @@ toolsAdminApi.get('/stats', async (c) => {
 
     let filteredHistory = [...executionHistory];
 
-    // 应用过滤器
     if (groupId) {
       filteredHistory = filteredHistory.filter(
         (record) => record.groupId === groupId,
@@ -715,7 +641,6 @@ toolsAdminApi.get('/stats', async (c) => {
       );
     }
 
-    // 计算统计信息
     const totalExecutions = filteredHistory.length;
     const successfulExecutions = filteredHistory.filter(
       (r) => !r.isError,
@@ -727,7 +652,6 @@ toolsAdminApi.get('/stats', async (c) => {
           filteredHistory.length
         : 0;
 
-    // 按工具统计
     const toolStats = new Map<
       string,
       {
@@ -763,7 +687,6 @@ toolsAdminApi.get('/stats', async (c) => {
       stats.averageTime = stats.totalTime / stats.executions;
     });
 
-    // 获取最常用的工具
     const topTools = Array.from(toolStats.entries())
       .sort((a, b) => b[1].executions - a[1].executions)
       .slice(0, 10)
@@ -798,22 +721,3 @@ toolsAdminApi.get('/stats', async (c) => {
     return errorResponse(c, error as Error, 500);
   }
 });
-
-// 修改工具执行端点以记录历史
-// 需要在执行成功后添加记录
-// 这将在现有的execute端点中集成
-
-// 优雅关闭处理器
-export async function shutdownToolsAdminApi(): Promise<void> {
-  try {
-    if (hubService) {
-      logger.info('关闭工具管理API服务');
-      await hubService.shutdown();
-      hubService = null;
-    }
-    logger.info('工具管理API关闭完成');
-  } catch (error) {
-    logger.error('工具管理API关闭时出错', error as Error);
-    throw error;
-  }
-}

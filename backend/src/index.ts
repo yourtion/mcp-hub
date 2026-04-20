@@ -9,13 +9,16 @@ import { shutdownGroupMcpRouter } from './api/mcp/group-router.js';
 import { shutdownServersApi } from './api/servers/index.js';
 import { app } from './app.js';
 import { shutdownMcpService } from './legacy/index.js';
-import { McpHubService } from './services/mcp_hub_service.js';
+import {
+  createHubService,
+  getHubServiceSafe,
+  setHubService,
+  shutdownHubService,
+} from './services/service-registry.js';
 import { getAllConfig } from './utils/config.js';
 import { logger } from './utils/logger.js';
 import { validateAllConfigs } from './validation/config.js';
 
-// 全局服务实例
-let hubService: McpHubService | null = null;
 let httpServer: ReturnType<typeof serve> | null = null;
 
 /**
@@ -27,7 +30,6 @@ async function validateConfigurations() {
   try {
     const config = await getAllConfig();
 
-    // 验证所有配置（仅当系统配置非空时验证）
     const systemConfigToValidate =
       config.system && Object.keys(config.system).length > 0
         ? config.system
@@ -62,7 +64,7 @@ async function validateConfigurations() {
 }
 
 /**
- * 初始化 MCP Hub 服务
+ * 初始化 MCP Hub 服务（显式启动编排）
  */
 async function initializeHubService(validatedConfig: {
   mcpConfig: McpConfig;
@@ -72,14 +74,13 @@ async function initializeHubService(validatedConfig: {
   logger.info('开始初始化 MCP Hub 服务...');
 
   try {
-    // 创建 Hub 服务实例
-    hubService = new McpHubService(
-      validatedConfig.mcpConfig.servers,
-      validatedConfig.groupConfig,
-    );
+    const service = await createHubService({
+      servers: validatedConfig.mcpConfig.servers,
+      groups: validatedConfig.groupConfig,
+    });
 
     // 设置初始化超时
-    const initPromise = hubService.initialize();
+    const initPromise = service.initialize();
     let timeoutId: NodeJS.Timeout | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(
@@ -94,11 +95,13 @@ async function initializeHubService(validatedConfig: {
       clearTimeout(timeoutId);
     }
 
+    // 注册到全局服务注册表，所有 API 模块共享此实例
+    setHubService(service);
+
     logger.info('MCP Hub 服务初始化成功');
-    return hubService;
+    return service;
   } catch (error) {
     logger.error('MCP Hub 服务初始化失败', error as Error);
-    hubService = null;
     throw error;
   }
 }
@@ -117,10 +120,11 @@ async function startServer() {
     // 1. 验证配置
     const validatedConfig = await validateConfigurations();
 
-    // 2. 初始化 MCP Hub 服务
+    // 2. 初始化 MCP Hub 服务（显式启动）
     await initializeHubService(validatedConfig);
 
     // 3. 初始化仪表板服务
+    const hubService = getHubServiceSafe();
     if (hubService) {
       logger.info('初始化仪表板服务...');
       initializeDashboardServices(hubService);
@@ -138,7 +142,7 @@ async function startServer() {
         logger.info(`服务器启动成功`, {
           port: info.port,
           timestamp: new Date().toISOString(),
-          hubServiceInitialized: !!hubService,
+          hubServiceInitialized: !!getHubServiceSafe(),
         });
       },
     );
@@ -164,7 +168,8 @@ async function cleanupResources() {
 
   const cleanupPromises: Promise<void>[] = [];
 
-  // 关闭 Hub 服务
+  // 关闭 Hub 服务（从注册表获取）
+  const hubService = await shutdownHubService();
   if (hubService) {
     cleanupPromises.push(
       hubService.shutdown().catch((error) => {
@@ -208,7 +213,6 @@ async function cleanupResources() {
   await Promise.allSettled(cleanupPromises);
 
   // 重置全局变量
-  hubService = null;
   httpServer = null;
 
   logger.info('资源清理完成');

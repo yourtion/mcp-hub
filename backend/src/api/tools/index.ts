@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
-import { McpHubService } from '../../services/mcp_hub_service.js';
+import { getHubService } from '../../services/service-registry.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
-import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 import type { GroupToolInfo } from '../mcp/group-service.js';
 import {
@@ -11,68 +10,10 @@ import {
 
 export const toolsApi = new Hono();
 
-// 全局hub服务实例
-let hubService: McpHubService | null = null;
-
-export function getExistingHubService(): McpHubService | null {
-  return hubService;
-}
-
-// 初始化hub服务
-export async function getHubService(): Promise<McpHubService> {
-  if (hubService) {
-    return hubService;
-  }
-
-  try {
-    logger.info('初始化工具管理API的MCP Hub服务');
-
-    // 加载配置
-    const config = await getAllConfig();
-
-    // 创建hub服务实例
-    hubService = new McpHubService(
-      config.mcps.servers,
-      config.groups,
-      config.apiToolsConfigPath,
-    );
-
-    // 初始化服务
-    const initPromise = hubService.initialize();
-    let timeoutId: NodeJS.Timeout | undefined;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => reject(new Error('服务初始化超时')), 30000);
-      timeoutId.unref?.();
-    });
-
-    await Promise.race([initPromise, timeoutPromise]);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-
-    logger.info('工具管理API的MCP Hub服务初始化成功');
-    return hubService;
-  } catch (error) {
-    logger.error('工具管理API的MCP Hub服务初始化失败', error as Error);
-    hubService = null;
-    throw error;
-  }
-}
-
-// 安全获取hub服务
-async function _getHubServiceSafe(): Promise<McpHubService | null> {
-  try {
-    return await getHubService();
-  } catch (error) {
-    logger.error('Hub服务不可用', error as Error);
-    return null;
-  }
-}
-
 // GET /api/tools - 获取所有工具列表
 toolsApi.get('/', async (c) => {
   try {
-    const service = await getHubService();
+    const service = getHubService();
 
     // 获取查询参数
     const serverId = c.req.query('serverId');
@@ -163,7 +104,7 @@ toolsApi.get('/server/:serverId', async (c) => {
     const serverId = c.req.param('serverId');
     const groupId = c.req.query('groupId') || 'default';
 
-    const service = await getHubService();
+    const service = getHubService();
 
     // 获取所有工具并按服务器过滤
     const allTools = await service.listTools(groupId);
@@ -226,7 +167,7 @@ toolsApi.get('/:toolName', async (c) => {
     const toolName = c.req.param('toolName');
     const groupId = c.req.query('groupId') || 'default';
 
-    const service = await getHubService();
+    const service = getHubService();
 
     // 获取所有工具并查找指定工具
     const allTools = await service.listTools(groupId);
@@ -267,7 +208,6 @@ toolsApi.get('/:toolName', async (c) => {
       serverStatus,
       inputSchema: tool.inputSchema,
       groupId,
-      // 添加工具可用性状态（API工具始终可用）
       isAvailable: isApiTool || serverStatus === 'connected',
     });
   } catch (error) {
@@ -284,7 +224,7 @@ toolsApi.post('/:toolName/execute', async (c) => {
     const groupId = body.groupId || c.req.query('groupId') || 'default';
     const serverId = body.serverId || c.req.query('serverId');
 
-    const service = await getHubService();
+    const service = getHubService();
 
     // 验证工具是否存在
     const allTools = await service.listTools(groupId);
@@ -319,7 +259,7 @@ toolsApi.post('/:toolName/execute', async (c) => {
       );
     }
 
-    // 验证服务器状态（API工具跳过此检查，因为它们不是MCP服务器）
+    // 验证服务器状态
     const isApiTool = tool.serverId === 'api-tools';
     const serverHealth = service.getServerHealth();
     const serverStatus = serverHealth.get(tool.serverId);
@@ -402,7 +342,7 @@ toolsApi.post('/:toolName/execute', async (c) => {
   }
 });
 
-// POST /api/tools/:toolName/test - 测试工具（验证参数但不执行）
+// POST /api/tools/:toolName/test - 测试工具
 toolsApi.post('/:toolName/test', async (c) => {
   try {
     const toolName = c.req.param('toolName');
@@ -410,7 +350,7 @@ toolsApi.post('/:toolName/test', async (c) => {
     const args = body.arguments || body.args || {};
     const groupId = body.groupId || c.req.query('groupId') || 'default';
 
-    const service = await getHubService();
+    const service = getHubService();
 
     // 验证工具是否存在
     const allTools = await service.listTools(groupId);
@@ -442,7 +382,6 @@ toolsApi.post('/:toolName/test', async (c) => {
       serverStatus,
     });
 
-    // 执行参数验证
     const validationResult = await validateToolArguments(tool, args);
 
     const testResult = {
@@ -485,7 +424,6 @@ async function validateToolArguments(
   const warnings: string[] = [];
 
   try {
-    // 如果没有输入模式，跳过验证
     if (!tool.inputSchema || typeof tool.inputSchema !== 'object') {
       warnings.push('工具没有定义输入模式，跳过参数验证');
       return { isValid: true, errors, warnings };
@@ -498,7 +436,6 @@ async function validateToolArguments(
       additionalProperties?: boolean;
     };
 
-    // 验证必需字段
     if (schema.required && Array.isArray(schema.required)) {
       for (const requiredField of schema.required) {
         if (!(requiredField in args)) {
@@ -512,7 +449,6 @@ async function validateToolArguments(
       }
     }
 
-    // 验证参数类型
     if (schema.properties && typeof schema.properties === 'object') {
       for (const [argName, argValue] of Object.entries(args)) {
         const propSchema = schema.properties[argName];
@@ -529,7 +465,6 @@ async function validateToolArguments(
       }
     }
 
-    // 检查额外属性
     if (schema.additionalProperties === false && schema.properties) {
       const allowedProps = Object.keys(schema.properties);
       const providedProps = Object.keys(args);
@@ -554,18 +489,17 @@ async function validateToolArguments(
     });
 
     warnings.push(`参数验证时出错: ${(error as Error).message}`);
-    return { isValid: true, errors, warnings }; // 验证出错时允许执行
+    return { isValid: true, errors, warnings };
   }
 }
 
-// 类型验证辅助函数
 function validateArgumentType(
   argName: string,
   argValue: unknown,
   propSchema: Record<string, unknown>,
 ): { isValid: boolean; error?: string } {
   if (!propSchema.type) {
-    return { isValid: true }; // 没有指定类型，允许任何值
+    return { isValid: true };
   }
 
   const expectedType = propSchema.type;
@@ -631,7 +565,6 @@ function validateArgumentType(
       break;
 
     default:
-      // 未知类型，允许通过
       logger.debug('未知的参数类型，允许通过', {
         argName,
         expectedType,
