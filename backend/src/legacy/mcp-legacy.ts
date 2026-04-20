@@ -1,3 +1,11 @@
+/**
+ * Legacy MCP 端点模块
+ *
+ * @deprecated 此模块包含旧版全局 MCP 端点，计划在 v2.0 移除。
+ * 请使用基于组的端点 `/:group/mcp` 替代。
+ * 替代 API：`GET /api/servers`, `GET /api/tools`, `POST /api/debug/tool-test`
+ */
+
 import {
   McpServiceManager,
   performanceMonitor,
@@ -7,13 +15,22 @@ import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { toFetchResponse, toReqRes } from 'fetch-to-node';
 import { Hono } from 'hono';
-import { initializeMcpService, mcpServer } from './services/mcp_service.js';
-import { toMcpServerConfig } from './types/config-helpers.js';
-import type { Tool } from './types/mcp-hub.js';
-import { getAllConfig } from './utils/config.js';
-import { logger } from './utils/logger.js';
+import { initializeMcpService, mcpServer } from '../services/mcp_service.js';
+import { toMcpServerConfig } from '../types/config-helpers.js';
+import type { Tool } from '../types/mcp-hub.js';
+import { getAllConfig } from '../utils/config.js';
+import { logger } from '../utils/logger.js';
+import { deprecationMiddleware } from './deprecation.js';
 
 export const mcp = new Hono();
+
+// 为所有 legacy /mcp/* 端点添加弃用标记
+// Sunset: 2026-10-01（v2.0 计划移除日期）
+// 替代路径：使用 /api/* 管理 API 和 /:group/mcp 组路由
+const LEGACY_SUNSET = 'Sat, 01 Oct 2026 00:00:00 GMT';
+
+mcp.use('/mcp/*', deprecationMiddleware(LEGACY_SUNSET));
+mcp.use('/mcp', deprecationMiddleware(LEGACY_SUNSET));
 
 // Track initialization state
 let isInitialized = false;
@@ -111,6 +128,7 @@ mcp.post('/mcp', async (c) => {
 
 /**
  * MCP服务状态端点 - 管理和调试功能
+ * @deprecated 使用 GET /api/servers 代替
  */
 mcp.get('/mcp/status', async (c) => {
   const requestId = `mcp-status-${Date.now()}`;
@@ -191,6 +209,7 @@ mcp.get('/mcp/status', async (c) => {
 
 /**
  * MCP工具列表端点 - 管理和调试功能
+ * @deprecated 使用 GET /api/tools 代替
  */
 mcp.get('/mcp/tools', async (c) => {
   const requestId = `mcp-tools-${Date.now()}`;
@@ -272,6 +291,7 @@ mcp.get('/mcp/tools', async (c) => {
 
 /**
  * MCP服务器详情端点 - 管理和调试功能
+ * @deprecated 使用 GET /api/servers/:serverId 代替
  */
 mcp.get('/mcp/servers/:serverId', async (c) => {
   try {
@@ -337,6 +357,7 @@ mcp.get('/mcp/servers/:serverId', async (c) => {
 
 /**
  * MCP工具执行端点 - 管理和调试功能
+ * @deprecated 使用 POST /api/debug/tool-test 代替
  */
 mcp.post('/mcp/execute', async (c) => {
   try {
@@ -393,6 +414,7 @@ mcp.post('/mcp/execute', async (c) => {
 
 /**
  * MCP健康检查端点 - 管理和调试功能
+ * @deprecated 使用 GET /api/hub/health 代替
  */
 mcp.get('/mcp/health', async (c) => {
   try {
@@ -403,8 +425,6 @@ mcp.get('/mcp/health', async (c) => {
     }
 
     const status = coreServiceManager.getServiceStatus();
-    const _serverConnections = coreServiceManager.getServerConnections();
-
     // 计算健康分数
     const totalServers = status.serverCount;
     const activeConnections = status.activeConnections;
@@ -461,7 +481,7 @@ export async function shutdownMcpService(): Promise<void> {
 
     // 关闭传统MCP服务
     const { shutdownMcpService: shutdownService } = await import(
-      './services/mcp_service.js'
+      '../services/mcp_service.js'
     );
     await shutdownService();
 

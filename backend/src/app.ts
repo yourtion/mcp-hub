@@ -11,7 +11,7 @@ import { performanceApi } from './api/performance/index.js';
 import { serversApi } from './api/servers/index.js';
 import { toolsApi } from './api/tools/index.js';
 import { toolsAdminApi } from './api/tools-admin/index.js';
-import { mcp } from './mcp.js';
+import { mcp } from './legacy/index.js';
 import { createAuthMiddleware } from './middleware/auth.js';
 import { requestIdMiddleware } from './middleware/request-id.js';
 import { secureHeadersMiddleware } from './middleware/security.js';

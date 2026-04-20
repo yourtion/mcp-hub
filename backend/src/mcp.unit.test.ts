@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mcp, shutdownMcpService } from './mcp.js';
+import { mcp, shutdownMcpService } from './legacy/mcp-legacy.js';
 
 // Mock所有依赖
 vi.mock('@mcp-core/mcp-hub-core', () => ({
@@ -111,6 +111,7 @@ vi.mock('./utils/logger.js', () => ({
     info: vi.fn(),
     error: vi.fn(),
     debug: vi.fn(),
+    warn: vi.fn(),
   },
 }));
 

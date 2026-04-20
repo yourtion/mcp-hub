@@ -8,7 +8,7 @@ import { shutdownHubApi } from './api/hub.js';
 import { shutdownGroupMcpRouter } from './api/mcp/group-router.js';
 import { shutdownServersApi } from './api/servers/index.js';
 import { app } from './app.js';
-import { shutdownMcpService } from './mcp.js';
+import { shutdownMcpService } from './legacy/index.js';
 import { McpHubService } from './services/mcp_hub_service.js';
 import { getAllConfig } from './utils/config.js';
 import { logger } from './utils/logger.js';
