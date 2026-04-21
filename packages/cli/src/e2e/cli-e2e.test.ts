@@ -4,13 +4,15 @@
  */
 
 import { McpServiceManager } from '@mcp-core/mcp-hub-core';
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { CliConfigManager } from '../config/cli-config-manager.js';
 import { McpProtocolHandler } from '../protocol/mcp-protocol-handler.js';
 import { CliMcpServer } from '../server/cli-mcp-server.js';
+
 import type { CliConfig } from '../types/index.js';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
 // Mock外部依赖
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js');
@@ -95,16 +97,10 @@ describe('CLI端到端测试', () => {
       };
       const mockTransport = { close: vi.fn() };
 
-      const { McpServer } = await import(
-        '@modelcontextprotocol/sdk/server/mcp.js'
-      );
-      const { StdioServerTransport } = await import(
-        '@modelcontextprotocol/sdk/server/stdio.js'
-      );
+      const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
+      const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
 
-      vi.mocked(McpServer).mockImplementation(
-        () => mockServer as unknown as McpServer,
-      );
+      vi.mocked(McpServer).mockImplementation(() => mockServer as unknown as McpServer);
       vi.mocked(StdioServerTransport).mockImplementation(
         () => mockTransport as unknown as StdioServerTransport,
       );
@@ -208,8 +204,7 @@ describe('CLI端到端测试', () => {
       };
 
       // 配置验证应该检测到错误
-      const validationResult =
-        await configManager.validateConfig(invalidConfig);
+      const validationResult = await configManager.validateConfig(invalidConfig);
       expect(validationResult).toBeDefined();
 
       // 即使配置有问题，系统也应该能够处理而不崩溃
@@ -224,23 +219,15 @@ describe('CLI端到端测试', () => {
       };
       const mockTransport = { close: vi.fn() };
 
-      const { McpServer } = await import(
-        '@modelcontextprotocol/sdk/server/mcp.js'
-      );
-      const { StdioServerTransport } = await import(
-        '@modelcontextprotocol/sdk/server/stdio.js'
-      );
+      const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
+      const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
 
-      vi.mocked(McpServer).mockImplementation(
-        () => mockServer as unknown as McpServer,
-      );
+      vi.mocked(McpServer).mockImplementation(() => mockServer as unknown as McpServer);
       vi.mocked(StdioServerTransport).mockImplementation(
         () => mockTransport as unknown as StdioServerTransport,
       );
 
-      vi.spyOn(coreService, 'initializeFromConfig').mockRejectedValue(
-        new Error('Init failed'),
-      );
+      vi.spyOn(coreService, 'initializeFromConfig').mockRejectedValue(new Error('Init failed'));
 
       // 初始化失败应该被适当处理
       try {
@@ -265,16 +252,10 @@ describe('CLI端到端测试', () => {
       };
       const mockTransport = { close: vi.fn() };
 
-      const { McpServer } = await import(
-        '@modelcontextprotocol/sdk/server/mcp.js'
-      );
-      const { StdioServerTransport } = await import(
-        '@modelcontextprotocol/sdk/server/stdio.js'
-      );
+      const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
+      const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
 
-      vi.mocked(McpServer).mockImplementation(
-        () => mockServer as unknown as McpServer,
-      );
+      vi.mocked(McpServer).mockImplementation(() => mockServer as unknown as McpServer);
       vi.mocked(StdioServerTransport).mockImplementation(
         () => mockTransport as unknown as StdioServerTransport,
       );
@@ -320,16 +301,10 @@ describe('CLI端到端测试', () => {
       };
       const mockTransport = { close: vi.fn() };
 
-      const { McpServer } = await import(
-        '@modelcontextprotocol/sdk/server/mcp.js'
-      );
-      const { StdioServerTransport } = await import(
-        '@modelcontextprotocol/sdk/server/stdio.js'
-      );
+      const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
+      const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
 
-      vi.mocked(McpServer).mockImplementation(
-        () => mockServer as unknown as McpServer,
-      );
+      vi.mocked(McpServer).mockImplementation(() => mockServer as unknown as McpServer);
       vi.mocked(StdioServerTransport).mockImplementation(
         () => mockTransport as unknown as StdioServerTransport,
       );
@@ -345,13 +320,11 @@ describe('CLI端到端测试', () => {
       vi.spyOn(coreService, 'initializeFromConfig').mockResolvedValue();
       vi.spyOn(coreService, 'getAllTools').mockResolvedValue(mockTools);
       vi.spyOn(coreService, 'isToolAvailable').mockResolvedValue(true);
-      vi.spyOn(coreService, 'executeToolCall').mockImplementation(
-        async (toolName) => ({
-          success: true,
-          data: { result: `Result from ${toolName}` },
-          executionTime: Math.random() * 100 + 50,
-        }),
-      );
+      vi.spyOn(coreService, 'executeToolCall').mockImplementation(async (toolName) => ({
+        success: true,
+        data: { result: `Result from ${toolName}` },
+        executionTime: Math.random() * 100 + 50,
+      }));
 
       await cliServer.initialize(testConfig);
       await cliServer.start();
@@ -380,16 +353,10 @@ describe('CLI端到端测试', () => {
       };
       const mockTransport = { close: vi.fn() };
 
-      const { McpServer } = await import(
-        '@modelcontextprotocol/sdk/server/mcp.js'
-      );
-      const { StdioServerTransport } = await import(
-        '@modelcontextprotocol/sdk/server/stdio.js'
-      );
+      const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
+      const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
 
-      vi.mocked(McpServer).mockImplementation(
-        () => mockServer as unknown as McpServer,
-      );
+      vi.mocked(McpServer).mockImplementation(() => mockServer as unknown as McpServer);
       vi.mocked(StdioServerTransport).mockImplementation(
         () => mockTransport as unknown as StdioServerTransport,
       );
@@ -414,9 +381,7 @@ describe('CLI端到端测试', () => {
       await cliServer.start();
 
       // 快速连续请求工具列表
-      const requests = Array.from({ length: 10 }, () =>
-        protocolHandler.handleListTools(),
-      );
+      const requests = Array.from({ length: 10 }, () => protocolHandler.handleListTools());
 
       const results = await Promise.all(requests);
 
@@ -447,9 +412,7 @@ describe('CLI端到端测试', () => {
       };
 
       // 配置管理器应该能够处理旧格式
-      const result = await configManager.validateConfig(
-        legacyConfig as unknown as CliConfig,
-      );
+      const result = await configManager.validateConfig(legacyConfig as unknown as CliConfig);
       expect(result).toBeDefined();
     });
 
@@ -461,16 +424,10 @@ describe('CLI端到端测试', () => {
       };
       const mockTransport = { close: vi.fn() };
 
-      const { McpServer } = await import(
-        '@modelcontextprotocol/sdk/server/mcp.js'
-      );
-      const { StdioServerTransport } = await import(
-        '@modelcontextprotocol/sdk/server/stdio.js'
-      );
+      const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
+      const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
 
-      vi.mocked(McpServer).mockImplementation(
-        () => mockServer as unknown as McpServer,
-      );
+      vi.mocked(McpServer).mockImplementation(() => mockServer as unknown as McpServer);
       vi.mocked(StdioServerTransport).mockImplementation(
         () => mockTransport as unknown as StdioServerTransport,
       );

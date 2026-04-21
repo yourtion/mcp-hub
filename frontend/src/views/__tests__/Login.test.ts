@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryHistory, createRouter } from 'vue-router';
+
 import Login from '../Login.vue';
 
 // Mock auth store
@@ -87,9 +88,7 @@ describe('Login', () => {
     expect(wrapper.find('.login-page').exists()).toBe(true);
     expect(wrapper.find('.login-card').exists()).toBe(true);
     expect(wrapper.find('.login-title').text()).toBe('MCP Hub');
-    expect(wrapper.find('.login-subtitle').text()).toBe(
-      'Model Context Protocol 管理平台',
-    );
+    expect(wrapper.find('.login-subtitle').text()).toBe('Model Context Protocol 管理平台');
   });
 
   it('should render form with username and password fields', () => {
@@ -224,8 +223,6 @@ describe('Login', () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.find('.login-error').exists()).toBe(true);
-    expect(wrapper.find('.login-error').text()).toBe(
-      '登录失败，请检查用户名和密码',
-    );
+    expect(wrapper.find('.login-error').text()).toBe('登录失败，请检查用户名和密码');
   });
 });

@@ -10,7 +10,7 @@ services:
       dockerfile: backend/Dockerfile
     container_name: mcp-hub-api
     ports:
-      - "8181:8181"
+      - '8181:8181'
     environment:
       - NODE_ENV=production
       - PORT=8181
@@ -21,7 +21,13 @@ services:
       - ./logs:/app/logs
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8181/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:8181/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -36,7 +42,7 @@ services:
       dockerfile: frontend/Dockerfile
     container_name: mcp-hub-web
     ports:
-      - "8180:80"
+      - '8180:80'
     depends_on:
       - mcp-hub-api
     environment:

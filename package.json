@@ -2,6 +2,9 @@
   "name": "@mcp-core/mcp-hub",
   "version": "0.0.1",
   "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
   "main": "index.js",
   "scripts": {
     "dev:fe": "pnpm --filter @mcp-core/mcp-hub-web dev",
@@ -14,8 +17,8 @@
     "build:fe": "pnpm --filter @mcp-core/mcp-hub-web build",
     "build:production": "pnpm --filter @mcp-core/mcp-hub-share build && pnpm build:core && pnpm build:api && pnpm build:cli && pnpm build:fe",
     "check": "pnpm --filter \"@mcp-core/*\" check",
-    "check:ci": "biome check .",
-    "check:all": "biome check --write .",
+    "check:ci": "oxlint --ignore-path .oxlintignore . && oxfmt --check .",
+    "check:all": "oxlint --fix --ignore-path .oxlintignore . && oxfmt .",
     "inspector": "pnpx @modelcontextprotocol/inspector",
     "test": "vitest --run",
     "test:watch": "vitest",
@@ -40,20 +43,13 @@
     "release:dry-run": "changeset publish --no-git-tag --dry-run"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.0.6",
     "@changesets/cli": "^2.29.8",
-    "tsx": "^4.7.1",
-    "vitest": "^4.1.4",
     "@vitest/coverage-v8": "^4.1.4",
-    "@vitest/ui": "^4.1.4"
+    "@vitest/ui": "^4.1.4",
+    "oxfmt": "0.46.0",
+    "oxlint": "1.61.0",
+    "tsx": "^4.7.1",
+    "vitest": "^4.1.4"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.6.4",
-  "pnpm": {
-    "overrides": {
-      "esbuild": "0.25.4"
-    }
-  }
+  "packageManager": "pnpm@10.6.4"
 }

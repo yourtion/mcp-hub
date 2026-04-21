@@ -1,11 +1,12 @@
-import type { GroupConfig } from '@mcp-core/mcp-hub-share';
+import { logger } from '../utils/logger.js';
+
 import type {
   Group,
   GroupManager as IGroupManager,
   ServerManager,
   Tool,
 } from '../types/mcp-hub.js';
-import { logger } from '../utils/logger.js';
+import type { GroupConfig } from '@mcp-core/mcp-hub-share';
 
 export class GroupManager implements IGroupManager {
   private readonly MAX_GROUPS = 100; // 组数量限制
@@ -55,10 +56,7 @@ export class GroupManager implements IGroupManager {
       this.validateGroupConfig(groupName, groupData);
 
       // Validate and filter servers to only valid ones
-      const validServers = await this.validateGroupServers(
-        groupName,
-        groupData.servers,
-      );
+      const validServers = await this.validateGroupServers(groupName, groupData.servers);
 
       // Store the group with validated servers
       this.groups.set(groupName, {
@@ -183,24 +181,16 @@ export class GroupManager implements IGroupManager {
     }
 
     // Validate optional description
-    if (
-      groupData.description !== undefined &&
-      typeof groupData.description !== 'string'
-    ) {
+    if (groupData.description !== undefined && typeof groupData.description !== 'string') {
       errors.push('description must be a string if provided');
     }
 
     if (errors.length > 0) {
-      throw new Error(
-        `Group ${groupName} validation failed: ${errors.join(', ')}`,
-      );
+      throw new Error(`Group ${groupName} validation failed: ${errors.join(', ')}`);
     }
   }
 
-  private async validateGroupServers(
-    groupName: string,
-    servers: string[],
-  ): Promise<string[]> {
+  private async validateGroupServers(groupName: string, servers: string[]): Promise<string[]> {
     const allServers = this.serverManager.getAllServers();
     const validServers: string[] = [];
     const invalidServers: string[] = [];
@@ -311,15 +301,11 @@ export class GroupManager implements IGroupManager {
   private applyToolFiltering(group: Group, allTools: Tool[]): Tool[] {
     // If group has specific tools listed, filter to only those tools
     if (group.tools.length > 0) {
-      const filteredTools = allTools.filter((tool) =>
-        group.tools.includes(tool.name),
-      );
+      const filteredTools = allTools.filter((tool) => group.tools.includes(tool.name));
 
       // Log if some specified tools are not available
       const availableToolNames = allTools.map((tool) => tool.name);
-      const missingTools = group.tools.filter(
-        (toolName) => !availableToolNames.includes(toolName),
-      );
+      const missingTools = group.tools.filter((toolName) => !availableToolNames.includes(toolName));
 
       if (missingTools.length > 0) {
         logger.warn('Some tools specified in group are not available', {
@@ -440,14 +426,10 @@ export class GroupManager implements IGroupManager {
     const group = this.groups.get(groupId);
     if (!group) {
       const error = new Error(`Group ${groupId} not found`);
-      logger.error(
-        'Attempted to get tools by server for non-existent group',
-        error,
-        {
-          groupId,
-          availableGroups: Array.from(this.groups.keys()),
-        },
-      );
+      logger.error('Attempted to get tools by server for non-existent group', error, {
+        groupId,
+        availableGroups: Array.from(this.groups.keys()),
+      });
       throw error;
     }
 
@@ -553,10 +535,7 @@ export class GroupManager implements IGroupManager {
 
       if (group.tools.length > 0 && actualToolCount === 0) {
         issues.push('No configured tools are available');
-      } else if (
-        group.tools.length > 0 &&
-        actualToolCount < group.tools.length
-      ) {
+      } else if (group.tools.length > 0 && actualToolCount < group.tools.length) {
         warnings.push(
           `Only ${actualToolCount} of ${group.tools.length} configured tools are available`,
         );

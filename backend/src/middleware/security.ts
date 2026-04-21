@@ -31,10 +31,7 @@ export function secureHeadersMiddleware() {
     c.header('Content-Security-Policy', csp);
 
     // 权限策略
-    c.header(
-      'Permissions-Policy',
-      'geolocation=(), microphone=(), camera=(), payment=()',
-    );
+    c.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=()');
 
     await next();
   };

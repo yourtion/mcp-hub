@@ -1,9 +1,6 @@
-import type {
-  LoginRequest,
-  LoginResponse,
-  RefreshResponse,
-} from '@/types/auth';
 import api, { handleApiResponse } from './api';
+
+import type { LoginRequest, LoginResponse, RefreshResponse } from '@/types/auth';
 
 /**
  * 用户登录
@@ -30,9 +27,7 @@ export async function logout(): Promise<void> {
 /**
  * 刷新token
  */
-export async function refreshToken(
-  refreshToken: string,
-): Promise<RefreshResponse> {
+export async function refreshToken(refreshToken: string): Promise<RefreshResponse> {
   const response = await api.post<RefreshResponse>('/auth/refresh', {
     refreshToken,
   });

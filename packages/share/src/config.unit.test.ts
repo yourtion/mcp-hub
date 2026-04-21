@@ -4,12 +4,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import type {
-  Group,
-  GroupConfig,
-  McpConfig,
-  SystemConfig,
-} from './config/types/index.js';
+
+import type { Group, GroupConfig, McpConfig, SystemConfig } from './config/types/index.js';
 
 describe('Config Types', () => {
   describe('McpConfig', () => {

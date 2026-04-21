@@ -1,7 +1,9 @@
-import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ServerManager } from '../types/mcp-hub.js';
+
 import { McpHubService } from './mcp_hub_service.js';
+
+import type { ServerManager } from '../types/mcp-hub.js';
+import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 
 // Mock external dependencies
 let _mockClientInstance: Record<string, ReturnType<typeof vi.fn>> | null = null;
@@ -125,9 +127,7 @@ describe('MCP Hub Service Integration Tests', () => {
         .mockRejectedValueOnce(new Error('Connection failed')); // file-server fails
 
       mockClient.listTools.mockResolvedValue({
-        tools: [
-          { name: 'add', description: 'Add two numbers', inputSchema: {} },
-        ],
+        tools: [{ name: 'add', description: 'Add two numbers', inputSchema: {} }],
       });
 
       await mcpHubService.initialize();
@@ -159,8 +159,7 @@ describe('MCP Hub Service Integration Tests', () => {
       await mcpHubService.initialize();
 
       // Mock shutdown failure by replacing the method temporarily
-      const serverManager = (mcpHubService as { serverManager: ServerManager })
-        .serverManager;
+      const serverManager = (mcpHubService as { serverManager: ServerManager }).serverManager;
       const originalShutdown = serverManager.shutdown.bind(serverManager);
       Object.defineProperty(serverManager, 'shutdown', {
         value: vi.fn().mockRejectedValue(new Error('Shutdown failed')),
@@ -169,9 +168,7 @@ describe('MCP Hub Service Integration Tests', () => {
       });
 
       // Should throw due to shutdown errors
-      await expect(mcpHubService.shutdown()).rejects.toThrow(
-        'Shutdown completed with',
-      );
+      await expect(mcpHubService.shutdown()).rejects.toThrow('Shutdown completed with');
 
       // Restore original method
       Object.defineProperty(serverManager, 'shutdown', {
@@ -277,16 +274,10 @@ describe('MCP Hub Service Integration Tests', () => {
       const isAvailable = await mcpHubService.isToolAvailable('add', 'default');
       expect(isAvailable).toBe(true);
 
-      const isNotAvailable = await mcpHubService.isToolAvailable(
-        'add',
-        'restricted',
-      );
+      const isNotAvailable = await mcpHubService.isToolAvailable('add', 'restricted');
       expect(isNotAvailable).toBe(false);
 
-      const nonExistent = await mcpHubService.isToolAvailable(
-        'non-existent-tool',
-        'default',
-      );
+      const nonExistent = await mcpHubService.isToolAvailable('non-existent-tool', 'default');
       expect(nonExistent).toBe(false);
     });
 
@@ -338,11 +329,7 @@ describe('MCP Hub Service Integration Tests', () => {
         content: [{ type: 'text', text: 'Result: 7' }],
       });
 
-      const result = await mcpHubService.callTool(
-        'add',
-        { a: 3, b: 4 },
-        'default',
-      );
+      const result = await mcpHubService.callTool('add', { a: 3, b: 4 }, 'default');
 
       expect(result.isError).toBe(false);
       expect(result.content).toEqual([{ type: 'text', text: 'Result: 7' }]);
@@ -361,9 +348,9 @@ describe('MCP Hub Service Integration Tests', () => {
     });
 
     it('should enforce group access control', async () => {
-      await expect(
-        mcpHubService.callTool('add', { a: 3, b: 4 }, 'restricted'),
-      ).rejects.toThrow('not found in group');
+      await expect(mcpHubService.callTool('add', { a: 3, b: 4 }, 'restricted')).rejects.toThrow(
+        'not found in group',
+      );
 
       expect(mockClient.callTool).not.toHaveBeenCalled();
     });
@@ -371,16 +358,10 @@ describe('MCP Hub Service Integration Tests', () => {
     it('should handle tool execution failures', async () => {
       mockClient.callTool.mockRejectedValue(new Error('Tool execution failed'));
 
-      const result = await mcpHubService.callTool(
-        'add',
-        { a: 3, b: 4 },
-        'default',
-      );
+      const result = await mcpHubService.callTool('add', { a: 3, b: 4 }, 'default');
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain(
-        'Tool execution failed after 2 attempts',
-      );
+      expect(result.content[0].text).toContain('Tool execution failed after 2 attempts');
     });
 
     it('should retry on retryable errors', async () => {
@@ -393,11 +374,7 @@ describe('MCP Hub Service Integration Tests', () => {
       // 使用 vi.useFakeTimers 加速重试延迟
       vi.useFakeTimers({ shouldAdvanceTime: true });
 
-      const resultPromise = mcpHubService.callTool(
-        'add',
-        { a: 3, b: 4 },
-        'default',
-      );
+      const resultPromise = mcpHubService.callTool('add', { a: 3, b: 4 }, 'default');
 
       // 快速推进所有定时器
       await vi.advanceTimersByTimeAsync(2000);
@@ -405,9 +382,7 @@ describe('MCP Hub Service Integration Tests', () => {
       const result = await resultPromise;
 
       expect(result.isError).toBe(false);
-      expect(result.content).toEqual([
-        { type: 'text', text: 'Success on retry' },
-      ]);
+      expect(result.content).toEqual([{ type: 'text', text: 'Success on retry' }]);
       expect(mockClient.callTool).toHaveBeenCalledTimes(2);
 
       vi.useRealTimers();
@@ -416,11 +391,7 @@ describe('MCP Hub Service Integration Tests', () => {
     it('should handle different result formats', async () => {
       // Test string result
       mockClient.callTool.mockResolvedValueOnce('Simple string result');
-      let result = await mcpHubService.callTool(
-        'add',
-        { a: 3, b: 4 },
-        'default',
-      );
+      let result = await mcpHubService.callTool('add', { a: 3, b: 4 }, 'default');
       expect(result.content[0].text).toBe('Simple string result');
 
       // Test object result
@@ -464,10 +435,7 @@ describe('MCP Hub Service Integration Tests', () => {
         } as unknown as GroupConfig,
       };
 
-      const invalidService = new McpHubService(
-        serverConfigs,
-        invalidGroupConfigs,
-      );
+      const invalidService = new McpHubService(serverConfigs, invalidGroupConfigs);
 
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
@@ -510,9 +478,7 @@ describe('MCP Hub Service Integration Tests', () => {
       await mcpHubService.initialize();
 
       // Mock server manager to fail during tool execution
-      mockClient.callTool.mockRejectedValue(
-        new Error('Server communication failed'),
-      );
+      mockClient.callTool.mockRejectedValue(new Error('Server communication failed'));
 
       const result = await mcpHubService.callTool('test-tool', {}, 'default');
 
@@ -558,9 +524,7 @@ describe('MCP Hub Service Integration Tests', () => {
 
       for (const [serverId, status] of serverHealth) {
         expect(typeof serverId).toBe('string');
-        expect(['connected', 'disconnected', 'error', 'connecting']).toContain(
-          status,
-        );
+        expect(['connected', 'disconnected', 'error', 'connecting']).toContain(status);
       }
     });
 
@@ -604,9 +568,7 @@ describe('MCP Hub Service Integration Tests', () => {
     });
 
     it('should handle concurrent tool listings', async () => {
-      const promises = Array.from({ length: 5 }, () =>
-        mcpHubService.listTools('default'),
-      );
+      const promises = Array.from({ length: 5 }, () => mcpHubService.listTools('default'));
 
       const results = await Promise.all(promises);
 
@@ -618,14 +580,8 @@ describe('MCP Hub Service Integration Tests', () => {
 
     it('should handle concurrent tool executions', async () => {
       mockClient.callTool.mockImplementation(
-        async ({
-          arguments: args,
-        }: {
-          arguments: Record<string, unknown>;
-        }) => ({
-          content: [
-            { type: 'text', text: `Result for ${JSON.stringify(args)}` },
-          ],
+        async ({ arguments: args }: { arguments: Record<string, unknown> }) => ({
+          content: [{ type: 'text', text: `Result for ${JSON.stringify(args)}` }],
         }),
       );
 
@@ -661,20 +617,13 @@ describe('MCP Hub Service Integration Tests', () => {
       );
 
       // Start a long-running operation
-      const executionPromise = mcpHubService.callTool(
-        'concurrent-tool',
-        {},
-        'default',
-      );
+      const executionPromise = mcpHubService.callTool('concurrent-tool', {}, 'default');
 
       // Shutdown service while operation is running
       const shutdownPromise = mcpHubService.shutdown();
 
       // Both should complete without throwing
-      const [executionResult] = await Promise.allSettled([
-        executionPromise,
-        shutdownPromise,
-      ]);
+      const [executionResult] = await Promise.allSettled([executionPromise, shutdownPromise]);
 
       // Execution might succeed or fail depending on timing
       expect(['fulfilled', 'rejected']).toContain(executionResult.status);
@@ -686,9 +635,7 @@ describe('MCP Hub Service Integration Tests', () => {
       const emptyService = new McpHubService({}, groupConfigs);
 
       // Should fail to initialize due to no servers for groups
-      await expect(emptyService.initialize()).rejects.toThrow(
-        'No groups are loaded',
-      );
+      await expect(emptyService.initialize()).rejects.toThrow('No groups are loaded');
     });
 
     it('should handle empty group configuration', async () => {

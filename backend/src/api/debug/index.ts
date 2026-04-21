@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+
 import { getHubService } from '../../services/service-registry.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { logger } from '../../utils/logger.js';
@@ -13,9 +14,7 @@ debugApi.get('/mcp-messages', async (c) => {
     // Get query parameters for filtering
     const limit = parseInt(c.req.query('limit') || '50');
     const serverId = c.req.query('serverId');
-    const type =
-      (c.req.query('type') as 'request' | 'response' | 'notification') ||
-      undefined;
+    const type = (c.req.query('type') as 'request' | 'response' | 'notification') || undefined;
 
     // Get MCP messages from the service
     const messages = service.getMcpMessages(limit, serverId, type);
@@ -103,10 +102,7 @@ debugApi.get('/error-analysis', async (c) => {
     // Simple error analysis
     const errorAnalysis = {
       totalErrors: errorMessages.length,
-      errorRate:
-        allMessages.length > 0
-          ? (errorMessages.length / allMessages.length) * 100
-          : 0,
+      errorRate: allMessages.length > 0 ? (errorMessages.length / allMessages.length) * 100 : 0,
       mostCommonErrors: errorMessages
         .map((msg) => {
           const content = msg.content as { error?: string };

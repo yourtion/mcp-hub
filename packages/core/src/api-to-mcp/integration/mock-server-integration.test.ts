@@ -6,13 +6,11 @@ import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { ApiToMcpServiceManagerImpl } from '../services/api-to-mcp-service-manager.js';
+import { createMockApiServer, type MockApiServer, MockResponses } from './mock-api-server.js';
+
 import type { ApiToolsConfig } from '../types/api-config.js';
-import {
-  createMockApiServer,
-  type MockApiServer,
-  MockResponses,
-} from './mock-api-server.js';
 
 // Mock日志记录器
 vi.mock('../../utils/logger.js', () => ({
@@ -304,10 +302,7 @@ describe('Mock服务器集成测试', () => {
       await fs.writeFile(configPath, JSON.stringify(config, null, 2));
       await serviceManager.initialize(configPath);
 
-      const result = await serviceManager.executeApiTool(
-        'protected-resource',
-        {},
-      );
+      const result = await serviceManager.executeApiTool('protected-resource', {});
 
       expect(result.isError).toBe(false);
 
@@ -361,10 +356,7 @@ describe('Mock服务器集成测试', () => {
       await fs.writeFile(configPath, JSON.stringify(config, null, 2));
       await serviceManager.initialize(configPath);
 
-      const result = await serviceManager.executeApiTool(
-        'api-key-resource',
-        {},
-      );
+      const result = await serviceManager.executeApiTool('api-key-resource', {});
 
       expect(result.isError).toBe(false);
 
@@ -501,10 +493,7 @@ describe('Mock服务器集成测试', () => {
       await fs.writeFile(configPath, JSON.stringify(config, null, 2));
       await serviceManager.initialize(configPath);
 
-      const result = await serviceManager.executeApiTool(
-        'complex-data-tool',
-        {},
-      );
+      const result = await serviceManager.executeApiTool('complex-data-tool', {});
 
       expect(result.isError).toBe(false);
       const responseData = JSON.parse(result.content[0].text);
@@ -546,10 +535,7 @@ describe('Mock服务器集成测试', () => {
       await fs.writeFile(configPath, JSON.stringify(config, null, 2));
       await serviceManager.initialize(configPath);
 
-      const result = await serviceManager.executeApiTool(
-        'jsonata-error-tool',
-        {},
-      );
+      const result = await serviceManager.executeApiTool('jsonata-error-tool', {});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('失败');

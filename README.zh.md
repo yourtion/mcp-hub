@@ -37,11 +37,12 @@ MCP Hub 采用模块化 monorepo 架构，包含以下包：
 │   └── share/           # 共享类型 (@mcp-core/mcp-hub-share)
 └── docs/                # 文档
 ```
+
 ## 安装
 
 ### 前置要求
 
-- Node.js 18+ 
+- Node.js 18+
 - pnpm 包管理器
 
 ### 安装依赖
@@ -114,11 +115,13 @@ mcp-hub --init-all --overwrite
 ```
 
 默认配置包含以下常用 MCP 服务器：
+
 - **fetch**: 网页获取和 HTTP 请求
 - **time**: 时间和日期功能
 - **sequential-thinking**: 序列化思考能力
 
 更多可用服务器预设：
+
 - **filesystem**: 文件系统操作
 - **memory**: 持久化记忆存储
 - **brave-search**: Brave 搜索引擎
@@ -145,6 +148,7 @@ pnpm build:fe
 前端提供了全面的基于 Web 的管理界面，包含以下功能：
 
 ##### 1. 认证与安全
+
 - **JWT 认证**: 基于令牌的安全登录系统
 - **自动令牌刷新**: 无缝会话管理，不中断用户操作
 - **路由守卫**: 需要认证的受保护页面
@@ -152,6 +156,7 @@ pnpm build:fe
 - **默认凭据**: 用户名: `admin`, 密码: `admin` (生产环境请修改!)
 
 ##### 2. 仪表板与监控
+
 - **系统概览**: 服务器、工具和组的实时统计
 - **实时状态更新**: 通过 Server-Sent Events (SSE) 实现实时监控
 - **性能指标**: 请求速率、响应时间和错误率
@@ -159,6 +164,7 @@ pnpm build:fe
 - **健康监控**: 系统健康检查和告警
 
 ##### 3. 服务器管理
+
 - **服务器列表**: 查看所有已配置的 MCP 服务器及状态指示器
 - **添加/编辑服务器**: 可视化的服务器配置表单
 - **连接控制**: 连接、断开和测试服务器连接
@@ -166,6 +172,7 @@ pnpm build:fe
 - **配置验证**: 保存前测试服务器配置
 
 ##### 4. 工具管理
+
 - **工具浏览器**: 浏览所有服务器上的可用 MCP 工具
 - **工具搜索与过滤**: 按名称、服务器或组查找工具
 - **工具测试**: 交互式工具执行，支持参数输入
@@ -173,6 +180,7 @@ pnpm build:fe
 - **工具详情**: 完整的工具文档和模式信息
 
 ##### 5. 组管理
+
 - **组配置**: 创建和管理服务器组
 - **成员管理**: 将服务器分配到组
 - **工具过滤**: 配置每个组可用的工具
@@ -180,6 +188,7 @@ pnpm build:fe
 - **组统计**: 使用统计和性能指标
 
 ##### 6. API 到 MCP 集成
+
 - **API 配置**: 将 REST API 转换为 MCP 工具
 - **参数映射**: API 到 MCP 参数映射的可视化编辑器
 - **API 测试**: 部署前测试 API 配置
@@ -187,6 +196,7 @@ pnpm build:fe
 - **自动生成**: 从 API 规范自动生成 MCP 工具
 
 ##### 7. 调试与开发工具
+
 - **MCP 协议监控**: 查看原始 MCP 协议消息
 - **工具调试器**: 使用详细执行日志测试工具
 - **性能分析器**: 分析工具性能和瓶颈
@@ -194,6 +204,7 @@ pnpm build:fe
 - **消息检查器**: 检查请求/响应负载
 
 ##### 8. 配置管理
+
 - **系统设置**: 配置系统级设置
 - **配置编辑器**: 带验证的配置编辑
 - **备份与恢复**: 创建和恢复配置备份
@@ -224,12 +235,14 @@ pnpm build:fe
 #### 访问 Web 界面
 
 1. **启动后端**:
+
    ```bash
    pnpm dev:api
    # 后端运行在 http://localhost:8181
    ```
 
 2. **启动前端**（开发模式）:
+
    ```bash
    pnpm dev:fe
    # 前端运行在 http://localhost:8180
@@ -241,10 +254,11 @@ pnpm build:fe
    - 您将被重定向到仪表板
 
 4. **生产部署**:
+
    ```bash
    # 构建前端
    pnpm build:fe
-   
+
    # 前端静态文件将在 frontend/dist 目录
    # 通过后端或单独的 Web 服务器提供服务
    ```
@@ -289,7 +303,7 @@ pnpm build:fe
       "validationKey": "dev-key-123"
     },
     "research": {
-      "name": "研究工具", 
+      "name": "研究工具",
       "description": "研究和信息收集工具",
       "servers": ["brave-search", "wikipedia"],
       "allowedTools": ["search", "lookup"],
@@ -348,7 +362,7 @@ pnpm dev:fe           # 以开发模式启动前端
 pnpm build            # 构建所有包
 pnpm check            # 运行代码检查和格式化
 
-# 测试  
+# 测试
 pnpm test             # 运行所有测试
 pnpm test:coverage    # 运行带覆盖率的测试
 pnpm test:e2e         # 运行端到端测试
@@ -367,7 +381,7 @@ cd packages/core
 pnpm dev              # 监视模式编译
 pnpm test:watch       # 监视模式测试
 
-# CLI 包  
+# CLI 包
 cd packages/cli
 pnpm dev              # 监视模式编译
 pnpm test:e2e         # 端到端测试
@@ -381,16 +395,19 @@ pnpm test:mcp         # MCP 协议测试
 ## 文档
 
 ### 用户指南
+
 - [Web 界面使用指南](docs/WEB_UI_GUIDE.md) - 完整的 Web 界面使用指南
 - [CLI 使用指南](docs/CLI_USAGE.md) - 详细的 CLI 使用和配置
 - [常见问题解答](docs/FAQ.md) - 常见问题和故障排除
 
 ### 技术文档
+
 - [API 参考](docs/API_REFERENCE.md) - 完整的 API 文档
 - [组路由指南](docs/GROUP_ROUTING.md) - 基于组的路由文档
 - [迁移指南](docs/MIGRATION.md) - 从旧版本升级
 
 ### 开发与部署
+
 - [开发指南](docs/DEVELOPMENT.md) - 开发环境搭建和贡献指南
 - [发布流程](#发布流程) - 使用 Changesets 进行版本管理和发布
 - [NPM Trusted Publishers 配置](docs/NPM_TRUSTED_PUBLISHERS.md) - 安全的包发布配置
@@ -404,6 +421,7 @@ MCP Hub 使用 [Changesets](https://github.com/changesets/changesets) 进行版�
 #### 日常开发流程
 
 1. **完成功能开发**：
+
    ```bash
    git checkout -b feature/my-feature
    # 开发和测试...
@@ -412,14 +430,17 @@ MCP Hub 使用 [Changesets](https://github.com/changesets/changesets) 进行版�
    ```
 
 2. **创建 Changeset**：
+
    ```bash
    pnpm changeset
    ```
+
    - 选择受影响的包
    - 选择版本类型（major/minor/patch）
    - 添加变更描述
 
 3. **提交代码**：
+
    ```bash
    git add .
    git commit -m "feat: add new feature"

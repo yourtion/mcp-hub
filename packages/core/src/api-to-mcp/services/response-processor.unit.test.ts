@@ -3,13 +3,15 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import type { HttpResponse } from '../types/http-client.js';
+
 import {
   type HttpError,
   McpError,
   McpErrorCode,
   ResponseProcessorImpl,
 } from './response-processor.js';
+
+import type { HttpResponse } from '../types/http-client.js';
 
 /** 非JSON文本响应结果 */
 interface TextResponseResult {
@@ -89,10 +91,7 @@ describe('ResponseProcessorImpl', () => {
 
       expect(result).toHaveProperty('names');
       expect(result).toHaveProperty('total');
-      expect(Array.from(result.names as Iterable<unknown>)).toEqual([
-        'John',
-        'Jane',
-      ]);
+      expect(Array.from(result.names as Iterable<unknown>)).toEqual(['John', 'Jane']);
       expect(result.total).toBe(2);
     });
 
@@ -103,18 +102,13 @@ describe('ResponseProcessorImpl', () => {
           { price: 20, quantity: 1 },
         ],
       };
-      const result = await processor.processWithJsonata(
-        data,
-        '$sum(items.(price * quantity))',
-      );
+      const result = await processor.processWithJsonata(data, '$sum(items.(price * quantity))');
       expect(result).toBe(40);
     });
 
     it('应该处理JSONata执行错误', async () => {
       const data = { name: 'John' };
-      await expect(
-        processor.processWithJsonata(data, 'invalid['),
-      ).rejects.toThrow();
+      await expect(processor.processWithJsonata(data, 'invalid[')).rejects.toThrow();
     });
 
     it('应该使用安全模式处理JSONata执行错误', async () => {
@@ -205,10 +199,7 @@ describe('ResponseProcessorImpl', () => {
   });
 
   describe('processResponse', () => {
-    const createMockResponse = (
-      status: number,
-      data: unknown,
-    ): HttpResponse => ({
+    const createMockResponse = (status: number, data: unknown): HttpResponse => ({
       status,
       statusText: 'OK',
       headers: new Headers(),
@@ -236,9 +227,7 @@ describe('ResponseProcessorImpl', () => {
 
     it('应该处理字符串响应', async () => {
       const response = createMockResponse(200, 'Hello World');
-      const result = (await processor.processResponse(
-        response,
-      )) as TextResponseResult;
+      const result = (await processor.processResponse(response)) as TextResponseResult;
 
       expect(result._type).toBe('text');
       expect(result.content).toBe('Hello World');
@@ -271,29 +260,20 @@ describe('ResponseProcessorImpl', () => {
         },
       };
 
-      await expect(processor.processResponse(response)).rejects.toThrow(
-        '资源未找到',
-      );
+      await expect(processor.processResponse(response)).rejects.toThrow('资源未找到');
     });
 
     it('应该处理无效的JSON字符串', async () => {
       const response = createMockResponse(200, 'invalid json {');
-      const result = (await processor.processResponse(
-        response,
-      )) as TextResponseResult;
+      const result = (await processor.processResponse(response)) as TextResponseResult;
 
       expect(result._type).toBe('text');
       expect(result.content).toBe('invalid json {');
     });
 
     it('应该处理XML响应', async () => {
-      const response = createMockResponse(
-        200,
-        '<root><name>John</name></root>',
-      );
-      const result = (await processor.processResponse(
-        response,
-      )) as TextResponseResult;
+      const response = createMockResponse(200, '<root><name>John</name></root>');
+      const result = (await processor.processResponse(response)) as TextResponseResult;
 
       expect(result._type).toBe('xml');
       expect(result.content).toBe('<root><name>John</name></root>');
@@ -302,9 +282,7 @@ describe('ResponseProcessorImpl', () => {
     it('应该处理CSV响应', async () => {
       const csvData = 'name,age\nJohn,30\nJane,25';
       const response = createMockResponse(200, csvData);
-      const result = (await processor.processResponse(
-        response,
-      )) as CsvResponseResult;
+      const result = (await processor.processResponse(response)) as CsvResponseResult;
 
       expect(result._type).toBe('csv');
       expect(result.rows).toEqual([
@@ -317,9 +295,7 @@ describe('ResponseProcessorImpl', () => {
     it('应该处理键值对响应', async () => {
       const kvData = 'name=John\nage=30\ncity:Beijing';
       const response = createMockResponse(200, kvData);
-      const result = (await processor.processResponse(
-        response,
-      )) as KeyValueResponseResult;
+      const result = (await processor.processResponse(response)) as KeyValueResponseResult;
 
       expect(result._type).toBe('key-value');
       expect(result.parsed).toEqual({
@@ -331,9 +307,7 @@ describe('ResponseProcessorImpl', () => {
 
     it('应该处理纯文本响应', async () => {
       const response = createMockResponse(200, 'Hello World');
-      const result = (await processor.processResponse(
-        response,
-      )) as TextResponseResult;
+      const result = (await processor.processResponse(response)) as TextResponseResult;
 
       expect(result._type).toBe('text');
       expect(result.content).toBe('Hello World');
@@ -341,10 +315,7 @@ describe('ResponseProcessorImpl', () => {
   });
 
   describe('processWithFallback', () => {
-    const createMockResponse = (
-      status: number,
-      data: unknown,
-    ): HttpResponse => ({
+    const createMockResponse = (status: number, data: unknown): HttpResponse => ({
       status,
       statusText: 'OK',
       headers: new Headers(),
@@ -358,11 +329,7 @@ describe('ResponseProcessorImpl', () => {
 
     it('应该使用主要表达式处理成功响应', async () => {
       const response = createMockResponse(200, { name: 'John', age: 30 });
-      const result = await processor.processWithFallback(
-        response,
-        'name',
-        'age',
-      );
+      const result = await processor.processWithFallback(response, 'name', 'age');
 
       expect(result).toBe('John');
     });
@@ -487,10 +454,7 @@ describe('ResponseProcessorImpl', () => {
       const response = createMockResponse(400, 'Bad Request', {
         error: { message: '参数无效' },
       });
-      const error = processor.processErrorResponseAsMcp(
-        response,
-        'error.message',
-      );
+      const error = processor.processErrorResponseAsMcp(response, 'error.message');
 
       expect(error.code).toBe(McpErrorCode.INVALID_PARAMS);
       expect(error.message).toBe('参数无效');
@@ -525,10 +489,7 @@ describe('ResponseProcessorImpl', () => {
   });
 
   describe('processResponse with MCP errors', () => {
-    const createMockResponse = (
-      status: number,
-      data: unknown,
-    ): HttpResponse => ({
+    const createMockResponse = (status: number, data: unknown): HttpResponse => ({
       status,
       statusText: status >= 400 ? 'Error' : 'OK',
       headers: new Headers(),
@@ -560,13 +521,8 @@ describe('ResponseProcessorImpl', () => {
         expect.fail('应该抛出错误');
       } catch (error) {
         expect(error).toBeInstanceOf(McpError);
-        expect((error as McpError).code).toBe(
-          McpErrorCode.JSONATA_EXECUTION_ERROR,
-        );
-        expect((error as McpError).data).toHaveProperty(
-          'jsonataExpression',
-          'invalid[',
-        );
+        expect((error as McpError).code).toBe(McpErrorCode.JSONATA_EXECUTION_ERROR);
+        expect((error as McpError).data).toHaveProperty('jsonataExpression', 'invalid[');
       }
     });
   });

@@ -3,18 +3,17 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { AuthService } from './auth.js';
 
 // Mock bcryptjs 以消除哈希计算时间
 vi.mock('bcryptjs', () => ({
   default: {
     hash: vi.fn().mockResolvedValue('$2a$10$mockedhashvalue'),
-    compare: vi
-      .fn()
-      .mockImplementation(async (password: string, _hash: string) => {
-        // 简单判断：如果密码匹配测试配置中的密码则返回 true
-        return password === 'password' || password === 'admin123';
-      }),
+    compare: vi.fn().mockImplementation(async (password: string, _hash: string) => {
+      // 简单判断：如果密码匹配测试配置中的密码则返回 true
+      return password === 'password' || password === 'admin123';
+    }),
   },
 }));
 
@@ -113,15 +112,15 @@ describe('AuthService', () => {
     });
 
     it('应该拒绝无效用户名', async () => {
-      await expect(
-        authService.login('nonexistent', 'password'),
-      ).rejects.toThrow('Invalid username or password');
+      await expect(authService.login('nonexistent', 'password')).rejects.toThrow(
+        'Invalid username or password',
+      );
     });
 
     it('应该拒绝无效密码', async () => {
-      await expect(
-        authService.login('testuser', 'wrongpassword'),
-      ).rejects.toThrow('Invalid username or password');
+      await expect(authService.login('testuser', 'wrongpassword')).rejects.toThrow(
+        'Invalid username or password',
+      );
     });
 
     it('应该在多次失败登录后锁定用户', async () => {
@@ -135,9 +134,9 @@ describe('AuthService', () => {
       }
 
       // 第4次尝试应该被锁定
-      await expect(
-        authService.login('testuser', 'wrongpassword'),
-      ).rejects.toThrow('Account temporarily locked');
+      await expect(authService.login('testuser', 'wrongpassword')).rejects.toThrow(
+        'Account temporarily locked',
+      );
     });
   });
 
@@ -159,9 +158,9 @@ describe('AuthService', () => {
     });
 
     it('应该拒绝无效token', async () => {
-      await expect(
-        authService.verifyAccessToken('invalid-token'),
-      ).rejects.toThrow('Invalid or expired token');
+      await expect(authService.verifyAccessToken('invalid-token')).rejects.toThrow(
+        'Invalid or expired token',
+      );
     });
 
     it('应该拒绝已撤销的token', async () => {
@@ -192,9 +191,9 @@ describe('AuthService', () => {
     });
 
     it('应该拒绝无效的refresh token', async () => {
-      await expect(
-        authService.refreshAccessToken('invalid-refresh-token'),
-      ).rejects.toThrow('Invalid refresh token');
+      await expect(authService.refreshAccessToken('invalid-refresh-token')).rejects.toThrow(
+        'Invalid refresh token',
+      );
     });
 
     it('应该拒绝已使用的refresh token', async () => {
@@ -202,9 +201,9 @@ describe('AuthService', () => {
       await authService.refreshAccessToken(refreshToken);
 
       // 再次使用应该失败
-      await expect(
-        authService.refreshAccessToken(refreshToken),
-      ).rejects.toThrow('Invalid refresh token');
+      await expect(authService.refreshAccessToken(refreshToken)).rejects.toThrow(
+        'Invalid refresh token',
+      );
     });
   });
 

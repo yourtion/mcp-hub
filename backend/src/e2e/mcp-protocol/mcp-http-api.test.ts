@@ -4,6 +4,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { app } from '../../app.js';
 import {
   cleanupTestEnvironment,
@@ -41,9 +42,7 @@ describe('MCP HTTP API端到端测试', () => {
         expect(data).toHaveProperty('servers');
         expect(data).toHaveProperty('compatibility');
 
-        console.log(
-          `✅ MCP状态获取成功，服务器数量: ${data.servers?.total || 0}`,
-        );
+        console.log(`✅ MCP状态获取成功，服务器数量: ${data.servers?.total || 0}`);
       } else {
         console.log(`⚠️ MCP状态获取失败: ${data.error.message}`);
       }
@@ -87,9 +86,7 @@ describe('MCP HTTP API端到端测试', () => {
         expect(data).toHaveProperty('service');
         expect(data).toHaveProperty('servers');
 
-        console.log(
-          `✅ MCP健康检查完成，状态: ${data.healthy ? '健康' : '不健康'}`,
-        );
+        console.log(`✅ MCP健康检查完成，状态: ${data.healthy ? '健康' : '不健康'}`);
       } else {
         console.log(`⚠️ MCP健康检查失败: ${data.error.message}`);
       }
@@ -108,9 +105,7 @@ describe('MCP HTTP API端到端测试', () => {
       }
 
       const firstServer = statusData.servers.details[0];
-      const serverResponse = await testApp.request(
-        `/mcp/servers/${firstServer.id}`,
-      );
+      const serverResponse = await testApp.request(`/mcp/servers/${firstServer.id}`);
 
       expect([200, 404]).toContain(serverResponse.status);
 

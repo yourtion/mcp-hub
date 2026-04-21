@@ -1,10 +1,10 @@
 import { createPinia } from 'pinia';
 import TDesign from 'tdesign-vue-next';
 import { createApp } from 'vue';
+
 import App from './App.vue';
 import { useTheme } from './composables/useTheme';
 import router from './router';
-
 import 'tdesign-vue-next/es/style/index.css';
 import './index.css';
 

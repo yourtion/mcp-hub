@@ -1,11 +1,9 @@
 import fs from 'node:fs/promises';
-import type {
-  GroupConfig,
-  McpConfig,
-  SystemConfig,
-} from '@mcp-core/mcp-hub-share';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { ConfigService } from './config_service.js';
+
+import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
 
 // Mock dependencies
 vi.mock('node:fs/promises');
@@ -119,10 +117,7 @@ describe('ConfigService', () => {
         },
       };
 
-      const result = await configService.validateConfig(
-        'system',
-        validSystemConfig,
-      );
+      const result = await configService.validateConfig('system', validSystemConfig);
 
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
@@ -162,19 +157,14 @@ describe('ConfigService', () => {
         },
       };
 
-      const result = await configService.validateConfig(
-        'system',
-        invalidSystemConfig,
-      );
+      const result = await configService.validateConfig('system', invalidSystemConfig);
 
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
 
       // 检查是否包含JWT密钥长度错误
       const jwtSecretError = result.errors.find(
-        (error) =>
-          error.path === 'auth.jwt.secret' &&
-          error.code === 'JWT_SECRET_TOO_SHORT',
+        (error) => error.path === 'auth.jwt.secret' && error.code === 'JWT_SECRET_TOO_SHORT',
       );
       expect(jwtSecretError).toBeDefined();
     });
@@ -212,25 +202,20 @@ describe('ConfigService', () => {
         },
       };
 
-      const result = await configService.validateConfig(
-        'mcp',
-        invalidMcpConfig,
-      );
+      const result = await configService.validateConfig('mcp', invalidMcpConfig);
 
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
 
       // 检查是否包含命令为空的错误
       const commandError = result.errors.find(
-        (error) =>
-          error.path.includes('command') && error.code === 'MISSING_COMMAND',
+        (error) => error.path.includes('command') && error.code === 'MISSING_COMMAND',
       );
       expect(commandError).toBeDefined();
 
       // 检查是否包含SSE URL缺失的错误
       const sseUrlError = result.errors.find(
-        (error) =>
-          error.path.includes('url') && error.code === 'MISSING_SSE_URL',
+        (error) => error.path.includes('url') && error.code === 'MISSING_SSE_URL',
       );
       expect(sseUrlError).toBeDefined();
     });
@@ -265,10 +250,7 @@ describe('ConfigService', () => {
         },
       };
 
-      const result = await configService.validateConfig(
-        'groups',
-        validGroupConfig,
-      );
+      const result = await configService.validateConfig('groups', validGroupConfig);
 
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
@@ -302,19 +284,14 @@ describe('ConfigService', () => {
         },
       };
 
-      const result = await configService.validateConfig(
-        'groups',
-        invalidGroupConfig,
-      );
+      const result = await configService.validateConfig('groups', invalidGroupConfig);
 
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
 
       // 检查是否包含验证密钥缺失的错误
       const validationKeyError = result.errors.find(
-        (error) =>
-          error.path.includes('validationKey') &&
-          error.code === 'MISSING_VALIDATION_KEY',
+        (error) => error.path.includes('validationKey') && error.code === 'MISSING_VALIDATION_KEY',
       );
       expect(validationKeyError).toBeDefined();
 
@@ -333,17 +310,12 @@ describe('ConfigService', () => {
         server: { port: 3001, host: 'localhost' },
       };
 
-      const result = await configService.analyzeConfigImpact(
-        'system',
-        systemConfig,
-      );
+      const result = await configService.analyzeConfigImpact('system', systemConfig);
 
       expect(result.affectedServices).toContain('认证服务');
       expect(result.affectedServices).toContain('Web服务器');
       expect(result.requiresRestart).toBe(true);
-      expect(result.recommendations).toContain(
-        '建议在维护窗口期间进行系统配置更新',
-      );
+      expect(result.recommendations).toContain('建议在维护窗口期间进行系统配置更新');
     });
 
     it('应该正确分析MCP配置的影响', async () => {
@@ -360,9 +332,7 @@ describe('ConfigService', () => {
 
       expect(result.affectedServices).toContain('MCP服务管理器');
       expect(result.requiresRestart).toBe(false);
-      expect(result.recommendations).toContain(
-        'MCP服务器配置更改将在下次连接时生效',
-      );
+      expect(result.recommendations).toContain('MCP服务器配置更改将在下次连接时生效');
     });
 
     it('应该正确分析组配置的影响', async () => {
@@ -375,10 +345,7 @@ describe('ConfigService', () => {
         },
       };
 
-      const result = await configService.analyzeConfigImpact(
-        'groups',
-        groupConfig,
-      );
+      const result = await configService.analyzeConfigImpact('groups', groupConfig);
 
       expect(result.affectedServices).toContain('组管理器');
       expect(result.requiresRestart).toBe(false);
@@ -402,10 +369,7 @@ describe('ConfigService', () => {
       mockFs.mkdir.mockResolvedValue(undefined);
       mockFs.writeFile.mockResolvedValue(undefined);
 
-      const backupId = await configService.createBackup('测试备份', [
-        'system',
-        'mcp',
-      ]);
+      const backupId = await configService.createBackup('测试备份', ['system', 'mcp']);
 
       expect(backupId).toBeDefined();
       expect(typeof backupId).toBe('string');
@@ -496,10 +460,7 @@ describe('ConfigService', () => {
         },
       };
 
-      const result = await configService.testConfig(
-        'system',
-        validSystemConfig,
-      );
+      const result = await configService.testConfig('system', validSystemConfig);
 
       expect(result.success).toBe(true);
       expect(result.tests.length).toBeGreaterThan(0);
@@ -547,10 +508,7 @@ describe('ConfigService', () => {
         },
       };
 
-      const result = await configService.testConfig(
-        'system',
-        invalidSystemConfig,
-      );
+      const result = await configService.testConfig('system', invalidSystemConfig);
 
       expect(result.success).toBe(false);
       expect(result.summary.failed).toBeGreaterThan(0);
@@ -607,10 +565,7 @@ describe('ConfigService', () => {
         server: { port: 3001, host: 'localhost' },
       };
 
-      const result = await configService.previewConfigChanges(
-        'system',
-        newConfig,
-      );
+      const result = await configService.previewConfigChanges('system', newConfig);
 
       expect(result).toBeDefined();
       expect(result.changes).toBeDefined();

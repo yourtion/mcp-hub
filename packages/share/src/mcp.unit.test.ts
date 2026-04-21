@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+
 import type { ServerConfig } from './mcp.js';
 
 describe('ServerConfig Types', () => {
@@ -155,10 +156,7 @@ describe('ServerConfig Types', () => {
         expect(sseConfig.url).toBeDefined();
       }
 
-      if (
-        streamingConfig.type === 'sse' ||
-        streamingConfig.type === 'streaming'
-      ) {
+      if (streamingConfig.type === 'sse' || streamingConfig.type === 'streaming') {
         expect(streamingConfig.url).toBeDefined();
       }
     });

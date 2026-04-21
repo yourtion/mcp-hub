@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryHistory, createRouter } from 'vue-router';
+
 import MainLayout from '../MainLayout.vue';
 
 // Mock child components to isolate tests
@@ -103,10 +104,7 @@ describe('MainLayout', () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.find('.sidebar').classes()).toContain('collapsed');
-    expect(localStorageMock.setItem).toHaveBeenCalledWith(
-      'sidebar_collapsed',
-      'true',
-    );
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('sidebar_collapsed', 'true');
   });
 
   it('should render router-view content inside page-content', () => {

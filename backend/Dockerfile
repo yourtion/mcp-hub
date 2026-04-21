@@ -24,7 +24,6 @@ FROM base AS builder
 COPY packages/share ./packages/share
 COPY packages/core ./packages/core
 COPY backend ./backend
-COPY biome.json ./
 
 # 构建所有包
 RUN pnpm build:core

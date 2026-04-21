@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { validateAllConfigs } from './validation/config.js';
 
 // Mock 依赖
@@ -68,9 +69,7 @@ describe('服务初始化测试', () => {
       if (result.success) {
         expect(result.data.mcpConfig).toBeDefined();
         expect(result.data.groupConfig).toBeDefined();
-        expect(Object.keys(result.data.mcpConfig.servers)).toContain(
-          'test-server',
-        );
+        expect(Object.keys(result.data.mcpConfig.servers)).toContain('test-server');
         expect(Object.keys(result.data.groupConfig)).toContain('default');
       }
     });
@@ -94,9 +93,7 @@ describe('服务初始化测试', () => {
 
       if (!result.success) {
         expect(result.errors.length).toBeGreaterThan(0);
-        expect(result.errors.some((err) => err.includes('MCP配置错误'))).toBe(
-          true,
-        );
+        expect(result.errors.some((err) => err.includes('MCP配置错误'))).toBe(true);
       }
     });
 
@@ -161,9 +158,7 @@ describe('服务初始化测试', () => {
 
       if (!result.success) {
         expect(result.errors.length).toBeGreaterThan(0);
-        expect(result.errors.some((err) => err.includes('命令不能为空'))).toBe(
-          true,
-        );
+        expect(result.errors.some((err) => err.includes('命令不能为空'))).toBe(true);
       }
     });
 
@@ -216,18 +211,12 @@ describe('服务初始化测试', () => {
         expect(Object.keys(result.data.groupConfig)).toHaveLength(3);
 
         // 验证服务器配置
-        expect(result.data.mcpConfig.servers['stdio-server'].type).toBe(
-          'stdio',
-        );
+        expect(result.data.mcpConfig.servers['stdio-server'].type).toBe('stdio');
         expect(result.data.mcpConfig.servers['sse-server'].type).toBe('sse');
 
         // 验证组配置
-        expect(result.data.groupConfig['stdio-group'].servers).toContain(
-          'stdio-server',
-        );
-        expect(result.data.groupConfig['combined-group'].servers).toHaveLength(
-          2,
-        );
+        expect(result.data.groupConfig['stdio-group'].servers).toContain('stdio-server');
+        expect(result.data.groupConfig['combined-group'].servers).toHaveLength(2);
       }
     });
   });
@@ -312,9 +301,7 @@ describe('服务初始化测试', () => {
       if (result.success) {
         expect(result.data.systemConfig).toBeDefined();
         expect(result.data.systemConfig?.users.admin.password).toBe('admin123');
-        expect(result.data.systemConfig?.users.user.groups).toContain(
-          'default',
-        );
+        expect(result.data.systemConfig?.users.user.groups).toContain('default');
       }
     });
 
@@ -347,17 +334,11 @@ describe('服务初始化测试', () => {
         },
       };
 
-      const result = validateAllConfigs(
-        mcpConfig,
-        groupConfig,
-        invalidSystemConfig,
-      );
+      const result = validateAllConfigs(mcpConfig, groupConfig, invalidSystemConfig);
       expect(result.success).toBe(false);
 
       if (!result.success) {
-        expect(result.errors.some((err) => err.includes('系统配置错误'))).toBe(
-          true,
-        );
+        expect(result.errors.some((err) => err.includes('系统配置错误'))).toBe(true);
       }
     });
   });

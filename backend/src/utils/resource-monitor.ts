@@ -178,13 +178,16 @@ export class ResourceMonitor {
     // 尝试通过检查 process._getActiveHandles 来估算
     try {
       // 这是一个内部 API，可能在某些版本中不可用
-      // biome-ignore lint/suspicious/noExplicitAny: 内部 API 访问
-      const handles = (process as any)._getActiveHandles?.();
+      const handles = (
+        process as NodeJS.Process & { _getActiveHandles?: () => (Record<string, unknown> | Date)[] }
+      )._getActiveHandles?.();
       if (Array.isArray(handles)) {
         count = handles.filter(
-          // biome-ignore lint/suspicious/noExplicitAny: 内部 API 类型
-          (h: any) =>
-            h && (h._onTimeout || h._onImmediate || h instanceof Date), // Timeout 或 Immediate
+          (h) =>
+            h &&
+            ((h as Record<string, unknown>)._onTimeout ||
+              (h as Record<string, unknown>)._onImmediate ||
+              h instanceof Date),
         ).length;
       }
     } catch {
@@ -201,8 +204,9 @@ export class ResourceMonitor {
    */
   private countActiveHandles(): number {
     try {
-      // biome-ignore lint/suspicious/noExplicitAny: 内部 API 访问
-      const handles = (process as any)._getActiveHandles?.();
+      const handles = (
+        process as NodeJS.Process & { _getActiveHandles?: () => unknown[] }
+      )._getActiveHandles?.();
       return Array.isArray(handles) ? handles.length : 0;
     } catch {
       return 0;
@@ -264,9 +268,7 @@ export class ResourceMonitor {
         currentValue: current.activeHandles,
         threshold: RESOURCE_THRESHOLDS.activeHandlesCritical,
       });
-    } else if (
-      current.activeHandles > RESOURCE_THRESHOLDS.activeHandlesWarning
-    ) {
+    } else if (current.activeHandles > RESOURCE_THRESHOLDS.activeHandlesWarning) {
       this.triggerAlert({
         level: 'warning',
         resource: 'handles',
@@ -286,8 +288,7 @@ export class ResourceMonitor {
           resource: 'file-descriptors',
           message: `文件描述符使用率过高: ${(fdUsageRatio * 100).toFixed(1)}% (${current.fileDescriptors}/${this.systemFdLimit})`,
           currentValue: current.fileDescriptors,
-          threshold:
-            this.systemFdLimit * RESOURCE_THRESHOLDS.fileDescriptorsCritical,
+          threshold: this.systemFdLimit * RESOURCE_THRESHOLDS.fileDescriptorsCritical,
         });
       } else if (fdUsageRatio > RESOURCE_THRESHOLDS.fileDescriptorsWarning) {
         this.triggerAlert({
@@ -295,8 +296,7 @@ export class ResourceMonitor {
           resource: 'file-descriptors',
           message: `文件描述符使用率较高: ${(fdUsageRatio * 100).toFixed(1)}% (${current.fileDescriptors}/${this.systemFdLimit})`,
           currentValue: current.fileDescriptors,
-          threshold:
-            this.systemFdLimit * RESOURCE_THRESHOLDS.fileDescriptorsWarning,
+          threshold: this.systemFdLimit * RESOURCE_THRESHOLDS.fileDescriptorsWarning,
         });
       }
     }
@@ -371,10 +371,7 @@ export class ResourceMonitor {
   /**
    * 判断趋势
    */
-  private getTrend(
-    first: number,
-    last: number,
-  ): 'increasing' | 'decreasing' | 'stable' {
+  private getTrend(first: number, last: number): 'increasing' | 'decreasing' | 'stable' {
     const diff = last - first;
     if (diff > 5) return 'increasing';
     if (diff < -5) return 'decreasing';

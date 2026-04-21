@@ -3,8 +3,10 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { ApiToolConfig } from '../types/api-config.js';
+
 import { ApiToolGenerator } from './api-tool-generator.js';
+
+import type { ApiToolConfig } from '../types/api-config.js';
 
 describe('ApiToolGenerator', () => {
   let generator: ApiToolGenerator;
@@ -44,9 +46,7 @@ describe('ApiToolGenerator', () => {
 
       expect(mcpTool.name).toBe('test-api');
       expect(mcpTool.description).toContain('这是一个测试API工具');
-      expect(mcpTool.description).toContain(
-        'API端点: GET https://api.example.com/test',
-      );
+      expect(mcpTool.description).toContain('API端点: GET https://api.example.com/test');
       expect(mcpTool.inputSchema.type).toBe('object');
       expect(mcpTool.inputSchema.properties).toBeDefined();
       expect(mcpTool.inputSchema.properties?.query).toEqual({

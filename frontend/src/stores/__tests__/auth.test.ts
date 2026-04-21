@@ -1,7 +1,8 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import * as authService from '@/services/auth';
+
 import { useAuthStore } from '../auth';
+import * as authService from '@/services/auth';
 
 // Mock auth service
 vi.mock('@/services/auth', () => ({
@@ -82,14 +83,8 @@ describe('Auth Store', () => {
     expect(authStore.refreshToken).toBe('new-refresh-token');
     expect(authStore.user).toEqual(mockResponse.user);
     expect(authStore.isAuthenticated).toBe(true);
-    expect(localStorageMock.setItem).toHaveBeenCalledWith(
-      'auth_token',
-      'new-token',
-    );
-    expect(localStorageMock.setItem).toHaveBeenCalledWith(
-      'refresh_token',
-      'new-refresh-token',
-    );
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('auth_token', 'new-token');
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('refresh_token', 'new-refresh-token');
     expect(localStorageMock.setItem).toHaveBeenCalledWith(
       'user_info',
       JSON.stringify(mockResponse.user),

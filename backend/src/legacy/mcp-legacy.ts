@@ -11,16 +11,18 @@ import {
   performanceMonitor,
   performanceOptimizer,
 } from '@mcp-core/mcp-hub-core';
-import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { toFetchResponse, toReqRes } from 'fetch-to-node';
 import { Hono } from 'hono';
+
 import { initializeMcpService, mcpServer } from '../services/mcp_service.js';
 import { toMcpServerConfig } from '../types/config-helpers.js';
-import type { Tool } from '../types/mcp-hub.js';
 import { getAllConfig } from '../utils/config.js';
 import { logger } from '../utils/logger.js';
 import { deprecationMiddleware } from './deprecation.js';
+
+import type { Tool } from '../types/mcp-hub.js';
+import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share';
 
 export const mcp = new Hono();
 
@@ -79,10 +81,9 @@ mcp.post('/mcp', async (c) => {
     await ensureMcpServiceInitialized();
 
     // 创建传输层
-    const transport: StreamableHTTPServerTransport =
-      new StreamableHTTPServerTransport({
-        sessionIdGenerator: undefined,
-      });
+    const transport: StreamableHTTPServerTransport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+    });
 
     // Added for extra debuggability
     transport.onerror = (error) => {
@@ -153,15 +154,13 @@ mcp.get('/mcp/status', async (c) => {
     const serverConnections = coreServiceManager.getServerConnections();
 
     // 构建详细状态信息
-    const serverDetails = Array.from(serverConnections.entries()).map(
-      ([id, conn]) => ({
-        id,
-        status: conn.status,
-        lastConnected: conn.lastConnected?.toISOString(),
-        toolCount: conn.tools?.length || 0,
-        error: conn.lastError?.message,
-      }),
-    );
+    const serverDetails = Array.from(serverConnections.entries()).map(([id, conn]) => ({
+      id,
+      status: conn.status,
+      lastConnected: conn.lastConnected?.toISOString(),
+      toolCount: conn.tools?.length || 0,
+      error: conn.lastError?.message,
+    }));
 
     const response = {
       service: {
@@ -384,11 +383,7 @@ mcp.post('/mcp/execute', async (c) => {
 
     logger.info('执行MCP工具', { toolName, serverId, args });
 
-    const result = await coreServiceManager.executeToolCall(
-      toolName,
-      args || {},
-      serverId,
-    );
+    const result = await coreServiceManager.executeToolCall(toolName, args || {}, serverId);
 
     logger.info('MCP工具执行完成', { toolName, serverId });
 
@@ -428,8 +423,7 @@ mcp.get('/mcp/health', async (c) => {
     // 计算健康分数
     const totalServers = status.serverCount;
     const activeConnections = status.activeConnections;
-    const healthScore =
-      totalServers > 0 ? (activeConnections / totalServers) * 100 : 0;
+    const healthScore = totalServers > 0 ? (activeConnections / totalServers) * 100 : 0;
 
     const isHealthy = healthScore >= 50; // 至少50%的服务器连接才算健康
 
@@ -480,9 +474,7 @@ export async function shutdownMcpService(): Promise<void> {
     logger.info('Shutting down enhanced MCP Service');
 
     // 关闭传统MCP服务
-    const { shutdownMcpService: shutdownService } = await import(
-      '../services/mcp_service.js'
-    );
+    const { shutdownMcpService: shutdownService } = await import('../services/mcp_service.js');
     await shutdownService();
 
     // 关闭核心服务管理器

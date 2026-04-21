@@ -4,10 +4,8 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import {
-  ConcurrentExecutor,
-  ConcurrentOperations,
-} from './concurrency/concurrent-executor.js';
+
+import { ConcurrentExecutor, ConcurrentOperations } from './concurrency/concurrent-executor.js';
 import { MockToolFactory } from './mocks/factory.js';
 
 describe('ConcurrentExecutor', () => {
@@ -144,10 +142,9 @@ describe('ConcurrentExecutor', () => {
         return 'success';
       });
 
-      const { results, stats } = await ConcurrentExecutor.executeWithStats(
-        operations,
-        { concurrency: 5 },
-      );
+      const { results, stats } = await ConcurrentExecutor.executeWithStats(operations, {
+        concurrency: 5,
+      });
 
       expect(results).toHaveLength(20);
       expect(stats.total).toBe(20);
@@ -172,8 +169,11 @@ describe('ConcurrentExecutor', () => {
         return counter;
       };
 
-      const { safe, inconsistencies } =
-        await ConcurrentExecutor.testConcurrencySafety(unsafeOperation, 50, 10);
+      const { safe, inconsistencies } = await ConcurrentExecutor.testConcurrencySafety(
+        unsafeOperation,
+        50,
+        10,
+      );
 
       // 不安全的操作应该检测到不一致
       expect(inconsistencies).toBeGreaterThan(0);
@@ -186,11 +186,7 @@ describe('ConcurrentExecutor', () => {
         return { value: 42 }; // 每次返回相同的值
       };
 
-      const { safe } = await ConcurrentExecutor.testConcurrencySafety(
-        safeOperation,
-        20,
-        5,
-      );
+      const { safe } = await ConcurrentExecutor.testConcurrencySafety(safeOperation, 20, 5);
 
       expect(safe).toBe(true);
     });
@@ -210,14 +206,13 @@ describe('ConcurrentExecutor', () => {
         }
       };
 
-      const { maxSafeConcurrency, breakdown } =
-        await ConcurrentExecutor.stressTest(operation, {
-          startConcurrency: 10,
-          maxConcurrency: 50,
-          increment: 10,
-          operationsPerLevel: 20,
-          failureThreshold: 10, // 10% 失败率
-        });
+      const { maxSafeConcurrency, breakdown } = await ConcurrentExecutor.stressTest(operation, {
+        startConcurrency: 10,
+        maxConcurrency: 50,
+        increment: 10,
+        operationsPerLevel: 20,
+        failureThreshold: 10, // 10% 失败率
+      });
 
       expect(maxSafeConcurrency).toBeGreaterThan(0);
       expect(breakdown.length).toBeGreaterThan(0);
@@ -232,14 +227,11 @@ describe('ConcurrentExecutor', () => {
         return { data: 'test' };
       };
 
-      const { stats, benchmark } = await ConcurrentExecutor.benchmark(
-        operation,
-        {
-          iterations: 20,
-          warmupIterations: 5,
-          concurrency: 5,
-        },
-      );
+      const { stats, benchmark } = await ConcurrentExecutor.benchmark(operation, {
+        iterations: 20,
+        warmupIterations: 5,
+        concurrency: 5,
+      });
 
       expect(stats.total).toBe(20);
       expect(benchmark.totalTime).toBeGreaterThan(0);
@@ -263,8 +255,11 @@ describe('ConcurrentExecutor', () => {
         return id;
       };
 
-      const { hasRaceConditions, details } =
-        await ConcurrentExecutor.detectRaceConditions(operation, 50, 10);
+      const { hasRaceConditions, details } = await ConcurrentExecutor.detectRaceConditions(
+        operation,
+        50,
+        10,
+      );
 
       expect(details).toHaveLength(50);
       expect(details.every((d) => d.result)).toBe(true);
@@ -285,11 +280,7 @@ describe('ConcurrentOperations', () => {
 
       const executor = vi.fn().mockResolvedValue({ success: true });
 
-      const results = await ConcurrentOperations.executeTools(
-        executor,
-        tools,
-        2,
-      );
+      const results = await ConcurrentOperations.executeTools(executor, tools, 2);
 
       expect(results).toHaveLength(3);
       expect(executor).toHaveBeenCalledTimes(3);
@@ -308,11 +299,7 @@ describe('ConcurrentOperations', () => {
         return { success: true };
       });
 
-      const results = await ConcurrentOperations.executeTools(
-        executor,
-        tools,
-        2,
-      );
+      const results = await ConcurrentOperations.executeTools(executor, tools, 2);
 
       expect(results[0].success).toBe(true);
       expect(results[1].success).toBe(false);

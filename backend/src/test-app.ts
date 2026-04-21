@@ -62,10 +62,7 @@ testApp.get('/api/groups/:id', (c) => {
     });
   }
 
-  return c.json(
-    { error: { code: 'GROUP_NOT_FOUND', message: '组不存在' } },
-    404,
-  );
+  return c.json({ error: { code: 'GROUP_NOT_FOUND', message: '组不存在' } }, 404);
 });
 
 testApp.get('/api/groups/:id/tools', (c) => {
@@ -101,10 +98,7 @@ testApp.get('/api/groups/:id/tools', (c) => {
     });
   }
 
-  return c.json(
-    { error: { code: 'GROUP_NOT_FOUND', message: '组不存在' } },
-    404,
-  );
+  return c.json({ error: { code: 'GROUP_NOT_FOUND', message: '组不存在' } }, 404);
 });
 
 testApp.get('/api/groups/:id/servers', (c) => {
@@ -125,10 +119,7 @@ testApp.get('/api/groups/:id/servers', (c) => {
     });
   }
 
-  return c.json(
-    { error: { code: 'GROUP_NOT_FOUND', message: '组不存在' } },
-    404,
-  );
+  return c.json({ error: { code: 'GROUP_NOT_FOUND', message: '组不存在' } }, 404);
 });
 
 testApp.get('/api/groups/:id/health', (c) => {
@@ -269,13 +260,7 @@ testApp.post('/mcp/execute', async (c) => {
     );
   }
 
-  const validTools = [
-    'test-tool-1',
-    'test-tool-2',
-    'test-tool-3',
-    'test-tool-4',
-    'hub_status',
-  ];
+  const validTools = ['test-tool-1', 'test-tool-2', 'test-tool-3', 'test-tool-4', 'hub_status'];
 
   if (!validTools.includes(body.toolName)) {
     return c.json(
@@ -349,17 +334,11 @@ testApp.post('/messages', async (c) => {
 
 // 404处理
 testApp.notFound((c) => {
-  return c.json(
-    { error: { code: 'NOT_FOUND', message: 'Endpoint not found' } },
-    404,
-  );
+  return c.json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found' } }, 404);
 });
 
 // 错误处理
 testApp.onError((err, c) => {
   console.error('Test app error:', err);
-  return c.json(
-    { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
-    500,
-  );
+  return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } }, 500);
 });

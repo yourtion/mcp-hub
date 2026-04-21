@@ -2,7 +2,9 @@
 
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+
 import * as ServerService from '@/services/server';
+
 import type {
   CreateServerRequest,
   ServerInfo,

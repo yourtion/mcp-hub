@@ -4,6 +4,7 @@
  */
 
 import { createLogger } from '../../utils/logger.js';
+
 import type { ApiToolConfig, AuthConfig } from '../types/api-config.js';
 import type { CacheStats } from '../types/cache.js';
 import type { ApiResponse, HttpRequestConfig } from '../types/http-client.js';
@@ -141,11 +142,7 @@ export class CachedApiExecutor implements ApiExecutor {
       }
 
       // 缓存未命中，执行API调用
-      const response = await this.executeWithoutCache(
-        config,
-        parameters,
-        startTime,
-      );
+      const response = await this.executeWithoutCache(config, parameters, startTime);
 
       // 决定是否缓存响应
       const cacheDecision = this.shouldCacheResponse(config, response);
@@ -215,9 +212,7 @@ export class CachedApiExecutor implements ApiExecutor {
 
       // 注意：这是一个简化实现，实际应用中可能需要更高效的方式
       // 例如使用Redis的SCAN命令或维护键的索引
-      logger.warn(
-        `清除工具缓存: ${toolId} (模式: ${pattern}) - 需要实现具体的清理逻辑`,
-      );
+      logger.warn(`清除工具缓存: ${toolId} (模式: ${pattern}) - 需要实现具体的清理逻辑`);
 
       return clearedCount;
     } catch (error) {
@@ -248,9 +243,7 @@ export class CachedApiExecutor implements ApiExecutor {
     let success = 0;
     let failed = 0;
 
-    logger.info(
-      `开始预热缓存: ${config.id}, ${parametersList.length} 个参数组合`,
-    );
+    logger.info(`开始预热缓存: ${config.id}, ${parametersList.length} 个参数组合`);
 
     for (const parameters of parametersList) {
       try {
@@ -263,16 +256,11 @@ export class CachedApiExecutor implements ApiExecutor {
         }
       } catch (error) {
         failed++;
-        logger.warn(
-          `预热缓存失败`,
-          error instanceof Error ? error : new Error(String(error)),
-        );
+        logger.warn(`预热缓存失败`, error instanceof Error ? error : new Error(String(error)));
       }
     }
 
-    logger.info(
-      `缓存预热完成: ${config.id}, 成功: ${success}, 失败: ${failed}`,
-    );
+    logger.info(`缓存预热完成: ${config.id}, 成功: ${success}, 失败: ${failed}`);
     return { success, failed };
   }
 
@@ -287,22 +275,15 @@ export class CachedApiExecutor implements ApiExecutor {
   /**
    * 生成缓存键
    */
-  private generateCacheKey(
-    config: ApiToolConfig,
-    parameters: Record<string, unknown>,
-  ): string {
+  private generateCacheKey(config: ApiToolConfig, parameters: Record<string, unknown>): string {
     const baseKey = this.keyManager.generateKey(config.id, parameters);
-    return this.config.keyPrefix
-      ? `${this.config.keyPrefix}:${baseKey}`
-      : baseKey;
+    return this.config.keyPrefix ? `${this.config.keyPrefix}:${baseKey}` : baseKey;
   }
 
   /**
    * 从缓存获取响应
    */
-  private async getCachedResponse(
-    cacheKey: string,
-  ): Promise<ApiResponse | null> {
+  private async getCachedResponse(cacheKey: string): Promise<ApiResponse | null> {
     const startTime = Date.now();
 
     try {
@@ -316,10 +297,7 @@ export class CachedApiExecutor implements ApiExecutor {
 
       return null;
     } catch (error) {
-      logger.error(
-        '从缓存获取响应失败',
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.error('从缓存获取响应失败', error instanceof Error ? error : new Error(String(error)));
       return null;
     }
   }
@@ -327,28 +305,18 @@ export class CachedApiExecutor implements ApiExecutor {
   /**
    * 缓存响应
    */
-  private async cacheResponse(
-    cacheKey: string,
-    response: ApiResponse,
-    ttl: number,
-  ): Promise<void> {
+  private async cacheResponse(cacheKey: string, response: ApiResponse, ttl: number): Promise<void> {
     try {
       await this.cacheManager.set(cacheKey, response, ttl);
     } catch (error) {
-      logger.error(
-        '缓存响应失败',
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.error('缓存响应失败', error instanceof Error ? error : new Error(String(error)));
     }
   }
 
   /**
    * 决定是否缓存响应
    */
-  private shouldCacheResponse(
-    config: ApiToolConfig,
-    response: ApiResponse,
-  ): CacheDecision {
+  private shouldCacheResponse(config: ApiToolConfig, response: ApiResponse): CacheDecision {
     // 检查工具级别的缓存配置
     if (config.cache && !config.cache.enabled) {
       return {

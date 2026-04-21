@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger.js';
+
 import type {
   Group,
   GroupManager,
@@ -7,12 +9,10 @@ import type {
   ToolContent,
   ToolResult,
 } from '../types/mcp-hub.js';
-import { logger } from '../utils/logger.js';
 import type { ApiToolIntegrationService } from './api_tool_integration_service.js';
 
 export class ToolManager implements IToolManager {
-  private toolCache: Map<string, { tools: Tool[]; lastUpdated: Date }> =
-    new Map();
+  private toolCache: Map<string, { tools: Tool[]; lastUpdated: Date }> = new Map();
   private readonly CACHE_TTL_MS = 30000; // 30 seconds cache TTL
 
   constructor(
@@ -91,9 +91,7 @@ export class ToolManager implements IToolManager {
       // Step 1: Validate group exists and is accessible
       const groupValidation = await this.validateGroupAccess(groupId);
       if (!groupValidation.isValid) {
-        const error = new Error(
-          groupValidation.error || `Invalid group '${groupId}'`,
-        );
+        const error = new Error(groupValidation.error || `Invalid group '${groupId}'`);
         logger.warn('Group validation failed', {
           executionId,
           groupId,
@@ -104,19 +102,13 @@ export class ToolManager implements IToolManager {
 
       // Step 2: Validate tool access in group
       if (!this.groupManager.validateToolAccess(groupId, toolName)) {
-        const error = new Error(
-          `Tool '${toolName}' is not accessible in group '${groupId}'`,
-        );
+        const error = new Error(`Tool '${toolName}' is not accessible in group '${groupId}'`);
         logger.warn('Tool access denied', { executionId, groupId, toolName });
         return this.createErrorResult(error.message);
       }
 
       // Step 3: Route tool to appropriate server
-      const routingResult = await this.routeToolExecution(
-        groupId,
-        toolName,
-        executionId,
-      );
+      const routingResult = await this.routeToolExecution(groupId, toolName, executionId);
       if (!routingResult.success) {
         logger.warn('Tool routing failed', {
           executionId,
@@ -152,12 +144,7 @@ export class ToolManager implements IToolManager {
         result = await this.apiToolService.executeApiTool(toolName, args);
       } else {
         // Execute MCP tool
-        result = await this.executeToolWithRetry(
-          serverId,
-          toolName,
-          args,
-          executionId,
-        );
+        result = await this.executeToolWithRetry(serverId, toolName, args, executionId);
       }
 
       logger.info('Tool execution completed successfully', {
@@ -176,9 +163,7 @@ export class ToolManager implements IToolManager {
         args,
       });
 
-      return this.createErrorResult(
-        `Unexpected error: ${(error as Error).message}`,
-      );
+      return this.createErrorResult(`Unexpected error: ${(error as Error).message}`);
     }
   }
 
@@ -283,11 +268,7 @@ export class ToolManager implements IToolManager {
           maxRetries,
         });
 
-        const result = await this.serverManager.executeToolOnServer(
-          serverId,
-          toolName,
-          args,
-        );
+        const result = await this.serverManager.executeToolOnServer(serverId, toolName, args);
 
         logger.debug('Tool execution attempt successful', {
           executionId,
@@ -345,13 +326,7 @@ export class ToolManager implements IToolManager {
   }
 
   private isRetryableError(error: Error): boolean {
-    const retryablePatterns = [
-      /connection/i,
-      /timeout/i,
-      /network/i,
-      /temporary/i,
-      /unavailable/i,
-    ];
+    const retryablePatterns = [/connection/i, /timeout/i, /network/i, /temporary/i, /unavailable/i];
 
     return retryablePatterns.some((pattern) => pattern.test(error.message));
   }
@@ -384,17 +359,13 @@ export class ToolManager implements IToolManager {
       // Search through each server's tools
       for (const serverId of availableServers) {
         try {
-          const serverConnection = this.serverManager
-            .getAllServers()
-            .get(serverId);
+          const serverConnection = this.serverManager.getAllServers().get(serverId);
           if (!serverConnection || serverConnection.status !== 'connected') {
             continue;
           }
 
           // Check if this server has the tool
-          const hasTool = serverConnection.tools.some(
-            (tool) => tool.name === toolName,
-          );
+          const hasTool = serverConnection.tools.some((tool) => tool.name === toolName);
           if (hasTool) {
             logger.debug('Found tool on server', {
               toolName,
@@ -492,10 +463,7 @@ export class ToolManager implements IToolManager {
           }
 
           // Check for null/undefined values in required fields
-          if (
-            args[requiredField] === null ||
-            args[requiredField] === undefined
-          ) {
+          if (args[requiredField] === null || args[requiredField] === undefined) {
             const error = `Required argument '${requiredField}' cannot be null or undefined`;
             logger.warn('Required argument is null/undefined', {
               toolName: tool.name,
@@ -509,15 +477,11 @@ export class ToolManager implements IToolManager {
       // Validate property types if schema properties are defined
       if (schema.properties && typeof schema.properties === 'object') {
         for (const [argName, argValue] of Object.entries(args)) {
-          const propSchema = (
-            schema.properties as Record<string, Record<string, unknown>>
-          )[argName];
+          const propSchema = (schema.properties as Record<string, Record<string, unknown>>)[
+            argName
+          ];
           if (propSchema && typeof propSchema === 'object') {
-            const typeValidation = this.validateArgumentType(
-              argName,
-              argValue,
-              propSchema,
-            );
+            const typeValidation = this.validateArgumentType(argName, argValue, propSchema);
             if (!typeValidation.isValid) {
               logger.warn('Argument type validation failed', {
                 toolName: tool.name,
@@ -540,14 +504,10 @@ export class ToolManager implements IToolManager {
       ) {
         const allowedProps = Object.keys(schema.properties);
         const providedProps = Object.keys(args);
-        const extraProps = providedProps.filter(
-          (prop) => !allowedProps.includes(prop),
-        );
+        const extraProps = providedProps.filter((prop) => !allowedProps.includes(prop));
 
         if (extraProps.length > 0) {
-          const error = `Additional properties not allowed: ${extraProps.join(
-            ', ',
-          )}`;
+          const error = `Additional properties not allowed: ${extraProps.join(', ')}`;
           logger.warn('Additional properties provided', {
             toolName: tool.name,
             extraProps,
@@ -630,11 +590,7 @@ export class ToolManager implements IToolManager {
         break;
 
       case 'object':
-        if (
-          actualType !== 'object' ||
-          argValue === null ||
-          Array.isArray(argValue)
-        ) {
+        if (actualType !== 'object' || argValue === null || Array.isArray(argValue)) {
           return {
             isValid: false,
             error: `Argument '${argName}' must be an object, got ${actualType}`,
@@ -1040,10 +996,7 @@ export class ToolManager implements IToolManager {
     }
   }
 
-  async isToolAvailableInGroup(
-    groupId: string,
-    toolName: string,
-  ): Promise<boolean> {
+  async isToolAvailableInGroup(groupId: string, toolName: string): Promise<boolean> {
     logger.debug('Checking tool availability in group', { groupId, toolName });
 
     try {
@@ -1077,10 +1030,7 @@ export class ToolManager implements IToolManager {
     }
   }
 
-  async getToolDetails(
-    groupId: string,
-    toolName: string,
-  ): Promise<Tool | null> {
+  async getToolDetails(groupId: string, toolName: string): Promise<Tool | null> {
     logger.debug('Getting tool details', { groupId, toolName });
 
     try {

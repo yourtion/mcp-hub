@@ -42,15 +42,10 @@ export type { ToolInfo, ToolResult } from './tool.js';
  */
 export interface McpServiceManager {
   /** 从配置初始化MCP服务 */
-  initializeFromConfig(
-    config: import('./config.js').McpServerConfig,
-  ): Promise<void>;
+  initializeFromConfig(config: import('./config.js').McpServerConfig): Promise<void>;
 
   /** 注册MCP服务器 */
-  registerServer(
-    serverId: string,
-    config: import('./config.js').ServerConfig,
-  ): Promise<void>;
+  registerServer(serverId: string, config: import('./config.js').ServerConfig): Promise<void>;
 
   /** 获取所有可用工具 */
   getAllTools(): Promise<import('./tool.js').ToolInfo[]>;

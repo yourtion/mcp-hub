@@ -3,8 +3,8 @@
  * 提供启动时间优化、响应时间优化和资源使用优化
  */
 
-import { EventEmitter } from 'node:events';
 import { createLogger } from '@mcp-core/mcp-hub-share';
+import { EventEmitter } from 'node:events';
 
 /**
  * 性能优化配置
@@ -84,10 +84,7 @@ export class PerformanceOptimizer extends EventEmitter {
 
   // 连接池
   private connectionPool = new Map<string, unknown[]>();
-  private connectionStats = new Map<
-    string,
-    { created: number; used: number; errors: number }
-  >();
+  private connectionStats = new Map<string, { created: number; used: number; errors: number }>();
 
   // 垃圾回收
   private gcTimer?: NodeJS.Timeout;
@@ -132,10 +129,7 @@ export class PerformanceOptimizer extends EventEmitter {
   /**
    * 优化启动时间 - 延迟加载模块
    */
-  async optimizeStartupTime<T>(
-    moduleLoader: () => Promise<T>,
-    moduleName: string,
-  ): Promise<T> {
+  async optimizeStartupTime<T>(moduleLoader: () => Promise<T>, moduleName: string): Promise<T> {
     if (!this.config.enableLazyLoading) {
       return moduleLoader();
     }
@@ -339,14 +333,11 @@ export class PerformanceOptimizer extends EventEmitter {
       // 池已满，关闭连接
       if (
         connection &&
-        typeof (connection as { close?: () => Promise<void> }).close ===
-          'function'
+        typeof (connection as { close?: () => Promise<void> }).close === 'function'
       ) {
-        (connection as { close: () => Promise<void> })
-          .close()
-          .catch((error: Error) => {
-            this.logger.error('关闭多余连接失败', error);
-          });
+        (connection as { close: () => Promise<void> }).close().catch((error: Error) => {
+          this.logger.error('关闭多余连接失败', error);
+        });
       }
     }
   }
@@ -420,14 +411,11 @@ export class PerformanceOptimizer extends EventEmitter {
       ...this.metrics,
       cacheSize: this.cache.size,
       cacheHitRate:
-        this.metrics.cacheHits /
-          (this.metrics.cacheHits + this.metrics.cacheMisses) || 0,
-      connectionPools: Array.from(this.connectionPool.keys()).map(
-        (poolName) => ({
-          name: poolName,
-          stats: this.getConnectionPoolStats(poolName),
-        }),
-      ),
+        this.metrics.cacheHits / (this.metrics.cacheHits + this.metrics.cacheMisses) || 0,
+      connectionPools: Array.from(this.connectionPool.keys()).map((poolName) => ({
+        name: poolName,
+        stats: this.getConnectionPoolStats(poolName),
+      })),
     };
   }
 
@@ -546,16 +534,13 @@ export class PerformanceOptimizer extends EventEmitter {
       for (const connection of toClose) {
         if (
           connection &&
-          typeof (connection as { close?: () => Promise<void> }).close ===
-            'function'
+          typeof (connection as { close?: () => Promise<void> }).close === 'function'
         ) {
-          (connection as { close: () => Promise<void> })
-            .close()
-            .catch((error: Error) => {
-              this.logger.error('关闭空闲连接失败', error, {
-                context: { poolName },
-              });
+          (connection as { close: () => Promise<void> }).close().catch((error: Error) => {
+            this.logger.error('关闭空闲连接失败', error, {
+              context: { poolName },
             });
+          });
         }
       }
 
@@ -579,16 +564,13 @@ export class PerformanceOptimizer extends EventEmitter {
       for (const connection of pool) {
         if (
           connection &&
-          typeof (connection as { close?: () => Promise<void> }).close ===
-            'function'
+          typeof (connection as { close?: () => Promise<void> }).close === 'function'
         ) {
-          (connection as { close: () => Promise<void> })
-            .close()
-            .catch((error: Error) => {
-              this.logger.error('关闭连接失败', error, {
-                context: { poolName },
-              });
+          (connection as { close: () => Promise<void> }).close().catch((error: Error) => {
+            this.logger.error('关闭连接失败', error, {
+              context: { poolName },
             });
+          });
         }
       }
     }
@@ -600,10 +582,7 @@ export class PerformanceOptimizer extends EventEmitter {
   /**
    * 更新连接统计
    */
-  private updateConnectionStats(
-    poolName: string,
-    type: 'created' | 'used' | 'errors',
-  ): void {
+  private updateConnectionStats(poolName: string, type: 'created' | 'used' | 'errors'): void {
     const stats = this.connectionStats.get(poolName) || {
       created: 0,
       used: 0,
@@ -633,10 +612,8 @@ export const performanceOptimizer = new Proxy({} as PerformanceOptimizer, {
     if (!_performanceOptimizer) {
       _performanceOptimizer = createPerformanceOptimizer({
         enableLazyLoading: process.env.ENABLE_LAZY_LOADING !== 'false',
-        enableParallelInitialization:
-          process.env.ENABLE_PARALLEL_INIT !== 'false',
-        enableConnectionPooling:
-          process.env.ENABLE_CONNECTION_POOLING !== 'false',
+        enableParallelInitialization: process.env.ENABLE_PARALLEL_INIT !== 'false',
+        enableConnectionPooling: process.env.ENABLE_CONNECTION_POOLING !== 'false',
         enableCaching: process.env.ENABLE_CACHING !== 'false',
       });
     }

@@ -3,8 +3,10 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import type { TemplateContext } from '../types/template.js';
+
 import { TemplateEngineImpl } from './template-engine.js';
+
+import type { TemplateContext } from '../types/template.js';
 
 describe('TemplateEngineImpl', () => {
   const templateEngine = new TemplateEngineImpl();
@@ -106,8 +108,7 @@ describe('TemplateEngineImpl', () => {
     });
 
     it('应该处理null和undefined值', () => {
-      const template =
-        'Null: {{data.nullValue}}, Undefined: {{data.undefinedValue}}';
+      const template = 'Null: {{data.nullValue}}, Undefined: {{data.undefinedValue}}';
       const context: TemplateContext = {
         data: {
           nullValue: null,
@@ -119,9 +120,7 @@ describe('TemplateEngineImpl', () => {
       const result = templateEngine.render(template, context);
 
       expect(result.success).toBe(false);
-      expect(result.result).toBe(
-        'Null: null, Undefined: {{data.undefinedValue}}',
-      );
+      expect(result.result).toBe('Null: null, Undefined: {{data.undefinedValue}}');
       expect(result.error).toBe('未找到变量: data.undefinedValue');
     });
 
@@ -235,8 +234,7 @@ describe('TemplateEngineImpl', () => {
 
   describe('extractVariables', () => {
     it('应该提取所有变量', () => {
-      const template =
-        'Hello {{data.name}} from {{env.LOCATION}} at {{data.time}}!';
+      const template = 'Hello {{data.name}} from {{env.LOCATION}} at {{data.time}}!';
       const variables = templateEngine.extractVariables(template);
 
       expect(variables).toHaveLength(3);

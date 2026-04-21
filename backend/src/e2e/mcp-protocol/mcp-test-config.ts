@@ -5,11 +5,8 @@
 
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import {
-  checkServerHealth,
-  startTestServer,
-  waitForServer,
-} from '../test-server.js';
+
+import { checkServerHealth, startTestServer, waitForServer } from '../test-server.js';
 
 export interface McpTestConfig {
   serverPort: number;
@@ -127,10 +124,7 @@ export async function createResilientMcpClient(
     try {
       return await createMcpTestClient(clientName, config);
     } catch (error) {
-      console.warn(
-        `MCP客户端连接尝试 ${attempt}/${config.retries} 失败:`,
-        error,
-      );
+      console.warn(`MCP客户端连接尝试 ${attempt}/${config.retries} 失败:`, error);
 
       if (attempt < config.retries) {
         await new Promise((resolve) => setTimeout(resolve, 10 * attempt));

@@ -7,11 +7,7 @@
         <p class="mcp-page__desc">系统运行状态概览</p>
       </div>
       <div class="mcp-page__actions">
-        <t-button
-          variant="outline"
-          :loading="isRefreshing"
-          @click="handleRefresh"
-        >
+        <t-button variant="outline" :loading="isRefreshing" @click="handleRefresh">
           <template #icon>
             <RefreshIcon />
           </template>
@@ -22,11 +18,7 @@
 
     <!-- Stat Cards -->
     <div v-if="isLoading" class="mcp-grid mcp-grid--4">
-      <div
-        v-for="i in 4"
-        :key="i"
-        class="mcp-card mcp-stat stat-card stat-card--skeleton"
-      >
+      <div v-for="i in 4" :key="i" class="mcp-card mcp-stat stat-card stat-card--skeleton">
         <div class="skeleton skeleton--icon" />
         <div class="skeleton skeleton--value" />
         <div class="skeleton skeleton--label" />
@@ -34,11 +26,7 @@
     </div>
 
     <div v-else class="mcp-grid mcp-grid--4">
-      <div
-        v-for="card in statCardConfigs"
-        :key="card.label"
-        class="mcp-card mcp-stat stat-card"
-      >
+      <div v-for="card in statCardConfigs" :key="card.label" class="mcp-card mcp-stat stat-card">
         <div class="stat-card__icon" :class="`stat-card__icon--${card.colorClass}`">
           <component :is="card.icon" />
         </div>
@@ -62,10 +50,7 @@
           <h2 class="panel-header__title">最近活动</h2>
           <t-tooltip content="通过 SSE 实时推送">
             <span class="panel-header__badge">
-              <span
-                class="mcp-status__dot"
-                :class="sseDotClass"
-              />
+              <span class="mcp-status__dot" :class="sseDotClass" />
               {{ sseLabel }}
             </span>
           </t-tooltip>
@@ -80,11 +65,7 @@
           </div>
 
           <div v-else class="activities-list">
-            <div
-              v-for="activity in activities"
-              :key="activity.id"
-              class="activity-item"
-            >
+            <div v-for="activity in activities" :key="activity.id" class="activity-item">
               <span
                 class="activity-item__dot"
                 :class="`activity-item__dot--${activity.severity}`"
@@ -102,12 +83,7 @@
       <div class="mcp-card health-panel">
         <div class="panel-header">
           <h2 class="panel-header__title">系统健康</h2>
-          <t-tag
-            v-if="healthStatus"
-            :theme="healthTagTheme"
-            variant="light"
-            size="small"
-          >
+          <t-tag v-if="healthStatus" :theme="healthTagTheme" variant="light" size="small">
             {{ healthStatusLabel }}
           </t-tag>
         </div>
@@ -115,15 +91,8 @@
         <t-loading :loading="dashboardStore.loading.health" />
         <div v-if="!dashboardStore.loading.health && healthStatus">
           <div class="health-checks">
-            <div
-              v-for="check in healthCheckItems"
-              :key="check.key"
-              class="health-check"
-            >
-              <span
-                class="health-check__dot"
-                :class="`health-check__dot--${check.status}`"
-              />
+            <div v-for="check in healthCheckItems" :key="check.key" class="health-check">
+              <span class="health-check__dot" :class="`health-check__dot--${check.status}`" />
               <span class="health-check__name">{{ check.name }}</span>
               <span class="health-check__message">{{ check.message }}</span>
             </div>
@@ -146,13 +115,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
-import {
-  Button as TButton,
-  Tag as TTag,
-  Loading as TLoading,
-  Tooltip as TTooltip,
-} from 'tdesign-vue-next';
 import {
   RefreshIcon,
   ServerIcon,
@@ -163,7 +125,16 @@ import {
   HelpCircleIcon,
   TimeIcon,
 } from 'tdesign-icons-vue-next';
+import {
+  Button as TButton,
+  Tag as TTag,
+  Loading as TLoading,
+  Tooltip as TTooltip,
+} from 'tdesign-vue-next';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+
 import { useDashboardStore } from '@/stores/dashboard';
+
 import type { Activity, SystemHealth } from '@/types/dashboard';
 
 const dashboardStore = useDashboardStore();
@@ -205,7 +176,10 @@ const statCardConfigs = computed(() => {
       colorClass: 'green',
       trend: {
         value: connectionRate,
-        direction: (connectionRate >= 80 ? 'up' : connectionRate >= 50 ? 'stable' : 'down') as 'up' | 'down' | 'stable',
+        direction: (connectionRate >= 80 ? 'up' : connectionRate >= 50 ? 'stable' : 'down') as
+          | 'up'
+          | 'down'
+          | 'stable',
         period: '连接率',
       },
     },
@@ -272,9 +246,24 @@ const healthCheckItems = computed(() => {
   if (!checks) return [];
 
   return [
-    { key: 'servers', name: '服务器', status: checks.servers.status, message: checks.servers.message },
-    { key: 'groups', name: '服务器组', status: checks.groups.status, message: checks.groups.message },
-    { key: 'apiTools', name: 'API 工具', status: checks.apiTools.status, message: checks.apiTools.message },
+    {
+      key: 'servers',
+      name: '服务器',
+      status: checks.servers.status,
+      message: checks.servers.message,
+    },
+    {
+      key: 'groups',
+      name: '服务器组',
+      status: checks.groups.status,
+      message: checks.groups.message,
+    },
+    {
+      key: 'apiTools',
+      name: 'API 工具',
+      status: checks.apiTools.status,
+      message: checks.apiTools.message,
+    },
     { key: 'memory', name: '内存', status: checks.memory.status, message: checks.memory.message },
   ];
 });
@@ -427,8 +416,13 @@ onUnmounted(() => {
 }
 
 @keyframes skeleton-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 /* Two-column layout */

@@ -7,7 +7,6 @@
 
 import { spawn } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
-import { promisify } from 'node:util';
 
 interface PerformanceResult {
   test: string;
@@ -147,11 +146,7 @@ async function runPerformanceTests(): Promise<PerformanceReport> {
 
   for (const test of tests) {
     console.log(`⏱️  测试: ${test.name}`);
-    const result = await measureCommand(
-      test.command,
-      test.args,
-      test.expectedMaxDuration + 5000,
-    );
+    const result = await measureCommand(test.command, test.args, test.expectedMaxDuration + 5000);
     results.push(result);
 
     const status = result.success ? '✅' : '❌';
@@ -177,8 +172,7 @@ async function runPerformanceTests(): Promise<PerformanceReport> {
     totalTests: results.length,
     passedTests: results.filter((r) => r.success).length,
     failedTests: results.filter((r) => !r.success).length,
-    averageDuration:
-      durations.reduce((sum, d) => sum + d, 0) / durations.length,
+    averageDuration: durations.reduce((sum, d) => sum + d, 0) / durations.length,
     maxDuration: Math.max(...durations),
     minDuration: Math.min(...durations),
   };

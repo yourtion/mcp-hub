@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+
 import { McpServiceFactoryImpl, mcpServiceFactory } from './index.js';
 
 describe('McpServiceFactory', () => {

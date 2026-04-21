@@ -18,8 +18,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import SideNavigation from './SideNavigation.vue';
+
 import AppHeader from './AppHeader.vue';
+import SideNavigation from './SideNavigation.vue';
 
 const STORAGE_KEY = 'sidebar_collapsed';
 
@@ -76,11 +77,15 @@ onMounted(() => {
 
 /* Page transition */
 .page-enter-active {
-  transition: opacity var(--transition-base), transform var(--transition-base);
+  transition:
+    opacity var(--transition-base),
+    transform var(--transition-base);
 }
 
 .page-leave-active {
-  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .page-enter-from {

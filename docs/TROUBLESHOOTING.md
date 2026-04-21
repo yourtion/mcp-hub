@@ -41,11 +41,13 @@ tail -f logs/mcp-hub.log
 #### 问题：API 服务器无法启动
 
 **症状**:
+
 ```
 Error: listen EADDRINUSE: address already in use :::3000
 ```
 
 **解决方案**:
+
 ```bash
 # 检查端口占用
 lsof -i :3000
@@ -61,11 +63,13 @@ pnpm dev:api
 #### 问题：依赖包缺失
 
 **症状**:
+
 ```
 Error: Cannot find module '@mcp-core/mcp-hub-core'
 ```
 
 **解决方案**:
+
 ```bash
 # 重新安装依赖
 pnpm install
@@ -82,11 +86,13 @@ pnpm clean && pnpm build
 #### 问题：配置文件未找到
 
 **症状**:
+
 ```
 Error: Configuration file not found: mcp_service.json
 ```
 
 **解决方案**:
+
 ```bash
 # 检查配置文件路径
 ls -la backend/config/
@@ -101,11 +107,13 @@ cat backend/config/mcp_service.json | jq .
 #### 问题：配置格式错误
 
 **症状**:
+
 ```
 Error: Invalid JSON in configuration file
 ```
 
 **解决方案**:
+
 ```bash
 # 验证 JSON 格式
 jsonlint backend/config/mcp_service.json
@@ -125,11 +133,13 @@ jq . backend/config/mcp_service.json
 #### 问题：无法连接到 MCP 服务器
 
 **症状**:
+
 ```
 Error: Failed to connect to MCP server 'filesystem'
 ```
 
 **诊断步骤**:
+
 ```bash
 # 1. 检查服务器配置
 cat backend/config/mcp_service.json | jq '.servers.filesystem'
@@ -145,6 +155,7 @@ ping localhost
 ```
 
 **解决方案**:
+
 ```bash
 # 更新服务器配置
 {
@@ -169,11 +180,13 @@ ls -la /path/to/directory
 #### 问题：MCP 服务器超时
 
 **症状**:
+
 ```
 Error: MCP server timeout after 30000ms
 ```
 
 **解决方案**:
+
 ```bash
 # 增加超时时间
 {
@@ -197,11 +210,13 @@ time npx -y @modelcontextprotocol/server-slow
 #### 问题：组路由返回 404
 
 **症状**:
+
 ```
 GET /development/mcp/list_tools -> 404 Not Found
 ```
 
 **诊断步骤**:
+
 ```bash
 # 1. 检查组配置
 cat backend/config/group.json | jq '.groups.development'
@@ -214,6 +229,7 @@ curl http://localhost:8181/api/groups
 ```
 
 **解决方案**:
+
 ```bash
 # 确保组配置正确
 {
@@ -233,11 +249,13 @@ pnpm dev:api
 #### 问题：工具不在允许列表中
 
 **症状**:
+
 ```
 Error: Tool 'write_file' not allowed in group 'development'
 ```
 
 **解决方案**:
+
 ```bash
 # 更新组配置，添加工具到允许列表
 {
@@ -263,11 +281,13 @@ Error: Tool 'write_file' not allowed in group 'development'
 #### 问题：CLI 命令未找到
 
 **症状**:
+
 ```
 bash: mcp-hub: command not found
 ```
 
 **解决方案**:
+
 ```bash
 # 检查 CLI 包是否已构建
 cd packages/cli
@@ -286,11 +306,13 @@ echo $PATH
 #### 问题：CLI 配置文件错误
 
 **症状**:
+
 ```
 Error: Invalid CLI configuration
 ```
 
 **解决方案**:
+
 ```bash
 # 创建默认配置
 mcp-hub --init
@@ -317,6 +339,7 @@ mcp-hub --config mcp_service.json --validate
 #### 问题：响应时间过长
 
 **诊断步骤**:
+
 ```bash
 # 检查系统指标
 curl http://localhost:8181/api/system/metrics
@@ -329,6 +352,7 @@ top -p $(pgrep -f mcp-hub)
 ```
 
 **解决方案**:
+
 ```bash
 # 优化连接池配置
 {
@@ -363,6 +387,7 @@ top -p $(pgrep -f mcp-hub)
 #### 问题：内存使用过高
 
 **诊断步骤**:
+
 ```bash
 # 检查内存使用
 ps aux | grep mcp-hub
@@ -375,6 +400,7 @@ kill -USR2 <PID>
 ```
 
 **解决方案**:
+
 ```bash
 # 限制 Node.js 内存
 node --max-old-space-size=512 backend/dist/src/index.js
@@ -397,11 +423,13 @@ node --trace-gc backend/dist/src/index.js
 #### 问题：Docker 容器无法启动
 
 **症状**:
+
 ```
 Error: Container exited with code 1
 ```
 
 **诊断步骤**:
+
 ```bash
 # 查看容器日志
 docker logs mcp-hub-api
@@ -414,6 +442,7 @@ docker exec -it mcp-hub-api /bin/sh
 ```
 
 **解决方案**:
+
 ```bash
 # 检查 Dockerfile
 cat backend/Dockerfile
@@ -428,11 +457,13 @@ ls -la ./backend/config/
 #### 问题：容器间网络连接问题
 
 **症状**:
+
 ```
 Error: connect ECONNREFUSED 127.0.0.1:3000
 ```
 
 **解决方案**:
+
 ```bash
 # 检查 docker-compose 网络配置
 docker-compose ps
@@ -451,11 +482,13 @@ docker-compose port mcp-hub-api 3000
 #### 问题：文件权限被拒绝
 
 **症状**:
+
 ```
 Error: EACCES: permission denied, open '/workspace/file.txt'
 ```
 
 **解决方案**:
+
 ```bash
 # 检查文件权限
 ls -la /workspace/
@@ -477,11 +510,13 @@ services:
 #### 问题：环境变量访问权限
 
 **症状**:
+
 ```
 Error: Environment variable BRAVE_API_KEY not accessible
 ```
 
 **解决方案**:
+
 ```bash
 # 检查环境变量
 env | grep BRAVE_API_KEY

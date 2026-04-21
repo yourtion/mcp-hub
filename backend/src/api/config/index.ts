@@ -1,6 +1,7 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod/v4';
+
 import { ConfigService } from '../../services/config_service.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 
@@ -62,10 +63,7 @@ configApi.put('/', zValidator('json', configUpdateSchema), async (c) => {
     const { configType, config, description } = c.req.valid('json');
 
     // 验证配置
-    const validationResult = await configService.validateConfig(
-      configType,
-      config,
-    );
+    const validationResult = await configService.validateConfig(configType, config);
     if (!validationResult.valid) {
       return c.json(
         {
@@ -94,34 +92,24 @@ configApi.put('/', zValidator('json', configUpdateSchema), async (c) => {
 /**
  * POST /api/config/validate - 验证配置
  */
-configApi.post(
-  '/validate',
-  zValidator('json', configValidationSchema),
-  async (c) => {
-    try {
-      const { configType, config } = c.req.valid('json');
+configApi.post('/validate', zValidator('json', configValidationSchema), async (c) => {
+  try {
+    const { configType, config } = c.req.valid('json');
 
-      const validationResult = await configService.validateConfig(
-        configType,
-        config,
-      );
-      const impactAnalysis = await configService.analyzeConfigImpact(
-        configType,
-        config,
-      );
+    const validationResult = await configService.validateConfig(configType, config);
+    const impactAnalysis = await configService.analyzeConfigImpact(configType, config);
 
-      return successResponse(c, {
-        valid: validationResult.valid,
-        errors: validationResult.errors,
-        warnings: validationResult.warnings,
-        impact: impactAnalysis,
-      });
-    } catch (error) {
-      console.error('配置验证失败:', error);
-      return errorResponse(c, error as Error, 500);
-    }
-  },
-);
+    return successResponse(c, {
+      valid: validationResult.valid,
+      errors: validationResult.errors,
+      warnings: validationResult.warnings,
+      impact: impactAnalysis,
+    });
+  } catch (error) {
+    console.error('配置验证失败:', error);
+    return errorResponse(c, error as Error, 500);
+  }
+});
 
 /**
  * GET /api/config/history - 获取配置历史
@@ -130,17 +118,9 @@ configApi.get('/history', async (c) => {
   try {
     const limit = Number(c.req.query('limit')) || 50;
     const offset = Number(c.req.query('offset')) || 0;
-    const configType = c.req.query('configType') as
-      | 'system'
-      | 'mcp'
-      | 'groups'
-      | undefined;
+    const configType = c.req.query('configType') as 'system' | 'mcp' | 'groups' | undefined;
 
-    const history = await configService.getConfigHistory(
-      limit,
-      offset,
-      configType,
-    );
+    const history = await configService.getConfigHistory(limit, offset, configType);
 
     return successResponse(c, {
       history,
@@ -161,10 +141,7 @@ configApi.post('/backup', zValidator('json', configBackupSchema), async (c) => {
   try {
     const { description, includeTypes } = c.req.valid('json');
 
-    const backupId = await configService.createBackup(
-      description,
-      includeTypes,
-    );
+    const backupId = await configService.createBackup(description, includeTypes);
 
     return successResponse(c, {
       backupId,
@@ -179,65 +156,50 @@ configApi.post('/backup', zValidator('json', configBackupSchema), async (c) => {
 /**
  * POST /api/config/restore - 恢复配置
  */
-configApi.post(
-  '/restore',
-  zValidator('json', configRestoreSchema),
-  async (c) => {
-    try {
-      const { backupId, configTypes } = c.req.valid('json');
+configApi.post('/restore', zValidator('json', configRestoreSchema), async (c) => {
+  try {
+    const { backupId, configTypes } = c.req.valid('json');
 
-      await configService.restoreFromBackup(backupId, configTypes);
+    await configService.restoreFromBackup(backupId, configTypes);
 
-      return successResponse(c, { message: '配置恢复成功' });
-    } catch (error) {
-      console.error('恢复配置失败:', error);
-      return errorResponse(c, error as Error, 500);
-    }
-  },
-);
+    return successResponse(c, { message: '配置恢复成功' });
+  } catch (error) {
+    console.error('恢复配置失败:', error);
+    return errorResponse(c, error as Error, 500);
+  }
+});
 
 /**
  * POST /api/config/test - 测试配置
  */
-configApi.post(
-  '/test',
-  zValidator('json', configValidationSchema),
-  async (c) => {
-    try {
-      const { configType, config } = c.req.valid('json');
+configApi.post('/test', zValidator('json', configValidationSchema), async (c) => {
+  try {
+    const { configType, config } = c.req.valid('json');
 
-      const testResult = await configService.testConfig(configType, config);
+    const testResult = await configService.testConfig(configType, config);
 
-      return successResponse(c, testResult);
-    } catch (error) {
-      console.error('配置测试失败:', error);
-      return errorResponse(c, error as Error, 500);
-    }
-  },
-);
+    return successResponse(c, testResult);
+  } catch (error) {
+    console.error('配置测试失败:', error);
+    return errorResponse(c, error as Error, 500);
+  }
+});
 
 /**
  * POST /api/config/preview - 预览配置更改
  */
-configApi.post(
-  '/preview',
-  zValidator('json', configValidationSchema),
-  async (c) => {
-    try {
-      const { configType, config } = c.req.valid('json');
+configApi.post('/preview', zValidator('json', configValidationSchema), async (c) => {
+  try {
+    const { configType, config } = c.req.valid('json');
 
-      const preview = await configService.previewConfigChanges(
-        configType,
-        config,
-      );
+    const preview = await configService.previewConfigChanges(configType, config);
 
-      return successResponse(c, preview);
-    } catch (error) {
-      console.error('配置预览失败:', error);
-      return errorResponse(c, error as Error, 500);
-    }
-  },
-);
+    return successResponse(c, preview);
+  } catch (error) {
+    console.error('配置预览失败:', error);
+    return errorResponse(c, error as Error, 500);
+  }
+});
 
 /**
  * GET /api/config/backups - 获取备份列表

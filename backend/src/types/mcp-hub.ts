@@ -74,12 +74,8 @@ export interface GroupManager {
     availableServers: number;
     configuredTools: number;
   };
-  validateGroupHealth(
-    groupId: string,
-  ): Promise<{ isHealthy: boolean; issues: string[] }>;
-  getAllGroupsHealth(): Promise<
-    Map<string, { isHealthy: boolean; issues: string[] }>
-  >;
+  validateGroupHealth(groupId: string): Promise<{ isHealthy: boolean; issues: string[] }>;
+  getAllGroupsHealth(): Promise<Map<string, { isHealthy: boolean; issues: string[] }>>;
   getGroupToolsByServer(groupId: string): Promise<Map<string, Tool[]>>;
 }
 
@@ -109,11 +105,7 @@ export interface ToolManager {
 export interface McpHubService {
   initialize(): Promise<void>;
   listTools(groupId?: string): Promise<Tool[]>;
-  callTool(
-    toolName: string,
-    args: Record<string, unknown>,
-    groupId?: string,
-  ): Promise<ToolResult>;
+  callTool(toolName: string, args: Record<string, unknown>, groupId?: string): Promise<ToolResult>;
   getGroupInfo(groupId: string): Group | undefined;
   getServerHealth(): Map<string, ServerStatus>;
   shutdown(): Promise<void>;

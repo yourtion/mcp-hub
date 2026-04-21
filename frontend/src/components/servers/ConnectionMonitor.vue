@@ -15,7 +15,9 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue';
+
 import { useServerStore } from '@/stores/server';
+
 import type { ServerStatus } from '@/types/server';
 
 const props = defineProps<{

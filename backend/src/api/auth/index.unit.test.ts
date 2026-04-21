@@ -2,11 +2,12 @@
  * 认证API测试
  */
 
+import { Hono } from 'hono';
 import fs from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { AuthService } from '../../services/auth.js';
 import { resetConfigInstances } from '../../utils/config.js';
 import { createAuthApi } from './index.js';
@@ -15,11 +16,9 @@ import { createAuthApi } from './index.js';
 vi.mock('bcryptjs', () => ({
   default: {
     hash: vi.fn().mockResolvedValue('$2a$10$mockedhashvalue'),
-    compare: vi
-      .fn()
-      .mockImplementation(async (password: string, _hash: string) => {
-        return password === 'password' || password === 'admin123';
-      }),
+    compare: vi.fn().mockImplementation(async (password: string, _hash: string) => {
+      return password === 'password' || password === 'admin123';
+    }),
   },
 }));
 
@@ -413,9 +412,7 @@ describe('认证API', () => {
       const data = await res.json();
       expect(data.success).toBe(false);
       // JWT库会将无效token识别为过期token
-      expect(
-        ['AUTH_INVALID_TOKEN', 'AUTH_TOKEN_EXPIRED'].includes(data.error.code),
-      ).toBe(true);
+      expect(['AUTH_INVALID_TOKEN', 'AUTH_TOKEN_EXPIRED'].includes(data.error.code)).toBe(true);
     });
 
     it('应该拒绝已登出的token', async () => {

@@ -20,7 +20,7 @@ FROM base AS builder
 
 # 复制源代码
 COPY frontend ./frontend
-COPY tsconfig.json biome.json ./
+COPY tsconfig.json ./
 
 # 构建前端
 RUN pnpm build:fe

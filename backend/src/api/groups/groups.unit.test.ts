@@ -4,6 +4,7 @@
 
 import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { groupsApi } from './index.js';
 
 // 定义路由类型 - 修改以匹配Hono的实际路由类型
@@ -84,8 +85,7 @@ describe('Groups API Integration Tests', () => {
       // 查找GET /:groupId路由
       const routes = groupsApi.routes;
       const getDetailRoute = routes.find(
-        (route: RouteInfo) =>
-          route.path === '/:groupId' && route.method === 'GET',
+        (route: RouteInfo) => route.path === '/:groupId' && route.method === 'GET',
       );
       expect(getDetailRoute).toBeDefined();
     });
@@ -98,8 +98,7 @@ describe('Groups API Integration Tests', () => {
       // 查找PUT /:groupId路由
       const routes = groupsApi.routes;
       const putRoute = routes.find(
-        (route: RouteInfo) =>
-          route.path === '/:groupId' && route.method === 'PUT',
+        (route: RouteInfo) => route.path === '/:groupId' && route.method === 'PUT',
       );
       expect(putRoute).toBeDefined();
     });
@@ -112,8 +111,7 @@ describe('Groups API Integration Tests', () => {
       // 查找DELETE /:groupId路由
       const routes = groupsApi.routes;
       const deleteRoute = routes.find(
-        (route: RouteInfo) =>
-          route.path === '/:groupId' && route.method === 'DELETE',
+        (route: RouteInfo) => route.path === '/:groupId' && route.method === 'DELETE',
       );
       expect(deleteRoute).toBeDefined();
     });
@@ -126,8 +124,7 @@ describe('Groups API Integration Tests', () => {
       // 查找健康检查路由
       const routes = groupsApi.routes;
       const healthRoute = routes.find(
-        (route: RouteInfo) =>
-          route.path === '/:groupId/health' && route.method === 'GET',
+        (route: RouteInfo) => route.path === '/:groupId/health' && route.method === 'GET',
       );
       expect(healthRoute).toBeDefined();
     });
@@ -140,8 +137,7 @@ describe('Groups API Integration Tests', () => {
       // 查找工具列表路由
       const routes = groupsApi.routes;
       const toolsRoute = routes.find(
-        (route: RouteInfo) =>
-          route.path === '/:groupId/tools' && route.method === 'GET',
+        (route: RouteInfo) => route.path === '/:groupId/tools' && route.method === 'GET',
       );
       expect(toolsRoute).toBeDefined();
     });
@@ -154,8 +150,7 @@ describe('Groups API Integration Tests', () => {
       // 查找工具配置路由
       const routes = groupsApi.routes;
       const toolsConfigRoute = routes.find(
-        (route: RouteInfo) =>
-          route.path === '/:groupId/tools' && route.method === 'POST',
+        (route: RouteInfo) => route.path === '/:groupId/tools' && route.method === 'POST',
       );
       expect(toolsConfigRoute).toBeDefined();
     });
@@ -168,8 +163,7 @@ describe('Groups API Integration Tests', () => {
       // 查找可用工具路由
       const routes = groupsApi.routes;
       const availableToolsRoute = routes.find(
-        (route: RouteInfo) =>
-          route.path === '/:groupId/available-tools' && route.method === 'GET',
+        (route: RouteInfo) => route.path === '/:groupId/available-tools' && route.method === 'GET',
       );
       expect(availableToolsRoute).toBeDefined();
     });
@@ -183,8 +177,7 @@ describe('Groups API Integration Tests', () => {
       const routes = groupsApi.routes;
       const validateAccessRoute = routes.find(
         (route: RouteInfo) =>
-          route.path === '/:groupId/validate-tool-access' &&
-          route.method === 'POST',
+          route.path === '/:groupId/validate-tool-access' && route.method === 'POST',
       );
       expect(validateAccessRoute).toBeDefined();
     });
@@ -197,8 +190,7 @@ describe('Groups API Integration Tests', () => {
       // 查找验证密钥设置路由
       const routes = groupsApi.routes;
       const setValidationKeyRoute = routes.find(
-        (route: RouteInfo) =>
-          route.path === '/:groupId/validation-key' && route.method === 'POST',
+        (route: RouteInfo) => route.path === '/:groupId/validation-key' && route.method === 'POST',
       );
       expect(setValidationKeyRoute).toBeDefined();
     });
@@ -211,8 +203,7 @@ describe('Groups API Integration Tests', () => {
       // 查找验证密钥状态路由
       const routes = groupsApi.routes;
       const getValidationKeyRoute = routes.find(
-        (route: RouteInfo) =>
-          route.path === '/:groupId/validation-key' && route.method === 'GET',
+        (route: RouteInfo) => route.path === '/:groupId/validation-key' && route.method === 'GET',
       );
       expect(getValidationKeyRoute).toBeDefined();
     });
@@ -225,8 +216,7 @@ describe('Groups API Integration Tests', () => {
       // 查找密钥验证路由
       const routes = groupsApi.routes;
       const validateKeyRoute = routes.find(
-        (route: RouteInfo) =>
-          route.path === '/:groupId/validate-key' && route.method === 'POST',
+        (route: RouteInfo) => route.path === '/:groupId/validate-key' && route.method === 'POST',
       );
       expect(validateKeyRoute).toBeDefined();
     });
@@ -240,8 +230,7 @@ describe('Groups API Integration Tests', () => {
       const routes = groupsApi.routes;
       const deleteValidationKeyRoute = routes.find(
         (route: RouteInfo) =>
-          route.path === '/:groupId/validation-key' &&
-          route.method === 'DELETE',
+          route.path === '/:groupId/validation-key' && route.method === 'DELETE',
       );
       expect(deleteValidationKeyRoute).toBeDefined();
     });
@@ -255,8 +244,7 @@ describe('Groups API Integration Tests', () => {
       const routes = groupsApi.routes;
       const generateValidationKeyRoute = routes.find(
         (route: RouteInfo) =>
-          route.path === '/:groupId/generate-validation-key' &&
-          route.method === 'POST',
+          route.path === '/:groupId/generate-validation-key' && route.method === 'POST',
       );
       expect(generateValidationKeyRoute).toBeDefined();
     });
@@ -269,8 +257,7 @@ describe('Groups API Integration Tests', () => {
       // 查找服务器列表路由
       const routes = groupsApi.routes;
       const serversRoute = routes.find(
-        (route: RouteInfo) =>
-          route.path === '/:groupId/servers' && route.method === 'GET',
+        (route: RouteInfo) => route.path === '/:groupId/servers' && route.method === 'GET',
       );
       expect(serversRoute).toBeDefined();
     });
@@ -281,9 +268,7 @@ describe('Groups API Integration Tests', () => {
       expect(groupsApi).toBeDefined();
 
       const routes = groupsApi.routes;
-      const routePaths = routes.map(
-        (route: RouteInfo) => `${route.method} ${route.path}`,
-      );
+      const routePaths = routes.map((route: RouteInfo) => `${route.method} ${route.path}`);
 
       // 检查核心CRUD路由
       expect(routePaths).toContain('GET /');

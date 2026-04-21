@@ -7,9 +7,7 @@
             <template #icon><ChevronLeftIcon /></template>
             返回工具详情
           </t-button>
-          <h2 class="mcp-page__title test-title">
-            测试工具: {{ tool?.name || toolName }}
-          </h2>
+          <h2 class="mcp-page__title test-title">测试工具: {{ tool?.name || toolName }}</h2>
           <p class="mcp-page__desc">{{ tool?.description || '加载中...' }}</p>
         </div>
       </div>
@@ -23,12 +21,7 @@
         <div class="mcp-card test-form-card">
           <h3 class="test-form-card__title">参数输入</h3>
           <template v-if="schemaProperties.length > 0">
-            <t-form
-              ref="formRef"
-              :data="formData"
-              label-align="top"
-              :label-width="0"
-            >
+            <t-form ref="formRef" :data="formData" label-align="top" :label-width="0">
               <t-form-item
                 v-for="prop in schemaProperties"
                 :key="prop.name"
@@ -64,10 +57,7 @@
                 />
 
                 <!-- Boolean -->
-                <t-switch
-                  v-else-if="prop.type === 'boolean'"
-                  v-model="formData[prop.name]"
-                />
+                <t-switch v-else-if="prop.type === 'boolean'" v-model="formData[prop.name]" />
 
                 <!-- Array / Object (JSON textarea) -->
                 <t-textarea
@@ -86,11 +76,7 @@
           </template>
 
           <div class="test-form-card__actions">
-            <t-button
-              theme="primary"
-              :loading="testing"
-              @click="handleTest"
-            >
+            <t-button theme="primary" :loading="testing" @click="handleTest">
               <template #icon><CheckCircleIcon /></template>
               验证参数
             </t-button>
@@ -106,17 +92,21 @@
               <div class="test-result-status">
                 <span
                   class="test-result-status__badge"
-                  :class="testResponse.validation.isValid
-                    ? 'test-result-status__badge--valid'
-                    : 'test-result-status__badge--invalid'"
+                  :class="
+                    testResponse.validation.isValid
+                      ? 'test-result-status__badge--valid'
+                      : 'test-result-status__badge--invalid'
+                  "
                 >
                   {{ testResponse.validation.isValid ? '参数有效' : '参数无效' }}
                 </span>
                 <span
                   class="test-result-status__badge"
-                  :class="testResponse.canExecute
-                    ? 'test-result-status__badge--valid'
-                    : 'test-result-status__badge--invalid'"
+                  :class="
+                    testResponse.canExecute
+                      ? 'test-result-status__badge--valid'
+                      : 'test-result-status__badge--invalid'
+                  "
                 >
                   {{ testResponse.canExecute ? '可执行' : '不可执行' }}
                 </span>
@@ -177,10 +167,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
 import { ChevronLeftIcon, CheckCircleIcon } from 'tdesign-icons-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next';
+import { ref } from 'vue';
+
 import { useToolForm } from '@/composables/useToolForm';
+
 import type { ToolTestResponse } from '@/types/tool';
 
 const {

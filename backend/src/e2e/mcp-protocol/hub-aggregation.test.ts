@@ -6,12 +6,9 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { app } from '../../app.js';
-import {
-  cleanupTestEnvironment,
-  setupTestEnvironment,
-  sleep,
-} from '../test-utils.js';
+import { cleanupTestEnvironment, setupTestEnvironment, sleep } from '../test-utils.js';
 
 describe('MCP Hub聚合功能端到端测试', () => {
   let _testApp: typeof app;
@@ -30,9 +27,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
 
   describe('多服务器工具聚合', () => {
     it('应该能够聚合来自多个MCP服务器的工具', async () => {
-      const transport = new SSEClientTransport(
-        new URL('http://localhost:8181/mcp/sse'),
-      );
+      const transport = new SSEClientTransport(new URL('http://localhost:8181/mcp/sse'));
       const client = new Client(
         {
           name: 'aggregation-test-client',
@@ -77,9 +72,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
     }, 30000);
 
     it('应该能够正确路由工具调用到对应的后端服务器', async () => {
-      const transport = new SSEClientTransport(
-        new URL('http://localhost:8181/mcp/sse'),
-      );
+      const transport = new SSEClientTransport(new URL('http://localhost:8181/mcp/sse'));
       const client = new Client(
         {
           name: 'routing-test-client',
@@ -137,9 +130,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
     }, 45000);
 
     it('应该能够处理后端服务器的不同响应格式', async () => {
-      const transport = new SSEClientTransport(
-        new URL('http://localhost:8181/mcp/sse'),
-      );
+      const transport = new SSEClientTransport(new URL('http://localhost:8181/mcp/sse'));
       const client = new Client(
         {
           name: 'response-format-test',
@@ -194,9 +185,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
             }
           }
 
-          console.log(
-            `Processed ${responsesReceived.length} different response formats`,
-          );
+          console.log(`Processed ${responsesReceived.length} different response formats`);
         }
       } finally {
         await client.close();
@@ -207,9 +196,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
 
   describe('服务器状态管理', () => {
     it('应该能够处理后端服务器的连接状态变化', async () => {
-      const transport = new SSEClientTransport(
-        new URL('http://localhost:8181/mcp/sse'),
-      );
+      const transport = new SSEClientTransport(new URL('http://localhost:8181/mcp/sse'));
       const client = new Client(
         {
           name: 'server-status-test',
@@ -250,9 +237,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
     }, 30000);
 
     it('应该能够处理部分后端服务器不可用的情况', async () => {
-      const transport = new SSEClientTransport(
-        new URL('http://localhost:8181/mcp/sse'),
-      );
+      const transport = new SSEClientTransport(new URL('http://localhost:8181/mcp/sse'));
       const client = new Client(
         {
           name: 'partial-failure-test',
@@ -289,18 +274,12 @@ describe('MCP Hub聚合功能端到端测试', () => {
             } catch (error) {
               failedCalls++;
               // 失败应该是业务逻辑错误，不是服务器不可用错误
-              expect((error as Error).message).not.toContain(
-                'server unavailable',
-              );
-              expect((error as Error).message).not.toContain(
-                'connection refused',
-              );
+              expect((error as Error).message).not.toContain('server unavailable');
+              expect((error as Error).message).not.toContain('connection refused');
             }
           }
 
-          console.log(
-            `Successful calls: ${successfulCalls}, Failed calls: ${failedCalls}`,
-          );
+          console.log(`Successful calls: ${successfulCalls}, Failed calls: ${failedCalls}`);
         }
       } finally {
         await client.close();
@@ -311,9 +290,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
 
   describe('工具命名空间和冲突处理', () => {
     it('应该能够处理来自不同服务器的同名工具', async () => {
-      const transport = new SSEClientTransport(
-        new URL('http://localhost:8181/mcp/sse'),
-      );
+      const transport = new SSEClientTransport(new URL('http://localhost:8181/mcp/sse'));
       const client = new Client(
         {
           name: 'namespace-test',
@@ -337,15 +314,11 @@ describe('MCP Hub聚合功能端到端测试', () => {
 
           // 检查是否有重复的工具名称
           if (toolNames.length !== uniqueNames.size) {
-            console.log(
-              'Found duplicate tool names, checking namespace handling...',
-            );
+            console.log('Found duplicate tool names, checking namespace handling...');
 
             // 如果有重复名称，Hub应该通过某种方式区分它们
             // 例如：添加服务器前缀、后缀或其他标识
-            const duplicates = toolNames.filter(
-              (name, index) => toolNames.indexOf(name) !== index,
-            );
+            const duplicates = toolNames.filter((name, index) => toolNames.indexOf(name) !== index);
 
             for (const duplicateName of duplicates) {
               const duplicateTools = toolsResult.tools.filter(
@@ -354,9 +327,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
 
               // 验证重复工具有不同的描述或其他区分信息
               if (duplicateTools.length > 1) {
-                const descriptions = duplicateTools.map(
-                  (tool) => tool.description,
-                );
+                const descriptions = duplicateTools.map((tool) => tool.description);
                 const uniqueDescriptions = new Set(descriptions);
 
                 // 应该有不同的描述来区分同名工具
@@ -380,9 +351,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
     }, 30000);
 
     it('应该能够提供工具的来源信息', async () => {
-      const transport = new SSEClientTransport(
-        new URL('http://localhost:8181/mcp/sse'),
-      );
+      const transport = new SSEClientTransport(new URL('http://localhost:8181/mcp/sse'));
       const client = new Client(
         {
           name: 'source-info-test',
@@ -433,9 +402,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
 
   describe('性能和扩展性', () => {
     it('应该能够高效处理大量工具的聚合', async () => {
-      const transport = new SSEClientTransport(
-        new URL('http://localhost:8181/mcp/sse'),
-      );
+      const transport = new SSEClientTransport(new URL('http://localhost:8181/mcp/sse'));
       const client = new Client(
         {
           name: 'scalability-test',
@@ -463,9 +430,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
         // 即使有大量工具，响应时间也应该合理
         expect(responseTime).toBeLessThan(10000); // 10秒内
 
-        console.log(
-          `Listed ${toolsResult.tools.length} tools in ${responseTime}ms`,
-        );
+        console.log(`Listed ${toolsResult.tools.length} tools in ${responseTime}ms`);
 
         // 如果有工具，测试调用性能
         if (toolsResult.tools.length > 0) {
@@ -494,9 +459,7 @@ describe('MCP Hub聚合功能端到端测试', () => {
     }, 45000);
 
     it('应该能够处理并发的工具调用', async () => {
-      const transport = new SSEClientTransport(
-        new URL('http://localhost:8181/mcp/sse'),
-      );
+      const transport = new SSEClientTransport(new URL('http://localhost:8181/mcp/sse'));
       const client = new Client(
         {
           name: 'concurrent-calls-test',
@@ -519,15 +482,13 @@ describe('MCP Hub聚合功能端到端测试', () => {
           const concurrentCallCount = 5;
 
           // 创建并发调用
-          const concurrentCalls = Array.from(
-            { length: concurrentCallCount },
-            () =>
-              client
-                .callTool({
-                  name: tool.name,
-                  arguments: {},
-                })
-                .catch((error) => ({ error: (error as Error).message })),
+          const concurrentCalls = Array.from({ length: concurrentCallCount }, () =>
+            client
+              .callTool({
+                name: tool.name,
+                arguments: {},
+              })
+              .catch((error) => ({ error: (error as Error).message })),
           );
 
           const startTime = Date.now();

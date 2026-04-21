@@ -1,8 +1,3 @@
-/**
- * 从 Zod Schema 推导的类型定义
- * 所有配置类型均从 schema 推导，保证 schema 与类型始终一致
- */
-import type { z } from 'zod/v4';
 import type {
   ApiEndpointConfigSchema,
   ApiToolConfigSchema,
@@ -34,6 +29,11 @@ import type {
   StdioServerConfigSchema,
 } from '../schemas/server.schema.js';
 import type { SystemConfigSchema } from '../schemas/system.schema.js';
+/**
+ * 从 Zod Schema 推导的类型定义
+ * 所有配置类型均从 schema 推导，保证 schema 与类型始终一致
+ */
+import type { z } from 'zod/v4';
 
 // Server types
 export type BaseServerConfig = z.infer<typeof BaseServerConfigSchema>;

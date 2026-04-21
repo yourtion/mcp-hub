@@ -48,8 +48,7 @@ try {
 
 // 3. 检查配置文件结构
 console.log('\n3. 配置文件结构检查:');
-const configDir =
-  process.env.CONFIG_PATH || path.join(tempDir, 'test-config-check');
+const configDir = process.env.CONFIG_PATH || path.join(tempDir, 'test-config-check');
 
 try {
   // 创建测试配置目录
@@ -64,10 +63,7 @@ try {
       tools: [],
     },
   };
-  writeFileSync(
-    path.join(configDir, 'group.json'),
-    JSON.stringify(groupConfig, null, 2),
-  );
+  writeFileSync(path.join(configDir, 'group.json'), JSON.stringify(groupConfig, null, 2));
 
   const mcpConfig = {
     servers: {
@@ -79,10 +75,7 @@ try {
       },
     },
   };
-  writeFileSync(
-    path.join(configDir, 'mcp_server.json'),
-    JSON.stringify(mcpConfig, null, 2),
-  );
+  writeFileSync(path.join(configDir, 'mcp_server.json'), JSON.stringify(mcpConfig, null, 2));
 
   const systemConfig = {
     server: {
@@ -115,10 +108,7 @@ try {
       },
     },
   };
-  writeFileSync(
-    path.join(configDir, 'system.json'),
-    JSON.stringify(systemConfig, null, 2),
-  );
+  writeFileSync(path.join(configDir, 'system.json'), JSON.stringify(systemConfig, null, 2));
 
   console.log(`   ✓ 配置目录可创建: ${configDir}`);
   console.log(`   ✓ group.json 可写入`);
@@ -126,9 +116,7 @@ try {
   console.log(`   ✓ system.json 可写入`);
 
   // 验证配置文件可读
-  const groupData = JSON.parse(
-    readFileSync(path.join(configDir, 'group.json'), 'utf-8'),
-  );
+  const groupData = JSON.parse(readFileSync(path.join(configDir, 'group.json'), 'utf-8'));
   if (groupData['test-group']) {
     console.log(`   ✓ group.json 可读且格式正确`);
   }

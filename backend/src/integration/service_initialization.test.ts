@@ -1,10 +1,8 @@
-import type {
-  GroupConfig,
-  McpConfig,
-  SystemConfig,
-} from '@mcp-core/mcp-hub-share';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { validateAllConfigs } from '../validation/config.js';
+
+import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
 
 describe('服务初始化集成测试', () => {
   beforeEach(() => {
@@ -157,9 +155,7 @@ describe('服务初始化集成测试', () => {
       // 验证系统配置
       expect(result.data.systemConfig).toBeDefined();
       expect(result.data.systemConfig?.users.admin.groups).toContain('default');
-      expect(result.data.systemConfig?.users['time-user'].groups).toEqual([
-        'time-tools',
-      ]);
+      expect(result.data.systemConfig?.users['time-user'].groups).toEqual(['time-tools']);
     }
   });
 
@@ -203,11 +199,7 @@ describe('服务初始化集成测试', () => {
     };
 
     // 执行配置验证
-    const result = validateAllConfigs(
-      invalidMcpConfig,
-      invalidGroupConfig,
-      invalidSystemConfig,
-    );
+    const result = validateAllConfigs(invalidMcpConfig, invalidGroupConfig, invalidSystemConfig);
 
     // 验证错误结果
     expect(result.success).toBe(false);

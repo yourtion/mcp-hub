@@ -5,13 +5,16 @@
 ## 基础端点
 
 ### GET /api/tools
+
 获取所有工具列表
 
 **查询参数:**
+
 - `serverId` (可选): 按服务器ID过滤工具
 - `groupId` (可选): 指定组ID，默认为 'default'
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -36,32 +39,41 @@
 ```
 
 ### GET /api/tools/server/:serverId
+
 获取指定服务器的工具
 
 **路径参数:**
+
 - `serverId`: 服务器ID
 
 **查询参数:**
+
 - `groupId` (可选): 指定组ID，默认为 'default'
 
 ### GET /api/tools/:toolName
+
 获取工具详细信息
 
 **路径参数:**
+
 - `toolName`: 工具名称
 
 **查询参数:**
+
 - `groupId` (可选): 指定组ID，默认为 'default'
 
 ## 工具执行
 
 ### POST /api/tools/:toolName/execute
+
 执行工具
 
 **路径参数:**
+
 - `toolName`: 工具名称
 
 **请求体:**
+
 ```json
 {
   "arguments": {
@@ -74,6 +86,7 @@
 ```
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -96,12 +109,15 @@
 ```
 
 ### POST /api/tools/:toolName/test
+
 测试工具参数（验证但不执行）
 
 **路径参数:**
+
 - `toolName`: 工具名称
 
 **请求体:**
+
 ```json
 {
   "arguments": {
@@ -112,6 +128,7 @@
 ```
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -134,9 +151,11 @@
 ## 历史记录和统计
 
 ### GET /api/tools/history
+
 获取工具执行历史记录
 
 **查询参数:**
+
 - `limit` (可选): 限制返回数量，默认50
 - `offset` (可选): 偏移量，默认0
 - `toolName` (可选): 按工具名称过滤
@@ -144,19 +163,24 @@
 - `groupId` (可选): 按组ID过滤
 
 ### GET /api/tools/history/:executionId
+
 获取特定执行记录的详细信息
 
 **路径参数:**
+
 - `executionId`: 执行记录ID
 
 ### GET /api/tools/stats
+
 获取工具执行统计信息
 
 **查询参数:**
+
 - `groupId` (可选): 按组ID过滤
 - `serverId` (可选): 按服务器ID过滤
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -185,12 +209,15 @@
 ## 监控和健康检查
 
 ### GET /api/tools/monitoring
+
 获取工具状态监控信息
 
 **查询参数:**
+
 - `groupId` (可选): 指定组ID，默认为 'default'
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -216,20 +243,25 @@
 ```
 
 ### GET /api/tools/health
+
 获取工具健康检查信息
 
 **查询参数:**
+
 - `groupId` (可选): 指定组ID，默认为 'default'
 
 ### GET /api/tools/performance
+
 获取工具性能分析信息
 
 **查询参数:**
+
 - `timeRange` (可选): 时间范围，可选值: '1h', '6h', '24h', '7d'，默认 '1h'
 - `groupId` (可选): 按组ID过滤
 - `serverId` (可选): 按服务器ID过滤
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -265,9 +297,11 @@
 ```
 
 ### GET /api/tools/errors
+
 获取工具错误日志和调试信息
 
 **查询参数:**
+
 - `limit` (可选): 限制返回数量，默认50
 - `offset` (可选): 偏移量，默认0
 - `toolName` (可选): 按工具名称过滤
@@ -276,6 +310,7 @@
 - `severity` (可选): 错误严重程度过滤
 
 **响应示例:**
+
 ```json
 {
   "success": true,

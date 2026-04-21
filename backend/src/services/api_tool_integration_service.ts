@@ -7,8 +7,10 @@ import {
   type ApiToMcpServiceManager,
   ApiToMcpServiceManagerImpl,
 } from '@mcp-core/mcp-hub-core/api-to-mcp';
-import type { Tool, ToolResult } from '../types/mcp-hub.js';
+
 import { logger } from '../utils/logger.js';
+
+import type { Tool, ToolResult } from '../types/mcp-hub.js';
 
 /**
  * API工具集成服务类
@@ -84,10 +86,7 @@ export class ApiToolIntegrationService {
    * @param args 调用参数
    * @returns 工具执行结果
    */
-  async executeApiTool(
-    toolName: string,
-    args: Record<string, unknown>,
-  ): Promise<ToolResult> {
+  async executeApiTool(toolName: string, args: Record<string, unknown>): Promise<ToolResult> {
     if (!this.initialized) {
       return {
         isError: true,
@@ -103,10 +102,7 @@ export class ApiToolIntegrationService {
     logger.debug('执行API工具', { toolName, args });
 
     try {
-      const result = await this.apiServiceManager.executeApiTool(
-        toolName,
-        args,
-      );
+      const result = await this.apiServiceManager.executeApiTool(toolName, args);
 
       // 转换为MCP Hub的ToolResult格式
       return {
@@ -208,8 +204,7 @@ export class ApiToolIntegrationService {
       // ✅ 改进：提供更详细的错误信息
       const errorMessage = (error as Error).message;
       const isNotInitialized =
-        errorMessage.includes('not_initialized') ||
-        errorMessage.includes('未运行');
+        errorMessage.includes('not_initialized') || errorMessage.includes('未运行');
 
       if (isNotInitialized) {
         logger.warn('API工具服务管理器未初始化，请检查配置文件路径是否正确', {

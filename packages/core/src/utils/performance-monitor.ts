@@ -249,12 +249,9 @@ export class PerformanceMonitor extends EventEmitter {
 
     const requestTimes = successfulRequests.map((r) => r.duration);
     const totalRequestTime = requestTimes.reduce((sum, time) => sum + time, 0);
-    const averageRequestTime =
-      requestTimes.length > 0 ? totalRequestTime / requestTimes.length : 0;
-    const minRequestTime =
-      requestTimes.length > 0 ? Math.min(...requestTimes) : 0;
-    const maxRequestTime =
-      requestTimes.length > 0 ? Math.max(...requestTimes) : 0;
+    const averageRequestTime = requestTimes.length > 0 ? totalRequestTime / requestTimes.length : 0;
+    const minRequestTime = requestTimes.length > 0 ? Math.min(...requestTimes) : 0;
+    const maxRequestTime = requestTimes.length > 0 ? Math.max(...requestTimes) : 0;
 
     const errorCount = failedRequests.length;
     const errorRate = requestCount > 0 ? errorCount / requestCount : 0;
@@ -313,8 +310,7 @@ export class PerformanceMonitor extends EventEmitter {
     const recentRequests = this.getRecentRequests(this.config.collectInterval);
     const errorRate =
       recentRequests.length > 0
-        ? recentRequests.filter((r) => !r.success).length /
-          recentRequests.length
+        ? recentRequests.filter((r) => !r.success).length / recentRequests.length
         : 0;
 
     if (errorRate > thresholds.maxErrorRate) {
@@ -334,14 +330,10 @@ export class PerformanceMonitor extends EventEmitter {
     const cutoff = Date.now() - this.config.retentionPeriod;
 
     // 清理请求历史
-    this.requestHistory = this.requestHistory.filter(
-      (req) => req.endTime >= cutoff,
-    );
+    this.requestHistory = this.requestHistory.filter((req) => req.endTime >= cutoff);
 
     // 清理指标历史
-    this.metricsHistory = this.metricsHistory.filter(
-      (metrics) => metrics.timestamp >= cutoff,
-    );
+    this.metricsHistory = this.metricsHistory.filter((metrics) => metrics.timestamp >= cutoff);
 
     this.emit('dataCleanup', {
       requestHistorySize: this.requestHistory.length,
@@ -382,8 +374,7 @@ export class PerformanceMonitor extends EventEmitter {
       cpu: {
         user: cpuUsage.user,
         system: cpuUsage.system,
-        usagePercentage:
-          ((cpuUsage.user + cpuUsage.system) / (1000000 * cpuCount)) * 100,
+        usagePercentage: ((cpuUsage.user + cpuUsage.system) / (1000000 * cpuCount)) * 100,
       },
       system: {
         totalMemory,
@@ -411,20 +402,15 @@ export class PerformanceMonitor extends EventEmitter {
     topSlowRequests: RequestPerformance[];
   } {
     const cutoff = timeWindow ? Date.now() - timeWindow : 0;
-    const relevantRequests = this.requestHistory.filter(
-      (req) => req.endTime >= cutoff,
-    );
-    const relevantMetrics = this.metricsHistory.filter(
-      (metrics) => metrics.timestamp >= cutoff,
-    );
+    const relevantRequests = this.requestHistory.filter((req) => req.endTime >= cutoff);
+    const relevantMetrics = this.metricsHistory.filter((metrics) => metrics.timestamp >= cutoff);
 
     const totalRequests = relevantRequests.length;
     const successfulRequests = relevantRequests.filter((r) => r.success).length;
     const failedRequests = totalRequests - successfulRequests;
     const averageResponseTime =
       totalRequests > 0
-        ? relevantRequests.reduce((sum, req) => sum + req.duration, 0) /
-          totalRequests
+        ? relevantRequests.reduce((sum, req) => sum + req.duration, 0) / totalRequests
         : 0;
     const errorRate = totalRequests > 0 ? failedRequests / totalRequests : 0;
 

@@ -1,18 +1,14 @@
-import crypto from 'node:crypto';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import type {
-  DeepReadonly,
-  GroupConfig,
-  McpConfig,
-  SystemConfig,
-} from '@mcp-core/mcp-hub-share';
 import {
   GroupConfigSchema,
   McpConfigSchema,
   SystemConfigSchema,
 } from '@mcp-core/mcp-hub-share/config';
-import type { z } from 'zod/v4';
+import crypto from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+import { getAllConfig, saveConfig } from '../utils/config.js';
+
 import type {
   ConfigBackup,
   ConfigChange,
@@ -27,7 +23,8 @@ import type {
   ConfigValidationWarning,
   IConfigService,
 } from '../types/config.js';
-import { getAllConfig, saveConfig } from '../utils/config.js';
+import type { DeepReadonly, GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
+import type { z } from 'zod/v4';
 
 // Schema 引用（从 share 统一导入）
 const systemConfigSchema = SystemConfigSchema;
@@ -40,8 +37,7 @@ export class ConfigService implements IConfigService {
   private readonly backupDir: string;
 
   constructor() {
-    this.configDir =
-      process.env.CONFIG_PATH || path.resolve(process.cwd(), 'config');
+    this.configDir = process.env.CONFIG_PATH || path.resolve(process.cwd(), 'config');
     this.historyDir = path.resolve(this.configDir, '.history');
     this.backupDir = path.resolve(this.configDir, '.backups');
 
@@ -151,8 +147,7 @@ export class ConfigService implements IConfigService {
     } catch (error) {
       errors.push({
         path: 'root',
-        message:
-          error instanceof Error ? error.message : '验证过程中发生未知错误',
+        message: error instanceof Error ? error.message : '验证过程中发生未知错误',
         code: 'VALIDATION_ERROR',
         severity: 'error',
       });
@@ -225,9 +220,7 @@ export class ConfigService implements IConfigService {
     const mcpConfig = config as unknown as McpConfig;
 
     // 验证服务器配置
-    for (const [serverId, serverConfig] of Object.entries(
-      mcpConfig.servers || {},
-    )) {
+    for (const [serverId, serverConfig] of Object.entries(mcpConfig.servers || {})) {
       // 类型守卫：检查是否为 StdioServerConfig
       if ('command' in serverConfig) {
         if (!serverConfig.command) {
@@ -242,9 +235,8 @@ export class ConfigService implements IConfigService {
 
       // 类型守卫：检查是否为 HTTPServerConfig
       if ('transport' in serverConfig) {
-        const transport = (
-          serverConfig as { transport?: { type?: string; url?: string } }
-        ).transport;
+        const transport = (serverConfig as { transport?: { type?: string; url?: string } })
+          .transport;
         if (transport?.type === 'sse' && !transport.url) {
           errors.push({
             path: `servers.${serverId}.transport.url`,
@@ -381,10 +373,7 @@ export class ConfigService implements IConfigService {
     }
   }
 
-  async createBackup(
-    description?: string,
-    includeTypes?: ConfigType[],
-  ): Promise<string> {
+  async createBackup(description?: string, includeTypes?: ConfigType[]): Promise<string> {
     const backupId = crypto.randomUUID();
     const timestamp = new Date().toISOString();
     const currentConfig = await this.getCurrentConfig();
@@ -418,19 +407,13 @@ export class ConfigService implements IConfigService {
     const backupContent = JSON.stringify(backup, null, 2);
     backup.size = Buffer.byteLength(backupContent, 'utf-8');
 
-    const backupFilePath = path.resolve(
-      this.backupDir,
-      `${timestamp}-${backupId}.json`,
-    );
+    const backupFilePath = path.resolve(this.backupDir, `${timestamp}-${backupId}.json`);
     await fs.writeFile(backupFilePath, backupContent, 'utf-8');
 
     return backupId;
   }
 
-  async restoreFromBackup(
-    backupId: string,
-    configTypes?: ConfigType[],
-  ): Promise<void> {
+  async restoreFromBackup(backupId: string, configTypes?: ConfigType[]): Promise<void> {
     // 查找备份文件
     const backupFiles = await fs.readdir(this.backupDir);
     const backupFile = backupFiles.find((file) => file.includes(backupId));
@@ -564,11 +547,7 @@ export class ConfigService implements IConfigService {
   async getConfigVersion(): Promise<string> {
     // 基于配置文件的修改时间生成版本号
     const lastUpdated = await this.getLastUpdatedTime();
-    return crypto
-      .createHash('md5')
-      .update(lastUpdated)
-      .digest('hex')
-      .substring(0, 8);
+    return crypto.createHash('md5').update(lastUpdated).digest('hex').substring(0, 8);
   }
 
   private async recordConfigHistory(
@@ -591,11 +570,7 @@ export class ConfigService implements IConfigService {
       const historyFileName = `${historyEntry.timestamp}-${configType}-${historyEntry.id}.json`;
       const historyFilePath = path.resolve(this.historyDir, historyFileName);
 
-      await fs.writeFile(
-        historyFilePath,
-        JSON.stringify(historyEntry, null, 2),
-        'utf-8',
-      );
+      await fs.writeFile(historyFilePath, JSON.stringify(historyEntry, null, 2), 'utf-8');
     } catch (error) {
       console.error('记录配置历史失败:', error);
     }
@@ -614,9 +589,7 @@ export class ConfigService implements IConfigService {
         name: 'schema_validation',
         description: '配置模式验证',
         status: validationResult.valid ? 'passed' : 'failed',
-        message: validationResult.valid
-          ? '配置模式验证通过'
-          : '配置模式验证失败',
+        message: validationResult.valid ? '配置模式验证通过' : '配置模式验证失败',
         details: validationResult.errors,
       });
 
@@ -670,16 +643,12 @@ export class ConfigService implements IConfigService {
         const server = net.createServer();
 
         await new Promise<void>((resolve, reject) => {
-          server.listen(
-            systemConfig.server.port,
-            systemConfig.server.host,
-            () => {
-              server.close();
-              // 清理错误监听器
-              server.removeAllListeners('error');
-              resolve();
-            },
-          );
+          server.listen(systemConfig.server.port, systemConfig.server.host, () => {
+            server.close();
+            // 清理错误监听器
+            server.removeAllListeners('error');
+            resolve();
+          });
 
           server.on('error', (error: NodeJS.ErrnoException) => {
             // 清理错误监听器
@@ -758,16 +727,11 @@ export class ConfigService implements IConfigService {
     }
   }
 
-  private async testMcpConfig(
-    config: Record<string, unknown>,
-    tests: ConfigTest[],
-  ): Promise<void> {
+  private async testMcpConfig(config: Record<string, unknown>, tests: ConfigTest[]): Promise<void> {
     const mcpConfig = config as unknown as McpConfig;
 
     // 测试服务器配置
-    for (const [serverId, serverConfig] of Object.entries(
-      mcpConfig.servers || {},
-    )) {
+    for (const [serverId, serverConfig] of Object.entries(mcpConfig.servers || {})) {
       // 类型守卫：测试命令可执行性（仅 StdioServerConfig）
       if ('command' in serverConfig && serverConfig.command) {
         try {
@@ -837,9 +801,8 @@ export class ConfigService implements IConfigService {
 
       // 测试传输配置（仅 HTTPServerConfig）
       if ('transport' in serverConfig) {
-        const transport = (
-          serverConfig as { transport?: { type?: string; url?: string } }
-        ).transport;
+        const transport = (serverConfig as { transport?: { type?: string; url?: string } })
+          .transport;
         if (transport) {
           if (transport.type === 'sse' && transport.url) {
             // 可以添加URL可达性测试
@@ -874,14 +837,10 @@ export class ConfigService implements IConfigService {
     for (const [groupId, group] of Object.entries(groupConfig)) {
       // 测试服务器引用
       const validServers =
-        group.servers?.filter((serverId) =>
-          availableServers.includes(serverId),
-        ) || [];
+        group.servers?.filter((serverId) => availableServers.includes(serverId)) || [];
 
       const invalidServers =
-        group.servers?.filter(
-          (serverId) => !availableServers.includes(serverId),
-        ) || [];
+        group.servers?.filter((serverId) => !availableServers.includes(serverId)) || [];
 
       if (invalidServers.length > 0) {
         tests.push({
@@ -953,10 +912,7 @@ export class ConfigService implements IConfigService {
     };
   }
 
-  private calculateDetailedChanges(
-    oldConfig: unknown,
-    newConfig: unknown,
-  ): ConfigChange[] {
+  private calculateDetailedChanges(oldConfig: unknown, newConfig: unknown): ConfigChange[] {
     const changes: ConfigChange[] = [];
 
     // 简化的深度比较实现
@@ -978,10 +934,7 @@ export class ConfigService implements IConfigService {
     return changes;
   }
 
-  private generateRollbackPlan(
-    configType: ConfigType,
-    _changes: ConfigChange[],
-  ): string[] {
+  private generateRollbackPlan(configType: ConfigType, _changes: ConfigChange[]): string[] {
     const rollbackPlan: string[] = [];
 
     rollbackPlan.push(`1. 停止相关服务 (如果需要)`);
@@ -993,10 +946,7 @@ export class ConfigService implements IConfigService {
     return rollbackPlan;
   }
 
-  private calculateChanges(
-    oldConfig: unknown,
-    newConfig: unknown,
-  ): ConfigChange[] {
+  private calculateChanges(oldConfig: unknown, newConfig: unknown): ConfigChange[] {
     // 简化的变更计算逻辑
     // 在实际实现中，可以使用更复杂的深度比较算法
     const changes: ConfigChange[] = [];

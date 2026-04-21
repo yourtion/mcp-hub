@@ -3,13 +3,8 @@
  * 提供便捷的 Mock 对象创建方法
  */
 
-import type {
-  GroupConfig,
-  McpConfig,
-  ServerConfig,
-  SystemConfig,
-} from '@mcp-core/mcp-hub-share';
 import type { ToolInfo } from '../../types/tool.js';
+import type { GroupConfig, McpConfig, ServerConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
 
 /**
  * Mock 客户端接口类型，避免 vi.fn() 返回类型引用 @vitest/spy
@@ -63,9 +58,7 @@ export class MockConfigFactory {
   /**
    * 创建多个服务器配置
    */
-  static createMcpServerConfig(
-    serverCount: number,
-  ): Record<string, ServerConfig> {
+  static createMcpServerConfig(serverCount: number): Record<string, ServerConfig> {
     const servers: Record<string, ServerConfig> = {};
 
     for (let i = 1; i <= serverCount; i++) {
@@ -92,17 +85,11 @@ export class MockConfigFactory {
   /**
    * 创建组配置
    */
-  static createGroupConfig(
-    groupCount: number = 2,
-    serversPerGroup: number = 2,
-  ): GroupConfig {
+  static createGroupConfig(groupCount: number = 2, serversPerGroup: number = 2): GroupConfig {
     const groups: GroupConfig = {};
 
     for (let i = 1; i <= groupCount; i++) {
-      const servers = Array.from(
-        { length: serversPerGroup },
-        (_, j) => `server${i * 10 + j}`,
-      );
+      const servers = Array.from({ length: serversPerGroup }, (_, j) => `server${i * 10 + j}`);
 
       groups[`group${i}`] = {
         id: `group${i}`,
@@ -294,10 +281,7 @@ export class MockMcpClientFactory {
       connect: vi.fn().mockImplementation(
         () =>
           new Promise((_, reject) => {
-            const timer = setTimeout(
-              () => reject(new Error('Connection timeout')),
-              100,
-            );
+            const timer = setTimeout(() => reject(new Error('Connection timeout')), 100);
             timer.unref?.();
           }),
       ),
@@ -305,20 +289,14 @@ export class MockMcpClientFactory {
       listTools: vi.fn().mockImplementation(
         () =>
           new Promise((_, reject) => {
-            const timer = setTimeout(
-              () => reject(new Error('List tools timeout')),
-              100,
-            );
+            const timer = setTimeout(() => reject(new Error('List tools timeout')), 100);
             timer.unref?.();
           }),
       ),
       callTool: vi.fn().mockImplementation(
         () =>
           new Promise((_, reject) => {
-            const timer = setTimeout(
-              () => reject(new Error('Call tool timeout')),
-              100,
-            );
+            const timer = setTimeout(() => reject(new Error('Call tool timeout')), 100);
             timer.unref?.();
           }),
       ),
@@ -381,9 +359,7 @@ export class MockMcpClientFactory {
         );
       }),
       isConnected: vi.fn().mockReturnValue(!config.shouldFail),
-      getStatus: vi
-        .fn()
-        .mockReturnValue(config.shouldFail ? 'error' : 'connected'),
+      getStatus: vi.fn().mockReturnValue(config.shouldFail ? 'error' : 'connected'),
     };
 
     return client;

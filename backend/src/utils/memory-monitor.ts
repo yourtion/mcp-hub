@@ -229,15 +229,9 @@ export class MemoryMonitor {
     logger.warn('内存告警', {
       level: alert.level,
       message: alert.message,
-      growthRate: alert.growthRate
-        ? this.formatBytes(alert.growthRate)
-        : undefined,
-      currentUsage: alert.currentUsage
-        ? this.formatBytes(alert.currentUsage)
-        : undefined,
-      threshold: alert.threshold
-        ? this.formatBytes(alert.threshold)
-        : undefined,
+      growthRate: alert.growthRate ? this.formatBytes(alert.growthRate) : undefined,
+      currentUsage: alert.currentUsage ? this.formatBytes(alert.currentUsage) : undefined,
+      threshold: alert.threshold ? this.formatBytes(alert.threshold) : undefined,
     });
 
     if (this.alertCallback) {
@@ -272,8 +266,7 @@ export class MemoryMonitor {
       current,
       trend,
       snapshotCount: this.snapshots.length,
-      heapUsageRatio:
-        current.heapTotal > 0 ? current.heapUsed / current.heapTotal : 0,
+      heapUsageRatio: current.heapTotal > 0 ? current.heapUsed / current.heapTotal : 0,
     };
   }
 

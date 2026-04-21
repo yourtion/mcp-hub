@@ -6,12 +6,14 @@ import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   createMockApiServer,
   type MockApiServer,
   MockResponses,
 } from '../integration/mock-api-server.js';
 import { ApiToMcpServiceManagerImpl } from '../services/api-to-mcp-service-manager.js';
+
 import type { ApiToolsConfig } from '../types/api-config.js';
 
 // Mock日志记录器
@@ -37,9 +39,7 @@ class PerformanceTestUtils {
   /**
    * 测量执行时间
    */
-  static async measureTime<T>(
-    fn: () => Promise<T>,
-  ): Promise<{ result: T; duration: number }> {
+  static async measureTime<T>(fn: () => Promise<T>): Promise<{ result: T; duration: number }> {
     const startTime = process.hrtime.bigint();
     const result = await fn();
     const endTime = process.hrtime.bigint();
@@ -73,9 +73,7 @@ class PerformanceTestUtils {
       max: sorted[len - 1],
       avg: values.reduce((sum, val) => sum + val, 0) / len,
       median:
-        len % 2 === 0
-          ? (sorted[len / 2 - 1] + sorted[len / 2]) / 2
-          : sorted[Math.floor(len / 2)],
+        len % 2 === 0 ? (sorted[len / 2 - 1] + sorted[len / 2]) / 2 : sorted[Math.floor(len / 2)],
       p95: sorted[Math.floor(len * 0.95)],
       p99: sorted[Math.floor(len * 0.99)],
     };
@@ -84,9 +82,7 @@ class PerformanceTestUtils {
   /**
    * 生成负载测试数据
    */
-  static generateTestData(
-    count: number,
-  ): Array<{ id: number; name: string; data: string }> {
+  static generateTestData(count: number): Array<{ id: number; name: string; data: string }> {
     return Array.from({ length: count }, (_, i) => ({
       id: i + 1,
       name: `Item ${i + 1}`,
@@ -170,20 +166,17 @@ describe('API转MCP服务性能测试', () => {
       await serviceManager.initialize(configPath);
 
       const concurrencyLevels = [10, 50, 100];
-      const results: Record<number, { duration: number; successRate: number }> =
-        {};
+      const results: Record<number, { duration: number; successRate: number }> = {};
 
       for (const concurrency of concurrencyLevels) {
         mockServer.clearRequestLogs();
 
-        const { result, duration } = await PerformanceTestUtils.measureTime(
-          async () => {
-            const promises = Array.from({ length: concurrency }, () =>
-              serviceManager.executeApiTool('concurrent-tool', {}),
-            );
-            return Promise.allSettled(promises);
-          },
-        );
+        const { result, duration } = await PerformanceTestUtils.measureTime(async () => {
+          const promises = Array.from({ length: concurrency }, () =>
+            serviceManager.executeApiTool('concurrent-tool', {}),
+          );
+          return Promise.allSettled(promises);
+        });
 
         const successCount = result.filter(
           (r) => r.status === 'fulfilled' && !r.value.isError,
@@ -243,11 +236,9 @@ describe('API转MCP服务性能测试', () => {
 
       // 连续执行请求并测量每个请求的时间
       for (let i = 0; i < requestCount; i++) {
-        const { duration } = await PerformanceTestUtils.measureTime(
-          async () => {
-            return serviceManager.executeApiTool('stable-tool', {});
-          },
-        );
+        const { duration } = await PerformanceTestUtils.measureTime(async () => {
+          return serviceManager.executeApiTool('stable-tool', {});
+        });
         durations.push(duration);
       }
 
@@ -306,22 +297,18 @@ describe('API转MCP服务性能测试', () => {
       await serviceManager.initialize(configPath);
 
       // 第一次请求（应该较慢，因为需要调用API）
-      const { duration: firstCallDuration } =
-        await PerformanceTestUtils.measureTime(async () => {
-          return serviceManager.executeApiTool('cached-tool', {});
-        });
+      const { duration: firstCallDuration } = await PerformanceTestUtils.measureTime(async () => {
+        return serviceManager.executeApiTool('cached-tool', {});
+      });
 
       // 第二次请求（应该很快，因为使用缓存）
-      const { duration: secondCallDuration } =
-        await PerformanceTestUtils.measureTime(async () => {
-          return serviceManager.executeApiTool('cached-tool', {});
-        });
+      const { duration: secondCallDuration } = await PerformanceTestUtils.measureTime(async () => {
+        return serviceManager.executeApiTool('cached-tool', {});
+      });
 
       console.log(`第一次调用: ${firstCallDuration.toFixed(2)}ms`);
       console.log(`第二次调用: ${secondCallDuration.toFixed(2)}ms`);
-      console.log(
-        `性能提升: ${(firstCallDuration / secondCallDuration).toFixed(2)}x`,
-      );
+      console.log(`性能提升: ${(firstCallDuration / secondCallDuration).toFixed(2)}x`);
 
       // 验证缓存效果（由于测试环境的不确定性，放宽验证条件）
       expect(firstCallDuration).toBeGreaterThan(50); // 第一次调用应该包含API延迟
@@ -385,34 +372,29 @@ describe('API转MCP服务性能测试', () => {
       const memoryBefore = PerformanceTestUtils.measureMemory();
 
       // 创建大量不同的缓存项
-      const { duration: populationDuration } =
-        await PerformanceTestUtils.measureTime(async () => {
-          const promises = Array.from({ length: cacheItemCount }, (_, i) =>
-            serviceManager.executeApiTool('cache-stress-tool', { id: i }),
-          );
-          return Promise.all(promises);
-        });
+      const { duration: populationDuration } = await PerformanceTestUtils.measureTime(async () => {
+        const promises = Array.from({ length: cacheItemCount }, (_, i) =>
+          serviceManager.executeApiTool('cache-stress-tool', { id: i }),
+        );
+        return Promise.all(promises);
+      });
 
       const memoryAfter = PerformanceTestUtils.measureMemory();
       const memoryIncrease = memoryAfter.heapUsed - memoryBefore.heapUsed;
 
-      console.log(
-        `创建 ${cacheItemCount} 个缓存项耗时: ${populationDuration.toFixed(2)}ms`,
-      );
+      console.log(`创建 ${cacheItemCount} 个缓存项耗时: ${populationDuration.toFixed(2)}ms`);
       console.log(`内存增长: ${(memoryIncrease / 1024 / 1024).toFixed(2)}MB`);
 
       // 测试缓存命中性能
       const randomIds = Array.from({ length: 50 }, () =>
         Math.floor(Math.random() * cacheItemCount),
       );
-      const { duration: hitDuration } = await PerformanceTestUtils.measureTime(
-        async () => {
-          const promises = randomIds.map((id) =>
-            serviceManager.executeApiTool('cache-stress-tool', { id }),
-          );
-          return Promise.all(promises);
-        },
-      );
+      const { duration: hitDuration } = await PerformanceTestUtils.measureTime(async () => {
+        const promises = randomIds.map((id) =>
+          serviceManager.executeApiTool('cache-stress-tool', { id }),
+        );
+        return Promise.all(promises);
+      });
 
       console.log(`50次缓存命中耗时: ${hitDuration.toFixed(2)}ms`);
 
@@ -505,12 +487,8 @@ describe('API转MCP服务性能测试', () => {
       const firstHalfAvg = firstSnapshot;
       const secondHalfAvg = lastSnapshot;
 
-      console.log(
-        `前半段平均内存: ${(firstHalfAvg / 1024 / 1024).toFixed(2)}MB`,
-      );
-      console.log(
-        `后半段平均内存: ${(secondHalfAvg / 1024 / 1024).toFixed(2)}MB`,
-      );
+      console.log(`前半段平均内存: ${(firstHalfAvg / 1024 / 1024).toFixed(2)}MB`);
+      console.log(`后半段平均内存: ${(secondHalfAvg / 1024 / 1024).toFixed(2)}MB`);
       console.log(`内存增长率: ${(memoryGrowth * 100).toFixed(2)}%`);
 
       // 验证没有严重的内存泄漏（放宽限制，因为测试环境的不确定性）
@@ -576,18 +554,12 @@ describe('API转MCP服务性能测试', () => {
 
       const memoryAfterCleanup = PerformanceTestUtils.measureMemory();
 
-      const creationIncrease =
-        memoryAfterCreation.heapUsed - memoryBefore.heapUsed;
-      const cleanupDecrease =
-        memoryAfterCreation.heapUsed - memoryAfterCleanup.heapUsed;
+      const creationIncrease = memoryAfterCreation.heapUsed - memoryBefore.heapUsed;
+      const cleanupDecrease = memoryAfterCreation.heapUsed - memoryAfterCleanup.heapUsed;
       const cleanupEfficiency = cleanupDecrease / creationIncrease;
 
-      console.log(
-        `创建后内存增长: ${(creationIncrease / 1024 / 1024).toFixed(2)}MB`,
-      );
-      console.log(
-        `清理后内存减少: ${(cleanupDecrease / 1024 / 1024).toFixed(2)}MB`,
-      );
+      console.log(`创建后内存增长: ${(creationIncrease / 1024 / 1024).toFixed(2)}MB`);
+      console.log(`清理后内存减少: ${(cleanupDecrease / 1024 / 1024).toFixed(2)}MB`);
       console.log(`清理效率: ${(cleanupEfficiency * 100).toFixed(1)}%`);
 
       // 验证资源清理效果（由于Node.js GC的不确定性，只验证清理操作执行了）
@@ -646,11 +618,9 @@ describe('API转MCP服务性能测试', () => {
 
       const memoryBefore = PerformanceTestUtils.measureMemory();
 
-      const { result, duration } = await PerformanceTestUtils.measureTime(
-        async () => {
-          return serviceManager.executeApiTool('large-data-tool', {});
-        },
-      );
+      const { result, duration } = await PerformanceTestUtils.measureTime(async () => {
+        return serviceManager.executeApiTool('large-data-tool', {});
+      });
 
       const memoryAfter = PerformanceTestUtils.measureMemory();
       const memoryIncrease = memoryAfter.heapUsed - memoryBefore.heapUsed;
@@ -765,11 +735,9 @@ describe('API转MCP服务性能测试', () => {
       await fs.writeFile(configPath, JSON.stringify(config, null, 2));
       await serviceManager.initialize(configPath);
 
-      const { result, duration } = await PerformanceTestUtils.measureTime(
-        async () => {
-          return serviceManager.executeApiTool('complex-jsonata-tool', {});
-        },
-      );
+      const { result, duration } = await PerformanceTestUtils.measureTime(async () => {
+        return serviceManager.executeApiTool('complex-jsonata-tool', {});
+      });
 
       console.log(`复杂JSONata处理耗时: ${duration.toFixed(2)}ms`);
 
@@ -792,10 +760,7 @@ describe('API转MCP服务性能测试', () => {
       // 由于JSONata处理可能有问题，先检查响应数据是否存在
       if (responseData && typeof responseData === 'object') {
         // 如果JSONata处理成功，检查预期字段
-        if (
-          responseData.summary &&
-          responseData.summary.totalUsers !== undefined
-        ) {
+        if (responseData.summary && responseData.summary.totalUsers !== undefined) {
           expect(responseData.summary.totalUsers).toBe(1000);
         }
         if (responseData.departmentStats !== undefined) {
@@ -838,11 +803,10 @@ describe('API转MCP服务性能测试', () => {
       await serviceManager.initialize(configPath);
 
       // 测量初始加载时间
-      const { duration: initialLoadDuration } =
-        await PerformanceTestUtils.measureTime(async () => {
-          const tools = await serviceManager.getApiTools();
-          return tools;
-        });
+      const { duration: initialLoadDuration } = await PerformanceTestUtils.measureTime(async () => {
+        const tools = await serviceManager.getApiTools();
+        return tools;
+      });
 
       console.log(`初始加载100个工具耗时: ${initialLoadDuration.toFixed(2)}ms`);
 
@@ -873,11 +837,10 @@ describe('API转MCP服务性能测试', () => {
       await fs.writeFile(configPath, JSON.stringify(updatedConfig, null, 2));
 
       // 测量重新加载时间
-      const { duration: reloadDuration } =
-        await PerformanceTestUtils.measureTime(async () => {
-          await serviceManager.reloadConfig();
-          return serviceManager.getApiTools();
-        });
+      const { duration: reloadDuration } = await PerformanceTestUtils.measureTime(async () => {
+        await serviceManager.reloadConfig();
+        return serviceManager.getApiTools();
+      });
 
       console.log(`重新加载101个工具耗时: ${reloadDuration.toFixed(2)}ms`);
 

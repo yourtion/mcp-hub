@@ -3,8 +3,8 @@
  * 生成各种测试场景所需的数据
  */
 
-import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 import type { ToolInfo } from '../../types/tool.js';
+import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 
 /**
  * 测试数据生成器
@@ -54,10 +54,7 @@ export class TestDataGenerator {
   /**
    * 生成多个工具
    */
-  static generateManyTools(
-    count: number,
-    serverId: string = 'server1',
-  ): ToolInfo[] {
+  static generateManyTools(count: number, serverId: string = 'server1'): ToolInfo[] {
     return Array.from({ length: count }, (_, i) => ({
       name: `tool_${i + 1}`,
       description: `Auto-generated tool ${i + 1}`,
@@ -89,10 +86,7 @@ export class TestDataGenerator {
 
       // 大量参数
       manyParams: Object.fromEntries(
-        Array.from({ length: 100 }, (_, i) => [
-          `param${i + 1}`,
-          `value${i + 1}`,
-        ]),
+        Array.from({ length: 100 }, (_, i) => [`param${i + 1}`, `value${i + 1}`]),
       ),
 
       // 深度嵌套参数
@@ -144,8 +138,7 @@ export class TestDataGenerator {
    * 生成随机字符串
    */
   static randomString(length: number = 10): string {
-    const chars =
-      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     return Array.from({ length }, () =>
       chars.charAt(Math.floor(Math.random() * chars.length)),
     ).join('');

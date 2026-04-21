@@ -3,6 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { CacheManagerImpl } from './cache-manager.js';
 
 // Mock日志记录器
@@ -262,9 +263,7 @@ describe('CacheManagerImpl', () => {
       circularObj.self = circularObj; // 创建循环引用
 
       // 应该抛出序列化错误
-      expect(() =>
-        cacheManager.generateCacheKey('test', circularObj),
-      ).toThrow();
+      expect(() => cacheManager.generateCacheKey('test', circularObj)).toThrow();
     });
 
     it('应该处理大型对象', async () => {
@@ -299,9 +298,7 @@ describe('CacheManagerImpl', () => {
 
       await Promise.all(promises);
 
-      const getPromises = Array.from({ length: 10 }, (_, i) =>
-        cacheManager.get(`concurrent-${i}`),
-      );
+      const getPromises = Array.from({ length: 10 }, (_, i) => cacheManager.get(`concurrent-${i}`));
 
       const results = await Promise.all(getPromises);
 

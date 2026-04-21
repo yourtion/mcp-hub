@@ -54,14 +54,7 @@
         <p class="mcp-empty__desc">点击"添加API配置"按钮创建第一个API转MCP配置</p>
       </div>
 
-      <t-table
-        v-else
-        :data="configs"
-        :columns="tableColumns"
-        row-key="id"
-        hover
-        stripe
-      >
+      <t-table v-else :data="configs" :columns="tableColumns" row-key="id" hover stripe>
         <template #status="{ row }">
           <StatusTag :status="row.status" />
         </template>
@@ -88,16 +81,10 @@
 
         <template #actions="{ row }">
           <div class="api-to-mcp-page__actions">
-            <t-button variant="text" size="small" @click="openTestDialog(row)">
-              测试
-            </t-button>
-            <t-button variant="text" size="small" @click="openEditDialog(row)">
-              编辑
-            </t-button>
+            <t-button variant="text" size="small" @click="openTestDialog(row)"> 测试 </t-button>
+            <t-button variant="text" size="small" @click="openEditDialog(row)"> 编辑 </t-button>
             <t-popconfirm content="确认删除此API配置？" @confirm="handleDelete(row.id)">
-              <t-button variant="text" size="small" theme="danger">
-                删除
-              </t-button>
+              <t-button variant="text" size="small" theme="danger"> 删除 </t-button>
             </t-popconfirm>
           </div>
         </template>
@@ -127,11 +114,7 @@
           <t-input v-model="formData.url" placeholder="https://api.example.com/endpoint" />
         </t-form-item>
         <t-form-item label="请求方法">
-          <t-select
-            v-model="formData.method"
-            :options="methodOptions"
-            placeholder="选择请求方法"
-          />
+          <t-select v-model="formData.method" :options="methodOptions" placeholder="选择请求方法" />
         </t-form-item>
         <t-form-item label="请求头 (JSON)">
           <t-textarea
@@ -198,7 +181,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { AddIcon, FileExportIcon, FileImportIcon, SwapIcon } from 'tdesign-icons-vue-next';
 import {
   Button as TButton,
   Table as TTable,
@@ -213,14 +196,11 @@ import {
   Popconfirm as TPopconfirm,
   MessagePlugin,
 } from 'tdesign-vue-next';
-import {
-  AddIcon,
-  FileExportIcon,
-  FileImportIcon,
-  SwapIcon,
-} from 'tdesign-icons-vue-next';
-import { apiToMcpService } from '@/services/api-to-mcp';
+import { onMounted, reactive, ref } from 'vue';
+
 import { StatusTag } from '@/components/common';
+import { apiToMcpService } from '@/services/api-to-mcp';
+
 import type { ApiConfigInfo, TestApiConfigResponse } from '@/types/api-to-mcp';
 
 // --- State ---
@@ -369,7 +349,9 @@ async function handleSaveConfig(): Promise<void> {
   dialogSaving.value = true;
   try {
     const configPayload = {
-      id: isEditing.value ? editingId.value : `api-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id: isEditing.value
+        ? editingId.value
+        : `api-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       name: formData.name,
       description: formData.description,
       api: {
@@ -380,7 +362,7 @@ async function handleSaveConfig(): Promise<void> {
       parameters: {
         type: 'object',
         properties: (parameters as Record<string, unknown>).properties ?? {},
-        required: (parameters as Record<string, unknown>).required as string[] ?? [],
+        required: ((parameters as Record<string, unknown>).required as string[]) ?? [],
       },
       response: {},
     };

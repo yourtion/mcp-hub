@@ -6,7 +6,9 @@ import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { ApiToMcpServiceManagerImpl } from '../services/api-to-mcp-service-manager.js';
+
 import type { ApiToolsConfig } from '../types/api-config.js';
 
 // Mock日志记录器
@@ -467,15 +469,10 @@ describe('API转MCP服务集成测试', () => {
 
       await serviceManager.initialize(configPath);
 
-      const result = await serviceManager.executeApiTool(
-        'network-error-tool',
-        {},
-      );
+      const result = await serviceManager.executeApiTool('network-error-tool', {});
       expect(result.isError).toBe(true);
       // 网络错误可能有不同的错误消息格式
-      expect(result.content[0].text).toContain(
-        'Cannot read properties of undefined',
-      );
+      expect(result.content[0].text).toContain('Cannot read properties of undefined');
     }, 10000); // 增加测试超时时间到10秒
 
     it('应该处理JSONata表达式错误', async () => {
@@ -514,10 +511,7 @@ describe('API转MCP服务集成测试', () => {
 
       await serviceManager.initialize(configPath);
 
-      const result = await serviceManager.executeApiTool(
-        'jsonata-error-tool',
-        {},
-      );
+      const result = await serviceManager.executeApiTool('jsonata-error-tool', {});
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('失败');
     });
@@ -602,9 +596,7 @@ describe('API转MCP服务集成测试', () => {
       await serviceManager.initialize(configPath);
 
       // 并发执行配置重载
-      const reloadPromises = Array.from({ length: 3 }, () =>
-        serviceManager.reloadConfig(),
-      );
+      const reloadPromises = Array.from({ length: 3 }, () => serviceManager.reloadConfig());
 
       // 所有重载操作都应该成功完成
       await Promise.all(reloadPromises);
@@ -763,9 +755,7 @@ describe('API转MCP服务集成测试', () => {
       expect(shutdownHealth.healthy).toBe(false);
 
       // 关闭后的操作应该抛出错误
-      await expect(serviceManager.getApiTools()).rejects.toThrow(
-        '服务管理器未运行',
-      );
+      await expect(serviceManager.getApiTools()).rejects.toThrow('服务管理器未运行');
     });
   });
 });

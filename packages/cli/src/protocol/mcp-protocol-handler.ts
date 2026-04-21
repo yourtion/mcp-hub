@@ -3,8 +3,9 @@
  * 处理MCP协议的请求和响应格式化
  */
 
-import type { McpServiceManager, ToolResult } from '@mcp-core/mcp-hub-core';
 import { createCliLogger } from '@mcp-core/mcp-hub-share';
+
+import type { McpServiceManager, ToolResult } from '@mcp-core/mcp-hub-core';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 /**
@@ -51,8 +52,7 @@ export class McpProtocolHandler {
       // 转换为MCP工具格式
       const tools = toolInfos.map((toolInfo) => ({
         name: toolInfo.name,
-        description:
-          toolInfo.description || `来自服务器 ${toolInfo.serverId} 的工具`,
+        description: toolInfo.description || `来自服务器 ${toolInfo.serverId} 的工具`,
         inputSchema: {
           type: 'object',
           properties: {},
@@ -65,32 +65,25 @@ export class McpProtocolHandler {
       return { tools };
     } catch (error) {
       console.error('处理list_tools请求失败:', error);
-      throw this.createMcpError(
-        McpErrorCode.INTERNAL_ERROR,
-        '获取工具列表失败',
-        { originalError: (error as Error).message },
-      );
+      throw this.createMcpError(McpErrorCode.INTERNAL_ERROR, '获取工具列表失败', {
+        originalError: (error as Error).message,
+      });
     }
   }
 
   /**
    * 处理call_tool请求
    */
-  async handleCallTool(
-    toolName: string,
-    args: unknown,
-  ): Promise<CallToolResult> {
+  async handleCallTool(toolName: string, args: unknown): Promise<CallToolResult> {
     try {
       console.debug('处理call_tool请求', { toolName, args });
 
       // 验证工具是否存在
       const isAvailable = await this.coreService.isToolAvailable(toolName);
       if (!isAvailable) {
-        throw this.createMcpError(
-          McpErrorCode.TOOL_NOT_FOUND,
-          `工具 '${toolName}' 未找到`,
-          { toolName },
-        );
+        throw this.createMcpError(McpErrorCode.TOOL_NOT_FOUND, `工具 '${toolName}' 未找到`, {
+          toolName,
+        });
       }
 
       // 执行工具调用
@@ -126,10 +119,7 @@ export class McpProtocolHandler {
   /**
    * 格式化工具调用响应
    */
-  private formatToolCallResponse(
-    result: ToolResult,
-    toolName: string,
-  ): CallToolResult {
+  private formatToolCallResponse(result: ToolResult, toolName: string): CallToolResult {
     if (result.success) {
       return {
         content: [
@@ -145,10 +135,7 @@ export class McpProtocolHandler {
         content: [
           {
             type: 'text',
-            text: this.formatErrorResponse(
-              result.error || '工具执行失败',
-              toolName,
-            ),
+            text: this.formatErrorResponse(result.error || '工具执行失败', toolName),
           },
         ],
         isError: true,
@@ -186,11 +173,7 @@ export class McpProtocolHandler {
   /**
    * 创建MCP错误
    */
-  private createMcpError(
-    code: McpErrorCode,
-    message: string,
-    data?: unknown,
-  ): Error {
+  private createMcpError(code: McpErrorCode, message: string, data?: unknown): Error {
     const error = new Error(message) as Error & {
       code: McpErrorCode;
       data?: unknown;
@@ -243,10 +226,7 @@ export class McpProtocolHandler {
    */
   validateCallToolParams(params: unknown): { toolName: string; args: unknown } {
     if (!params || typeof params !== 'object') {
-      throw this.createMcpError(
-        McpErrorCode.INVALID_PARAMS,
-        '请求参数无效：参数必须是对象',
-      );
+      throw this.createMcpError(McpErrorCode.INVALID_PARAMS, '请求参数无效：参数必须是对象');
     }
 
     const { name, arguments: args } = params as Record<string, unknown>;

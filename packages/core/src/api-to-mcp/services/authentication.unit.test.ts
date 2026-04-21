@@ -3,8 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { AuthConfig } from '../types/api-config.js';
-import type { HttpRequestConfig } from '../types/http-client.js';
+
 import {
   ApiKeyStrategy,
   AuthenticationManager,
@@ -13,6 +12,9 @@ import {
   createAuthenticationManager,
   defaultAuthManager,
 } from './authentication.js';
+
+import type { AuthConfig } from '../types/api-config.js';
+import type { HttpRequestConfig } from '../types/http-client.js';
 
 describe('认证策略', () => {
   describe('BearerTokenStrategy', () => {
@@ -155,9 +157,7 @@ describe('认证策略', () => {
         type: 'apikey',
       };
 
-      expect(() => strategy.applyAuth(request, authConfig)).toThrow(
-        'API Key认证需要提供token',
-      );
+      expect(() => strategy.applyAuth(request, authConfig)).toThrow('API Key认证需要提供token');
     });
 
     it('应该验证有效的配置', () => {
@@ -206,8 +206,7 @@ describe('认证策略', () => {
       const result = strategy.applyAuth(request, authConfig);
 
       // 验证Base64编码的凭据
-      const expectedCredentials =
-        Buffer.from('testuser:testpass').toString('base64');
+      const expectedCredentials = Buffer.from('testuser:testpass').toString('base64');
       expect(result.headers).toEqual({
         Authorization: `Basic ${expectedCredentials}`,
       });
@@ -340,9 +339,9 @@ describe('AuthenticationManager', () => {
         type: 'unsupported',
       } as AuthConfig;
 
-      expect(() =>
-        authManager.applyAuthentication(request, authConfig),
-      ).toThrow('不支持的认证类型: unsupported');
+      expect(() => authManager.applyAuthentication(request, authConfig)).toThrow(
+        '不支持的认证类型: unsupported',
+      );
     });
 
     it('应该在配置无效时抛出错误', () => {
@@ -356,9 +355,9 @@ describe('AuthenticationManager', () => {
         // 缺少token
       };
 
-      expect(() =>
-        authManager.applyAuthentication(request, authConfig),
-      ).toThrow('认证配置无效: Bearer认证需要提供token');
+      expect(() => authManager.applyAuthentication(request, authConfig)).toThrow(
+        '认证配置无效: Bearer认证需要提供token',
+      );
     });
   });
 

@@ -1,50 +1,23 @@
 {
   "name": "@mcp-core/mcp-hub-core",
   "version": "0.0.1",
-  "description": "MCP Hub核心包 - 提供MCP服务管理、连接管理和工具调用的核心功能",
-  "type": "module",
   "private": false,
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "publishConfig": {
-    "access": "public"
-  },
+  "description": "MCP Hub核心包 - 提供MCP服务管理、连接管理和工具调用的核心功能",
+  "keywords": [
+    "core",
+    "hub",
+    "mcp",
+    "model-context-protocol"
+  ],
+  "license": "ISC",
+  "author": "",
   "files": [
     "dist",
     "README.md"
   ],
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "check": "biome check --write src/",
-    "test": "vitest --run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest --run --coverage",
-    "test:debug": "VITEST_DEBUG=true vitest",
-    "test:coverage:debug": "VITEST_DEBUG=true vitest --run --coverage",
-    "coverage:open": "open coverage/index.html"
-  },
-  "keywords": [
-    "mcp",
-    "model-context-protocol",
-    "hub",
-    "core"
-  ],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.6.4",
-  "dependencies": {
-    "@mcp-core/mcp-hub-share": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.0.4",
-    "axios": "^1.6.7",
-    "jsonata": "^2.0.3",
-    "zod": "^4.3.6"
-  },
-  "devDependencies": {
-    "@types/jsonata": "^1.5.1",
-    "@types/node": "^20.11.17",
-    "typescript": "^5.8.3"
-  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -75,5 +48,32 @@
       "types": "./dist/errors/index.d.ts",
       "import": "./dist/errors/index.js"
     }
-  }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "check": "oxlint --fix src/ && oxfmt src/",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest --run --coverage",
+    "test:debug": "VITEST_DEBUG=true vitest",
+    "test:coverage:debug": "VITEST_DEBUG=true vitest --run --coverage",
+    "coverage:open": "open coverage/index.html"
+  },
+  "dependencies": {
+    "@mcp-core/mcp-hub-share": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "axios": "^1.6.7",
+    "jsonata": "^2.0.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/jsonata": "^1.5.1",
+    "@types/node": "^20.11.17",
+    "typescript": "^5.8.3"
+  },
+  "packageManager": "pnpm@10.6.4"
 }

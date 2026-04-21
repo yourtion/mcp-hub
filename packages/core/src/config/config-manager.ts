@@ -3,13 +3,6 @@
  * 配置的唯一读写校验入口
  */
 
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
-import path from 'node:path';
-import type {
-  GroupConfig,
-  McpConfig,
-  SystemConfig,
-} from '@mcp-core/mcp-hub-share/config';
 import {
   GroupConfigSchema,
   McpConfigSchema,
@@ -18,6 +11,10 @@ import {
   validateCrossReferences,
   validateWithSchema,
 } from '@mcp-core/mcp-hub-share/config';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+
+import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share/config';
 
 /**
  * 所有配置的加载结果
@@ -43,10 +40,7 @@ export class ConfigManager {
   private configDir: string;
 
   constructor(configDir?: string) {
-    this.configDir =
-      configDir ??
-      process.env.CONFIG_PATH ??
-      path.resolve(process.cwd(), 'config');
+    this.configDir = configDir ?? process.env.CONFIG_PATH ?? path.resolve(process.cwd(), 'config');
   }
 
   /**
@@ -176,18 +170,14 @@ export class ConfigManager {
     // Schema 校验 MCP
     const mcpResult = this.validateMcpConfig(mcpConfig);
     if (!mcpResult.success) {
-      allErrors.push(
-        ...(mcpResult.errors ?? []).map((e: string) => `MCP配置错误: ${e}`),
-      );
+      allErrors.push(...(mcpResult.errors ?? []).map((e: string) => `MCP配置错误: ${e}`));
       return { success: false, errors: allErrors };
     }
 
     // Schema 校验 Group
     const groupResult = this.validateGroupConfig(groupConfig);
     if (!groupResult.success) {
-      allErrors.push(
-        ...(groupResult.errors ?? []).map((e: string) => `组配置错误: ${e}`),
-      );
+      allErrors.push(...(groupResult.errors ?? []).map((e: string) => `组配置错误: ${e}`));
       return { success: false, errors: allErrors };
     }
 
@@ -197,9 +187,7 @@ export class ConfigManager {
       groupResult.data!,
     );
     if (!crossRefResult.valid) {
-      allErrors.push(
-        ...crossRefResult.errors.map((e: string) => `交叉引用错误: ${e}`),
-      );
+      allErrors.push(...crossRefResult.errors.map((e: string) => `交叉引用错误: ${e}`));
       return { success: false, errors: allErrors };
     }
 
@@ -208,9 +196,7 @@ export class ConfigManager {
     if (systemConfig) {
       const sysResult = this.validateSystemConfig(systemConfig);
       if (!sysResult.success) {
-        allErrors.push(
-          ...(sysResult.errors ?? []).map((e: string) => `系统配置错误: ${e}`),
-        );
+        allErrors.push(...(sysResult.errors ?? []).map((e: string) => `系统配置错误: ${e}`));
         return { success: false, errors: allErrors };
       }
       parsedSystemConfig = sysResult.data;
@@ -233,10 +219,7 @@ export class ConfigManager {
   /**
    * 读取并解析 JSON 配置文件
    */
-  private async loadConfigFile<T>(
-    filePath: string,
-    defaultValue: T,
-  ): Promise<T> {
+  private async loadConfigFile<T>(filePath: string, defaultValue: T): Promise<T> {
     try {
       const content = await readFile(filePath, 'utf-8');
       return JSON.parse(content) as T;

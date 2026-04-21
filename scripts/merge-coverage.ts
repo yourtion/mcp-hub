@@ -6,12 +6,12 @@ import { join } from 'path';
 interface CoverageData {
   [filePath: string]: {
     path: string;
-    statementMap: any;
-    fnMap: any;
-    branchMap: any;
-    s: any;
-    f: any;
-    b: any;
+    statementMap: Record<string, unknown>;
+    fnMap: Record<string, unknown>;
+    branchMap: Record<string, unknown>;
+    s: Record<string, number>;
+    f: Record<string, number>;
+    b: Record<string, number>;
   };
 }
 
@@ -50,9 +50,7 @@ function mergeCoverageData(): { data: CoverageData; summary: CoverageSummary } {
 
     if (existsSync(coverageFile)) {
       try {
-        const data: CoverageData = JSON.parse(
-          readFileSync(coverageFile, 'utf-8'),
-        );
+        const data: CoverageData = JSON.parse(readFileSync(coverageFile, 'utf-8'));
 
         // 合并覆盖率数据，添加包前缀避免冲突
         for (const [filePath, fileData] of Object.entries(data)) {
@@ -74,9 +72,7 @@ function mergeCoverageData(): { data: CoverageData; summary: CoverageSummary } {
     // 合并汇总数据
     if (existsSync(summaryFile)) {
       try {
-        const summary: CoverageSummary = JSON.parse(
-          readFileSync(summaryFile, 'utf-8'),
-        );
+        const summary: CoverageSummary = JSON.parse(readFileSync(summaryFile, 'utf-8'));
         const { total } = summary;
 
         summaryData.lines.total += total.lines.total;
@@ -102,9 +98,7 @@ function mergeCoverageData(): { data: CoverageData; summary: CoverageSummary } {
 
   // 计算总体百分比
   summaryData.lines.pct =
-    summaryData.lines.total > 0
-      ? (summaryData.lines.covered / summaryData.lines.total) * 100
-      : 0;
+    summaryData.lines.total > 0 ? (summaryData.lines.covered / summaryData.lines.total) * 100 : 0;
   summaryData.functions.pct =
     summaryData.functions.total > 0
       ? (summaryData.functions.covered / summaryData.functions.total) * 100

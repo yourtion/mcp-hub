@@ -100,8 +100,7 @@ export class CliMemoryProfiler {
 
     const firstSnapshot = this.snapshots[0];
     const lastSnapshot = this.snapshots[this.snapshots.length - 1];
-    const totalMemoryGrowth =
-      lastSnapshot.memoryAfter - firstSnapshot.memoryBefore;
+    const totalMemoryGrowth = lastSnapshot.memoryAfter - firstSnapshot.memoryBefore;
     const averageGrowthPerIteration =
       this.snapshots.length > 0 ? totalMemoryGrowth / this.snapshots.length : 0;
 
@@ -127,9 +126,7 @@ export class CliMemoryProfiler {
     logger.info('=== 内存泄漏分析报告 ===');
     logger.info(`总迭代次数: ${report.totalIterations}`);
     logger.info(`总内存增长: ${this.formatBytes(report.totalMemoryGrowth)}`);
-    logger.info(
-      `平均每次增长: ${this.formatBytes(report.averageGrowthPerIteration)}`,
-    );
+    logger.info(`平均每次增长: ${this.formatBytes(report.averageGrowthPerIteration)}`);
     logger.info(`检测到泄漏: ${report.leakDetected ? '是 ⚠️' : '否 ✅'}`);
 
     if (report.leakDetected) {

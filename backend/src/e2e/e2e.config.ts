@@ -208,13 +208,7 @@ export class TestResultCollector {
     timestamp: number;
   }> = [];
 
-  recordResult(
-    scenario: string,
-    step: string,
-    success: boolean,
-    duration: number,
-    error?: string,
-  ) {
+  recordResult(scenario: string, step: string, success: boolean, duration: number, error?: string) {
     this.results.push({
       scenario,
       step,
@@ -234,9 +228,7 @@ export class TestResultCollector {
     const successful = this.results.filter((r) => r.success).length;
     const failed = total - successful;
     const averageDuration =
-      total > 0
-        ? this.results.reduce((sum, r) => sum + r.duration, 0) / total
-        : 0;
+      total > 0 ? this.results.reduce((sum, r) => sum + r.duration, 0) / total : 0;
 
     return {
       total,

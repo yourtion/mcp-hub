@@ -2,7 +2,9 @@
 
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+
 import * as GroupService from '@/services/group';
+
 import type {
   ConfigureGroupToolsRequest,
   CreateGroupRequest,
@@ -35,12 +37,8 @@ export const useGroupStore = defineStore('group', () => {
 
   // 计算属性
   const groupList = computed(() => Array.from(groups.value.values()));
-  const healthyGroups = computed(() =>
-    groupList.value.filter((group) => group.isHealthy),
-  );
-  const unhealthyGroups = computed(() =>
-    groupList.value.filter((group) => !group.isHealthy),
-  );
+  const healthyGroups = computed(() => groupList.value.filter((group) => group.isHealthy));
+  const unhealthyGroups = computed(() => groupList.value.filter((group) => !group.isHealthy));
   const groupsWithValidation = computed(() =>
     groupList.value.filter((group) => group.validation.enabled),
   );
@@ -66,9 +64,7 @@ export const useGroupStore = defineStore('group', () => {
       summary.value = {
         totalGroups: response.totalGroups,
         healthyGroups: response.healthyGroups,
-        unhealthyGroups:
-          response.unhealthyGroups ??
-          response.totalGroups - response.healthyGroups,
+        unhealthyGroups: response.unhealthyGroups ?? response.totalGroups - response.healthyGroups,
         totalServers: response.totalServers,
         connectedServers: response.connectedServers,
         totalTools: response.totalTools,
@@ -200,10 +196,7 @@ export const useGroupStore = defineStore('group', () => {
   };
 
   // 配置组工具过滤
-  const configureGroupTools = async (
-    groupId: string,
-    data: ConfigureGroupToolsRequest,
-  ) => {
+  const configureGroupTools = async (groupId: string, data: ConfigureGroupToolsRequest) => {
     try {
       loading.value = true;
       error.value = null;
@@ -214,8 +207,7 @@ export const useGroupStore = defineStore('group', () => {
       const existingGroup = groups.value.get(groupId);
       if (existingGroup) {
         existingGroup.tools = data.tools;
-        existingGroup.toolFilterMode =
-          data.tools.length > 0 ? 'whitelist' : 'none';
+        existingGroup.toolFilterMode = data.tools.length > 0 ? 'whitelist' : 'none';
         groups.value.set(groupId, { ...existingGroup });
       }
 
@@ -251,10 +243,7 @@ export const useGroupStore = defineStore('group', () => {
   };
 
   // 设置组验证密钥
-  const setGroupValidationKey = async (
-    groupId: string,
-    data: SetGroupValidationKeyRequest,
-  ) => {
+  const setGroupValidationKey = async (groupId: string, data: SetGroupValidationKeyRequest) => {
     try {
       loading.value = true;
       error.value = null;
@@ -287,17 +276,13 @@ export const useGroupStore = defineStore('group', () => {
     try {
       return await GroupService.getGroupValidationKeyStatus(groupId);
     } catch (err) {
-      error.value =
-        err instanceof Error ? err.message : '获取组验证密钥状态失败';
+      error.value = err instanceof Error ? err.message : '获取组验证密钥状态失败';
       throw err;
     }
   };
 
   // 验证组密钥
-  const validateGroupKey = async (
-    groupId: string,
-    data: GroupKeyValidationRequest,
-  ) => {
+  const validateGroupKey = async (groupId: string, data: GroupKeyValidationRequest) => {
     try {
       return await GroupService.validateGroupKey(groupId, data);
     } catch (err) {

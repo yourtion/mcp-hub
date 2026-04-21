@@ -5,8 +5,10 @@
 import { mkdir, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { CliConfig } from '../types/index';
+
 import { CliConfigManager } from './cli-config-manager';
+
+import type { CliConfig } from '../types/index';
 
 describe('CliConfigManager', () => {
   let configManager: CliConfigManager;
@@ -83,9 +85,7 @@ describe('CliConfigManager', () => {
     it('应该在配置文件不存在时抛出错误', async () => {
       const nonExistentPath = join(tempDir, 'nonexistent.json');
 
-      await expect(configManager.loadConfig(nonExistentPath)).rejects.toThrow(
-        '配置文件不存在',
-      );
+      await expect(configManager.loadConfig(nonExistentPath)).rejects.toThrow('配置文件不存在');
     });
 
     it('应该在JSON格式无效时抛出错误', async () => {
@@ -254,9 +254,7 @@ describe('CliConfigManager', () => {
         args: ['server.js'],
       };
 
-      expect(configManager.validateServerConfig(invalidServerConfig)).toBe(
-        false,
-      );
+      expect(configManager.validateServerConfig(invalidServerConfig)).toBe(false);
     });
   });
 
@@ -289,15 +287,10 @@ describe('CliConfigManager', () => {
         },
       };
 
-      const mergedConfig = configManager.mergeConfigs(
-        baseConfig,
-        overrideConfig,
-      );
+      const mergedConfig = configManager.mergeConfigs(baseConfig, overrideConfig);
 
       expect(mergedConfig.servers.server1).toEqual(baseConfig.servers.server1);
-      expect(mergedConfig.servers.server2).toEqual(
-        overrideConfig.servers?.server2,
-      );
+      expect(mergedConfig.servers.server2).toEqual(overrideConfig.servers?.server2);
       expect(mergedConfig.logging.level).toBe('debug');
       expect(mergedConfig.transport.type).toBe('stdio');
     });

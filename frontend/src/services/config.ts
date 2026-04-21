@@ -1,5 +1,7 @@
 // 配置管理API服务
 
+import api, { handleApiResponse } from './api';
+
 import type { ApiResponse } from '@/types/api';
 import type {
   ConfigBackup,
@@ -14,7 +16,6 @@ import type {
   ConfigValidationRequest,
   ConfigValidationResponse,
 } from '@/types/config';
-import api, { handleApiResponse } from './api';
 
 /**
  * 配置管理服务类
@@ -39,9 +40,7 @@ export class ConfigService {
   /**
    * 验证配置
    */
-  async validateConfig(
-    request: ConfigValidationRequest,
-  ): Promise<ConfigValidationResponse> {
+  async validateConfig(request: ConfigValidationRequest): Promise<ConfigValidationResponse> {
     const response = await api.post<ApiResponse<ConfigValidationResponse>>(
       '/config/validate',
       request,
@@ -75,12 +74,11 @@ export class ConfigService {
   /**
    * 创建配置备份
    */
-  async createBackup(
-    request: ConfigBackupRequest,
-  ): Promise<{ backupId: string; message: string }> {
-    const response = await api.post<
-      ApiResponse<{ backupId: string; message: string }>
-    >('/config/backup', request);
+  async createBackup(request: ConfigBackupRequest): Promise<{ backupId: string; message: string }> {
+    const response = await api.post<ApiResponse<{ backupId: string; message: string }>>(
+      '/config/backup',
+      request,
+    );
     return handleApiResponse(response);
   }
 
@@ -88,36 +86,23 @@ export class ConfigService {
    * 恢复配置
    */
   async restoreFromBackup(request: ConfigRestoreRequest): Promise<void> {
-    const response = await api.post<ApiResponse<void>>(
-      '/config/restore',
-      request,
-    );
+    const response = await api.post<ApiResponse<void>>('/config/restore', request);
     return handleApiResponse(response);
   }
 
   /**
    * 测试配置
    */
-  async testConfig(
-    request: ConfigValidationRequest,
-  ): Promise<ConfigTestResult> {
-    const response = await api.post<ApiResponse<ConfigTestResult>>(
-      '/config/test',
-      request,
-    );
+  async testConfig(request: ConfigValidationRequest): Promise<ConfigTestResult> {
+    const response = await api.post<ApiResponse<ConfigTestResult>>('/config/test', request);
     return handleApiResponse(response);
   }
 
   /**
    * 预览配置更改
    */
-  async previewConfigChanges(
-    request: ConfigValidationRequest,
-  ): Promise<ConfigPreview> {
-    const response = await api.post<ApiResponse<ConfigPreview>>(
-      '/config/preview',
-      request,
-    );
+  async previewConfigChanges(request: ConfigValidationRequest): Promise<ConfigPreview> {
+    const response = await api.post<ApiResponse<ConfigPreview>>('/config/preview', request);
     return handleApiResponse(response);
   }
 

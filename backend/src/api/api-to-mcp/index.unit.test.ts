@@ -4,8 +4,10 @@
 
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ApiToMcpWebService } from '../../services/api-to-mcp-web-service.js';
+
 import { apiToMcpRoutes } from './index.js';
+
+import type { ApiToMcpWebService } from '../../services/api-to-mcp-web-service.js';
 
 describe('API to MCP API Routes', () => {
   let app: Hono;
@@ -206,17 +208,14 @@ describe('API to MCP API Routes', () => {
 
       vi.mocked(mockApiToMcpService.updateConfig).mockResolvedValue(mockResult);
 
-      const response = await app.request(
-        `/api/api-to-mcp/configs/${configId}`,
-        {
-          method: 'PUT' as const,
-          headers: {
-            Authorization: 'Bearer test-token',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(validConfig),
+      const response = await app.request(`/api/api-to-mcp/configs/${configId}`, {
+        method: 'PUT' as const,
+        headers: {
+          Authorization: 'Bearer test-token',
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify(validConfig),
+      });
 
       expect(response.status).toBe(200);
       const body = await response.json();
@@ -235,17 +234,14 @@ describe('API to MCP API Routes', () => {
         },
       };
 
-      const response = await app.request(
-        `/api/api-to-mcp/configs/${configId}`,
-        {
-          method: 'PUT' as const,
-          headers: {
-            Authorization: 'Bearer test-token',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(mismatchedConfig),
+      const response = await app.request(`/api/api-to-mcp/configs/${configId}`, {
+        method: 'PUT' as const,
+        headers: {
+          Authorization: 'Bearer test-token',
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify(mismatchedConfig),
+      });
 
       expect(response.status).toBe(400);
       const body = await response.json();
@@ -267,15 +263,12 @@ describe('API to MCP API Routes', () => {
 
       vi.mocked(mockApiToMcpService.deleteConfig).mockResolvedValue(mockResult);
 
-      const response = await app.request(
-        `/api/api-to-mcp/configs/${configId}`,
-        {
-          method: 'DELETE' as const,
-          headers: {
-            Authorization: 'Bearer test-token',
-          },
+      const response = await app.request(`/api/api-to-mcp/configs/${configId}`, {
+        method: 'DELETE' as const,
+        headers: {
+          Authorization: 'Bearer test-token',
         },
-      );
+      });
 
       expect(response.status).toBe(200);
       const body = await response.json();
@@ -293,15 +286,12 @@ describe('API to MCP API Routes', () => {
 
       vi.mocked(mockApiToMcpService.deleteConfig).mockResolvedValue(mockResult);
 
-      const response = await app.request(
-        '/api/api-to-mcp/configs/non-existent',
-        {
-          method: 'DELETE' as const,
-          headers: {
-            Authorization: 'Bearer test-token',
-          },
+      const response = await app.request('/api/api-to-mcp/configs/non-existent', {
+        method: 'DELETE' as const,
+        headers: {
+          Authorization: 'Bearer test-token',
         },
-      );
+      });
 
       expect(response.status).toBe(400);
       const body = await response.json();
@@ -329,17 +319,14 @@ describe('API to MCP API Routes', () => {
 
       vi.mocked(mockApiToMcpService.testConfig).mockResolvedValue(mockResult);
 
-      const response = await app.request(
-        `/api/api-to-mcp/configs/${configId}/test`,
-        {
-          method: 'POST' as const,
-          headers: {
-            Authorization: 'Bearer test-token',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(validParameters),
+      const response = await app.request(`/api/api-to-mcp/configs/${configId}/test`, {
+        method: 'POST' as const,
+        headers: {
+          Authorization: 'Bearer test-token',
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify(validParameters),
+      });
 
       expect(response.status).toBe(200);
       const body = await response.json();
@@ -358,17 +345,14 @@ describe('API to MCP API Routes', () => {
 
       vi.mocked(mockApiToMcpService.testConfig).mockResolvedValue(mockResult);
 
-      const response = await app.request(
-        `/api/api-to-mcp/configs/${configId}/test`,
-        {
-          method: 'POST' as const,
-          headers: {
-            Authorization: 'Bearer test-token',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(validParameters),
+      const response = await app.request(`/api/api-to-mcp/configs/${configId}/test`, {
+        method: 'POST' as const,
+        headers: {
+          Authorization: 'Bearer test-token',
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify(validParameters),
+      });
 
       expect(response.status).toBe(200);
       const body = await response.json();
@@ -398,19 +382,14 @@ describe('API to MCP API Routes', () => {
         response: {},
       };
 
-      vi.mocked(mockApiToMcpService.getConfigDetails).mockResolvedValue(
-        mockConfig,
-      );
+      vi.mocked(mockApiToMcpService.getConfigDetails).mockResolvedValue(mockConfig);
 
-      const response = await app.request(
-        `/api/api-to-mcp/configs/${configId}`,
-        {
-          method: 'GET' as const,
-          headers: {
-            Authorization: 'Bearer test-token',
-          },
+      const response = await app.request(`/api/api-to-mcp/configs/${configId}`, {
+        method: 'GET' as const,
+        headers: {
+          Authorization: 'Bearer test-token',
         },
-      );
+      });
 
       expect(response.status).toBe(200);
       const body = await response.json();
@@ -422,15 +401,12 @@ describe('API to MCP API Routes', () => {
     it('应该处理获取不存在的配置详情', async () => {
       vi.mocked(mockApiToMcpService.getConfigDetails).mockResolvedValue(null);
 
-      const response = await app.request(
-        `/api/api-to-mcp/configs/non-existent`,
-        {
-          method: 'GET' as const,
-          headers: {
-            Authorization: 'Bearer test-token',
-          },
+      const response = await app.request(`/api/api-to-mcp/configs/non-existent`, {
+        method: 'GET' as const,
+        headers: {
+          Authorization: 'Bearer test-token',
         },
-      );
+      });
 
       expect(response.status).toBe(404);
       const body = await response.json();
@@ -447,15 +423,12 @@ describe('API to MCP API Routes', () => {
       const appWithoutService = new Hono();
       appWithoutService.route('/api/api-to-mcp', apiToMcpRoutes);
 
-      const response = await appWithoutService.request(
-        '/api/api-to-mcp/configs',
-        {
-          method: 'GET' as const,
-          headers: {
-            Authorization: 'Bearer test-token',
-          },
+      const response = await appWithoutService.request('/api/api-to-mcp/configs', {
+        method: 'GET' as const,
+        headers: {
+          Authorization: 'Bearer test-token',
         },
-      );
+      });
 
       expect(response.status).toBe(503);
       const body = await response.json();

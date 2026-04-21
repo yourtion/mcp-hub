@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { ConfigTemplateType } from '../types';
+
 import { ConfigTemplateGenerator } from './config-template';
+
+import type { ConfigTemplateType } from '../types';
 
 describe('ConfigTemplateGenerator', () => {
   let generator: ConfigTemplateGenerator;
@@ -143,15 +145,9 @@ describe('ConfigTemplateGenerator', () => {
     it('应该包含开发相关的环境变量', () => {
       const template = generator.generateDevelopmentTemplate();
 
-      expect(template.servers.dev_server.env).toHaveProperty(
-        'NODE_ENV',
-        'development',
-      );
+      expect(template.servers.dev_server.env).toHaveProperty('NODE_ENV', 'development');
       expect(template.servers.dev_server.env).toHaveProperty('DEBUG', '*');
-      expect(template.servers.test_server.env).toHaveProperty(
-        'NODE_ENV',
-        'test',
-      );
+      expect(template.servers.test_server.env).toHaveProperty('NODE_ENV', 'test');
     });
   });
 
@@ -196,9 +192,7 @@ describe('ConfigTemplateGenerator', () => {
       const template = generator.generateProductionTemplate();
 
       // 验证内存优化参数
-      expect(template.servers.main_server.args).toContain(
-        '--max-old-space-size=4096',
-      );
+      expect(template.servers.main_server.args).toContain('--max-old-space-size=4096');
 
       // 验证较长的超时时间
       expect(template.servers.main_server.timeout).toBe(120000);
@@ -212,12 +206,7 @@ describe('ConfigTemplateGenerator', () => {
 
   describe('generateTemplate', () => {
     it('应该根据类型生成正确的模板', () => {
-      const types: ConfigTemplateType[] = [
-        'basic',
-        'advanced',
-        'development',
-        'production',
-      ];
+      const types: ConfigTemplateType[] = ['basic', 'advanced', 'development', 'production'];
 
       for (const type of types) {
         const template = generator.generateTemplate(type);
@@ -228,9 +217,7 @@ describe('ConfigTemplateGenerator', () => {
     });
 
     it('应该为未知类型返回基础模板', () => {
-      const template = generator.generateTemplate(
-        'unknown' as ConfigTemplateType,
-      );
+      const template = generator.generateTemplate('unknown' as ConfigTemplateType);
       const basicTemplate = generator.generateBasicTemplate();
 
       expect(template).toEqual(basicTemplate);
@@ -298,10 +285,8 @@ describe('ConfigTemplateGenerator', () => {
     });
 
     it('应该为不同类型包含特定注释', () => {
-      const developmentTemplate =
-        generator.getTemplateWithComments('development');
-      const productionTemplate =
-        generator.getTemplateWithComments('production');
+      const developmentTemplate = generator.getTemplateWithComments('development');
+      const productionTemplate = generator.getTemplateWithComments('production');
 
       expect(developmentTemplate).toContain('// 开发环境配置');
       expect(developmentTemplate).toContain('// - 启用调试日志');
@@ -358,12 +343,7 @@ describe('ConfigTemplateGenerator', () => {
 
   describe('模板一致性验证', () => {
     it('所有模板都应该有相同的基础结构', () => {
-      const types: ConfigTemplateType[] = [
-        'basic',
-        'advanced',
-        'development',
-        'production',
-      ];
+      const types: ConfigTemplateType[] = ['basic', 'advanced', 'development', 'production'];
 
       for (const type of types) {
         const template = generator.generateTemplate(type);
@@ -378,19 +358,12 @@ describe('ConfigTemplateGenerator', () => {
     });
 
     it('所有服务器配置都应该有必需的字段', () => {
-      const types: ConfigTemplateType[] = [
-        'basic',
-        'advanced',
-        'development',
-        'production',
-      ];
+      const types: ConfigTemplateType[] = ['basic', 'advanced', 'development', 'production'];
 
       for (const type of types) {
         const template = generator.generateTemplate(type);
 
-        for (const [_serverId, serverConfig] of Object.entries(
-          template.servers,
-        )) {
+        for (const [_serverId, serverConfig] of Object.entries(template.servers)) {
           expect(serverConfig).toHaveProperty('command');
           expect(typeof serverConfig.command).toBe('string');
           expect(serverConfig.command.length).toBeGreaterThan(0);
@@ -407,12 +380,7 @@ describe('ConfigTemplateGenerator', () => {
     });
 
     it('所有模板的transport类型都应该是stdio', () => {
-      const types: ConfigTemplateType[] = [
-        'basic',
-        'advanced',
-        'development',
-        'production',
-      ];
+      const types: ConfigTemplateType[] = ['basic', 'advanced', 'development', 'production'];
 
       for (const type of types) {
         const template = generator.generateTemplate(type);

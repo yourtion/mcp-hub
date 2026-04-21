@@ -4,6 +4,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
+
 import {
   createLogger,
   EnvironmentDetector,
@@ -250,8 +251,6 @@ describe('createLogger', () => {
     });
 
     // 不应该抛出错误
-    expect(() =>
-      logger.info('Test message', { userId: '123', action: 'test' }),
-    ).not.toThrow();
+    expect(() => logger.info('Test message', { userId: '123', action: 'test' })).not.toThrow();
   });
 });

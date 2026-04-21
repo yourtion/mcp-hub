@@ -3,13 +3,14 @@
  * 提供组列表、组详情、组健康检查等API
  */
 
-import {
-  createCipheriv,
-  createDecipheriv,
-  createHash,
-  randomBytes,
-} from 'node:crypto';
 import { McpServiceManager, type ToolInfo } from '@mcp-core/mcp-hub-core';
+import { Hono } from 'hono';
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
+
+import { errorResponse, successResponse } from '../../utils/api-response.js';
+import { getAllConfig, saveConfig } from '../../utils/config.js';
+import { logger } from '../../utils/logger.js';
+
 import type {
   ConfigureGroupToolsRequest,
   CreateGroupRequest,
@@ -20,10 +21,6 @@ import type {
   SetGroupValidationKeyRequest,
   UpdateGroupRequest,
 } from '@mcp-core/mcp-hub-share';
-import { Hono } from 'hono';
-import { errorResponse, successResponse } from '../../utils/api-response.js';
-import { getAllConfig, saveConfig } from '../../utils/config.js';
-import { logger } from '../../utils/logger.js';
 
 // 定义 JsonSchema 类型
 interface JsonSchema {
@@ -128,9 +125,8 @@ groupsApi.get('/', async (c) => {
           try {
             const allTools = await coreServiceManager?.getAllTools();
             availableTools =
-              allTools?.filter(
-                (tool) => tool.serverId && groupServers.includes(tool.serverId),
-              ) || [];
+              allTools?.filter((tool) => tool.serverId && groupServers.includes(tool.serverId)) ||
+              [];
             toolCount = availableTools.length;
           } catch (error) {
             logger.warn('获取组工具数量失败', {
@@ -143,9 +139,7 @@ groupsApi.get('/', async (c) => {
           const toolFilter = groupConfig.tools || [];
           let filteredTools = availableTools;
           if (toolFilter.length > 0) {
-            filteredTools = availableTools.filter((tool) =>
-              toolFilter.includes(tool.name),
-            );
+            filteredTools = availableTools.filter((tool) => toolFilter.includes(tool.name));
           }
 
           return {
@@ -162,9 +156,7 @@ groupsApi.get('/', async (c) => {
             isHealthy: connectedServers.length > 0,
             healthScore:
               groupServers.length > 0
-                ? Math.round(
-                    (connectedServers.length / groupServers.length) * 100,
-                  )
+                ? Math.round((connectedServers.length / groupServers.length) * 100)
                 : 0,
             validation: {
               enabled: groupConfig.validation?.enabled || false,
@@ -179,13 +171,10 @@ groupsApi.get('/', async (c) => {
               filteredTools: filteredTools.length,
               healthPercentage:
                 groupServers.length > 0
-                  ? Math.round(
-                      (connectedServers.length / groupServers.length) * 100,
-                    )
+                  ? Math.round((connectedServers.length / groupServers.length) * 100)
                   : 0,
             },
-            lastUpdated:
-              groupConfig.validation?.lastUpdated || new Date().toISOString(),
+            lastUpdated: groupConfig.validation?.lastUpdated || new Date().toISOString(),
           };
         } catch (error) {
           logger.error('处理组信息时出错', error as Error, { groupId });
@@ -225,38 +214,25 @@ groupsApi.get('/', async (c) => {
       totalGroups: groupList.length,
       healthyGroups: groupList.filter((g) => g.isHealthy).length,
       totalServers: groupList.reduce((sum, g) => sum + g.serverCount, 0),
-      connectedServers: groupList.reduce(
-        (sum, g) => sum + g.connectedServers,
-        0,
-      ),
+      connectedServers: groupList.reduce((sum, g) => sum + g.connectedServers, 0),
       totalTools: groupList.reduce((sum, g) => sum + g.toolCount, 0),
       filteredTools: groupList.reduce((sum, g) => sum + g.filteredToolCount, 0),
       averageHealthScore:
         groupList.length > 0
-          ? Math.round(
-              groupList.reduce((sum, g) => sum + g.healthScore, 0) /
-                groupList.length,
-            )
+          ? Math.round(groupList.reduce((sum, g) => sum + g.healthScore, 0) / groupList.length)
           : 0,
-      groupsWithValidation: groupList.filter((g) => g.validation.enabled)
-        .length,
-      groupsWithToolFilter: groupList.filter((g) => g.toolFilterMode !== 'none')
-        .length,
+      groupsWithValidation: groupList.filter((g) => g.validation.enabled).length,
+      groupsWithToolFilter: groupList.filter((g) => g.toolFilterMode !== 'none').length,
       summary: {
         status:
-          groupList.filter((g) => g.isHealthy).length === groupList.length &&
-          groupList.length > 0
+          groupList.filter((g) => g.isHealthy).length === groupList.length && groupList.length > 0
             ? 'healthy'
             : groupList.filter((g) => g.isHealthy).length > 0
               ? 'partial'
               : 'unhealthy',
         issues: [
-          ...(groupList.some((g) => g.healthScore < 50)
-            ? ['部分组健康度较低']
-            : []),
-          ...(groupList.filter((g) => g.error).length > 0
-            ? ['部分组存在错误']
-            : []),
+          ...(groupList.some((g) => g.healthScore < 50) ? ['部分组健康度较低'] : []),
+          ...(groupList.filter((g) => g.error).length > 0 ? ['部分组存在错误'] : []),
         ],
       },
       timestamp: new Date().toISOString(),
@@ -352,9 +328,7 @@ groupsApi.get('/:groupId', async (c) => {
 
       // 如果组配置了特定工具过滤，应用过滤
       if (groupConfig.tools && groupConfig.tools.length > 0) {
-        groupTools = groupTools.filter((tool) =>
-          groupConfig.tools.includes(tool.name),
-        );
+        groupTools = groupTools.filter((tool) => groupConfig.tools.includes(tool.name));
       }
     } catch (error) {
       logger.warn('获取组工具失败', {
@@ -377,10 +351,7 @@ groupsApi.get('/:groupId', async (c) => {
       tools: groupTools,
       toolCount: groupTools.length,
       toolFilter: groupConfig.tools || [],
-      toolFilterMode:
-        groupConfig.tools && groupConfig.tools.length > 0
-          ? 'whitelist'
-          : 'none',
+      toolFilterMode: groupConfig.tools && groupConfig.tools.length > 0 ? 'whitelist' : 'none',
       isHealthy: connectedServers.length > 0,
       healthScore:
         groupServers.length > 0
@@ -389,9 +360,7 @@ groupsApi.get('/:groupId', async (c) => {
       validation: {
         enabled: groupConfig.validation?.enabled || false,
         hasKey: !!groupConfig.validation?.validationKey,
-        validationKey: groupConfig.validation?.validationKey
-          ? '***'
-          : undefined,
+        validationKey: groupConfig.validation?.validationKey ? '***' : undefined,
         createdAt: groupConfig.validation?.createdAt,
         lastUpdated: groupConfig.validation?.lastUpdated,
       },
@@ -413,8 +382,7 @@ groupsApi.get('/:groupId', async (c) => {
         requiresValidation: groupConfig.validation?.enabled || false,
         toolAccessRestricted: groupConfig.tools && groupConfig.tools.length > 0,
       },
-      lastUpdated:
-        groupConfig.validation?.lastUpdated || new Date().toISOString(),
+      lastUpdated: groupConfig.validation?.lastUpdated || new Date().toISOString(),
       timestamp: new Date().toISOString(),
     };
 
@@ -484,17 +452,13 @@ groupsApi.get('/:groupId/health', async (c) => {
 
     const healthyServers = serverHealth.filter((s) => s.healthy === true);
     const healthScore =
-      groupServers.length > 0
-        ? Math.round((healthyServers.length / groupServers.length) * 100)
-        : 0;
+      groupServers.length > 0 ? Math.round((healthyServers.length / groupServers.length) * 100) : 0;
 
     // 检查工具可用性
     let toolHealth = { available: 0, total: 0 };
     try {
       const allTools = await coreServiceManager.getAllTools();
-      const groupTools = allTools.filter((tool) =>
-        groupServers.includes(tool.serverId || ''),
-      );
+      const groupTools = allTools.filter((tool) => groupServers.includes(tool.serverId || ''));
 
       toolHealth = {
         available: groupTools.length,
@@ -579,15 +543,11 @@ groupsApi.get('/:groupId/tools', async (c) => {
     const allTools = await coreServiceManager.getAllTools();
 
     // 获取组内工具
-    let groupTools = allTools.filter((tool) =>
-      groupServers.includes(tool.serverId || ''),
-    );
+    let groupTools = allTools.filter((tool) => groupServers.includes(tool.serverId || ''));
 
     // 应用组工具过滤
     if (groupConfig.tools && groupConfig.tools.length > 0) {
-      groupTools = groupTools.filter((tool) =>
-        groupConfig.tools.includes(tool.name),
-      );
+      groupTools = groupTools.filter((tool) => groupConfig.tools.includes(tool.name));
     }
 
     // 按服务器分组
@@ -683,8 +643,7 @@ groupsApi.get('/:groupId/servers', async (c) => {
         // 获取服务器工具
         let serverTools: ToolInfo[] = [];
         try {
-          serverTools =
-            (await coreServiceManager?.getServerTools(serverId)) || [];
+          serverTools = (await coreServiceManager?.getServerTools(serverId)) || [];
         } catch (error) {
           logger.warn('获取服务器工具失败', {
             serverId,
@@ -743,8 +702,7 @@ groupsApi.get('/:groupId/servers', async (c) => {
 function encryptValidationKey(key: string): string {
   try {
     // 使用系统密钥进行加密（在实际生产环境中应该使用更安全的密钥管理）
-    const systemKey =
-      process.env.VALIDATION_KEY_SECRET || 'mcp-hub-default-secret-key';
+    const systemKey = process.env.VALIDATION_KEY_SECRET || 'mcp-hub-default-secret-key';
     const keyHash = createHash('sha256').update(systemKey).digest();
 
     // 生成随机IV
@@ -767,8 +725,7 @@ function encryptValidationKey(key: string): string {
  */
 function decryptValidationKey(encryptedKey: string): string {
   try {
-    const systemKey =
-      process.env.VALIDATION_KEY_SECRET || 'mcp-hub-default-secret-key';
+    const systemKey = process.env.VALIDATION_KEY_SECRET || 'mcp-hub-default-secret-key';
     const keyHash = createHash('sha256').update(systemKey).digest();
 
     // 分离IV和加密数据
@@ -821,9 +778,7 @@ function assessKeyComplexity(key: string): 'weak' | 'medium' | 'strong' {
     /(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|012|123|234|345|456|567|678|789|890)/i.test(
       key,
     );
-  const hasCommonPatterns = /(password|qwerty|asdf|zxcv|1234|admin|user)/i.test(
-    key,
-  );
+  const hasCommonPatterns = /(password|qwerty|asdf|zxcv|1234|admin|user)/i.test(key);
 
   if (hasRepeatedChars) score -= 1;
   if (hasSequentialChars) score -= 1;
@@ -940,11 +895,7 @@ function validateGroupData(data: CreateGroupRequest | UpdateGroupRequest): {
 
   // 验证名称
   if ('name' in data && data.name !== undefined) {
-    if (
-      !data.name ||
-      typeof data.name !== 'string' ||
-      data.name.trim().length === 0
-    ) {
+    if (!data.name || typeof data.name !== 'string' || data.name.trim().length === 0) {
       errors.push('组名称不能为空');
     } else if (data.name.length > 100) {
       errors.push('组名称长度不能超过100个字符');
@@ -1155,9 +1106,7 @@ groupsApi.post('/', async (c) => {
 
     // 验证服务器是否存在
     const servers = config.mcps.servers as Record<string, unknown>;
-    const invalidServers = body.servers.filter(
-      (serverId) => !servers[serverId],
-    );
+    const invalidServers = body.servers.filter((serverId) => !servers[serverId]);
 
     if (invalidServers.length > 0) {
       logger.warn('创建组时发现不存在的服务器', {
@@ -1210,8 +1159,7 @@ groupsApi.post('/', async (c) => {
       description: body.description || '',
       servers: body.servers || [],
       tools: body.tools || [],
-      toolFilterMode:
-        body.tools && body.tools.length > 0 ? 'whitelist' : 'none',
+      toolFilterMode: body.tools && body.tools.length > 0 ? 'whitelist' : 'none',
       validation: {
         enabled: false,
         hasKey: false,
@@ -1299,9 +1247,7 @@ groupsApi.put('/:groupId', async (c) => {
     // 验证服务器是否存在（如果提供了服务器列表）
     if (body.servers) {
       const servers = config.mcps.servers as Record<string, unknown>;
-      const invalidServers = body.servers.filter(
-        (serverId) => !servers[serverId],
-      );
+      const invalidServers = body.servers.filter((serverId) => !servers[serverId]);
 
       if (invalidServers.length > 0) {
         logger.warn('更新组时发现不存在的服务器', {
@@ -1355,10 +1301,7 @@ groupsApi.put('/:groupId', async (c) => {
       description: updatedGroup.description || '',
       servers: updatedGroup.servers || [],
       tools: updatedGroup.tools || [],
-      toolFilterMode:
-        updatedGroup.tools && updatedGroup.tools.length > 0
-          ? 'whitelist'
-          : 'none',
+      toolFilterMode: updatedGroup.tools && updatedGroup.tools.length > 0 ? 'whitelist' : 'none',
       validation: {
         enabled: updatedGroup.validation?.enabled || false,
         hasKey: !!updatedGroup.validation?.validationKey,
@@ -1374,8 +1317,7 @@ groupsApi.put('/:groupId', async (c) => {
       },
       accessControl: {
         requiresValidation: updatedGroup.validation?.enabled || false,
-        toolAccessRestricted:
-          updatedGroup.tools && updatedGroup.tools.length > 0,
+        toolAccessRestricted: updatedGroup.tools && updatedGroup.tools.length > 0,
       },
       lastUpdated: new Date().toISOString(),
     });
@@ -1642,9 +1584,7 @@ groupsApi.post('/:groupId/tools', async (c) => {
       filterMode: body.filterMode || 'whitelist',
       validation: {
         enabled: existingGroup.validation?.enabled || false,
-        requiresKey:
-          existingGroup.validation?.enabled &&
-          !!existingGroup.validation?.validationKey,
+        requiresKey: existingGroup.validation?.enabled && !!existingGroup.validation?.validationKey,
       },
       impact: {
         previouslyFilteredTools: existingGroup.tools?.length || 0,
@@ -1716,9 +1656,7 @@ groupsApi.get('/:groupId/available-tools', async (c) => {
     const allTools = await coreServiceManager.getAllTools();
 
     // 获取组内所有可用工具
-    const availableTools = allTools.filter((tool) =>
-      groupServers.includes(tool.serverId || ''),
-    );
+    const availableTools = allTools.filter((tool) => groupServers.includes(tool.serverId || ''));
 
     // 应用工具过滤
     const toolFilter = groupConfig.tools || [];
@@ -1726,9 +1664,7 @@ groupsApi.get('/:groupId/available-tools', async (c) => {
 
     if (toolFilter.length > 0) {
       // 白名单模式：只显示配置的工具
-      filteredTools = availableTools.filter((tool) =>
-        toolFilter.includes(tool.name),
-      );
+      filteredTools = availableTools.filter((tool) => toolFilter.includes(tool.name));
     }
 
     // 按服务器分组
@@ -1774,17 +1710,13 @@ groupsApi.get('/:groupId/available-tools', async (c) => {
             : 100,
         excludedTools: availableTools.length - filteredTools.length,
       },
-      categories: [
-        ...new Set(filteredTools.map((tool) => tool.category || 'general')),
-      ],
+      categories: [...new Set(filteredTools.map((tool) => tool.category || 'general'))],
       serverDistribution: Object.keys(toolsByServer).map((serverId) => ({
         serverId,
         toolCount: toolsByServer[serverId].length,
         percentage:
           filteredTools.length > 0
-            ? Math.round(
-                (toolsByServer[serverId].length / filteredTools.length) * 100,
-              )
+            ? Math.round((toolsByServer[serverId].length / filteredTools.length) * 100)
             : 0,
       })),
       timestamp: new Date().toISOString(),
@@ -1875,8 +1807,7 @@ groupsApi.post('/:groupId/validate-tool-access', async (c) => {
 
     // 查找工具
     const tool = allTools.find(
-      (t) =>
-        t.name === body.toolName && groupServers.includes(t.serverId || ''),
+      (t) => t.name === body.toolName && groupServers.includes(t.serverId || ''),
     );
 
     if (!tool) {
@@ -1919,8 +1850,7 @@ groupsApi.post('/:groupId/validate-tool-access', async (c) => {
       message,
       validation: {
         groupHasValidation: groupConfig.validation?.enabled || false,
-        toolInFilterList:
-          toolFilter.length > 0 ? toolFilter.includes(body.toolName) : true,
+        toolInFilterList: toolFilter.length > 0 ? toolFilter.includes(body.toolName) : true,
         filterMode: toolFilter.length > 0 ? 'whitelist' : 'none',
       },
       toolInfo: hasAccess
@@ -2418,9 +2348,7 @@ groupsApi.post('/:groupId/generate-validation-key', async (c) => {
         recommendations: generateSecurityRecommendations(newKey),
       },
       warnings: [
-        ...(assessKeyComplexity(newKey) === 'weak'
-          ? ['密钥强度较弱，建议使用更复杂的密钥']
-          : []),
+        ...(assessKeyComplexity(newKey) === 'weak' ? ['密钥强度较弱，建议使用更复杂的密钥'] : []),
         ...(newKey.length < 16 ? ['密钥长度较短，建议至少16个字符'] : []),
       ],
     });

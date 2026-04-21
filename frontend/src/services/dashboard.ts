@@ -1,5 +1,7 @@
 // 仪表板API服务
 
+import api, { handleApiResponse } from './api';
+
 import type {
   Activity,
   DashboardStats,
@@ -10,7 +12,6 @@ import type {
   SystemHealth,
   SystemInfo,
 } from '@/types/dashboard';
-import api, { handleApiResponse } from './api';
 
 export class DashboardService {
   /**
@@ -32,9 +33,7 @@ export class DashboardService {
   /**
    * 获取详细健康检查报告
    */
-  async getDetailedHealth(): Promise<
-    SystemHealth & { additionalChecks: Record<string, unknown> }
-  > {
+  async getDetailedHealth(): Promise<SystemHealth & { additionalChecks: Record<string, unknown> }> {
     const response = await api.get('/dashboard/health-detailed');
     return handleApiResponse(response);
   }
@@ -60,9 +59,7 @@ export class DashboardService {
   /**
    * 获取最近活动
    */
-  async getRecentActivities(
-    limit = 50,
-  ): Promise<{ activities: Activity[]; total: number }> {
+  async getRecentActivities(limit = 50): Promise<{ activities: Activity[]; total: number }> {
     const response = await api.get(`/dashboard/activities?limit=${limit}`);
     return handleApiResponse(response);
   }

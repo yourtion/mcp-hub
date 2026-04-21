@@ -3,9 +3,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { RateLimiterImpl } from './rate-limiter.js';
+
 import type { RateLimitConfig } from '../../types/api-config.js';
 import type { SecurityEvent } from '../../types/security.js';
-import { RateLimiterImpl } from './rate-limiter.js';
 
 // Mock日志记录器
 vi.mock('../../../utils/logger.js', () => ({
@@ -131,24 +133,16 @@ describe('RateLimiterImpl', () => {
       const rateLimiterWithConfig = new RateLimiterImpl(config);
 
       // 客户端A使用配额
-      expect(
-        await rateLimiterWithConfig.checkLimit('test-tool', 'client-a'),
-      ).toBe(true);
+      expect(await rateLimiterWithConfig.checkLimit('test-tool', 'client-a')).toBe(true);
       await rateLimiterWithConfig.recordCall('test-tool', 'client-a');
-      expect(
-        await rateLimiterWithConfig.checkLimit('test-tool', 'client-a'),
-      ).toBe(true);
+      expect(await rateLimiterWithConfig.checkLimit('test-tool', 'client-a')).toBe(true);
       await rateLimiterWithConfig.recordCall('test-tool', 'client-a');
 
       // 客户端A应该被限制
-      expect(
-        await rateLimiterWithConfig.checkLimit('test-tool', 'client-a'),
-      ).toBe(false);
+      expect(await rateLimiterWithConfig.checkLimit('test-tool', 'client-a')).toBe(false);
 
       // 但客户端B应该仍然被允许
-      expect(
-        await rateLimiterWithConfig.checkLimit('test-tool', 'client-b'),
-      ).toBe(true);
+      expect(await rateLimiterWithConfig.checkLimit('test-tool', 'client-b')).toBe(true);
       await rateLimiterWithConfig.recordCall('test-tool', 'client-b');
     });
 
@@ -168,24 +162,16 @@ describe('RateLimiterImpl', () => {
 
       // 普通工具应该有10个请求的限制
       for (let i = 0; i < 10; i++) {
-        expect(await rateLimiterWithConfig.checkLimit('normal-tool')).toBe(
-          true,
-        );
+        expect(await rateLimiterWithConfig.checkLimit('normal-tool')).toBe(true);
         await rateLimiterWithConfig.recordCall('normal-tool');
       }
 
       // 受限工具应该只有2个请求的限制
-      expect(await rateLimiterWithConfig.checkLimit('restricted-tool')).toBe(
-        true,
-      );
+      expect(await rateLimiterWithConfig.checkLimit('restricted-tool')).toBe(true);
       await rateLimiterWithConfig.recordCall('restricted-tool');
-      expect(await rateLimiterWithConfig.checkLimit('restricted-tool')).toBe(
-        true,
-      );
+      expect(await rateLimiterWithConfig.checkLimit('restricted-tool')).toBe(true);
       await rateLimiterWithConfig.recordCall('restricted-tool');
-      expect(await rateLimiterWithConfig.checkLimit('restricted-tool')).toBe(
-        false,
-      );
+      expect(await rateLimiterWithConfig.checkLimit('restricted-tool')).toBe(false);
     });
   });
 
@@ -199,18 +185,14 @@ describe('RateLimiterImpl', () => {
       const rateLimiterWithConfig = new RateLimiterImpl(config);
 
       // 初始状态应该有5个剩余请求
-      expect(
-        await rateLimiterWithConfig.getRemainingRequests('test-tool'),
-      ).toBe(5);
+      expect(await rateLimiterWithConfig.getRemainingRequests('test-tool')).toBe(5);
 
       // 使用2个请求
       await rateLimiterWithConfig.recordCall('test-tool');
       await rateLimiterWithConfig.recordCall('test-tool');
 
       // 应该剩余3个请求
-      expect(
-        await rateLimiterWithConfig.getRemainingRequests('test-tool'),
-      ).toBe(3);
+      expect(await rateLimiterWithConfig.getRemainingRequests('test-tool')).toBe(3);
     });
 
     it('应该重置计数器', async () => {
@@ -225,17 +207,13 @@ describe('RateLimiterImpl', () => {
       await rateLimiterWithConfig.recordCall('test-tool');
       await rateLimiterWithConfig.recordCall('test-tool');
 
-      expect(
-        await rateLimiterWithConfig.getRemainingRequests('test-tool'),
-      ).toBe(3);
+      expect(await rateLimiterWithConfig.getRemainingRequests('test-tool')).toBe(3);
 
       // 重置计数器
       await rateLimiterWithConfig.resetCounter('test-tool');
 
       // 应该恢复到初始状态
-      expect(
-        await rateLimiterWithConfig.getRemainingRequests('test-tool'),
-      ).toBe(5);
+      expect(await rateLimiterWithConfig.getRemainingRequests('test-tool')).toBe(5);
     });
 
     it('应该获取频率限制状态', async () => {
@@ -289,8 +267,7 @@ describe('RateLimiterImpl', () => {
       }
 
       // 应该检测到异常活动
-      const anomalies =
-        await rateLimiterWithConfig.detectAnomalies('test-tool');
+      const anomalies = await rateLimiterWithConfig.detectAnomalies('test-tool');
       expect(anomalies).toHaveLength(1);
       expect(anomalies[0].type).toBe('SUSPICIOUS_ACTIVITY');
       expect(anomalies[0].severity).toBe('high');
@@ -318,8 +295,7 @@ describe('RateLimiterImpl', () => {
       }
 
       // 不应该检测到异常
-      const anomalies =
-        await rateLimiterWithConfig.detectAnomalies('test-tool');
+      const anomalies = await rateLimiterWithConfig.detectAnomalies('test-tool');
       expect(anomalies).toHaveLength(0);
     });
   });

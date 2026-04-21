@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { mcp, shutdownMcpService } from './legacy/mcp-legacy.js';
 
 // Mock所有依赖
@@ -61,9 +62,7 @@ vi.mock('@mcp-core/mcp-hub-core', () => ({
 }));
 
 vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', () => ({
-  StreamableHTTPServerTransport: vi.fn(function (
-    this: Record<string, unknown>,
-  ) {
+  StreamableHTTPServerTransport: vi.fn(function (this: Record<string, unknown>) {
     Object.assign(this, {
       handleRequest: vi.fn().mockResolvedValue(undefined),
       close: vi.fn(),
@@ -147,12 +146,8 @@ describe('MCP Router', () => {
 
     it('应该处理MCP请求错误', async () => {
       // Mock一个会抛出错误的请求
-      const { initializeMcpService } = await import(
-        './services/mcp_service.js'
-      );
-      vi.mocked(initializeMcpService).mockRejectedValueOnce(
-        new Error('初始化失败'),
-      );
+      const { initializeMcpService } = await import('./services/mcp_service.js');
+      vi.mocked(initializeMcpService).mockRejectedValueOnce(new Error('初始化失败'));
 
       const mockRequest = new Request('http://localhost/mcp', {
         method: 'POST',
@@ -205,9 +200,7 @@ describe('MCP Router', () => {
 
   describe('GET /mcp/servers/:serverId', () => {
     it('应该返回指定服务器的详情', async () => {
-      const response = await mcp.request(
-        'http://localhost/mcp/servers/server1',
-      );
+      const response = await mcp.request('http://localhost/mcp/servers/server1');
       expect(response.status).toBe(200);
 
       const data = await response.json();
@@ -218,9 +211,7 @@ describe('MCP Router', () => {
 
     it('应该在服务器不存在时返回404', async () => {
       // Mock getServerConnections返回空Map
-      const response = await mcp.request(
-        'http://localhost/mcp/servers/nonexistent',
-      );
+      const response = await mcp.request('http://localhost/mcp/servers/nonexistent');
       expect(response.status).toBe(404);
     });
   });

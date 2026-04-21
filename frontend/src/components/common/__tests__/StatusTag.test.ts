@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+
 import StatusTag from '../StatusTag.vue';
 
 describe('StatusTag', () => {

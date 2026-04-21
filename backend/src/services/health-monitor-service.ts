@@ -1,6 +1,7 @@
-import type { GroupManager, ServerManager } from '../types/mcp-hub.js';
 import { ServerStatus } from '../types/mcp-hub.js';
 import { logger } from '../utils/logger.js';
+
+import type { GroupManager, ServerManager } from '../types/mcp-hub.js';
 
 /**
  * 健康监控服务
@@ -155,15 +156,11 @@ export class HealthMonitorService {
       const report = await this.generateReport();
 
       if (report.critical.length > 0) {
-        logger.error(
-          'Critical health issues detected',
-          new Error('Service health critical'),
-          {
-            criticalIssues: report.critical,
-            warnings: report.warnings,
-            healthScore: report.healthScore,
-          },
-        );
+        logger.error('Critical health issues detected', new Error('Service health critical'), {
+          criticalIssues: report.critical,
+          warnings: report.warnings,
+          healthScore: report.healthScore,
+        });
       } else if (report.warnings.length > 0) {
         logger.warn('Service health warnings detected', {
           warnings: report.warnings,
@@ -231,9 +228,7 @@ export class HealthMonitorService {
     if (serverStats.connected === 0) {
       critical.push('No servers are connected');
     } else if (serverStats.connected < serverStats.total * 0.5) {
-      warnings.push(
-        `Only ${serverStats.connected} of ${serverStats.total} servers are connected`,
-      );
+      warnings.push(`Only ${serverStats.connected} of ${serverStats.total} servers are connected`);
     }
 
     if (serverStats.failed > 0) {
@@ -263,9 +258,7 @@ export class HealthMonitorService {
         }
       } catch (error) {
         groupStats.unhealthy++;
-        warnings.push(
-          `Group '${groupId}' health check failed: ${(error as Error).message}`,
-        );
+        warnings.push(`Group '${groupId}' health check failed: ${(error as Error).message}`);
       }
     }
 

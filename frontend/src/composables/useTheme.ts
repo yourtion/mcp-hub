@@ -4,14 +4,10 @@ export type ThemeMode = 'light' | 'dark' | 'auto';
 
 const STORAGE_KEY = 'mcp-hub-theme';
 
-const mode = ref<ThemeMode>(
-  (localStorage.getItem(STORAGE_KEY) as ThemeMode) || 'auto',
-);
+const mode = ref<ThemeMode>((localStorage.getItem(STORAGE_KEY) as ThemeMode) || 'auto');
 
 function getSystemPreference(): 'light' | 'dark' {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 function applyTheme(m: ThemeMode) {

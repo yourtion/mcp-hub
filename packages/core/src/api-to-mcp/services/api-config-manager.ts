@@ -5,11 +5,13 @@
 
 import { type FSWatcher, promises as fs, watch } from 'node:fs';
 import { resolve } from 'node:path';
+
 import { createLogger } from '../../utils/logger.js';
 import { ApiToolsConfigSchema } from '../config/api-config-schemas.js';
+import { EnvironmentResolverImpl } from '../utils/environment-resolver.js';
+
 import type { ApiToolConfig, ApiToolsConfig } from '../types/api-config.js';
 import type { ValidationResult } from '../types/api-tool.js';
-import { EnvironmentResolverImpl } from '../utils/environment-resolver.js';
 
 const logger = createLogger({ component: 'ApiConfigManager' });
 
@@ -107,9 +109,7 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
       // 先解析环境变量，再进行验证
       const resolvedConfig: ApiToolsConfig = {
         ...config,
-        tools: config.tools.map((tool) =>
-          this.resolveEnvironmentVariables(tool),
-        ),
+        tools: config.tools.map((tool) => this.resolveEnvironmentVariables(tool)),
       };
 
       // 验证解析后的配置格式
@@ -118,10 +118,7 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
         const errorMessages = validationResult.errors
           .map((e) => `${e.path}: ${e.message}`)
           .join(', ');
-        throw new ConfigLoadError(
-          `配置文件格式验证失败: ${errorMessages}`,
-          this.configPath,
-        );
+        throw new ConfigLoadError(`配置文件格式验证失败: ${errorMessages}`, this.configPath);
       }
 
       const resolvedTools = resolvedConfig.tools;
@@ -135,18 +132,10 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
 
       if (error instanceof Error && 'code' in error) {
         if (error.code === 'ENOENT') {
-          throw new ConfigLoadError(
-            `配置文件不存在: ${configPath}`,
-            configPath,
-            error,
-          );
+          throw new ConfigLoadError(`配置文件不存在: ${configPath}`, configPath, error);
         }
         if (error.code === 'EACCES') {
-          throw new ConfigLoadError(
-            `无权限访问配置文件: ${configPath}`,
-            configPath,
-            error,
-          );
+          throw new ConfigLoadError(`无权限访问配置文件: ${configPath}`, configPath, error);
         }
       }
 
@@ -228,16 +217,12 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
     this.watchCallback = callback;
 
     try {
-      this.watcher = watch(
-        this.configPath,
-        { persistent: false },
-        (eventType) => {
-          if (eventType === 'change') {
-            logger.info('检测到配置文件变化，重新加载配置...');
-            this.handleConfigChange();
-          }
-        },
-      );
+      this.watcher = watch(this.configPath, { persistent: false }, (eventType) => {
+        if (eventType === 'change') {
+          logger.info('检测到配置文件变化，重新加载配置...');
+          this.handleConfigChange();
+        }
+      });
 
       logger.info(`开始监听配置文件变化: ${this.configPath}`);
     } catch (error) {
@@ -272,19 +257,14 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
       const clonedConfig = JSON.parse(JSON.stringify(config));
 
       // 使用环境变量解析器处理整个配置对象
-      const resolvedConfig =
-        this.environmentResolver.resolveObject(clonedConfig);
+      const resolvedConfig = this.environmentResolver.resolveObject(clonedConfig);
 
       // 验证必需的环境变量
-      const requiredVars =
-        this.environmentResolver.extractAllEnvironmentVariables(config);
-      const missingVars =
-        this.environmentResolver.validateRequiredVariables(requiredVars);
+      const requiredVars = this.environmentResolver.extractAllEnvironmentVariables(config);
+      const missingVars = this.environmentResolver.validateRequiredVariables(requiredVars);
 
       if (missingVars.length > 0) {
-        console.warn(
-          `工具 ${config.id} 缺少环境变量: ${missingVars.join(', ')}`,
-        );
+        console.warn(`工具 ${config.id} 缺少环境变量: ${missingVars.join(', ')}`);
       }
 
       return resolvedConfig;

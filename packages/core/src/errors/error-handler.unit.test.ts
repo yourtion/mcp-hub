@@ -2,6 +2,7 @@
  * 错误处理器测试
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   ConfigError,
   ConnectionError,
@@ -98,12 +99,8 @@ describe('UnifiedErrorHandler', () => {
     it('应该在可重试错误时进行重试', async () => {
       const operation = vi
         .fn()
-        .mockRejectedValueOnce(
-          new ConnectionError(ErrorCode.CONNECTION_TIMEOUT),
-        )
-        .mockRejectedValueOnce(
-          new ConnectionError(ErrorCode.CONNECTION_TIMEOUT),
-        )
+        .mockRejectedValueOnce(new ConnectionError(ErrorCode.CONNECTION_TIMEOUT))
+        .mockRejectedValueOnce(new ConnectionError(ErrorCode.CONNECTION_TIMEOUT))
         .mockResolvedValue('success');
 
       const context: ErrorContext = {
@@ -146,9 +143,7 @@ describe('UnifiedErrorHandler', () => {
         component: 'TestComponent',
       };
 
-      await expect(
-        errorHandler.executeWithRetry(operation, context),
-      ).rejects.toThrow(error);
+      await expect(errorHandler.executeWithRetry(operation, context)).rejects.toThrow(error);
 
       expect(operation).toHaveBeenCalledTimes(1);
     });
@@ -166,11 +161,7 @@ describe('UnifiedErrorHandler', () => {
         fallbackValue: 'fallback',
       };
 
-      const result = await errorHandler.executeWithFallback(
-        operation,
-        context,
-        fallbackStrategy,
-      );
+      const result = await errorHandler.executeWithFallback(operation, context, fallbackStrategy);
 
       expect(result).toBe('success');
       expect(operation).toHaveBeenCalledTimes(1);
@@ -187,11 +178,7 @@ describe('UnifiedErrorHandler', () => {
         fallbackValue: 'fallback',
       };
 
-      const result = await errorHandler.executeWithFallback(
-        operation,
-        context,
-        fallbackStrategy,
-      );
+      const result = await errorHandler.executeWithFallback(operation, context, fallbackStrategy);
 
       expect(result).toBe('fallback');
       expect(mockLogger).toHaveBeenCalled();
@@ -209,11 +196,7 @@ describe('UnifiedErrorHandler', () => {
         fallbackFunction,
       };
 
-      const result = await errorHandler.executeWithFallback(
-        operation,
-        context,
-        fallbackStrategy,
-      );
+      const result = await errorHandler.executeWithFallback(operation, context, fallbackStrategy);
 
       expect(result).toBe('function-fallback');
       expect(fallbackFunction).toHaveBeenCalled();
@@ -265,9 +248,7 @@ describe('ErrorFactory', () => {
   });
 
   it('应该创建连接错误', () => {
-    const error = ErrorFactory.createConnectionError(
-      ErrorCode.CONNECTION_TIMEOUT,
-    );
+    const error = ErrorFactory.createConnectionError(ErrorCode.CONNECTION_TIMEOUT);
 
     expect(error).toBeInstanceOf(ConnectionError);
     expect(error.code).toBe(ErrorCode.CONNECTION_TIMEOUT);
@@ -275,27 +256,21 @@ describe('ErrorFactory', () => {
   });
 
   it('应该创建服务错误', () => {
-    const error = ErrorFactory.createServiceError(
-      ErrorCode.SERVICE_UNAVAILABLE,
-    );
+    const error = ErrorFactory.createServiceError(ErrorCode.SERVICE_UNAVAILABLE);
 
     expect(error).toBeInstanceOf(Error);
     expect(error.code).toBe(ErrorCode.SERVICE_UNAVAILABLE);
   });
 
   it('应该创建工具执行错误', () => {
-    const error = ErrorFactory.createToolExecutionError(
-      ErrorCode.TOOL_EXECUTION_FAILED,
-    );
+    const error = ErrorFactory.createToolExecutionError(ErrorCode.TOOL_EXECUTION_FAILED);
 
     expect(error).toBeInstanceOf(Error);
     expect(error.code).toBe(ErrorCode.TOOL_EXECUTION_FAILED);
   });
 
   it('应该创建验证错误', () => {
-    const error = ErrorFactory.createValidationError(
-      ErrorCode.INVALID_REQUEST_FORMAT,
-    );
+    const error = ErrorFactory.createValidationError(ErrorCode.INVALID_REQUEST_FORMAT);
 
     expect(error).toBeInstanceOf(Error);
     expect(error.code).toBe(ErrorCode.INVALID_REQUEST_FORMAT);

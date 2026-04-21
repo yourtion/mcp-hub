@@ -50,18 +50,14 @@ export function isTextContent(content: McpContentItem): content is TextContent {
 /**
  * 类型守卫：检查是否为 ImageContent
  */
-export function isImageContent(
-  content: McpContentItem,
-): content is ImageContent {
+export function isImageContent(content: McpContentItem): content is ImageContent {
   return content.type === 'image';
 }
 
 /**
  * 类型守卫：检查是否为 ResourceContent
  */
-export function isResourceContent(
-  content: McpContentItem,
-): content is ResourceContent {
+export function isResourceContent(content: McpContentItem): content is ResourceContent {
   return content.type === 'resource';
 }
 

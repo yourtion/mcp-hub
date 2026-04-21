@@ -3,9 +3,11 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ApiExecutorImpl, createApiExecutor } from './api-executor.js';
+
 import type { ApiToolConfig, AuthConfig } from '../types/api-config.js';
 import type { HttpRequestConfig, HttpResponse } from '../types/http-client.js';
-import { ApiExecutorImpl, createApiExecutor } from './api-executor.js';
 import type { AuthenticationManager } from './authentication.js';
 import type { HttpClient } from './http-client.js';
 
@@ -23,9 +25,7 @@ const mockBuildRequest = vi.fn().mockImplementation((apiConfig, _context) => ({
   usedVariables: [],
 }));
 
-const mockValidateParameters = vi
-  .fn()
-  .mockReturnValue({ valid: true, errors: [] });
+const mockValidateParameters = vi.fn().mockReturnValue({ valid: true, errors: [] });
 
 // Mock依赖
 vi.mock('./http-client.js');
@@ -88,11 +88,7 @@ describe('ApiExecutorImpl', () => {
         enableRequestLogging: false,
       };
 
-      const executor = new ApiExecutorImpl(
-        mockHttpClient,
-        mockAuthManager,
-        config,
-      );
+      const executor = new ApiExecutorImpl(mockHttpClient, mockAuthManager, config);
       expect(executor).toBeInstanceOf(ApiExecutorImpl);
     });
   });
@@ -168,27 +164,18 @@ describe('ApiExecutorImpl', () => {
       };
 
       // Mock认证管理器方法
-      vi.mocked(mockAuthManager.resolveEnvironmentVariables).mockReturnValue(
-        authConfig,
-      );
+      vi.mocked(mockAuthManager.resolveEnvironmentVariables).mockReturnValue(authConfig);
       vi.mocked(mockAuthManager.validateEnvironmentVariables).mockReturnValue({
         valid: true,
         missingVars: [],
       });
-      vi.mocked(mockAuthManager.applyAuthentication).mockReturnValue(
-        authenticatedRequest,
-      );
+      vi.mocked(mockAuthManager.applyAuthentication).mockReturnValue(authenticatedRequest);
 
       const result = apiExecutor.applyAuthentication(request, authConfig);
 
-      expect(mockAuthManager.resolveEnvironmentVariables).toHaveBeenCalledWith(
-        authConfig,
-      );
+      expect(mockAuthManager.resolveEnvironmentVariables).toHaveBeenCalledWith(authConfig);
       expect(mockAuthManager.validateEnvironmentVariables).toHaveBeenCalled();
-      expect(mockAuthManager.applyAuthentication).toHaveBeenCalledWith(
-        request,
-        authConfig,
-      );
+      expect(mockAuthManager.applyAuthentication).toHaveBeenCalledWith(request, authConfig);
       expect(result).toEqual(authenticatedRequest);
     });
 
@@ -204,17 +191,15 @@ describe('ApiExecutorImpl', () => {
       };
 
       // Mock认证管理器方法
-      vi.mocked(mockAuthManager.resolveEnvironmentVariables).mockReturnValue(
-        authConfig,
-      );
+      vi.mocked(mockAuthManager.resolveEnvironmentVariables).mockReturnValue(authConfig);
       vi.mocked(mockAuthManager.validateEnvironmentVariables).mockReturnValue({
         valid: false,
         missingVars: ['MISSING_TOKEN'],
       });
 
-      expect(() =>
-        apiExecutor.applyAuthentication(request, authConfig),
-      ).toThrow('认证配置中的环境变量未定义: MISSING_TOKEN');
+      expect(() => apiExecutor.applyAuthentication(request, authConfig)).toThrow(
+        '认证配置中的环境变量未定义: MISSING_TOKEN',
+      );
     });
   });
 
@@ -251,9 +236,7 @@ describe('ApiExecutorImpl', () => {
       const error = new Error('Network Error');
       vi.mocked(mockHttpClient.request).mockRejectedValue(error);
 
-      await expect(apiExecutor.handleTimeoutAndRetry(request)).rejects.toThrow(
-        'Network Error',
-      );
+      await expect(apiExecutor.handleTimeoutAndRetry(request)).rejects.toThrow('Network Error');
     });
   });
 
@@ -327,24 +310,19 @@ describe('ApiExecutorImpl', () => {
       };
 
       // 创建新的执行器实例
-      const _MockParameterValidatorImpl = vi
-        .fn()
-        .mockImplementation(() => mockValidatorInstance);
+      const _MockParameterValidatorImpl = vi.fn().mockImplementation(() => mockValidatorInstance);
 
       // 临时替换构造函数中使用的验证器
-      const originalValidator = (
-        apiExecutor as unknown as { parameterValidator: unknown }
-      ).parameterValidator;
-      (
-        apiExecutor as unknown as { parameterValidator: unknown }
-      ).parameterValidator = mockValidatorInstance;
+      const originalValidator = (apiExecutor as unknown as { parameterValidator: unknown })
+        .parameterValidator;
+      (apiExecutor as unknown as { parameterValidator: unknown }).parameterValidator =
+        mockValidatorInstance;
 
       const result = await apiExecutor.executeApiCall(apiConfig, parameters);
 
       // 恢复原始验证器
-      (
-        apiExecutor as unknown as { parameterValidator: unknown }
-      ).parameterValidator = originalValidator;
+      (apiExecutor as unknown as { parameterValidator: unknown }).parameterValidator =
+        originalValidator;
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('参数验证失败');
@@ -423,12 +401,10 @@ describe('ApiExecutorImpl', () => {
         valid: true,
         missingVars: [],
       });
-      vi.mocked(mockAuthManager.applyAuthentication).mockImplementation(
-        (req) => ({
-          ...req,
-          headers: { ...req.headers, Authorization: 'Bearer test-token' },
-        }),
-      );
+      vi.mocked(mockAuthManager.applyAuthentication).mockImplementation((req) => ({
+        ...req,
+        headers: { ...req.headers, Authorization: 'Bearer test-token' },
+      }));
 
       vi.mocked(mockHttpClient.request).mockResolvedValue(mockResponse);
 
@@ -474,11 +450,7 @@ describe('ApiExecutorImpl', () => {
 
     it('应该通过工厂函数创建带配置的API执行器', () => {
       const config = { defaultTimeout: 10000 };
-      const executor = createApiExecutor(
-        mockHttpClient,
-        mockAuthManager,
-        config,
-      );
+      const executor = createApiExecutor(mockHttpClient, mockAuthManager, config);
       expect(executor).toBeInstanceOf(ApiExecutorImpl);
     });
   });

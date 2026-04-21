@@ -2,6 +2,7 @@
  * 性能监控系统测试
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   createPerformanceMonitor,
   DEFAULT_PERFORMANCE_CONFIG,
@@ -413,9 +414,7 @@ describe('PerformanceMonitor', () => {
       const newConfig = { collectInterval: 2000 };
       monitor.updateConfig(newConfig);
 
-      expect(configUpdatedSpy).toHaveBeenCalledWith(
-        expect.objectContaining(newConfig),
-      );
+      expect(configUpdatedSpy).toHaveBeenCalledWith(expect.objectContaining(newConfig));
     });
   });
 

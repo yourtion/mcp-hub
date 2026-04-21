@@ -17,11 +17,13 @@
 获取跟踪的MCP协议消息列表，用于调试和监控MCP协议交互。
 
 **查询参数:**
+
 - `limit` (可选, 数字): 返回消息的最大数量，默认为50
 - `serverId` (可选, 字符串): 按服务器ID过滤消息
 - `type` (可选, 字符串): 按消息类型过滤 ('request', 'response', 'notification')
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -51,18 +53,21 @@
 测试工具执行并获取详细的执行结果和性能指标。
 
 **请求体:**
+
 ```json
 {
   "toolName": "get_current_time",
-  "serverId": "time-mcp",     // 可选
-  "groupId": "default",       // 可选
-  "arguments": {              // 可选
+  "serverId": "time-mcp", // 可选
+  "groupId": "default", // 可选
+  "arguments": {
+    // 可选
     "format": "ISO"
   }
 }
 ```
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -95,6 +100,7 @@
 获取系统性能统计信息，包括请求量、响应时间和错误率。
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -128,6 +134,7 @@
 分析系统中的错误模式，识别常见的错误类型和问题。
 
 **响应示例:**
+
 ```json
 {
   "success": true,

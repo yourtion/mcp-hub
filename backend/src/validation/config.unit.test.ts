@@ -1,5 +1,5 @@
-import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share';
 import { describe, expect, it } from 'vitest';
+
 import {
   validateAllConfigs,
   validateConfigCrossReferences,
@@ -7,6 +7,8 @@ import {
   validateMcpConfig,
   validateSystemConfig,
 } from './config.js';
+
+import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share';
 
 describe('配置验证工具', () => {
   describe('validateMcpConfig', () => {
@@ -74,9 +76,7 @@ describe('配置验证工具', () => {
       const result = validateMcpConfig(config);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.errors.some((err) => err.includes('命令不能为空'))).toBe(
-          true,
-        );
+        expect(result.errors.some((err) => err.includes('命令不能为空'))).toBe(true);
       }
     });
 
@@ -93,9 +93,7 @@ describe('配置验证工具', () => {
       const result = validateMcpConfig(config);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(
-          result.errors.some((err) => err.includes('必须是有效的URL')),
-        ).toBe(true);
+        expect(result.errors.some((err) => err.includes('必须是有效的URL'))).toBe(true);
       }
     });
   });
@@ -132,9 +130,7 @@ describe('配置验证工具', () => {
       const result = validateGroupConfig(config, ['server1']);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(
-          result.errors.some((err) => err.includes('引用了不存在的服务器')),
-        ).toBe(true);
+        expect(result.errors.some((err) => err.includes('引用了不存在的服务器'))).toBe(true);
       }
     });
 
@@ -151,11 +147,9 @@ describe('配置验证工具', () => {
       const result = validateGroupConfig(config);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(
-          result.errors.some((err) =>
-            err.includes('每个组至少需要包含一个服务器'),
-          ),
-        ).toBe(true);
+        expect(result.errors.some((err) => err.includes('每个组至少需要包含一个服务器'))).toBe(
+          true,
+        );
       }
     });
 
@@ -172,9 +166,7 @@ describe('配置验证工具', () => {
       const result = validateGroupConfig(config);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(
-          result.errors.some((err) => err.includes('组名称不能为空')),
-        ).toBe(true);
+        expect(result.errors.some((err) => err.includes('组名称不能为空'))).toBe(true);
       }
     });
   });
@@ -254,9 +246,7 @@ describe('配置验证工具', () => {
       const result = validateSystemConfig(config);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.errors.some((err) => err.includes('密码不能为空'))).toBe(
-          true,
-        );
+        expect(result.errors.some((err) => err.includes('密码不能为空'))).toBe(true);
       }
     });
   });
@@ -320,11 +310,9 @@ describe('配置验证工具', () => {
       const result = validateConfigCrossReferences(mcpConfig, groupConfig);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(
-          result.errors.some((err) =>
-            err.includes('引用了未在MCP配置中定义的服务器'),
-          ),
-        ).toBe(true);
+        expect(result.errors.some((err) => err.includes('引用了未在MCP配置中定义的服务器'))).toBe(
+          true,
+        );
       }
     });
   });
@@ -421,9 +409,7 @@ describe('配置验证工具', () => {
       const result = validateAllConfigs(mcpConfig, groupConfig);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.errors.some((err) => err.includes('MCP配置错误'))).toBe(
-          true,
-        );
+        expect(result.errors.some((err) => err.includes('MCP配置错误'))).toBe(true);
       }
     });
   });

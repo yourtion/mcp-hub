@@ -23,9 +23,7 @@
         />
       </div>
       <div class="mcp-toolbar__right">
-        <span class="tool-list__count">
-          共 {{ filteredData.length }} 个工具
-        </span>
+        <span class="tool-list__count"> 共 {{ filteredData.length }} 个工具 </span>
       </div>
     </div>
 
@@ -43,8 +41,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, h } from 'vue';
 import { SearchIcon } from 'tdesign-icons-vue-next';
+import { computed, ref, h } from 'vue';
+
 import type { ToolInfo } from '@/types/tool';
 import type { PrimaryTableCol, TableRowData } from 'tdesign-vue-next';
 
@@ -72,8 +71,7 @@ const filteredData = computed(() => {
     const term = searchText.value.toLowerCase();
     result = result.filter(
       (tool) =>
-        tool.name.toLowerCase().includes(term) ||
-        tool.description.toLowerCase().includes(term),
+        tool.name.toLowerCase().includes(term) || tool.description.toLowerCase().includes(term),
     );
   }
 
@@ -116,8 +114,7 @@ const columns: PrimaryTableCol<TableRowData>[] = [
     cell: (_h, { row }) => {
       const tool = row as ToolInfo;
       const desc = tool.description || '-';
-      const truncated =
-        desc.length > 60 ? `${desc.substring(0, 60)}...` : desc;
+      const truncated = desc.length > 60 ? `${desc.substring(0, 60)}...` : desc;
       return h('span', { style: { color: 'var(--text-secondary)' } }, truncated);
     },
   },

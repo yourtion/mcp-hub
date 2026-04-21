@@ -3,6 +3,7 @@
  */
 
 import { logger } from '../../utils/logger.js';
+
 import type { ApiToolConfig } from '../types/api-config.js';
 import type { McpTool, ValidationResult } from '../types/api-tool.js';
 
@@ -177,9 +178,7 @@ export class ApiToolRegistry {
    * @param toolsWithConfigs 工具和配置的数组
    * @returns 注册结果统计
    */
-  registerTools(
-    toolsWithConfigs: Array<{ tool: McpTool; config: ApiToolConfig }>,
-  ): {
+  registerTools(toolsWithConfigs: Array<{ tool: McpTool; config: ApiToolConfig }>): {
     successful: number;
     failed: number;
     errors: Array<{ toolId: string; error: string }>;
@@ -335,11 +334,7 @@ export class ApiToolRegistry {
       // 按描述关键词过滤
       if (options.description) {
         if (options.fuzzy) {
-          if (
-            !tool.description
-              .toLowerCase()
-              .includes(options.description.toLowerCase())
-          ) {
+          if (!tool.description.toLowerCase().includes(options.description.toLowerCase())) {
             return false;
           }
         } else {
@@ -447,11 +442,7 @@ export class ApiToolRegistry {
     const errors = [];
 
     // 验证工具名称
-    if (
-      !tool.name ||
-      typeof tool.name !== 'string' ||
-      tool.name.trim() === ''
-    ) {
+    if (!tool.name || typeof tool.name !== 'string' || tool.name.trim() === '') {
       errors.push({
         path: 'name',
         message: '工具名称不能为空',

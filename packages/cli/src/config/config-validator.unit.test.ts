@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { CliConfig } from '../types';
+
 import { ConfigValidator } from './config-validator';
+
+import type { CliConfig } from '../types';
 
 describe('ConfigValidator', () => {
   let validator: ConfigValidator;
@@ -412,9 +414,7 @@ describe('ConfigValidator', () => {
       expect(result.warnings.length).toBeGreaterThan(0);
       expect(
         result.warnings.some(
-          (w) =>
-            w.path.includes('123invalid') &&
-            w.message.includes('服务器ID建议使用字母开头'),
+          (w) => w.path.includes('123invalid') && w.message.includes('服务器ID建议使用字母开头'),
         ),
       ).toBe(true);
     });
@@ -430,11 +430,7 @@ describe('ConfigValidator', () => {
       const result = validator.validateConfig(config);
 
       expect(result.valid).toBe(true);
-      expect(
-        result.warnings.some((w) =>
-          w.message.includes('检测到重复的服务器命令'),
-        ),
-      ).toBe(true);
+      expect(result.warnings.some((w) => w.message.includes('检测到重复的服务器命令'))).toBe(true);
     });
   });
 

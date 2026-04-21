@@ -2,6 +2,7 @@
  * McpConfig 统一 Zod Schema
  */
 import { z } from 'zod/v4';
+
 import { ServerConfigSchema } from './server.schema.js';
 
 /**

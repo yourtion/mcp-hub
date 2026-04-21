@@ -73,7 +73,7 @@ CLI 使用与 API 服务器相同的 `mcp_service.json` 配置格式：
       "env": {}
     },
     "brave-search": {
-      "command": "npx", 
+      "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-brave-search"],
       "env": {
         "BRAVE_API_KEY": "your-brave-api-key"

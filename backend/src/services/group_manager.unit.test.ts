@@ -1,8 +1,10 @@
-import type { GroupConfig } from '@mcp-core/mcp-hub-share';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ServerConnection, ServerManager } from '../types/mcp-hub.js';
+
 import { ServerStatus } from '../types/mcp-hub.js';
 import { GroupManager } from './group_manager.js';
+
+import type { ServerConnection, ServerManager } from '../types/mcp-hub.js';
+import type { GroupConfig } from '@mcp-core/mcp-hub-share';
 
 // Mock the logger
 vi.mock('../utils/logger.js');
@@ -168,9 +170,7 @@ describe('GroupManager', () => {
       // Should create a fallback group
       expect(groups.has('invalid-group')).toBe(true);
       const group = groups.get('invalid-group');
-      expect(group?.description).toContain(
-        'Fallback group created due to configuration errors',
-      );
+      expect(group?.description).toContain('Fallback group created due to configuration errors');
     });
 
     it('should handle groups with invalid server references', async () => {
@@ -195,10 +195,7 @@ describe('GroupManager', () => {
         },
       };
 
-      const recoverableManager = new GroupManager(
-        partiallyInvalidConfig,
-        mockServerManager,
-      );
+      const recoverableManager = new GroupManager(partiallyInvalidConfig, mockServerManager);
       await recoverableManager.initialize();
 
       const groups = recoverableManager.getAllGroups();
@@ -216,19 +213,14 @@ describe('GroupManager', () => {
         },
       };
 
-      const noServersManager = new GroupManager(
-        noValidServersConfig,
-        mockServerManager,
-      );
+      const noServersManager = new GroupManager(noValidServersConfig, mockServerManager);
       await noServersManager.initialize();
 
       const groups = noServersManager.getAllGroups();
       // Should create a fallback group even with no valid servers
       expect(groups.has('no-servers')).toBe(true);
       const group = groups.get('no-servers');
-      expect(group?.description).toContain(
-        'Fallback group created due to configuration errors',
-      );
+      expect(group?.description).toContain('Fallback group created due to configuration errors');
     });
   });
 
@@ -347,30 +339,18 @@ describe('GroupManager', () => {
     });
 
     it('should restrict access to tools not in group allowlist', () => {
-      expect(groupManager.validateToolAccess('filtered-tools', 'tool1')).toBe(
-        true,
-      );
-      expect(groupManager.validateToolAccess('filtered-tools', 'tool3')).toBe(
-        true,
-      );
-      expect(groupManager.validateToolAccess('filtered-tools', 'tool2')).toBe(
-        false,
-      );
-      expect(groupManager.validateToolAccess('filtered-tools', 'tool4')).toBe(
-        false,
-      );
+      expect(groupManager.validateToolAccess('filtered-tools', 'tool1')).toBe(true);
+      expect(groupManager.validateToolAccess('filtered-tools', 'tool3')).toBe(true);
+      expect(groupManager.validateToolAccess('filtered-tools', 'tool2')).toBe(false);
+      expect(groupManager.validateToolAccess('filtered-tools', 'tool4')).toBe(false);
     });
 
     it('should deny access for non-existent group', () => {
-      expect(groupManager.validateToolAccess('non-existent', 'tool1')).toBe(
-        false,
-      );
+      expect(groupManager.validateToolAccess('non-existent', 'tool1')).toBe(false);
     });
 
     it('should deny access for group with no available servers', () => {
-      expect(
-        groupManager.validateToolAccess('disconnected-server', 'tool1'),
-      ).toBe(false);
+      expect(groupManager.validateToolAccess('disconnected-server', 'tool1')).toBe(false);
     });
   });
 
@@ -387,26 +367,17 @@ describe('GroupManager', () => {
     });
 
     it('should return null for tool not in group allowlist', async () => {
-      const result = await groupManager.findToolInGroup(
-        'filtered-tools',
-        'tool2',
-      );
+      const result = await groupManager.findToolInGroup('filtered-tools', 'tool2');
       expect(result).toBeNull();
     });
 
     it('should return null for non-existent group', async () => {
-      const result = await groupManager.findToolInGroup(
-        'non-existent',
-        'tool1',
-      );
+      const result = await groupManager.findToolInGroup('non-existent', 'tool1');
       expect(result).toBeNull();
     });
 
     it('should return null for non-existent tool', async () => {
-      const result = await groupManager.findToolInGroup(
-        'default',
-        'non-existent-tool',
-      );
+      const result = await groupManager.findToolInGroup('default', 'non-existent-tool');
       expect(result).toBeNull();
     });
   });
@@ -443,9 +414,7 @@ describe('GroupManager', () => {
     });
 
     it('should exclude disconnected servers', () => {
-      const servers = groupManager.getAvailableGroupServers(
-        'disconnected-server',
-      );
+      const servers = groupManager.getAvailableGroupServers('disconnected-server');
       expect(servers).toEqual([]); // server3 is disconnected
     });
   });
@@ -490,9 +459,7 @@ describe('GroupManager', () => {
     });
 
     it('should report unhealthy group with no available servers', async () => {
-      const health = await groupManager.validateGroupHealth(
-        'disconnected-server',
-      );
+      const health = await groupManager.validateGroupHealth('disconnected-server');
       expect(health.isHealthy).toBe(false);
       expect(health.issues).toContain('No servers are currently available');
     });
@@ -570,9 +537,7 @@ describe('GroupManager', () => {
         // Should create fallback groups for invalid configurations
         expect(groups.has(groupId)).toBe(true);
         const group = groups.get(groupId);
-        expect(group?.description).toContain(
-          'Fallback group created due to configuration errors',
-        );
+        expect(group?.description).toContain('Fallback group created due to configuration errors');
       }
     });
 
@@ -586,19 +551,14 @@ describe('GroupManager', () => {
         },
       };
 
-      const duplicateManager = new GroupManager(
-        duplicateConfig,
-        mockServerManager,
-      );
+      const duplicateManager = new GroupManager(duplicateConfig, mockServerManager);
       await duplicateManager.initialize();
 
       const groups = duplicateManager.getAllGroups();
       // Should create fallback group for duplicate servers
       expect(groups.has('duplicate-servers')).toBe(true);
       const group = groups.get('duplicate-servers');
-      expect(group?.description).toContain(
-        'Fallback group created due to configuration errors',
-      );
+      expect(group?.description).toContain('Fallback group created due to configuration errors');
     });
 
     it('should handle duplicate tool names in group', async () => {
@@ -611,19 +571,14 @@ describe('GroupManager', () => {
         },
       };
 
-      const duplicateManager = new GroupManager(
-        duplicateConfig,
-        mockServerManager,
-      );
+      const duplicateManager = new GroupManager(duplicateConfig, mockServerManager);
       await duplicateManager.initialize();
 
       const groups = duplicateManager.getAllGroups();
       // Should create fallback group for duplicate tools
       expect(groups.has('duplicate-tools')).toBe(true);
       const group = groups.get('duplicate-tools');
-      expect(group?.description).toContain(
-        'Fallback group created due to configuration errors',
-      );
+      expect(group?.description).toContain('Fallback group created due to configuration errors');
     });
   });
 

@@ -11,7 +11,7 @@ services:
       target: base
     container_name: mcp-hub-api-dev
     ports:
-      - "8181:8181"
+      - '8181:8181'
     environment:
       - NODE_ENV=development
       - PORT=8181
@@ -22,7 +22,7 @@ services:
       - ./backend:/app/backend
       - ./backend/config:/app/backend/config
       - ./logs:/app/logs
-    command: ["pnpm", "dev:api"]
+    command: ['pnpm', 'dev:api']
     restart: unless-stopped
     networks:
       - mcp-hub-dev-network
@@ -35,13 +35,13 @@ services:
       target: base
     container_name: mcp-hub-web-dev
     ports:
-      - "8180:8180"
+      - '8180:8180'
     environment:
       - VITE_API_BASE_URL=http://localhost:8181
     volumes:
       # 挂载源代码用于热重载
       - ./frontend:/app/frontend
-    command: ["pnpm", "dev:fe"]
+    command: ['pnpm', 'dev:fe']
     restart: unless-stopped
     networks:
       - mcp-hub-dev-network

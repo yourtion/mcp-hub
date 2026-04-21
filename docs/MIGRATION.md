@@ -16,10 +16,10 @@
 
 ### 支持的升级路径
 
-| 从版本 | 到版本 | 兼容性 | 说明 |
-|--------|--------|--------|------|
-| 0.x.x | 1.0.0+ | 🟡 部分兼容 | 需要配置迁移 |
-| 无 | 1.0.0+ | ✅ 全新安装 | 按照安装指南操作 |
+| 从版本 | 到版本 | 兼容性      | 说明             |
+| ------ | ------ | ----------- | ---------------- |
+| 0.x.x  | 1.0.0+ | 🟡 部分兼容 | 需要配置迁移     |
+| 无     | 1.0.0+ | ✅ 全新安装 | 按照安装指南操作 |
 
 ### 不兼容的变化
 
@@ -79,6 +79,7 @@ pnpm build
 旧版本的 `mcp_service.json` 格式基本保持兼容，但建议检查以下项：
 
 **旧格式 (0.x.x)**:
+
 ```json
 {
   "servers": {
@@ -92,6 +93,7 @@ pnpm build
 ```
 
 **新格式 (1.0.0+)** - 保持兼容:
+
 ```json
 {
   "servers": {
@@ -190,16 +192,18 @@ echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}' | node dist/cli.js
 如果您使用 Docker 部署，需要更新配置：
 
 **旧版本**:
+
 ```yaml
 # 单一容器部署
 services:
   mcp-hub:
     build: .
     ports:
-      - "3000:3000"
+      - '3000:3000'
 ```
 
 **新版本**:
+
 ```yaml
 # 使用新的 docker-compose.yml
 services:
@@ -208,8 +212,8 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     ports:
-      - "3000:3000"
-  
+      - '3000:3000'
+
   mcp-hub-cli:
     build:
       context: .
@@ -232,6 +236,7 @@ export MCP_HUB_CONFIG_DIR=/app/config
 ### 示例 1: 基本配置迁移
 
 **迁移前** (`mcp_service.json`):
+
 ```json
 {
   "servers": {
@@ -247,6 +252,7 @@ export MCP_HUB_CONFIG_DIR=/app/config
 
 1. 保持 `mcp_service.json` 不变
 2. 创建 `group.json`:
+
 ```json
 {
   "groups": {
@@ -262,6 +268,7 @@ export MCP_HUB_CONFIG_DIR=/app/config
 ### 示例 2: 复杂配置迁移
 
 **迁移前**:
+
 ```json
 {
   "servers": {
@@ -270,7 +277,7 @@ export MCP_HUB_CONFIG_DIR=/app/config
       "args": ["-y", "@modelcontextprotocol/server-filesystem", "/workspace"]
     },
     "search": {
-      "command": "npx", 
+      "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-brave-search"],
       "env": {
         "BRAVE_API_KEY": "your-key"
@@ -283,6 +290,7 @@ export MCP_HUB_CONFIG_DIR=/app/config
 **迁移后**:
 
 1. 更新 `mcp_service.json`:
+
 ```json
 {
   "servers": {
@@ -305,6 +313,7 @@ export MCP_HUB_CONFIG_DIR=/app/config
 ```
 
 2. 创建 `group.json`:
+
 ```json
 {
   "groups": {

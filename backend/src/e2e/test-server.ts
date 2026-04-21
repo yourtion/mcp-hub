@@ -4,6 +4,7 @@
  */
 
 import { serve } from '@hono/node-server';
+
 import { app } from '../app.js';
 import { logger } from '../utils/logger.js';
 
@@ -87,9 +88,7 @@ export function getTestServer(port: number = 3000): TestServer {
 /**
  * 启动测试服务器（如果尚未启动）
  */
-export async function startTestServer(
-  port: number = 3000,
-): Promise<TestServer> {
+export async function startTestServer(port: number = 3000): Promise<TestServer> {
   const server = getTestServer(port);
   if (!server.isRunning()) {
     await server.start();

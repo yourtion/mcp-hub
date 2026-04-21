@@ -1,17 +1,17 @@
 {
   "name": "@mcp-core/mcp-hub-api",
-  "private": true,
   "version": "0.0.1",
-  "type": "module",
+  "private": true,
   "files": [
     "dist",
     "config",
     "README.md"
   ],
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "check": "rm -rf dist && biome check --write",
+    "check": "rm -rf dist && oxlint --fix src/ && oxfmt src/",
     "start": "node dist/src/index.js",
     "test": "vitest --run",
     "test:watch": "vitest",

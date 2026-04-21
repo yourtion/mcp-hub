@@ -4,7 +4,9 @@
  */
 
 import crypto from 'node:crypto';
+
 import { logger } from '../../utils/logger.js';
+
 import type { CacheConfig, CacheKeyGenerator } from '../types/api-config.js';
 import type { CacheEntry, CacheStats, CacheStrategy } from '../types/cache.js';
 
@@ -58,21 +60,12 @@ const defaultKeyGenerator: CacheKeyGenerator = (
 
     // 创建参数的哈希值
     const paramsStr = JSON.stringify(sortedParams);
-    const paramsHash = crypto
-      .createHash('sha256')
-      .update(paramsStr)
-      .digest('hex')
-      .substring(0, 16);
+    const paramsHash = crypto.createHash('sha256').update(paramsStr).digest('hex').substring(0, 16);
 
     return `${toolId}:${paramsHash}`;
   } catch (error) {
-    logger.error(
-      '生成缓存键时出错:',
-      error instanceof Error ? error : new Error(String(error)),
-    );
-    throw new Error(
-      `无法生成缓存键: ${error instanceof Error ? error.message : '未知错误'}`,
-    );
+    logger.error('生成缓存键时出错:', error instanceof Error ? error : new Error(String(error)));
+    throw new Error(`无法生成缓存键: ${error instanceof Error ? error.message : '未知错误'}`);
   }
 };
 
@@ -210,10 +203,7 @@ export class CacheManagerImpl implements CacheManager {
   /**
    * 生成缓存键
    */
-  generateCacheKey(
-    toolId: string,
-    parameters: Record<string, unknown>,
-  ): string {
+  generateCacheKey(toolId: string, parameters: Record<string, unknown>): string {
     return this.keyGenerator(toolId, parameters);
   }
 
@@ -384,10 +374,7 @@ export class RedisCacheManager implements CacheManager {
     logger.debug('Redis缓存已清空');
   }
 
-  generateCacheKey(
-    toolId: string,
-    parameters: Record<string, unknown>,
-  ): string {
+  generateCacheKey(toolId: string, parameters: Record<string, unknown>): string {
     return this.keyGenerator(toolId, parameters);
   }
 
@@ -421,10 +408,7 @@ export class MultiLevelCacheManager implements CacheManager {
   private l2Cache?: CacheManager; // Redis缓存（可选）
   private keyGenerator: CacheKeyGenerator = defaultKeyGenerator;
 
-  constructor(
-    l1Config?: CacheConfig,
-    l2Config?: CacheConfig & { redisUrl?: string },
-  ) {
+  constructor(l1Config?: CacheConfig, l2Config?: CacheConfig & { redisUrl?: string }) {
     this.l1Cache = new CacheManagerImpl(l1Config);
 
     if (l2Config) {
@@ -483,10 +467,7 @@ export class MultiLevelCacheManager implements CacheManager {
     }
   }
 
-  generateCacheKey(
-    toolId: string,
-    parameters: Record<string, unknown>,
-  ): string {
+  generateCacheKey(toolId: string, parameters: Record<string, unknown>): string {
     return this.keyGenerator(toolId, parameters);
   }
 
@@ -503,9 +484,7 @@ export class MultiLevelCacheManager implements CacheManager {
       totalRequests: l1Stats.totalRequests + l2Stats.totalRequests,
       hits: l1Stats.hits + l2Stats.hits,
       misses: l1Stats.misses + l2Stats.misses,
-      hitRate:
-        (l1Stats.hits + l2Stats.hits) /
-          (l1Stats.totalRequests + l2Stats.totalRequests) || 0,
+      hitRate: (l1Stats.hits + l2Stats.hits) / (l1Stats.totalRequests + l2Stats.totalRequests) || 0,
       currentSize: l1Stats.currentSize + l2Stats.currentSize,
       maxSize: l1Stats.maxSize + l2Stats.maxSize,
     };

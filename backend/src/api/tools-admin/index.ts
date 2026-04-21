@@ -4,6 +4,7 @@
  */
 
 import { Hono } from 'hono';
+
 import { getHubService } from '../../services/service-registry.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { logger } from '../../utils/logger.js';
@@ -57,19 +58,13 @@ toolsAdminApi.get('/history', async (c) => {
     let filteredHistory = [...executionHistory];
 
     if (toolName) {
-      filteredHistory = filteredHistory.filter(
-        (record) => record.toolName === toolName,
-      );
+      filteredHistory = filteredHistory.filter((record) => record.toolName === toolName);
     }
     if (serverId) {
-      filteredHistory = filteredHistory.filter(
-        (record) => record.serverId === serverId,
-      );
+      filteredHistory = filteredHistory.filter((record) => record.serverId === serverId);
     }
     if (groupId) {
-      filteredHistory = filteredHistory.filter(
-        (record) => record.groupId === groupId,
-      );
+      filteredHistory = filteredHistory.filter((record) => record.groupId === groupId);
     }
 
     const total = filteredHistory.length;
@@ -147,10 +142,7 @@ toolsAdminApi.get('/monitoring', async (c) => {
         description: tool.description,
         serverId: tool.serverId,
         inputSchema: tool.inputSchema,
-        status:
-          serverGroup.serverStatus === 'connected'
-            ? 'available'
-            : 'unavailable',
+        status: serverGroup.serverStatus === 'connected' ? 'available' : 'unavailable',
       });
     });
 
@@ -179,8 +171,7 @@ toolsAdminApi.get('/monitoring', async (c) => {
         totalServers,
         connectedServers,
         disconnectedServers: totalServers - connectedServers,
-        availabilityRate:
-          totalTools > 0 ? (availableTools / totalTools) * 100 : 0,
+        availabilityRate: totalTools > 0 ? (availableTools / totalTools) * 100 : 0,
       },
       toolsByServer: Object.fromEntries(toolsByServer),
       groupId,
@@ -199,24 +190,17 @@ toolsAdminApi.get('/health', async (c) => {
     const allTools = await service.listTools(groupId);
 
     const toolHealthChecks = allTools.map((tool) => {
-      const serverDetail = diagnostics.servers.details.find(
-        (s) => s.id === tool.serverId,
-      );
+      const serverDetail = diagnostics.servers.details.find((s) => s.id === tool.serverId);
       const serverStatus = serverDetail?.status || 'unknown';
       const isHealthy = serverStatus === 'connected';
 
       const recentExecutions = executionHistory
-        .filter(
-          (record) =>
-            record.toolName === tool.name && record.serverId === tool.serverId,
-        )
+        .filter((record) => record.toolName === tool.name && record.serverId === tool.serverId)
         .slice(0, 10);
 
       const recentErrors = recentExecutions.filter((record) => record.isError);
       const errorRate =
-        recentExecutions.length > 0
-          ? (recentErrors.length / recentExecutions.length) * 100
-          : 0;
+        recentExecutions.length > 0 ? (recentErrors.length / recentExecutions.length) * 100 : 0;
 
       const lastError = recentErrors.length > 0 ? recentErrors[0] : null;
 
@@ -237,17 +221,13 @@ toolsAdminApi.get('/health', async (c) => {
             }
           : null,
         issues: [
-          ...(serverStatus !== 'connected'
-            ? [`服务器 ${tool.serverId} 未连接`]
-            : []),
+          ...(serverStatus !== 'connected' ? [`服务器 ${tool.serverId} 未连接`] : []),
           ...(errorRate > 50 ? [`错误率过高: ${errorRate}%`] : []),
         ],
       };
     });
 
-    const healthyTools = toolHealthChecks.filter(
-      (check) => check.isHealthy,
-    ).length;
+    const healthyTools = toolHealthChecks.filter((check) => check.isHealthy).length;
     const totalTools = toolHealthChecks.length;
     const overallHealthy = totalTools > 0 && healthyTools / totalTools >= 0.8;
 
@@ -307,47 +287,29 @@ toolsAdminApi.get('/performance', async (c) => {
     });
 
     if (groupId) {
-      filteredHistory = filteredHistory.filter(
-        (record) => record.groupId === groupId,
-      );
+      filteredHistory = filteredHistory.filter((record) => record.groupId === groupId);
     }
     if (serverId) {
-      filteredHistory = filteredHistory.filter(
-        (record) => record.serverId === serverId,
-      );
+      filteredHistory = filteredHistory.filter((record) => record.serverId === serverId);
     }
 
     const totalExecutions = filteredHistory.length;
-    const successfulExecutions = filteredHistory.filter(
-      (r) => !r.isError,
-    ).length;
+    const successfulExecutions = filteredHistory.filter((r) => !r.isError).length;
     const failedExecutions = filteredHistory.filter((r) => r.isError).length;
 
     const executionTimes = filteredHistory.map((r) => r.executionTime);
     const averageExecutionTime =
       executionTimes.length > 0
-        ? executionTimes.reduce((sum, time) => sum + time, 0) /
-          executionTimes.length
+        ? executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length
         : 0;
 
-    const minExecutionTime =
-      executionTimes.length > 0 ? Math.min(...executionTimes) : 0;
-    const maxExecutionTime =
-      executionTimes.length > 0 ? Math.max(...executionTimes) : 0;
+    const minExecutionTime = executionTimes.length > 0 ? Math.min(...executionTimes) : 0;
+    const maxExecutionTime = executionTimes.length > 0 ? Math.max(...executionTimes) : 0;
 
     const sortedTimes = [...executionTimes].sort((a, b) => a - b);
-    const p50 =
-      sortedTimes.length > 0
-        ? sortedTimes[Math.floor(sortedTimes.length * 0.5)]
-        : 0;
-    const p95 =
-      sortedTimes.length > 0
-        ? sortedTimes[Math.floor(sortedTimes.length * 0.95)]
-        : 0;
-    const p99 =
-      sortedTimes.length > 0
-        ? sortedTimes[Math.floor(sortedTimes.length * 0.99)]
-        : 0;
+    const p50 = sortedTimes.length > 0 ? sortedTimes[Math.floor(sortedTimes.length * 0.5)] : 0;
+    const p95 = sortedTimes.length > 0 ? sortedTimes[Math.floor(sortedTimes.length * 0.95)] : 0;
+    const p99 = sortedTimes.length > 0 ? sortedTimes[Math.floor(sortedTimes.length * 0.99)] : 0;
 
     const toolPerformance = new Map<
       string,
@@ -388,12 +350,9 @@ toolsAdminApi.get('/performance', async (c) => {
     });
 
     toolPerformance.forEach((perf, toolName) => {
-      const toolExecutions = filteredHistory.filter(
-        (r) => r.toolName === toolName,
-      );
+      const toolExecutions = filteredHistory.filter((r) => r.toolName === toolName);
       perf.averageTime =
-        toolExecutions.reduce((sum, r) => sum + r.executionTime, 0) /
-        toolExecutions.length;
+        toolExecutions.reduce((sum, r) => sum + r.executionTime, 0) / toolExecutions.length;
       if (perf.minTime === Number.MAX_VALUE) perf.minTime = 0;
     });
 
@@ -416,14 +375,11 @@ toolsAdminApi.get('/performance', async (c) => {
 
     timeSeriesData.forEach((data, hour) => {
       const hourExecutions = filteredHistory.filter(
-        (r) =>
-          `${new Date(r.timestamp).toISOString().slice(0, 13)}:00:00.000Z` ===
-          hour,
+        (r) => `${new Date(r.timestamp).toISOString().slice(0, 13)}:00:00.000Z` === hour,
       );
       data.averageTime =
         hourExecutions.length > 0
-          ? hourExecutions.reduce((sum, r) => sum + r.executionTime, 0) /
-            hourExecutions.length
+          ? hourExecutions.reduce((sum, r) => sum + r.executionTime, 0) / hourExecutions.length
           : 0;
     });
 
@@ -446,10 +402,7 @@ toolsAdminApi.get('/performance', async (c) => {
         totalExecutions,
         successfulExecutions,
         failedExecutions,
-        successRate:
-          totalExecutions > 0
-            ? (successfulExecutions / totalExecutions) * 100
-            : 0,
+        successRate: totalExecutions > 0 ? (successfulExecutions / totalExecutions) * 100 : 0,
         averageExecutionTime: Math.round(averageExecutionTime),
         minExecutionTime,
         maxExecutionTime,
@@ -465,10 +418,7 @@ toolsAdminApi.get('/performance', async (c) => {
           {
             ...perf,
             averageTime: Math.round(perf.averageTime),
-            successRate:
-              perf.executions > 0
-                ? (perf.successes / perf.executions) * 100
-                : 0,
+            successRate: perf.executions > 0 ? (perf.successes / perf.executions) * 100 : 0,
           },
         ]),
       ),
@@ -479,8 +429,7 @@ toolsAdminApi.get('/performance', async (c) => {
           executions: data.executions,
           errors: data.errors,
           averageTime: Math.round(data.averageTime),
-          errorRate:
-            data.executions > 0 ? (data.errors / data.executions) * 100 : 0,
+          errorRate: data.executions > 0 ? (data.errors / data.executions) * 100 : 0,
         })),
       filters: { groupId, serverId },
     });
@@ -501,19 +450,13 @@ toolsAdminApi.get('/errors', async (c) => {
     let errorRecords = executionHistory.filter((record) => record.isError);
 
     if (toolName) {
-      errorRecords = errorRecords.filter(
-        (record) => record.toolName === toolName,
-      );
+      errorRecords = errorRecords.filter((record) => record.toolName === toolName);
     }
     if (serverId) {
-      errorRecords = errorRecords.filter(
-        (record) => record.serverId === serverId,
-      );
+      errorRecords = errorRecords.filter((record) => record.serverId === serverId);
     }
     if (groupId) {
-      errorRecords = errorRecords.filter(
-        (record) => record.groupId === groupId,
-      );
+      errorRecords = errorRecords.filter((record) => record.groupId === groupId);
     }
 
     const errorAnalysis = new Map<
@@ -534,18 +477,16 @@ toolsAdminApi.get('/errors', async (c) => {
     errorRecords.forEach((record) => {
       let errorMessage = '未知错误';
       if (record.result && Array.isArray(record.result)) {
-        const textContent = (
-          record.result as Array<{ type: string; text?: string }>
-        ).find((content) => content.type === 'text');
+        const textContent = (record.result as Array<{ type: string; text?: string }>).find(
+          (content) => content.type === 'text',
+        );
         if (textContent?.text) {
           errorMessage = textContent.text;
         }
       }
 
       const errorKey =
-        errorMessage.length > 100
-          ? `${errorMessage.substring(0, 100)}...`
-          : errorMessage;
+        errorMessage.length > 100 ? `${errorMessage.substring(0, 100)}...` : errorMessage;
 
       if (!errorAnalysis.has(errorKey)) {
         errorAnalysis.set(errorKey, {
@@ -631,25 +572,18 @@ toolsAdminApi.get('/stats', async (c) => {
     let filteredHistory = [...executionHistory];
 
     if (groupId) {
-      filteredHistory = filteredHistory.filter(
-        (record) => record.groupId === groupId,
-      );
+      filteredHistory = filteredHistory.filter((record) => record.groupId === groupId);
     }
     if (serverId) {
-      filteredHistory = filteredHistory.filter(
-        (record) => record.serverId === serverId,
-      );
+      filteredHistory = filteredHistory.filter((record) => record.serverId === serverId);
     }
 
     const totalExecutions = filteredHistory.length;
-    const successfulExecutions = filteredHistory.filter(
-      (r) => !r.isError,
-    ).length;
+    const successfulExecutions = filteredHistory.filter((r) => !r.isError).length;
     const failedExecutions = filteredHistory.filter((r) => r.isError).length;
     const averageExecutionTime =
       filteredHistory.length > 0
-        ? filteredHistory.reduce((sum, r) => sum + r.executionTime, 0) /
-          filteredHistory.length
+        ? filteredHistory.reduce((sum, r) => sum + r.executionTime, 0) / filteredHistory.length
         : 0;
 
     const toolStats = new Map<
@@ -708,10 +642,7 @@ toolsAdminApi.get('/stats', async (c) => {
         totalExecutions,
         successfulExecutions,
         failedExecutions,
-        successRate:
-          totalExecutions > 0
-            ? (successfulExecutions / totalExecutions) * 100
-            : 0,
+        successRate: totalExecutions > 0 ? (successfulExecutions / totalExecutions) * 100 : 0,
         averageExecutionTime: Math.round(averageExecutionTime),
       },
       topTools,

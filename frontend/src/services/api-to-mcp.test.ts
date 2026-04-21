@@ -1,9 +1,11 @@
-import type { AxiosResponse } from 'axios';
-import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import api from '@/services/api';
 import { ApiToMcpService } from '@/services/api-to-mcp';
+
 import type { ApiConfigListResponse, ApiToolConfig } from '@/types/api-to-mcp';
+import type { AxiosResponse } from 'axios';
+import type { Mock } from 'vitest';
 
 // Mock axios
 vi.mock('@/services/api', () => ({
@@ -64,13 +66,9 @@ describe('ApiToMcpService', () => {
     });
 
     it('should throw error when API call fails', async () => {
-      (api.get as unknown as Mock).mockRejectedValue(
-        new Error('Network error'),
-      );
+      (api.get as unknown as Mock).mockRejectedValue(new Error('Network error'));
 
-      await expect(apiToMcpService.getConfigs()).rejects.toThrow(
-        'Network error',
-      );
+      await expect(apiToMcpService.getConfigs()).rejects.toThrow('Network error');
       expect(api.get).toHaveBeenCalledWith('/api-to-mcp/configs');
     });
   });
@@ -205,18 +203,12 @@ describe('ApiToMcpService', () => {
         },
       });
 
-      const result = await apiToMcpService.updateConfig(
-        'existing-config',
-        mockConfig,
-      );
+      const result = await apiToMcpService.updateConfig('existing-config', mockConfig);
 
       expect(result).toEqual(mockResult);
-      expect(api.put).toHaveBeenCalledWith(
-        '/api-to-mcp/configs/existing-config',
-        {
-          config: mockConfig,
-        },
-      );
+      expect(api.put).toHaveBeenCalledWith('/api-to-mcp/configs/existing-config', {
+        config: mockConfig,
+      });
     });
   });
 
@@ -238,9 +230,7 @@ describe('ApiToMcpService', () => {
       const result = await apiToMcpService.deleteConfig('config-to-delete');
 
       expect(result).toEqual(mockResult);
-      expect(api.delete).toHaveBeenCalledWith(
-        '/api-to-mcp/configs/config-to-delete',
-      );
+      expect(api.delete).toHaveBeenCalledWith('/api-to-mcp/configs/config-to-delete');
     });
   });
 
@@ -257,18 +247,12 @@ describe('ApiToMcpService', () => {
         data: mockResponse,
       });
 
-      const result = await apiToMcpService.testConfig(
-        'test-config',
-        mockParameters,
-      );
+      const result = await apiToMcpService.testConfig('test-config', mockParameters);
 
       expect(result).toEqual(mockResponse);
-      expect(api.post).toHaveBeenCalledWith(
-        '/api-to-mcp/configs/test-config/test',
-        {
-          parameters: mockParameters,
-        },
-      );
+      expect(api.post).toHaveBeenCalledWith('/api-to-mcp/configs/test-config/test', {
+        parameters: mockParameters,
+      });
     });
   });
 
@@ -345,10 +329,7 @@ describe('ApiToMcpService', () => {
       const result = await apiToMcpService.importConfig(mockImportConfig);
 
       expect(result).toEqual(mockResult);
-      expect(api.post).toHaveBeenCalledWith(
-        '/api-to-mcp/configs/import',
-        mockImportConfig,
-      );
+      expect(api.post).toHaveBeenCalledWith('/api-to-mcp/configs/import', mockImportConfig);
     });
   });
 
@@ -380,10 +361,7 @@ describe('ApiToMcpService', () => {
       const result = await apiToMcpService.exportConfig(mockExportConfig);
 
       expect(result).toEqual(mockResult);
-      expect(api.post).toHaveBeenCalledWith(
-        '/api-to-mcp/configs/export',
-        mockExportConfig,
-      );
+      expect(api.post).toHaveBeenCalledWith('/api-to-mcp/configs/export', mockExportConfig);
     });
   });
 
@@ -464,10 +442,7 @@ describe('ApiToMcpService', () => {
       const result = await apiToMcpService.generateToolPreview('test-config');
 
       expect(result).toEqual(mockResult);
-      expect(api.post).toHaveBeenCalledWith(
-        '/api/to-mcp/configs/test-config/preview',
-        {},
-      );
+      expect(api.post).toHaveBeenCalledWith('/api/to-mcp/configs/test-config/preview', {});
     });
   });
 

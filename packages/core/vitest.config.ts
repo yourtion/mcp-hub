@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { mergeConfig } from 'vitest/config';
+
 import configShared from '../../vitest.shared.js';
 
 export default mergeConfig(configShared, {

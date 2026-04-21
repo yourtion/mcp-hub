@@ -27,6 +27,7 @@
 ### 安装 Node.js
 
 **macOS**:
+
 ```bash
 # 使用 Homebrew
 brew install node@18
@@ -38,6 +39,7 @@ nvm use 18
 ```
 
 **Linux**:
+
 ```bash
 # 使用 nvm
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
@@ -50,6 +52,7 @@ sudo apt-get install -y nodejs
 ```
 
 **Windows**:
+
 - 从 [Node.js 官网](https://nodejs.org/) 下载安装器
 - 或使用 [nvm-windows](https://github.com/coreybutler/nvm-windows)
 
@@ -83,9 +86,7 @@ pnpm build
 ```json
 {
   "recommendations": [
-    "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode",
-    "biomejs.biome",
+    "oxc.oxc-vscode",
     "vue.volar",
     "bradlc.vscode-tailwindcss",
     "ms-vscode.vscode-typescript-next"
@@ -98,13 +99,13 @@ pnpm build
 ```json
 {
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "biomejs.biome",
+  "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.codeActionsOnSave": {
     "source.fixAll": true,
     "source.organizeImports": true
   },
   "[typescript]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "[vue]": {
     "editor.defaultFormatter": "Vue.volar"
@@ -170,6 +171,7 @@ packages/core
 ### 启动开发服务器
 
 **后端开发**:
+
 ```bash
 # 启动后端开发服务器（带热重载）
 pnpm dev:api
@@ -182,6 +184,7 @@ pnpm dev
 后端将在 `http://localhost:8181` 运行。
 
 **前端开发**:
+
 ```bash
 # 启动前端开发服务器
 pnpm dev:fe
@@ -194,6 +197,7 @@ pnpm dev
 前端将在 `http://localhost:8180` 运行。
 
 **同时启动前后端**:
+
 ```bash
 # 在两个终端窗口中分别运行
 # 终端 1
@@ -262,6 +266,7 @@ pnpm check --apply=off
 ### TypeScript 规范
 
 **类型定义**:
+
 ```typescript
 // ✅ 好的做法
 interface User {
@@ -275,7 +280,8 @@ function getUser(id: string): Promise<User> {
 }
 
 // ❌ 避免使用 any
-function processData(data: any) {  // 不推荐
+function processData(data: any) {
+  // 不推荐
   // ...
 }
 
@@ -286,6 +292,7 @@ function processData<T>(data: T): T {
 ```
 
 **命名约定**:
+
 - **接口**: PascalCase (`UserInfo`, `ServerConfig`)
 - **类型**: PascalCase (`ToolResult`, `ApiResponse`)
 - **函数**: camelCase (`getUserById`, `connectServer`)
@@ -296,6 +303,7 @@ function processData<T>(data: T): T {
 ### Vue 组件规范
 
 **组件命名**:
+
 ```vue
 <!-- ✅ 多词组件名 -->
 <template>
@@ -310,6 +318,7 @@ function processData<T>(data: T): T {
 ```
 
 **Props 定义**:
+
 ```typescript
 // ✅ 使用 TypeScript 定义 props
 interface Props {
@@ -322,6 +331,7 @@ const props = defineProps<Props>();
 ```
 
 **事件定义**:
+
 ```typescript
 // ✅ 定义事件类型
 const emit = defineEmits<{
@@ -333,6 +343,7 @@ const emit = defineEmits<{
 ### 注释规范
 
 **函数注释**:
+
 ```typescript
 /**
  * 连接到 MCP 服务器
@@ -341,15 +352,13 @@ const emit = defineEmits<{
  * @returns Promise，解析为连接结果
  * @throws {ConnectionError} 当连接失败时抛出
  */
-async function connectServer(
-  serverId: string,
-  config: ServerConfig
-): Promise<ConnectionResult> {
+async function connectServer(serverId: string, config: ServerConfig): Promise<ConnectionResult> {
   // 实现...
 }
 ```
 
 **代码注释**:
+
 ```typescript
 // ✅ 解释为什么，而不是做什么
 // 使用指数退避策略重试，避免服务器过载
@@ -373,6 +382,7 @@ const userId = 123;
 ```
 
 **类型 (type)**:
+
 - `feat`: 新功能
 - `fix`: 错误修复
 - `docs`: 文档更新
@@ -383,6 +393,7 @@ const userId = 123;
 - `chore`: 构建/工具相关
 
 **示例**:
+
 ```bash
 # 新功能
 git commit -m "feat(api): 添加服务器健康检查端点"
@@ -422,6 +433,7 @@ pnpm test:e2e
 ### 编写单元测试
 
 **后端测试示例**:
+
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ServerManager } from './server-manager';
@@ -456,14 +468,13 @@ describe('ServerManager', () => {
 
     await manager.addServer(config);
 
-    await expect(
-      manager.addServer(config)
-    ).rejects.toThrow('服务器已存在');
+    await expect(manager.addServer(config)).rejects.toThrow('服务器已存在');
   });
 });
 ```
 
 **前端测试示例**:
+
 ```typescript
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
@@ -486,9 +497,7 @@ describe('ServerList', () => {
   it('点击连接按钮应该触发事件', async () => {
     const wrapper = mount(ServerList, {
       props: {
-        servers: [
-          { id: 'server1', name: '服务器 1', status: 'disconnected' },
-        ],
+        servers: [{ id: 'server1', name: '服务器 1', status: 'disconnected' }],
       },
     });
 
@@ -503,12 +512,14 @@ describe('ServerList', () => {
 ### 测试覆盖率
 
 目标覆盖率：
+
 - **语句覆盖率**: > 80%
 - **分支覆盖率**: > 75%
 - **函数覆盖率**: > 80%
 - **行覆盖率**: > 80%
 
 查看覆盖率报告：
+
 ```bash
 pnpm test:coverage
 open coverage/index.html
@@ -521,6 +532,7 @@ open coverage/index.html
 **使用 VS Code 调试器**:
 
 创建 `.vscode/launch.json`:
+
 ```json
 {
   "version": "0.2.0",
@@ -539,6 +551,7 @@ open coverage/index.html
 ```
 
 **使用 Node.js 调试器**:
+
 ```bash
 # 启动调试模式
 node --inspect dist/src/index.js
@@ -548,6 +561,7 @@ chrome://inspect
 ```
 
 **日志调试**:
+
 ```typescript
 import { logger } from './utils/logger';
 
@@ -561,10 +575,12 @@ logger.error('错误信息', { error, stack });
 ### 前端调试
 
 **Vue DevTools**:
+
 - 安装 [Vue DevTools](https://devtools.vuejs.org/) 浏览器扩展
 - 在开发模式下自动启用
 
 **浏览器调试**:
+
 ```typescript
 // 使用 console
 console.log('调试信息', data);
@@ -582,28 +598,30 @@ function processData(data: unknown) {
 ```
 
 **网络请求调试**:
+
 ```typescript
 // 在 Axios 拦截器中添加日志
-axios.interceptors.request.use(config => {
+axios.interceptors.request.use((config) => {
   console.log('请求:', config.method, config.url, config.data);
   return config;
 });
 
 axios.interceptors.response.use(
-  response => {
+  (response) => {
     console.log('响应:', response.status, response.data);
     return response;
   },
-  error => {
+  (error) => {
     console.error('错误:', error.response?.status, error.message);
     return Promise.reject(error);
-  }
+  },
 );
 ```
 
 ### MCP 协议调试
 
 **使用 MCP Inspector**:
+
 ```bash
 # 启动 MCP Inspector
 pnpm inspector
@@ -613,6 +631,7 @@ pnpm inspector
 ```
 
 **查看 MCP 消息**:
+
 ```typescript
 // 在代码中记录 MCP 消息
 mcpClient.on('message', (message) => {
@@ -629,6 +648,7 @@ mcpClient.on('message', (message) => {
 ### 贡献流程
 
 1. **Fork 仓库**
+
    ```bash
    # 在 GitHub 上 Fork 仓库
    # 克隆你的 Fork
@@ -636,6 +656,7 @@ mcpClient.on('message', (message) => {
    ```
 
 2. **创建功能分支**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -646,12 +667,14 @@ mcpClient.on('message', (message) => {
    - 更新文档
 
 4. **提交更改**
+
    ```bash
    git add .
    git commit -m "feat: 添加新功能"
    ```
 
 5. **推送到 Fork**
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -692,7 +715,7 @@ mcpClient.on('message', (message) => {
 2. **重现步骤**: 如何重现问题
 3. **预期行为**: 应该发生什么
 4. **实际行为**: 实际发生了什么
-5. **环境信息**: 
+5. **环境信息**:
    - Node.js 版本
    - 操作系统
    - 浏览器（如果相关）
@@ -712,14 +735,16 @@ mcpClient.on('message', (message) => {
 ### 发布步骤
 
 1. **更新版本号**
+
    ```bash
    # 更新所有包的版本号
    pnpm version:bump
-   
+
    # 或手动更新 package.json
    ```
 
 2. **更新 CHANGELOG**
+
    ```bash
    # 记录版本变更
    echo "## [1.2.0] - 2024-01-15" >> CHANGELOG.md
@@ -728,17 +753,20 @@ mcpClient.on('message', (message) => {
    ```
 
 3. **运行测试**
+
    ```bash
    pnpm test
    pnpm test:e2e
    ```
 
 4. **构建**
+
    ```bash
    pnpm build:production
    ```
 
 5. **提交变更**
+
    ```bash
    git add .
    git commit -m "chore: 发布 v1.2.0"
@@ -746,6 +774,7 @@ mcpClient.on('message', (message) => {
    ```
 
 6. **推送到远程**
+
    ```bash
    git push origin main
    git push origin v1.2.0

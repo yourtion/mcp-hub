@@ -121,7 +121,7 @@ api.interceptors.response.use(
       await refreshToken();
       // 重试原始请求
     }
-  }
+  },
 );
 ```
 

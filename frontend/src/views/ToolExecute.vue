@@ -7,9 +7,7 @@
             <template #icon><ChevronLeftIcon /></template>
             返回工具详情
           </t-button>
-          <h2 class="mcp-page__title exec-title">
-            执行工具: {{ tool?.name || toolName }}
-          </h2>
+          <h2 class="mcp-page__title exec-title">执行工具: {{ tool?.name || toolName }}</h2>
           <p class="mcp-page__desc">{{ tool?.description || '加载中...' }}</p>
         </div>
       </div>
@@ -23,12 +21,7 @@
         <div class="mcp-card exec-form-card">
           <h3 class="exec-form-card__title">参数输入</h3>
           <template v-if="schemaProperties.length > 0">
-            <t-form
-              ref="formRef"
-              :data="formData"
-              label-align="top"
-              :label-width="0"
-            >
+            <t-form ref="formRef" :data="formData" label-align="top" :label-width="0">
               <t-form-item
                 v-for="prop in schemaProperties"
                 :key="prop.name"
@@ -64,10 +57,7 @@
                 />
 
                 <!-- Boolean -->
-                <t-switch
-                  v-else-if="prop.type === 'boolean'"
-                  v-model="formData[prop.name]"
-                />
+                <t-switch v-else-if="prop.type === 'boolean'" v-model="formData[prop.name]" />
 
                 <!-- Array / Object (JSON textarea) -->
                 <t-textarea
@@ -86,17 +76,11 @@
           </template>
 
           <div class="exec-form-card__actions">
-            <t-button
-              theme="primary"
-              :loading="executing"
-              @click="handleExecute"
-            >
+            <t-button theme="primary" :loading="executing" @click="handleExecute">
               <template #icon><PlayIcon /></template>
               执行
             </t-button>
-            <t-button variant="outline" @click="handleReset">
-              重置
-            </t-button>
+            <t-button variant="outline" @click="handleReset"> 重置 </t-button>
           </div>
         </div>
 
@@ -128,11 +112,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
 import { ChevronLeftIcon, PlayIcon } from 'tdesign-icons-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next';
-import { useToolForm } from '@/composables/useToolForm';
+import { ref } from 'vue';
+
 import { ExecutionDetail } from '@/components/tools';
+import { useToolForm } from '@/composables/useToolForm';
+
 import type { ToolExecuteResponse } from '@/types/tool';
 
 const {

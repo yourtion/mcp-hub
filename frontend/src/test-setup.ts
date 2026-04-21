@@ -19,8 +19,7 @@ config.global.stubs = {
     props: ['hover'],
   },
   TButton: {
-    template:
-      '<button class="mock-button"><slot name="icon" /><slot /></button>',
+    template: '<button class="mock-button"><slot name="icon" /><slot /></button>',
     props: ['theme', 'variant', 'loading', 'size'],
   },
   TInput: {
@@ -107,8 +106,7 @@ config.global.stubs = {
     template: '<span class="mock-breadcrumb-item"><slot /></span>',
   },
   Button: {
-    template:
-      '<button class="mock-button"><slot name="icon" /><slot /></button>',
+    template: '<button class="mock-button"><slot name="icon" /><slot /></button>',
     props: ['theme', 'variant', 'loading', 'size', 'shape'],
     emits: ['click'],
   },

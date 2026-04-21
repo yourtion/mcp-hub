@@ -1,7 +1,9 @@
 import { MessagePlugin } from 'tdesign-vue-next';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+
 import { useToolStore } from '@/stores/tool';
+
 import type { JsonSchemaProperty, ToolInfo } from '@/types/tool';
 
 export interface SchemaPropertyEntry {
@@ -72,10 +74,7 @@ export function useToolForm() {
       }
 
       // Parse JSON fields for array/object types
-      if (
-        (prop.type === 'array' || prop.type === 'object') &&
-        typeof value === 'string'
-      ) {
+      if ((prop.type === 'array' || prop.type === 'object') && typeof value === 'string') {
         try {
           args[prop.name] = JSON.parse(value);
         } catch {
@@ -96,15 +95,11 @@ export function useToolForm() {
     }
 
     if (tool.value?.inputSchema?.properties) {
-      for (const [name, prop] of Object.entries(
-        tool.value.inputSchema.properties,
-      )) {
+      for (const [name, prop] of Object.entries(tool.value.inputSchema.properties)) {
         const p = prop as JsonSchemaProperty;
         if (p.default !== undefined) {
           formData[name] =
-            typeof p.default === 'object'
-              ? JSON.stringify(p.default, null, 2)
-              : p.default;
+            typeof p.default === 'object' ? JSON.stringify(p.default, null, 2) : p.default;
         } else if (p.type === 'boolean') {
           formData[name] = false;
         } else {

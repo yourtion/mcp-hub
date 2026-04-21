@@ -68,11 +68,15 @@
             <!-- Overview stats -->
             <div class="debug-page__error-stats">
               <div class="debug-page__stat-item">
-                <span class="debug-page__stat-value">{{ errorAnalysis.data.analysis.totalErrors }}</span>
+                <span class="debug-page__stat-value">{{
+                  errorAnalysis.data.analysis.totalErrors
+                }}</span>
                 <span class="debug-page__stat-label">总错误数</span>
               </div>
               <div class="debug-page__stat-item">
-                <span class="debug-page__stat-value">{{ (errorAnalysis.data.analysis.errorRate * 100).toFixed(1) }}%</span>
+                <span class="debug-page__stat-value"
+                  >{{ (errorAnalysis.data.analysis.errorRate * 100).toFixed(1) }}%</span
+                >
                 <span class="debug-page__stat-label">错误率</span>
               </div>
             </div>
@@ -105,7 +109,9 @@
                   {{ formatTime(row.timestamp) }}
                 </template>
                 <template #content="{ row }">
-                  <pre class="mcp-code debug-page__error-content">{{ formatJson(row.content) }}</pre>
+                  <pre class="mcp-code debug-page__error-content">{{
+                    formatJson(row.content)
+                  }}</pre>
                 </template>
               </t-table>
             </div>
@@ -133,15 +139,21 @@
             <!-- Overview stats -->
             <div class="debug-page__perf-stats">
               <div class="debug-page__stat-card mcp-card">
-                <span class="debug-page__stat-value">{{ performance.data.stats.totalRequests }}</span>
+                <span class="debug-page__stat-value">{{
+                  performance.data.stats.totalRequests
+                }}</span>
                 <span class="debug-page__stat-label">总请求数</span>
               </div>
               <div class="debug-page__stat-card mcp-card">
-                <span class="debug-page__stat-value">{{ performance.data.stats.averageResponseTime.toFixed(1) }}ms</span>
+                <span class="debug-page__stat-value"
+                  >{{ performance.data.stats.averageResponseTime.toFixed(1) }}ms</span
+                >
                 <span class="debug-page__stat-label">平均响应时间</span>
               </div>
               <div class="debug-page__stat-card mcp-card">
-                <span class="debug-page__stat-value">{{ (performance.data.stats.errorRate * 100).toFixed(1) }}%</span>
+                <span class="debug-page__stat-value"
+                  >{{ (performance.data.stats.errorRate * 100).toFixed(1) }}%</span
+                >
                 <span class="debug-page__stat-label">错误率</span>
               </div>
             </div>
@@ -157,9 +169,7 @@
                 stripe
                 size="small"
               >
-                <template #avgTime="{ row }">
-                  {{ row.avgTime.toFixed(1) }}ms
-                </template>
+                <template #avgTime="{ row }"> {{ row.avgTime.toFixed(1) }}ms </template>
               </t-table>
             </div>
           </div>
@@ -193,9 +203,7 @@
               <template #icon><RefreshIcon /></template>
               获取消息
             </t-button>
-            <t-button variant="outline" @click="clearMessages">
-              清空
-            </t-button>
+            <t-button variant="outline" @click="clearMessages"> 清空 </t-button>
           </div>
 
           <div v-if="messageMonitor.messages.length > 0" class="debug-page__messages">
@@ -228,7 +236,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { PlayIcon, RefreshIcon, BugIcon, ChartBarIcon, ChatIcon } from 'tdesign-icons-vue-next';
 import {
   Tabs as TTabs,
   TabPanel as TTabPanel,
@@ -240,14 +248,10 @@ import {
   Select as TSelect,
   MessagePlugin,
 } from 'tdesign-vue-next';
-import {
-  PlayIcon,
-  RefreshIcon,
-  BugIcon,
-  ChartBarIcon,
-  ChatIcon,
-} from 'tdesign-icons-vue-next';
+import { computed, onMounted, reactive, ref } from 'vue';
+
 import { testTool, getErrorAnalysis, getPerformanceStats, getMcpMessages } from '@/services/debug';
+
 import type {
   McpMessage,
   ToolTestResponse,
@@ -290,9 +294,10 @@ const messageMonitor = reactive({
 // --- Computed ---
 const commonErrors = computed(() => {
   if (!errorAnalysis.data) return [];
-  return Object.entries(errorAnalysis.data.analysis.mostCommonErrors).map(
-    ([message, count]) => ({ message, count }),
-  );
+  return Object.entries(errorAnalysis.data.analysis.mostCommonErrors).map(([message, count]) => ({
+    message,
+    count,
+  }));
 });
 
 const messageTypeOptions = [

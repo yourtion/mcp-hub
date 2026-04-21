@@ -66,9 +66,7 @@ export type RequestInterceptor = (
 /**
  * 响应拦截器
  */
-export type ResponseInterceptor = (
-  response: HttpResponse,
-) => HttpResponse | Promise<HttpResponse>;
+export type ResponseInterceptor = (response: HttpResponse) => HttpResponse | Promise<HttpResponse>;
 
 /**
  * HTTP连接

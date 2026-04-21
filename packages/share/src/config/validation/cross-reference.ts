@@ -1,12 +1,13 @@
+import { GroupConfigSchema } from '../schemas/group.schema.js';
+import { McpConfigSchema } from '../schemas/mcp.schema.js';
+import { SystemConfigSchema } from '../schemas/system.schema.js';
+import { validateWithSchema } from './config-validator.js';
+
+import type { Group } from '../types/index.js';
 /**
  * 交叉引用校验（MCP 配置 → Group 配置）
  */
 import type { z } from 'zod/v4';
-import { GroupConfigSchema } from '../schemas/group.schema.js';
-import { McpConfigSchema } from '../schemas/mcp.schema.js';
-import { SystemConfigSchema } from '../schemas/system.schema.js';
-import type { Group } from '../types/index.js';
-import { validateWithSchema } from './config-validator.js';
 
 /**
  * 校验结果
@@ -33,9 +34,7 @@ export function validateCrossReferences(
   for (const [groupName, group] of Object.entries(groups)) {
     for (const serverName of group.servers) {
       if (!availableServers.has(serverName)) {
-        errors.push(
-          `组 "${groupName}" 引用了未在MCP配置中定义的服务器 "${serverName}"`,
-        );
+        errors.push(`组 "${groupName}" 引用了未在MCP配置中定义的服务器 "${serverName}"`);
       }
     }
   }
@@ -48,9 +47,7 @@ export function validateCrossReferences(
     }
   }
 
-  const unusedServers = Object.keys(servers).filter(
-    (server) => !usedServers.has(server),
-  );
+  const unusedServers = Object.keys(servers).filter((server) => !usedServers.has(server));
 
   if (unusedServers.length > 0) {
     warnings.push(`以下服务器未被任何组使用: ${unusedServers.join('、 ')}`);
@@ -92,9 +89,7 @@ export function validateAllConfigs(
   // Schema 校验 Group 配置
   const groupResult = validateWithSchema(GroupConfigSchema, groupConfig);
   if (!groupResult.success) {
-    allErrors.push(
-      ...(groupResult.errors ?? []).map((e) => `组配置错误: ${e}`),
-    );
+    allErrors.push(...(groupResult.errors ?? []).map((e) => `组配置错误: ${e}`));
     return { success: false, errors: allErrors };
   }
 
@@ -113,9 +108,7 @@ export function validateAllConfigs(
   if (systemConfig) {
     const sysResult = validateWithSchema(SystemConfigSchema, systemConfig);
     if (!sysResult.success) {
-      allErrors.push(
-        ...(sysResult.errors ?? []).map((e) => `系统配置错误: ${e}`),
-      );
+      allErrors.push(...(sysResult.errors ?? []).map((e) => `系统配置错误: ${e}`));
       return { success: false, errors: allErrors };
     }
     parsedSystemConfig = sysResult.data;

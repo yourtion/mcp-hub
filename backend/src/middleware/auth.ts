@@ -2,10 +2,11 @@
  * 认证中间件
  */
 
-import type { Context, Next } from 'hono';
+import { logger } from '../utils/logger.js';
+
 import type { AuthService } from '../services/auth.js';
 import type { AuthContext } from '../types/auth.js';
-import { logger } from '../utils/logger.js';
+import type { Context, Next } from 'hono';
 
 // 扩展Hono的Context类型以包含认证信息
 declare module 'hono' {
@@ -90,8 +91,7 @@ export function createAuthMiddleware(authService: AuthService) {
 
       await next();
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Authentication failed';
+      const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
 
       let errorCode = 'AUTH_INVALID_TOKEN';
       if (errorMessage.includes('expired')) {
@@ -221,8 +221,7 @@ export function requestLogMiddleware() {
     const method = c.req.method;
     const path = c.req.path;
     const userAgent = c.req.header('User-Agent') || 'Unknown';
-    const ip =
-      c.req.header('X-Forwarded-For') || c.req.header('X-Real-IP') || 'Unknown';
+    const ip = c.req.header('X-Forwarded-For') || c.req.header('X-Real-IP') || 'Unknown';
 
     // 获取用户信息（如果已认证）
     let username = 'Anonymous';
@@ -265,8 +264,7 @@ export function errorHandlerMiddleware() {
         method: c.req.method,
       });
 
-      const errorMessage =
-        error instanceof Error ? error.message : 'Internal server error';
+      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
 
       return c.json(
         {

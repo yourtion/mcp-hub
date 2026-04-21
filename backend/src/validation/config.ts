@@ -3,11 +3,6 @@
  * 使用 share 包的统一 Zod Schema 进行配置校验
  */
 
-import type {
-  GroupConfig,
-  McpConfig,
-  SystemConfig,
-} from '@mcp-core/mcp-hub-share/config';
 import {
   GroupConfigSchema,
   McpConfigSchema,
@@ -15,6 +10,8 @@ import {
   validateCrossReferences,
   validateWithSchema,
 } from '@mcp-core/mcp-hub-share/config';
+
+import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share/config';
 
 /**
  * 验证MCP服务器配置
@@ -60,13 +57,8 @@ export function validateGroupConfig(
 
   for (const [groupName, group] of Object.entries(result.data)) {
     for (const serverName of group.servers) {
-      if (
-        availableServers.length > 0 &&
-        !availableServers.includes(serverName)
-      ) {
-        validationErrors.push(
-          `组 "${groupName}" 引用了不存在的服务器 "${serverName}"`,
-        );
+      if (availableServers.length > 0 && !availableServers.includes(serverName)) {
+        validationErrors.push(`组 "${groupName}" 引用了不存在的服务器 "${serverName}"`);
       }
     }
 
@@ -154,14 +146,9 @@ export function validateAllConfigs(
   }
 
   // 验证交叉引用
-  const crossRefResult = validateConfigCrossReferences(
-    mcpResult.data,
-    groupResult.data,
-  );
+  const crossRefResult = validateConfigCrossReferences(mcpResult.data, groupResult.data);
   if (!crossRefResult.success) {
-    allErrors.push(
-      ...crossRefResult.errors.map((err) => `交叉引用错误: ${err}`),
-    );
+    allErrors.push(...crossRefResult.errors.map((err) => `交叉引用错误: ${err}`));
     return { success: false, errors: allErrors };
   }
 

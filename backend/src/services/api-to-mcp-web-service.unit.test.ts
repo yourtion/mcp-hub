@@ -3,8 +3,10 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ApiToolConfig } from '../types/web-api.js';
+
 import { logger } from '../utils/logger.js';
+
+import type { ApiToolConfig } from '../types/web-api.js';
 
 // 创建mock函数
 const mockApiToolIntegrationService = {
@@ -106,9 +108,7 @@ describe('ApiToMcpWebService', () => {
 
       await service.initialize(configPath);
 
-      expect(mockApiToolIntegrationService.initialize).toHaveBeenCalledWith(
-        configPath,
-      );
+      expect(mockApiToolIntegrationService.initialize).toHaveBeenCalledWith(configPath);
     });
 
     it('应该在未提供配置路径时发出警告', async () => {
@@ -117,12 +117,8 @@ describe('ApiToMcpWebService', () => {
 
       await service.initialize();
 
-      expect(loggerSpy).toHaveBeenCalledWith(
-        '未提供API配置文件路径，部分功能将不可用',
-      );
-      expect(mockApiToolIntegrationService.initialize).toHaveBeenCalledWith(
-        undefined,
-      );
+      expect(loggerSpy).toHaveBeenCalledWith('未提供API配置文件路径，部分功能将不可用');
+      expect(mockApiToolIntegrationService.initialize).toHaveBeenCalledWith(undefined);
     });
 
     it('应该正确处理初始化错误', async () => {
@@ -130,9 +126,7 @@ describe('ApiToMcpWebService', () => {
       const error = new Error('初始化失败');
       mockApiToolIntegrationService.initialize.mockRejectedValue(error);
 
-      await expect(service.initialize(configPath)).rejects.toThrow(
-        '初始化失败: 初始化失败',
-      );
+      await expect(service.initialize(configPath)).rejects.toThrow('初始化失败: 初始化失败');
     });
   });
 
@@ -177,9 +171,7 @@ describe('ApiToMcpWebService', () => {
       const error = new Error('获取失败');
       mockApiToolIntegrationService.getApiTools.mockRejectedValue(error);
 
-      await expect(service.getConfigs()).rejects.toThrow(
-        '获取配置列表失败: 获取失败',
-      );
+      await expect(service.getConfigs()).rejects.toThrow('获取配置列表失败: 获取失败');
     });
   });
 
@@ -315,10 +307,7 @@ describe('ApiToMcpWebService', () => {
     it('应该拒绝ID不匹配的更新', async () => {
       const mismatchedConfig = { ...existingConfig, id: 'different-id' };
 
-      const result = await service.updateConfig(
-        'test-config',
-        mismatchedConfig,
-      );
+      const result = await service.updateConfig('test-config', mismatchedConfig);
 
       expect(result.success).toBe(false);
       expect(result.message).toBe('配置ID不匹配');
@@ -327,10 +316,7 @@ describe('ApiToMcpWebService', () => {
     it('应该处理不存在的配置', async () => {
       const nonExistentConfig = { ...existingConfig, id: 'non-existent' };
 
-      const result = await service.updateConfig(
-        'non-existent',
-        nonExistentConfig,
-      );
+      const result = await service.updateConfig('non-existent', nonExistentConfig);
 
       expect(result.success).toBe(false);
       expect(result.message).toContain('不存在');
@@ -416,9 +402,7 @@ describe('ApiToMcpWebService', () => {
         ],
       };
 
-      mockApiToolIntegrationService.executeApiTool.mockResolvedValue(
-        mockResult,
-      );
+      mockApiToolIntegrationService.executeApiTool.mockResolvedValue(mockResult);
 
       const parameters = { test: 'value' };
       const result = await service.testConfig('test-tool', parameters);
@@ -443,9 +427,7 @@ describe('ApiToMcpWebService', () => {
         ],
       };
 
-      mockApiToolIntegrationService.executeApiTool.mockResolvedValue(
-        mockResult,
-      );
+      mockApiToolIntegrationService.executeApiTool.mockResolvedValue(mockResult);
 
       const result = await service.testConfig('test-tool', {});
 

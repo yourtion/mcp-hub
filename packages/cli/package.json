@@ -1,26 +1,42 @@
 {
   "name": "@mcp-core/mcp-hub-cli",
   "version": "0.0.1",
-  "description": "MCP Hub CLI包 - 提供命令行界面的MCP服务聚合器",
-  "type": "module",
   "private": false,
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "description": "MCP Hub CLI包 - 提供命令行界面的MCP服务聚合器",
+  "keywords": [
+    "cli",
+    "command-line",
+    "hub",
+    "mcp",
+    "model-context-protocol"
+  ],
+  "license": "ISC",
+  "author": "",
   "bin": {
     "mcp-hub": "./bin/mcp-hub.js"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "files": [
     "dist",
     "bin",
     "README.md"
   ],
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc && node scripts/fix-imports.js",
     "dev": "tsc --watch",
-    "check": "biome check --write src/",
+    "check": "oxlint --fix src/ && oxfmt src/",
     "test": "vitest --run",
     "test:watch": "vitest",
     "test:debug": "VITEST_DEBUG=true vitest --run",
@@ -34,16 +50,6 @@
     "test:all": "vitest --run",
     "start": "node dist/index.js"
   },
-  "keywords": [
-    "mcp",
-    "model-context-protocol",
-    "hub",
-    "cli",
-    "command-line"
-  ],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.6.4",
   "dependencies": {
     "@mcp-core/mcp-hub-core": "workspace:*",
     "@mcp-core/mcp-hub-share": "workspace:*",
@@ -54,11 +60,5 @@
     "@types/node": "^20.11.17",
     "typescript": "^5.8.3"
   },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    }
-  }
+  "packageManager": "pnpm@10.6.4"
 }

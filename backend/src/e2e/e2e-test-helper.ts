@@ -51,9 +51,7 @@ export class E2ETestHelper {
     await E2ETestHelper.waitFor(
       async () => {
         try {
-          const response = await fetch(
-            `${baseUrl}/api/servers/${serverId}/health`,
-          );
+          const response = await fetch(`${baseUrl}/api/servers/${serverId}/health`);
           const data = await response.json();
           return data.healthy === true;
         } catch {
@@ -150,11 +148,7 @@ export class E2ETestHelper {
     p99Time: number;
     opsPerSecond: number;
   }> {
-    const {
-      iterations = 100,
-      warmupIterations = 10,
-      concurrency: _concurrency = 10,
-    } = options;
+    const { iterations = 100, warmupIterations = 10, concurrency: _concurrency = 10 } = options;
 
     // 预热
     for (let i = 0; i < warmupIterations; i++) {
@@ -234,12 +228,7 @@ export class E2ETestHelper {
       retryIf?: (error: Error) => boolean;
     } = {},
   ): Promise<T> {
-    const {
-      maxAttempts = 3,
-      delay = 100,
-      backoff = 2,
-      retryIf = () => true,
-    } = options;
+    const { maxAttempts = 3, delay = 100, backoff = 2, retryIf = () => true } = options;
 
     let lastError: Error | undefined;
 
@@ -374,10 +363,7 @@ export class E2ETestHelper {
         (() => {
           let timeoutId: NodeJS.Timeout | undefined;
           const timeoutPromise = new Promise((_, reject) => {
-            timeoutId = setTimeout(
-              () => reject(new Error('Cleanup timeout')),
-              timeout,
-            );
+            timeoutId = setTimeout(() => reject(new Error('Cleanup timeout')), timeout);
             timeoutId.unref?.();
           });
 
@@ -396,9 +382,7 @@ export class E2ETestHelper {
         .map((r) => (r as PromiseRejectedResult).reason);
 
       if (errors.length > 0) {
-        throw new Error(
-          `Cleanup failed: ${errors.map((e) => String(e)).join(', ')}`,
-        );
+        throw new Error(`Cleanup failed: ${errors.map((e) => String(e)).join(', ')}`);
       }
     }
   }
@@ -513,8 +497,7 @@ export class E2ETestHelper {
     const max = Math.max(...latencies);
 
     // 计算标准差
-    const variance =
-      latencies.reduce((sum, l) => sum + (l - avg) ** 2, 0) / latencies.length;
+    const variance = latencies.reduce((sum, l) => sum + (l - avg) ** 2, 0) / latencies.length;
     const stdDev = Math.sqrt(variance);
 
     return {
@@ -566,8 +549,7 @@ export class E2EScenarioHelper {
     success: boolean;
     steps: Array<{ name: string; success: boolean; duration: number }>;
   }> {
-    const steps: Array<{ name: string; success: boolean; duration: number }> =
-      [];
+    const steps: Array<{ name: string; success: boolean; duration: number }> = [];
 
     try {
       // 步骤 1: 系统启动
@@ -665,17 +647,14 @@ export class E2EScenarioHelper {
     recoveryTime: number;
     steps: Array<{ name: string; success: boolean; duration: number }>;
   }> {
-    const steps: Array<{ name: string; success: boolean; duration: number }> =
-      [];
+    const steps: Array<{ name: string; success: boolean; duration: number }> = [];
 
     try {
       // 步骤 1: 检查初始健康状态
       const step1Start = Date.now();
-      const initialHealth = await E2ETestHelper.waitForServerHealthy(
-        baseUrl,
-        serverId,
-        { timeout: 5000 },
-      );
+      const initialHealth = await E2ETestHelper.waitForServerHealthy(baseUrl, serverId, {
+        timeout: 5000,
+      });
       steps.push({
         name: 'Initial health check',
         success: initialHealth,
@@ -697,9 +676,7 @@ export class E2EScenarioHelper {
       const step3Start = Date.now();
       await E2ETestHelper.waitFor(
         async () => {
-          const response = await fetch(
-            `${baseUrl}/api/servers/${serverId}/health`,
-          );
+          const response = await fetch(`${baseUrl}/api/servers/${serverId}/health`);
           const data = await response.json();
           return data.healthy === false;
         },

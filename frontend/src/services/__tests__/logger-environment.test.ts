@@ -3,10 +3,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  FrontendLogger,
-  LogLevel,
-} from '../../../../packages/share/src/frontend-logger';
+
+import { FrontendLogger, LogLevel } from '../../../../packages/share/src/frontend-logger';
 
 describe('FrontendLogger Environment Behavior', () => {
   let consoleSpy: ReturnType<typeof vi.spyOn>;

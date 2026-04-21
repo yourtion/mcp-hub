@@ -47,20 +47,14 @@ export interface ParameterValidator {
    * @param parameters 输入参数
    * @param schema JSON Schema
    */
-  applyDefaults(
-    parameters: Record<string, unknown>,
-    schema: JsonSchema,
-  ): Record<string, unknown>;
+  applyDefaults(parameters: Record<string, unknown>, schema: JsonSchema): Record<string, unknown>;
 
   /**
    * 检查必需字段
    * @param parameters 输入参数
    * @param schema JSON Schema
    */
-  checkRequiredFields(
-    parameters: Record<string, unknown>,
-    schema: JsonSchema,
-  ): ValidationError[];
+  checkRequiredFields(parameters: Record<string, unknown>, schema: JsonSchema): ValidationError[];
 }
 
 /**
@@ -130,10 +124,7 @@ export class ParameterValidatorImpl implements ParameterValidator {
     };
   }
 
-  applyDefaults(
-    parameters: Record<string, unknown>,
-    schema: JsonSchema,
-  ): Record<string, unknown> {
+  applyDefaults(parameters: Record<string, unknown>, schema: JsonSchema): Record<string, unknown> {
     const result = { ...parameters };
 
     for (const [key, propertySchema] of Object.entries(schema.properties)) {
@@ -145,10 +136,7 @@ export class ParameterValidatorImpl implements ParameterValidator {
     return result;
   }
 
-  checkRequiredFields(
-    parameters: Record<string, unknown>,
-    schema: JsonSchema,
-  ): ValidationError[] {
+  checkRequiredFields(parameters: Record<string, unknown>, schema: JsonSchema): ValidationError[] {
     const errors: ValidationError[] = [];
     const requiredFields = schema.required || [];
 
@@ -209,13 +197,7 @@ export class ParameterValidatorImpl implements ParameterValidator {
         errors.push(...this.validateArray(value as unknown[], schema, path));
         break;
       case 'object':
-        errors.push(
-          ...this.validateObject(
-            value as Record<string, unknown>,
-            schema,
-            path,
-          ),
-        );
+        errors.push(...this.validateObject(value as Record<string, unknown>, schema, path));
         break;
     }
 
@@ -359,11 +341,7 @@ export class ParameterValidatorImpl implements ParameterValidator {
     // 数组元素验证
     if (schema.items) {
       for (let i = 0; i < value.length; i++) {
-        const itemErrors = this.validateProperty(
-          value[i],
-          schema.items,
-          `${path}[${i}]`,
-        );
+        const itemErrors = this.validateProperty(value[i], schema.items, `${path}[${i}]`);
         errors.push(...itemErrors);
       }
     }
@@ -387,11 +365,7 @@ export class ParameterValidatorImpl implements ParameterValidator {
       const propertySchema = schema.properties[key];
 
       if (propertySchema) {
-        const propErrors = this.validateProperty(
-          propValue,
-          propertySchema,
-          `${path}.${key}`,
-        );
+        const propErrors = this.validateProperty(propValue, propertySchema, `${path}.${key}`);
         errors.push(...propErrors);
       } else if (schema.additionalProperties === false) {
         errors.push({
@@ -418,11 +392,7 @@ export class ParameterValidatorImpl implements ParameterValidator {
     return errors;
   }
 
-  private validateFormat(
-    value: string,
-    format: string,
-    path: string,
-  ): ValidationError[] {
+  private validateFormat(value: string, format: string, path: string): ValidationError[] {
     const errors: ValidationError[] = [];
 
     switch (format) {
@@ -503,10 +473,7 @@ export class ParameterValidatorImpl implements ParameterValidator {
   private isValidDateTime(dateTime: string): boolean {
     try {
       const parsedDate = new Date(dateTime);
-      return (
-        !Number.isNaN(parsedDate.getTime()) &&
-        dateTime === parsedDate.toISOString()
-      );
+      return !Number.isNaN(parsedDate.getTime()) && dateTime === parsedDate.toISOString();
     } catch {
       return false;
     }

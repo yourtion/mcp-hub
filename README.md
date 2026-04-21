@@ -21,7 +21,7 @@ MCP Hub follows a modular monorepo architecture with the following packages:
 ### Core Packages
 
 - **`@mcp-core/mcp-hub-core`** - Core MCP service management, connection handling, and tool execution
-- **`@mcp-core/mcp-hub-api`** - Web API server with group-based routing and HTTP endpoints  
+- **`@mcp-core/mcp-hub-api`** - Web API server with group-based routing and HTTP endpoints
 - **`@mcp-core/mcp-hub-cli`** - Command-line MCP server for standalone tool aggregation
 - **`@mcp-core/mcp-hub-share`** - Shared types and utilities across packages
 - **`@mcp-core/mcp-hub-web`** - Vue.js frontend interface (optional)
@@ -42,7 +42,7 @@ MCP Hub follows a modular monorepo architecture with the following packages:
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - pnpm package manager
 
 ### Install Dependencies
@@ -119,11 +119,13 @@ mcp-hub --init-all --overwrite
 ```
 
 The default configuration includes these commonly used MCP servers:
+
 - **fetch**: Web fetching and HTTP requests
 - **time**: Time and date functionality
 - **sequential-thinking**: Sequential thinking capabilities
 
 More available server presets:
+
 - **filesystem**: File system operations
 - **memory**: Persistent memory storage
 - **brave-search**: Brave search engine
@@ -150,6 +152,7 @@ The frontend will be available at `http://localhost:8180` (development) or serve
 The frontend provides a comprehensive web-based management interface with the following features:
 
 ##### 1. Authentication & Security
+
 - **JWT Authentication**: Secure login system with token-based authentication
 - **Automatic Token Refresh**: Seamless session management without interruption
 - **Route Guards**: Protected pages requiring authentication
@@ -157,6 +160,7 @@ The frontend provides a comprehensive web-based management interface with the fo
 - **Default Credentials**: Username: `admin`, Password: `admin` (change in production!)
 
 ##### 2. Dashboard & Monitoring
+
 - **System Overview**: Real-time statistics of servers, tools, and groups
 - **Live Status Updates**: Server-Sent Events (SSE) for real-time monitoring
 - **Performance Metrics**: Request rates, response times, and error rates
@@ -164,6 +168,7 @@ The frontend provides a comprehensive web-based management interface with the fo
 - **Health Monitoring**: System health checks and alerts
 
 ##### 3. Server Management
+
 - **Server List**: View all configured MCP servers with status indicators
 - **Add/Edit Servers**: Visual forms for server configuration
 - **Connection Control**: Connect, disconnect, and test server connections
@@ -171,6 +176,7 @@ The frontend provides a comprehensive web-based management interface with the fo
 - **Configuration Validation**: Test server configurations before saving
 
 ##### 4. Tool Management
+
 - **Tool Browser**: Browse all available MCP tools across servers
 - **Tool Search & Filter**: Find tools by name, server, or group
 - **Tool Testing**: Interactive tool execution with parameter input
@@ -178,6 +184,7 @@ The frontend provides a comprehensive web-based management interface with the fo
 - **Tool Details**: Complete tool documentation and schema information
 
 ##### 5. Group Management
+
 - **Group Configuration**: Create and manage server groups
 - **Member Management**: Assign servers to groups
 - **Tool Filtering**: Configure which tools are available per group
@@ -185,6 +192,7 @@ The frontend provides a comprehensive web-based management interface with the fo
 - **Group Statistics**: Usage statistics and performance metrics
 
 ##### 6. API to MCP Integration
+
 - **API Configuration**: Convert REST APIs to MCP tools
 - **Parameter Mapping**: Visual editor for API-to-MCP parameter mapping
 - **API Testing**: Test API configurations before deployment
@@ -192,6 +200,7 @@ The frontend provides a comprehensive web-based management interface with the fo
 - **Auto-generation**: Automatically generate MCP tools from API specs
 
 ##### 7. Debug & Development Tools
+
 - **MCP Protocol Monitor**: View raw MCP protocol messages
 - **Tool Debugger**: Test tools with detailed execution logs
 - **Performance Analyzer**: Analyze tool performance and bottlenecks
@@ -199,6 +208,7 @@ The frontend provides a comprehensive web-based management interface with the fo
 - **Message Inspector**: Inspect request/response payloads
 
 ##### 8. Configuration Management
+
 - **System Settings**: Configure system-wide settings
 - **Configuration Editor**: Edit configurations with validation
 - **Backup & Restore**: Create and restore configuration backups
@@ -229,12 +239,14 @@ The frontend uses JWT-based authentication. To configure authentication:
 #### Accessing the Web Interface
 
 1. **Start the Backend**:
+
    ```bash
    pnpm dev:api
    # Backend runs on http://localhost:8181
    ```
 
 2. **Start the Frontend** (Development):
+
    ```bash
    pnpm dev:fe
    # Frontend runs on http://localhost:8180
@@ -246,10 +258,11 @@ The frontend uses JWT-based authentication. To configure authentication:
    - You'll be redirected to the dashboard
 
 4. **Production Deployment**:
+
    ```bash
    # Build frontend
    pnpm build:fe
-   
+
    # Frontend static files will be in frontend/dist
    # Serve through backend or separate web server
    ```
@@ -294,7 +307,7 @@ Configure groups in `backend/config/group.json`:
       "validationKey": "dev-key-123"
     },
     "research": {
-      "name": "Research Tools", 
+      "name": "Research Tools",
       "description": "Tools for research and information gathering",
       "servers": ["brave-search", "wikipedia"],
       "allowedTools": ["search", "lookup"],
@@ -353,7 +366,7 @@ pnpm dev:fe           # Start frontend in development mode
 pnpm build            # Build all packages
 pnpm check            # Run linting and formatting
 
-# Testing  
+# Testing
 pnpm test             # Run all tests
 pnpm test:coverage    # Run tests with coverage
 pnpm test:e2e         # Run end-to-end tests
@@ -372,7 +385,7 @@ cd packages/core
 pnpm dev              # Watch mode compilation
 pnpm test:watch       # Watch mode testing
 
-# CLI package  
+# CLI package
 cd packages/cli
 pnpm dev              # Watch mode compilation
 pnpm test:e2e         # End-to-end testing
@@ -386,16 +399,19 @@ pnpm test:mcp         # MCP protocol tests
 ## Documentation
 
 ### User Guides
+
 - [Web UI Guide](docs/WEB_UI_GUIDE.md) - Complete web interface usage guide
 - [CLI Usage Guide](docs/CLI_USAGE.md) - Detailed CLI usage and configuration
 - [FAQ](docs/FAQ.md) - Frequently asked questions and troubleshooting
 
 ### Technical Documentation
+
 - [API Reference](docs/API_REFERENCE.md) - Complete API documentation
 - [Group Routing Guide](docs/GROUP_ROUTING.md) - Group-based routing documentation
 - [Migration Guide](docs/MIGRATION.md) - Upgrading from previous versions
 
 ### Development & Deployment
+
 - [Development Guide](docs/DEVELOPMENT.md) - Development environment setup and contribution guide
 - [Release Process](#release-process) - Version management and publishing with Changesets
 - [NPM Trusted Publishers](docs/NPM_TRUSTED_PUBLISHERS.md) - Secure package publishing setup
@@ -409,6 +425,7 @@ MCP Hub uses [Changesets](https://github.com/changesets/changesets) for version 
 #### Daily Development Workflow
 
 1. **Complete feature development**:
+
    ```bash
    git checkout -b feature/my-feature
    # Develop and test...
@@ -417,14 +434,17 @@ MCP Hub uses [Changesets](https://github.com/changesets/changesets) for version 
    ```
 
 2. **Create a Changeset**:
+
    ```bash
    pnpm changeset
    ```
+
    - Select affected packages
    - Choose version type (major/minor/patch)
    - Add change description
 
 3. **Commit code**:
+
    ```bash
    git add .
    git commit -m "feat: add new feature"

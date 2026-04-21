@@ -5,6 +5,7 @@
 ### ✅ 已完成的工作
 
 #### 1. 设计系统架构文档 ✅
+
 - ✅ 创建 `DESIGN_SYSTEM.md` - 完整的设计系统架构文档
 - ✅ 定义设计原则、组件分类、命名规范
 - ✅ 建立设计令牌系统（颜色、间距、字体、圆角、阴影）
@@ -13,6 +14,7 @@
 #### 2. 核心设计系统组件 ✅
 
 **布局组件 (4个)**
+
 - ✅ `PageHeader.vue` - 统一页面头部
   - 支持标题、描述、操作按钮、meta信息
   - 支持 extra 插槽
@@ -39,6 +41,7 @@
   - 页脚支持
 
 **数据展示组件 (3个)**
+
 - ✅ `StatCard.vue` - 统计卡片
   - 5种颜色主题
   - 支持趋势指示器
@@ -61,6 +64,7 @@
   - 响应式列布局
 
 **表单组件 (1个)**
+
 - ✅ `FormDialog.vue` - 统一表单对话框
   - 支持 3种模式：create/edit/view
   - 基于 JSON 配置生成表单
@@ -73,6 +77,7 @@
   - 动态字段显示/隐藏
 
 **操作组件 (2个)**
+
 - ✅ `ActionButton.vue` - 统一操作按钮
   - 支持下拉菜单
   - 确认对话框支持
@@ -88,6 +93,7 @@
   - 水平/垂直布局
 
 **反馈组件 (5个)**
+
 - ✅ `EmptyPage.vue` - 空状态页面
   - 5种类型：no-data, no-result, no-permission, error, loading
   - 支持自定义插图和图标
@@ -117,6 +123,7 @@
   - 自定义按钮文本
 
 #### 3. 基础设施 ✅
+
 - ✅ Less 预处理器配置
 - ✅ 设计令牌系统（9个 token 文件）
 - ✅ Mixins 和工具类
@@ -124,6 +131,7 @@
 - ✅ CSS 入口文件 (`design-system.css`)
 
 #### 4. 已重构的页面 (5个) ✅
+
 - ✅ `Dashboard.vue` - 使用 PageHeader + StatCard
 - ✅ `ServerList.vue` - 使用 PageHeader + StatCard
 - ✅ `GroupList.vue` - 使用 PageHeader + StatCard
@@ -131,6 +139,7 @@
 - ✅ `ApiConfigList.vue` - 使用 PageHeader + StatCard
 
 #### 5. 测试和构建 ✅
+
 - ✅ 所有测试通过 (138个测试)
 - ✅ 构建成功，无错误
 - ✅ 代码质量检查通过
@@ -152,29 +161,29 @@ import {
   FormDialog,
   LoadingPage,
   EmptyPage,
-  StatusIndicator
+  StatusIndicator,
 } from '@/design-system';
 ```
 
 ### 组件功能矩阵
 
-| 组件 | 状态 | 功能完整性 | 文档 | 测试 |
-|------|------|-----------|------|------|
-| PageHeader | ✅ | 100% | ✅ | ✅ |
-| ContentLayout | ✅ | 100% | ✅ | ✅ |
-| FilterBar | ✅ | 100% | ✅ | ⏳ |
-| AppLayout | ✅ | 100% | ✅ | ⏳ |
-| StatCard | ✅ | 100% | ✅ | ✅ |
-| DataTable | ✅ | 100% | ✅ | ⏳ |
-| DetailView | ✅ | 100% | ✅ | ⏳ |
-| FormDialog | ✅ | 100% | ✅ | ⏳ |
-| LoadingPage | ✅ | 100% | ✅ | ⏳ |
-| EmptyPage | ✅ | 100% | ✅ | ⏳ |
-| StatusIndicator | ✅ | 100% | ✅ | ✅ |
-| ErrorPage | ✅ | 100% | ✅ | ⏳ |
-| ConfirmDialog | ✅ | 100% | ✅ | ⏳ |
-| ActionButton | ✅ | 100% | ✅ | ⏳ |
-| ActionGroup | ✅ | 100% | ✅ | ⏳ |
+| 组件            | 状态 | 功能完整性 | 文档 | 测试 |
+| --------------- | ---- | ---------- | ---- | ---- |
+| PageHeader      | ✅   | 100%       | ✅   | ✅   |
+| ContentLayout   | ✅   | 100%       | ✅   | ✅   |
+| FilterBar       | ✅   | 100%       | ✅   | ⏳   |
+| AppLayout       | ✅   | 100%       | ✅   | ⏳   |
+| StatCard        | ✅   | 100%       | ✅   | ✅   |
+| DataTable       | ✅   | 100%       | ✅   | ⏳   |
+| DetailView      | ✅   | 100%       | ✅   | ⏳   |
+| FormDialog      | ✅   | 100%       | ✅   | ⏳   |
+| LoadingPage     | ✅   | 100%       | ✅   | ⏳   |
+| EmptyPage       | ✅   | 100%       | ✅   | ⏳   |
+| StatusIndicator | ✅   | 100%       | ✅   | ✅   |
+| ErrorPage       | ✅   | 100%       | ✅   | ⏳   |
+| ConfirmDialog   | ✅   | 100%       | ✅   | ⏳   |
+| ActionButton    | ✅   | 100%       | ✅   | ⏳   |
+| ActionGroup     | ✅   | 100%       | ✅   | ⏳   |
 
 ---
 
@@ -183,17 +192,20 @@ import {
 ### 代码质量提升
 
 #### 当前状态
+
 - ✅ 建立了完整的设计系统层
 - ✅ 统一了5个主要页面的头部和统计卡片
 - ✅ 代码重复率部分降低（~35% → ~20%）
 
 #### 设计系统优势
+
 1. **一致性** - 所有使用设计系统的页面风格统一
 2. **可维护性** - 集中管理的设计令牌和组件
 3. **开发效率** - 标准化组件可快速复用
 4. **类型安全** - 完整的 TypeScript 类型定义
 
 ### 技术栈
+
 - Vue 3.5.17 (Composition API)
 - TDesign Vue Next v1.16.1
 - Less 4.2.0
@@ -207,6 +219,7 @@ import {
 ### 待开发的设计系统组件
 
 #### 高优先级 (P0) ✅ 已完成
+
 - ✅ `AppLayout` - 应用主布局框架
 - ✅ `FilterBar` - 筛选栏组件
 - ✅ `ErrorPage` - 错误页面
@@ -215,6 +228,7 @@ import {
 - ✅ `ActionGroup` - 操作按钮组
 
 #### 中优先级 (P1)
+
 - [ ] `FormSection` - 表单分组
 - [ ] `FormBuilder` - 动态表单构建器
 - [ ] `SearchBar` - 搜索栏
@@ -222,6 +236,7 @@ import {
 - [ ] `ActionGroup` - 操作按钮组
 
 #### 低优先级 (P2)
+
 - [ ] `Breadcrumb` - 面包屑导航
 - [ ] `TabNav` - 标签页导航
 - [ ] `SideMenu` - 侧边菜单
@@ -231,18 +246,22 @@ import {
 ### 待完全重构的页面
 
 #### 列表页面 (部分完成)
+
 - ⏳ 使用 `DataTable` 完全替换表格实现
 - ⏳ 使用 `FilterBar` 替换筛选区域
 - ⏳ 统一操作按钮
 
 **需要完全重构的列表页面：**
+
 1. `ServerList.vue` - 当前只替换了头部
 2. `GroupList.vue` - 当前只替换了头部
 3. `ToolList.vue` - 当前只替换了头部
 4. `ApiConfigList.vue` - 当前只替换了头部
 
 #### 表单对话框 (未开始)
+
 **需要重构的表单对话框：**
+
 1. `ServerFormDialog.vue`
 2. `GroupFormDialog.vue`
 3. `ApiConfigFormDialog.vue`
@@ -251,12 +270,15 @@ import {
 6. `ApiExportDialog.vue`
 
 **使用 `FormDialog` 替换，目标是：**
+
 - 基于配置生成表单
 - 统一验证逻辑
 - 统一提交/取消流程
 
 #### 详情页面 (未开始)
+
 **需要创建/重构的详情页面：**
+
 1. `ServerDetail.vue` - 服务器详情
 2. `GroupDetail.vue` - 组详情
 3. `ToolDetail.vue` - 工具详情
@@ -264,7 +286,9 @@ import {
 **使用 `DetailView` 组件**
 
 #### 调试页面 (未开始)
+
 **需要重构的调试页面：**
+
 1. `PerformanceAnalyzer.vue`
 2. `ErrorAnalyzer.vue`
 3. `ToolDebugger.vue`
@@ -277,6 +301,7 @@ import {
 ## 📝 下一步行动计划
 
 ### ✅ 阶段 1: 完成设计系统核心组件 (已完成)
+
 1. ✅ 开发 `FilterBar` 组件
 2. ✅ 开发 `AppLayout` 组件
 3. ✅ 开发 `ErrorPage` 和 `ConfirmDialog`
@@ -285,6 +310,7 @@ import {
 6. ✅ 运行测试和构建验证
 
 **已完成组件总数**: 15个核心设计系统组件
+
 - 布局组件: 4个 (PageHeader, ContentLayout, FilterBar, AppLayout)
 - 数据展示组件: 3个 (StatCard, DataTable, DetailView)
 - 表单组件: 1个 (FormDialog)
@@ -292,23 +318,27 @@ import {
 - 操作组件: 2个 (ActionButton, ActionGroup)
 
 ### 阶段 2: 完全重构列表页面 (2-3天)
+
 1. 使用 `DataTable` 替换所有表格实现
 2. 使用 `FilterBar` 替换所有筛选区域
 3. 使用 `ContentLayout` 统一页面结构
 4. 更新相关测试
 
 ### 阶段 3: 重构表单对话框 (2-3天)
+
 1. 将所有表单对话框迁移到 `FormDialog`
 2. 建立字段配置模板
 3. 统一表单验证规则
 4. 更新测试
 
 ### 阶段 4: 重构详情页面 (1-2天)
+
 1. 使用 `DetailView` 创建详情页面
 2. 统一详情页布局
 3. 添加编辑功能
 
 ### 阶段 5: 清理和优化 (1天)
+
 1. 删除旧的重复组件
 2. 清理未使用的代码
 3. 性能优化
@@ -327,7 +357,7 @@ import {
     description="页面描述"
     :actions="[
       { text: '刷新', theme: 'default', variant: 'outline', onClick: handleRefresh },
-      { text: '新建', theme: 'primary', onClick: handleCreate }
+      { text: '新建', theme: 'primary', onClick: handleCreate },
     ]"
   >
     <!-- 统计卡片 -->
@@ -446,9 +476,11 @@ const detailFields: DetailField[] = [
 ## 📚 文档和资源
 
 ### 设计系统文档
+
 - `/frontend/DESIGN_SYSTEM.md` - 完整设计系统架构文档
 
 ### 组件位置
+
 ```
 frontend/src/design-system/
 ├── components/
@@ -494,6 +526,7 @@ frontend/src/design-system/
 ## ✅ 验收标准
 
 ### 已达成
+
 - ✅ 构建成功，无错误
 - ✅ 所有测试通过 (138/138)
 - ✅ 设计系统基础架构完成
@@ -501,6 +534,7 @@ frontend/src/design-system/
 - ✅ 部分页面重构完成
 
 ### 待达成
+
 - ⏳ 所有页面使用设计系统组件
 - ⏳ 代码重复率 < 10%
 - ⏳ 单元测试覆盖率 > 80%
@@ -511,22 +545,26 @@ frontend/src/design-system/
 ## 💡 关键决策和最佳实践
 
 ### 1. 在 TDesign 之上抽象
+
 - ✅ 不直接使用 TDesign 组件，通过设计系统层使用
 - ✅ 统一的 API 和交互模式
 - ✅ 业务逻辑与 UI 库解耦
 
 ### 2. 基于 JSON 配置
+
 - ✅ 表单字段配置化
 - ✅ 表格列配置化
 - ✅ 详情字段配置化
 - ✅ 易于扩展和维护
 
 ### 3. TypeScript 优先
+
 - ✅ 完整的类型定义
 - ✅ 泛型支持
 - ✅ 类型推断
 
 ### 4. 渐进式迁移
+
 - ✅ 新页面使用新组件
 - ✅ 旧页面逐步重构
 - ✅ 保持测试通过
@@ -536,9 +574,11 @@ frontend/src/design-system/
 ## 🎯 总结
 
 ### 当前状态
+
 我们已成功完成**阶段1：设计系统核心组件开发**，建立了完整的设计系统基础架构，开发了15个核心组件，并完成了5个页面的部分重构。所有测试通过（138/138），构建成功，项目处于良好的可维护状态。
 
 ### 核心成果
+
 1. **设计系统层** - 在 TDesign 之上建立了统一的抽象层，包含完整的类型定义
 2. **核心组件** - 15个可复用的设计系统组件，涵盖布局、数据展示、表单、反馈和操作
 3. **基础设施** - Less、设计令牌（9个token文件）、工具类完整
@@ -546,7 +586,9 @@ frontend/src/design-system/
 5. **测试验证** - 所有138个测试通过，构建成功
 
 ### 下一步重点
+
 按照5个阶段计划继续推进，**阶段2：完全重构列表页面**：
+
 1. 使用 `DataTable` 和 `FilterBar` 完全替换所有列表页面中的表格和筛选区域
 2. 使用 `ActionGroup` 统一操作按钮
 3. 使用 `ContentLayout` 统一页面结构

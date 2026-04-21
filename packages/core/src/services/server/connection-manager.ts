@@ -3,11 +3,7 @@
  * 负责MCP服务器连接池管理和状态监控
  */
 
-import type {
-  ConnectionStatus,
-  ServerConfig,
-  ToolInfo,
-} from '../../types/index.js';
+import type { ConnectionStatus, ServerConfig, ToolInfo } from '../../types/index.js';
 
 /**
  * 连接状态枚举
@@ -154,9 +150,7 @@ export interface ServerConnectionManagerInterface {
 /**
  * 服务器连接管理器实现
  */
-export class ServerConnectionManager
-  implements ServerConnectionManagerInterface
-{
+export class ServerConnectionManager implements ServerConnectionManagerInterface {
   private connections = new Map<string, ServerConnectionInfo>();
   private initialized = false;
   private shutdownInProgress = false;
@@ -190,10 +184,7 @@ export class ServerConnectionManager
     }
   }
 
-  async createConnection(
-    serverId: string,
-    config: ServerConfig,
-  ): Promise<void> {
+  async createConnection(serverId: string, config: ServerConfig): Promise<void> {
     this.ensureInitialized();
 
     console.info('创建服务器连接', {
@@ -279,8 +270,7 @@ export class ServerConnectionManager
       // 如果有客户端实例，关闭它
       if (
         connection.client &&
-        typeof (connection.client as { close?: () => Promise<void> }).close ===
-          'function'
+        typeof (connection.client as { close?: () => Promise<void> }).close === 'function'
       ) {
         await (connection.client as { close: () => Promise<void> }).close();
       }
@@ -301,9 +291,7 @@ export class ServerConnectionManager
 
   getActiveConnections(): string[] {
     return Array.from(this.connections.entries())
-      .filter(
-        ([, connection]) => connection.state === ConnectionState.CONNECTED,
-      )
+      .filter(([, connection]) => connection.state === ConnectionState.CONNECTED)
       .map(([serverId]) => serverId);
   }
 
@@ -417,24 +405,15 @@ export class ServerConnectionManager
 
     const stats: ConnectionPoolStats = {
       totalConnections: connections.length,
-      activeConnections: connections.filter(
-        (c) => c.state === ConnectionState.CONNECTED,
-      ).length,
-      failedConnections: connections.filter(
-        (c) => c.state === ConnectionState.ERROR,
-      ).length,
-      reconnectingConnections: connections.filter(
-        (c) => c.state === ConnectionState.RECONNECTING,
-      ).length,
+      activeConnections: connections.filter((c) => c.state === ConnectionState.CONNECTED).length,
+      failedConnections: connections.filter((c) => c.state === ConnectionState.ERROR).length,
+      reconnectingConnections: connections.filter((c) => c.state === ConnectionState.RECONNECTING)
+        .length,
       averageReconnectAttempts:
         connections.length > 0
-          ? connections.reduce((sum, c) => sum + c.reconnectAttempts, 0) /
-            connections.length
+          ? connections.reduce((sum, c) => sum + c.reconnectAttempts, 0) / connections.length
           : 0,
-      totalHealthChecks: connections.reduce(
-        (sum, c) => sum + c.healthCheckCount,
-        0,
-      ),
+      totalHealthChecks: connections.reduce((sum, c) => sum + c.healthCheckCount, 0),
     };
 
     return stats;
@@ -468,16 +447,14 @@ export class ServerConnectionManager
       // 关闭现有连接
       if (
         connection.client &&
-        typeof (connection.client as { close?: () => Promise<void> }).close ===
-          'function'
+        typeof (connection.client as { close?: () => Promise<void> }).close === 'function'
       ) {
         await (connection.client as { close: () => Promise<void> }).close();
       }
       connection.client = undefined;
 
       // 等待重连延迟
-      const delay =
-        this.RECONNECT_DELAY_BASE * 2 ** (connection.reconnectAttempts - 1);
+      const delay = this.RECONNECT_DELAY_BASE * 2 ** (connection.reconnectAttempts - 1);
       await new Promise((resolve) => setTimeout(resolve, delay));
 
       // 重新连接
@@ -528,8 +505,8 @@ export class ServerConnectionManager
 
     try {
       // 关闭所有连接
-      const closePromises = Array.from(this.connections.keys()).map(
-        (serverId) => this.closeConnection(serverId),
+      const closePromises = Array.from(this.connections.keys()).map((serverId) =>
+        this.closeConnection(serverId),
       );
 
       await Promise.allSettled(closePromises);
@@ -564,16 +541,11 @@ export class ServerConnectionManager
 
   private ensureInitialized(): void {
     if (!this.initialized) {
-      throw new ConnectionManagerError(
-        '连接管理器必须在使用前初始化',
-        'NOT_INITIALIZED',
-      );
+      throw new ConnectionManagerError('连接管理器必须在使用前初始化', 'NOT_INITIALIZED');
     }
   }
 
-  private async performConnection(
-    connection: ServerConnectionInfo,
-  ): Promise<void> {
+  private async performConnection(connection: ServerConnectionInfo): Promise<void> {
     const { id: serverId, config } = connection;
 
     console.debug('执行服务器连接', {
@@ -593,9 +565,7 @@ export class ServerConnectionManager
     }
   }
 
-  private async simulateConnection(
-    connection: ServerConnectionInfo,
-  ): Promise<void> {
+  private async simulateConnection(connection: ServerConnectionInfo): Promise<void> {
     // 模拟连接延迟
     await new Promise((resolve) => setTimeout(resolve, 100));
 

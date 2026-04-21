@@ -6,8 +6,10 @@ import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ApiToolsConfig } from '../types/api-config.js';
+
 import { ApiConfigManagerImpl, ConfigLoadError } from './api-config-manager.js';
+
+import type { ApiToolsConfig } from '../types/api-config.js';
 
 // Mock环境变量
 const originalEnv = process.env;
@@ -121,17 +123,13 @@ describe('ApiConfigManagerImpl', () => {
     it('应该在文件不存在时抛出ConfigLoadError', async () => {
       const nonExistentPath = join(tempDir, 'non-existent.json');
 
-      await expect(configManager.loadConfig(nonExistentPath)).rejects.toThrow(
-        ConfigLoadError,
-      );
+      await expect(configManager.loadConfig(nonExistentPath)).rejects.toThrow(ConfigLoadError);
     });
 
     it('应该在JSON格式错误时抛出ConfigLoadError', async () => {
       await fs.writeFile(configPath, '{ invalid json }');
 
-      await expect(configManager.loadConfig(configPath)).rejects.toThrow(
-        ConfigLoadError,
-      );
+      await expect(configManager.loadConfig(configPath)).rejects.toThrow(ConfigLoadError);
     });
 
     it('应该在配置格式验证失败时抛出ConfigLoadError', async () => {
@@ -147,9 +145,7 @@ describe('ApiConfigManagerImpl', () => {
 
       await fs.writeFile(configPath, JSON.stringify(invalidConfig));
 
-      await expect(configManager.loadConfig(configPath)).rejects.toThrow(
-        ConfigLoadError,
-      );
+      await expect(configManager.loadConfig(configPath)).rejects.toThrow(ConfigLoadError);
     });
   });
 
@@ -405,10 +401,7 @@ describe('ApiConfigManagerImpl', () => {
       configManager.stopWatching();
 
       // 修改文件
-      await fs.writeFile(
-        configPath,
-        JSON.stringify({ ...config, version: '2.0' }),
-      );
+      await fs.writeFile(configPath, JSON.stringify({ ...config, version: '2.0' }));
 
       // 等待可能的文件系统事件
       await new Promise((resolve) => setTimeout(resolve, 100));

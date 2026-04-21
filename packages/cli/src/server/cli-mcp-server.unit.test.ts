@@ -3,6 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { CliConfig } from '../types';
 
 /**
@@ -98,9 +99,7 @@ describe('CliMcpServer', () => {
     const serverInternals = server as unknown as CliMcpServerInternals;
 
     // 直接 spy createServiceManager 方法
-    vi.spyOn(serverInternals, 'createServiceManager').mockReturnValue(
-      mockServiceManager,
-    );
+    vi.spyOn(serverInternals, 'createServiceManager').mockReturnValue(mockServiceManager);
 
     // Mock registerTools 方法以避免 registerTool 错误
     vi.spyOn(serverInternals, 'registerTools').mockResolvedValue(undefined);
@@ -165,9 +164,7 @@ describe('CliMcpServer', () => {
     it('应该在初始化失败时清理资源', async () => {
       // Mock核心服务初始化失败
       const failingMockServiceManager = {
-        initializeFromConfig: vi
-          .fn()
-          .mockRejectedValue(new Error('初始化失败')),
+        initializeFromConfig: vi.fn().mockRejectedValue(new Error('初始化失败')),
         getAvailableTools: vi.fn(),
         getAllTools: vi.fn(),
         callTool: vi.fn(),
@@ -184,9 +181,7 @@ describe('CliMcpServer', () => {
         'createServiceManager',
       ).mockReturnValue(failingMockServiceManager);
 
-      await expect(failingServer.initialize(mockConfig)).rejects.toThrow(
-        '初始化失败',
-      );
+      await expect(failingServer.initialize(mockConfig)).rejects.toThrow('初始化失败');
 
       const status = failingServer.getStatus();
       expect(status.initialized).toBe(false);
@@ -208,9 +203,7 @@ describe('CliMcpServer', () => {
     it('应该在未初始化时抛出错误', async () => {
       const uninitializedServer = new CliMcpServer();
 
-      await expect(uninitializedServer.start()).rejects.toThrow(
-        'CLI MCP服务器必须先初始化',
-      );
+      await expect(uninitializedServer.start()).rejects.toThrow('CLI MCP服务器必须先初始化');
     });
 
     it('应该跳过重复启动', async () => {

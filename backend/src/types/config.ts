@@ -1,9 +1,4 @@
-import type {
-  DeepReadonly,
-  GroupConfig,
-  McpConfig,
-  SystemConfig,
-} from '@mcp-core/mcp-hub-share';
+import type { DeepReadonly, GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
 
 // 配置类型枚举
 export type ConfigType = 'system' | 'mcp' | 'groups';
@@ -196,16 +191,10 @@ export interface IConfigService {
   getConfigHistoryCount(configType?: ConfigType): Promise<number>;
 
   // 创建备份
-  createBackup(
-    description?: string,
-    includeTypes?: ConfigType[],
-  ): Promise<string>;
+  createBackup(description?: string, includeTypes?: ConfigType[]): Promise<string>;
 
   // 从备份恢复
-  restoreFromBackup(
-    backupId: string,
-    configTypes?: ConfigType[],
-  ): Promise<void>;
+  restoreFromBackup(backupId: string, configTypes?: ConfigType[]): Promise<void>;
 
   // 获取备份列表
   getBackupList(limit: number, offset: number): Promise<ConfigBackup[]>;
@@ -220,10 +209,7 @@ export interface IConfigService {
   getConfigVersion(): Promise<string>;
 
   // 测试配置
-  testConfig(
-    configType: ConfigType,
-    config: Record<string, unknown>,
-  ): Promise<ConfigTestResult>;
+  testConfig(configType: ConfigType, config: Record<string, unknown>): Promise<ConfigTestResult>;
 
   // 预览配置更改
   previewConfigChanges(

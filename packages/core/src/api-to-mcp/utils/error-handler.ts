@@ -115,8 +115,7 @@ export class ErrorHandlerImpl implements ErrorHandler {
     INVALID_CONFIG_FORMAT: '请检查配置文件的JSON格式是否正确',
     DUPLICATE_TOOL_ID: '请确保每个工具的ID都是唯一的',
     INVALID_URL: '请提供有效的HTTP/HTTPS URL，例如: https://api.example.com',
-    INVALID_JSONATA_SYNTAX:
-      '请检查JSONata表达式语法，参考: https://jsonata.org/',
+    INVALID_JSONATA_SYNTAX: '请检查JSONata表达式语法，参考: https://jsonata.org/',
     MISSING_REQUIRED_PARAMETER: '请添加所有必需的参数字段',
     INVALID_TYPE: '请检查字段类型是否符合要求',
     INVALID_SYNTAX: '请检查语法格式是否正确',
@@ -126,24 +125,19 @@ export class ErrorHandlerImpl implements ErrorHandler {
     validationResult: ValidationResult,
     context?: Record<string, unknown>,
   ): ErrorReport {
-    const detailedErrors: DetailedError[] = validationResult.errors.map(
-      (error) => ({
-        ...error,
-        severity: this.determineSeverity(error),
-        suggestion: this.generateSuggestion(error),
-        context,
-      }),
-    );
+    const detailedErrors: DetailedError[] = validationResult.errors.map((error) => ({
+      ...error,
+      severity: this.determineSeverity(error),
+      suggestion: this.generateSuggestion(error),
+      context,
+    }));
 
     const errorCount = detailedErrors.filter(
-      (e) =>
-        e.severity === ErrorSeverity.HIGH ||
-        e.severity === ErrorSeverity.CRITICAL,
+      (e) => e.severity === ErrorSeverity.HIGH || e.severity === ErrorSeverity.CRITICAL,
     ).length;
 
     const warningCount = detailedErrors.filter(
-      (e) =>
-        e.severity === ErrorSeverity.LOW || e.severity === ErrorSeverity.MEDIUM,
+      (e) => e.severity === ErrorSeverity.LOW || e.severity === ErrorSeverity.MEDIUM,
     ).length;
 
     return {
@@ -155,9 +149,7 @@ export class ErrorHandlerImpl implements ErrorHandler {
       suggestions: detailedErrors
         .filter((e) => e.suggestion)
         .map((e) => e.suggestion as string)
-        .filter(
-          (suggestion, index, array) => array.indexOf(suggestion) === index,
-        ), // 去重
+        .filter((suggestion, index, array) => array.indexOf(suggestion) === index), // 去重
     };
   }
 
@@ -231,18 +223,10 @@ export class ErrorHandlerImpl implements ErrorHandler {
       return '配置验证通过，没有发现错误';
     }
 
-    const criticalCount = errors.filter(
-      (e) => e.severity === ErrorSeverity.CRITICAL,
-    ).length;
-    const highCount = errors.filter(
-      (e) => e.severity === ErrorSeverity.HIGH,
-    ).length;
-    const mediumCount = errors.filter(
-      (e) => e.severity === ErrorSeverity.MEDIUM,
-    ).length;
-    const lowCount = errors.filter(
-      (e) => e.severity === ErrorSeverity.LOW,
-    ).length;
+    const criticalCount = errors.filter((e) => e.severity === ErrorSeverity.CRITICAL).length;
+    const highCount = errors.filter((e) => e.severity === ErrorSeverity.HIGH).length;
+    const mediumCount = errors.filter((e) => e.severity === ErrorSeverity.MEDIUM).length;
+    const lowCount = errors.filter((e) => e.severity === ErrorSeverity.LOW).length;
 
     const parts: string[] = [];
 

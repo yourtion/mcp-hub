@@ -5,6 +5,7 @@
 
 import { serve } from '@hono/node-server';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { app } from '../app.js';
 import { cleanupTestConfig, setupTestConfig } from './test-utils.js';
 
@@ -270,12 +271,9 @@ describe('Web UI 集成端到端测试', () => {
 
       if (serversData.data && serversData.data.servers.length > 0) {
         const serverId = serversData.data.servers[0].id;
-        const response = await fetch(
-          `${baseUrl}/api/tools/server/${serverId}`,
-          {
-            headers: { Authorization: `Bearer ${authToken}` },
-          },
-        );
+        const response = await fetch(`${baseUrl}/api/tools/server/${serverId}`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
 
         expect(response.status).toBe(200);
         const data = await response.json();
@@ -373,19 +371,12 @@ describe('Web UI 集成端到端测试', () => {
 
       if (response.status !== 200) {
         const errorText = await response.text();
-        console.error(
-          '[TEST] Dashboard stats error:',
-          response.status,
-          errorText,
-        );
+        console.error('[TEST] Dashboard stats error:', response.status, errorText);
       }
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      console.log(
-        '[TEST] Dashboard stats response:',
-        JSON.stringify(data, null, 2),
-      );
+      console.log('[TEST] Dashboard stats response:', JSON.stringify(data, null, 2));
       expect(data).toHaveProperty('success', true);
       expect(data).toHaveProperty('data');
       expect(data.data).toHaveProperty('overview');
@@ -445,11 +436,7 @@ describe('Web UI 集成端到端测试', () => {
 
       if (response.status !== 200) {
         const errorText = await response.text();
-        console.error(
-          '[TEST] Config validate error:',
-          response.status,
-          errorText,
-        );
+        console.error('[TEST] Config validate error:', response.status, errorText);
       }
 
       expect(response.status).toBe(200);
@@ -497,11 +484,7 @@ describe('Web UI 集成端到端测试', () => {
 
       if (![200, 201].includes(response.status)) {
         const errorText = await response.text();
-        console.error(
-          '[TEST] API-to-MCP create error:',
-          response.status,
-          errorText,
-        );
+        console.error('[TEST] API-to-MCP create error:', response.status, errorText);
       }
 
       // 在测试环境中，如果配置文件路径未设置，返回400是预期的
@@ -617,63 +600,46 @@ describe('Web UI 集成端到端测试', () => {
       expect([200, 201]).toContain(createResponse.status);
 
       // 3. 查看服务器详情
-      const detailResponse = await fetch(
-        `${baseUrl}/api/servers/flow-test-server`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const detailResponse = await fetch(`${baseUrl}/api/servers/flow-test-server`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (![200, 404].includes(detailResponse.status)) {
         const errorText = await detailResponse.text();
-        console.error(
-          '[TEST] Server detail error:',
-          detailResponse.status,
-          errorText,
-        );
+        console.error('[TEST] Server detail error:', detailResponse.status, errorText);
       }
 
       expect([200, 404]).toContain(detailResponse.status);
 
       // 4. 更新服务器
-      const updateResponse = await fetch(
-        `${baseUrl}/api/servers/flow-test-server`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: '更新后的流程测试服务器',
-            config: {
-              type: 'stdio',
-              command: 'node',
-              args: ['test.js'],
-            },
-          }),
+      const updateResponse = await fetch(`${baseUrl}/api/servers/flow-test-server`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          name: '更新后的流程测试服务器',
+          config: {
+            type: 'stdio',
+            command: 'node',
+            args: ['test.js'],
+          },
+        }),
+      });
 
       if (![200, 404].includes(updateResponse.status)) {
         const errorText = await updateResponse.text();
-        console.error(
-          '[TEST] Server update error:',
-          updateResponse.status,
-          errorText,
-        );
+        console.error('[TEST] Server update error:', updateResponse.status, errorText);
       }
 
       expect([200, 404]).toContain(updateResponse.status);
 
       // 5. 删除服务器
-      const deleteResponse = await fetch(
-        `${baseUrl}/api/servers/flow-test-server`,
-        {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const deleteResponse = await fetch(`${baseUrl}/api/servers/flow-test-server`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
       expect([200, 204, 404]).toContain(deleteResponse.status);
     });
   });

@@ -3,20 +3,18 @@
  * 使用简化的测试配置，确保基本功能正常工作
  */
 
-import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import type { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import {
-  cleanupTestEnvironment,
-  setupTestEnvironment,
-  sleep,
-} from '../test-utils.js';
+
+import { cleanupTestEnvironment, setupTestEnvironment, sleep } from '../test-utils.js';
 import {
   closeMcpClient,
   createResilientMcpClient,
   ensureTestServerRunning,
   validateMcpConnection,
 } from './mcp-test-config.js';
+
+import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import type { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 
 describe('基础MCP协议端到端测试', () => {
   let restoreConsole: () => void;
@@ -49,9 +47,7 @@ describe('基础MCP协议端到端测试', () => {
         return;
       }
 
-      const connection = await createResilientMcpClient(
-        'connection-test-client',
-      );
+      const connection = await createResilientMcpClient('connection-test-client');
 
       if (!connection) {
         // 如果连接失败，这可能是因为服务器配置问题，但不应该让测试失败
@@ -82,9 +78,7 @@ describe('基础MCP协议端到端测试', () => {
         return;
       }
 
-      const connection = await createResilientMcpClient(
-        'tools-list-test-client',
-      );
+      const connection = await createResilientMcpClient('tools-list-test-client');
 
       if (!connection) {
         console.warn('MCP客户端连接失败');
@@ -100,9 +94,7 @@ describe('基础MCP协议端到端测试', () => {
         expect(toolsResult.tools).toBeDefined();
         expect(Array.isArray(toolsResult.tools)).toBe(true);
 
-        console.log(
-          `✅ 工具列表获取成功，共 ${toolsResult.tools.length} 个工具`,
-        );
+        console.log(`✅ 工具列表获取成功，共 ${toolsResult.tools.length} 个工具`);
 
         // 验证工具的基本结构
         if (toolsResult.tools.length > 0) {
@@ -124,9 +116,7 @@ describe('基础MCP协议端到端测试', () => {
         return;
       }
 
-      const connection = await createResilientMcpClient(
-        'tool-call-test-client',
-      );
+      const connection = await createResilientMcpClient('tool-call-test-client');
 
       if (!connection) {
         console.warn('MCP客户端连接失败');
@@ -176,9 +166,7 @@ describe('基础MCP协议端到端测试', () => {
         return;
       }
 
-      const connection = await createResilientMcpClient(
-        'error-handling-test-client',
-      );
+      const connection = await createResilientMcpClient('error-handling-test-client');
 
       if (!connection) {
         console.warn('MCP客户端连接失败');
@@ -226,9 +214,7 @@ describe('基础MCP协议端到端测试', () => {
       try {
         // 创建多个并发连接
         for (let i = 0; i < clientCount; i++) {
-          const connection = await createResilientMcpClient(
-            `concurrent-client-${i}`,
-          );
+          const connection = await createResilientMcpClient(`concurrent-client-${i}`);
           if (connection) {
             connections.push(connection);
           }
@@ -239,32 +225,24 @@ describe('基础MCP协议端到端测试', () => {
           return;
         }
 
-        console.log(
-          `✅ 成功建立 ${connections.length}/${clientCount} 个并发连接`,
-        );
+        console.log(`✅ 成功建立 ${connections.length}/${clientCount} 个并发连接`);
 
         // 并发执行工具列表请求
         const toolsPromises = connections.map(({ client }) =>
-          client
-            .listTools()
-            .catch((error: Error) => ({ error: error.message })),
+          client.listTools().catch((error: Error) => ({ error: error.message })),
         );
 
         const results = await Promise.all(toolsPromises);
 
         // 验证大部分请求成功
-        const successCount = results.filter(
-          (result) => !('error' in result),
-        ).length;
+        const successCount = results.filter((result) => !('error' in result)).length;
         expect(successCount).toBeGreaterThan(0);
 
         console.log(`✅ 并发请求成功率: ${successCount}/${results.length}`);
       } finally {
         // 清理所有连接
         await Promise.all(
-          connections.map(({ client, transport }) =>
-            closeMcpClient(client, transport),
-          ),
+          connections.map(({ client, transport }) => closeMcpClient(client, transport)),
         );
       }
     }, 45000);

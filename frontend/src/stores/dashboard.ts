@@ -2,8 +2,10 @@
 
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+
 import { dashboardService } from '@/services/dashboard';
 import { type SSEEventType, sseService } from '@/services/sse';
+
 import type {
   Activity,
   DashboardStats,
@@ -62,8 +64,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const recentErrorCount = computed(() => {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     return activities.value.filter(
-      (activity) =>
-        activity.severity === 'error' && activity.timestamp > oneHourAgo,
+      (activity) => activity.severity === 'error' && activity.timestamp > oneHourAgo,
     ).length;
   });
 
@@ -242,10 +243,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       // 添加活动记录
       const activity: Activity = {
         id: `server_${data.serverId}_${Date.now()}`,
-        type:
-          data.status === 'connected'
-            ? 'server_connected'
-            : 'server_disconnected',
+        type: data.status === 'connected' ? 'server_connected' : 'server_disconnected',
         message: `服务器 ${data.serverId} ${data.status === 'connected' ? '已连接' : '已断开'}`,
         timestamp: new Date().toISOString(),
         severity: data.status === 'error' ? 'error' : 'info',

@@ -2,7 +2,9 @@
 
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+
 import { configService } from '@/services/config';
+
 import type {
   ConfigBackup,
   ConfigData,
@@ -122,9 +124,7 @@ export const useConfigStore = defineStore('config', () => {
   /**
    * 测试配置
    */
-  const testConfig = async (
-    request: ConfigValidationRequest,
-  ): Promise<ConfigTestResult> => {
+  const testConfig = async (request: ConfigValidationRequest): Promise<ConfigTestResult> => {
     try {
       loading.value = true;
       error.value = null;
@@ -145,9 +145,7 @@ export const useConfigStore = defineStore('config', () => {
   /**
    * 预览配置更改
    */
-  const previewConfigChanges = async (
-    request: ConfigValidationRequest,
-  ): Promise<ConfigPreview> => {
+  const previewConfigChanges = async (request: ConfigValidationRequest): Promise<ConfigPreview> => {
     try {
       loading.value = true;
       error.value = null;
@@ -177,11 +175,7 @@ export const useConfigStore = defineStore('config', () => {
       loading.value = true;
       error.value = null;
 
-      const result = await configService.getConfigHistory(
-        limit,
-        offset,
-        configType,
-      );
+      const result = await configService.getConfigHistory(limit, offset, configType);
 
       if (offset === 0) {
         historyEntries.value = result.history;
@@ -230,10 +224,7 @@ export const useConfigStore = defineStore('config', () => {
   /**
    * 恢复配置
    */
-  const restoreFromBackup = async (
-    backupId: string,
-    configTypes?: ConfigType[],
-  ): Promise<void> => {
+  const restoreFromBackup = async (backupId: string, configTypes?: ConfigType[]): Promise<void> => {
     try {
       loading.value = true;
       error.value = null;
@@ -290,8 +281,7 @@ export const useConfigStore = defineStore('config', () => {
     if (formData.value) {
       formData.value.config = config;
       formData.value.isDirty =
-        JSON.stringify(config) !==
-        JSON.stringify(formData.value.originalConfig);
+        JSON.stringify(config) !== JSON.stringify(formData.value.originalConfig);
     }
   };
 

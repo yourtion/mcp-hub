@@ -3,11 +3,7 @@
  * 基于统一的 logger 系统，提供 MCP 操作特有的日志方法
  */
 
-import {
-  createMcpLogger,
-  LogLevel,
-  type McpLogger,
-} from '@mcp-core/mcp-hub-share';
+import { createMcpLogger, LogLevel, type McpLogger } from '@mcp-core/mcp-hub-share';
 
 // 重新导出需要的类型和枚举，保持向后兼容
 export { LogLevel } from '@mcp-core/mcp-hub-share';
@@ -33,11 +29,7 @@ export interface Logger {
   debug(message: string, context?: Record<string, unknown>): void;
   info(message: string, context?: Record<string, unknown>): void;
   warn(message: string, context?: Record<string, unknown>): void;
-  error(
-    message: string,
-    error?: Error,
-    context?: Record<string, unknown>,
-  ): void;
+  error(message: string, error?: Error, context?: Record<string, unknown>): void;
 
   // MCP 专用方法
   logServerConnection(
@@ -45,11 +37,7 @@ export interface Logger {
     status: 'connected' | 'disconnected' | 'failed',
     context?: Record<string, unknown>,
   ): void;
-  logToolDiscovery(
-    serverId: string,
-    toolCount: number,
-    context?: Record<string, unknown>,
-  ): void;
+  logToolDiscovery(serverId: string, toolCount: number, context?: Record<string, unknown>): void;
   logToolExecution(
     toolName: string,
     groupId: string,
@@ -85,11 +73,7 @@ export class ConsoleLogger implements Logger {
     this.mcpLogger.warn(message, { context });
   }
 
-  error(
-    message: string,
-    error?: Error,
-    context?: Record<string, unknown>,
-  ): void {
+  error(message: string, error?: Error, context?: Record<string, unknown>): void {
     this.mcpLogger.error(message, error, { context });
   }
 
@@ -101,11 +85,7 @@ export class ConsoleLogger implements Logger {
     this.mcpLogger.logServerConnection(serverId, status, context);
   }
 
-  logToolDiscovery(
-    serverId: string,
-    toolCount: number,
-    context?: Record<string, unknown>,
-  ): void {
+  logToolDiscovery(serverId: string, toolCount: number, context?: Record<string, unknown>): void {
     this.mcpLogger.logToolDiscovery(serverId, toolCount, context);
   }
 

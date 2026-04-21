@@ -8,26 +8,13 @@
     @close="handleClose"
     @confirm="handleConfirm"
   >
-    <t-form
-      ref="formRef"
-      :data="formData"
-      :rules="formRules"
-      label-align="top"
-      :label-width="0"
-    >
+    <t-form ref="formRef" :data="formData" :rules="formRules" label-align="top" :label-width="0">
       <t-form-item label="组 ID" name="id">
-        <t-input
-          v-model="formData.id"
-          placeholder="输入唯一组标识符"
-          :disabled="mode === 'edit'"
-        />
+        <t-input v-model="formData.id" placeholder="输入唯一组标识符" :disabled="mode === 'edit'" />
       </t-form-item>
 
       <t-form-item label="名称" name="name">
-        <t-input
-          v-model="formData.name"
-          placeholder="输入组名称"
-        />
+        <t-input v-model="formData.name" placeholder="输入组名称" />
       </t-form-item>
 
       <t-form-item label="描述" name="description">
@@ -65,14 +52,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue';
-import type { FormInstanceFunctions, FormRule } from 'tdesign-vue-next';
-import type {
-  GroupInfo,
-  CreateGroupRequest,
-  UpdateGroupRequest,
-} from '@/types/group';
-import { useServerStore } from '@/stores/server';
+
 import { useGroupStore } from '@/stores/group';
+import { useServerStore } from '@/stores/server';
+
+import type { GroupInfo, CreateGroupRequest, UpdateGroupRequest } from '@/types/group';
+import type { FormInstanceFunctions, FormRule } from 'tdesign-vue-next';
 
 const props = defineProps<{
   visible: boolean;
@@ -89,9 +74,7 @@ const serverStore = useServerStore();
 const groupStore = useGroupStore();
 const formRef = ref<FormInstanceFunctions | null>(null);
 
-const dialogTitle = computed(() =>
-  props.mode === 'create' ? '创建组' : '编辑组',
-);
+const dialogTitle = computed(() => (props.mode === 'create' ? '创建组' : '编辑组'));
 
 interface FormState {
   id: string;
@@ -148,12 +131,8 @@ watch(
       formData.id = props.groupData.id;
       formData.name = props.groupData.name;
       formData.description = props.groupData.description ?? '';
-      formData.servers = Array.isArray(props.groupData.servers)
-        ? [...props.groupData.servers]
-        : [];
-      formData.tools = Array.isArray(props.groupData.tools)
-        ? [...props.groupData.tools]
-        : [];
+      formData.servers = Array.isArray(props.groupData.servers) ? [...props.groupData.servers] : [];
+      formData.tools = Array.isArray(props.groupData.tools) ? [...props.groupData.tools] : [];
     } else if (isVisible && props.mode === 'create') {
       resetForm();
     }

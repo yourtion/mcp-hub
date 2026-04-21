@@ -23,10 +23,7 @@ function generateRequestId(): string {
  * Request ID 中间件
  * 为每个请求生成唯一 ID 并注入到上下文
  */
-export async function requestIdMiddleware(
-  c: Context,
-  next: Next,
-): Promise<void> {
+export async function requestIdMiddleware(c: Context, next: Next): Promise<void> {
   const requestId = c.req.header('X-Request-ID') || generateRequestId();
   c.set('requestId', requestId);
   c.header('X-Request-ID', requestId);

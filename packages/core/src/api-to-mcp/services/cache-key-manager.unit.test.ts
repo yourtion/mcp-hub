@@ -3,6 +3,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   type CacheKeyManager,
   CacheKeyManagerImpl,
@@ -115,17 +116,11 @@ describe('CacheKeyManagerImpl', () => {
 
     it('应该在参数不是对象时抛出错误', () => {
       expect(() => {
-        keyManager.generateKey(
-          'tool',
-          null as unknown as Record<string, unknown>,
-        );
+        keyManager.generateKey('tool', null as unknown as Record<string, unknown>);
       }).toThrow('参数必须是一个对象');
 
       expect(() => {
-        keyManager.generateKey(
-          'tool',
-          'invalid' as unknown as Record<string, unknown>,
-        );
+        keyManager.generateKey('tool', 'invalid' as unknown as Record<string, unknown>);
       }).toThrow('参数必须是一个对象');
     });
   });
@@ -134,8 +129,7 @@ describe('CacheKeyManagerImpl', () => {
     it('应该设置和获取策略', () => {
       const customStrategy: CacheKeyStrategy = {
         name: 'custom',
-        generateKey: (toolId, params) =>
-          `custom:${toolId}:${JSON.stringify(params)}`,
+        generateKey: (toolId, params) => `custom:${toolId}:${JSON.stringify(params)}`,
       };
 
       keyManager.setStrategy(customStrategy);
@@ -157,8 +151,7 @@ describe('CacheKeyManagerImpl', () => {
     it('应该使用自定义策略生成键', () => {
       const customStrategy: CacheKeyStrategy = {
         name: 'custom',
-        generateKey: (toolId, params) =>
-          `custom_${toolId}_${Object.keys(params).length}`,
+        generateKey: (toolId, params) => `custom_${toolId}_${Object.keys(params).length}`,
       };
 
       keyManager.setStrategy(customStrategy);
@@ -179,9 +172,7 @@ describe('CacheKeyManagerImpl', () => {
     it('应该拒绝无效的键', () => {
       expect(keyManager.validateKey('')).toBe(false);
       expect(keyManager.validateKey(null as unknown as string)).toBe(false);
-      expect(keyManager.validateKey(undefined as unknown as string)).toBe(
-        false,
-      );
+      expect(keyManager.validateKey(undefined as unknown as string)).toBe(false);
     });
 
     it('应该使用策略的验证函数', () => {
@@ -248,11 +239,7 @@ describe('CacheKeyManagerImpl', () => {
   describe('批量键生成', () => {
     it('应该生成多个键', () => {
       const toolId = 'batch-tool';
-      const parametersList = [
-        { param: 'value1' },
-        { param: 'value2' },
-        { param: 'value3' },
-      ];
+      const parametersList = [{ param: 'value1' }, { param: 'value2' }, { param: 'value3' }];
 
       const keys = keyManager.generateKeysForTool(toolId, parametersList);
 
@@ -284,10 +271,7 @@ describe('CacheKeyManagerImpl', () => {
 
     it('应该在参数列表不是数组时抛出错误', () => {
       expect(() => {
-        keyManager.generateKeysForTool(
-          'tool',
-          null as unknown as Record<string, unknown>[],
-        );
+        keyManager.generateKeysForTool('tool', null as unknown as Record<string, unknown>[]);
       }).toThrow('参数列表必须是数组');
     });
   });
@@ -304,9 +288,7 @@ describe('缓存键策略', () => {
     });
 
     it('应该验证键格式', () => {
-      expect(
-        defaultCacheKeyStrategy.validateKey?.('test-tool:1234567890abcdef'),
-      ).toBe(true);
+      expect(defaultCacheKeyStrategy.validateKey?.('test-tool:1234567890abcdef')).toBe(true);
       expect(defaultCacheKeyStrategy.validateKey?.('invalid-key')).toBe(false);
     });
 
@@ -331,9 +313,7 @@ describe('缓存键策略', () => {
     });
 
     it('应该验证简单键格式', () => {
-      expect(simpleCacheKeyStrategy.validateKey?.('test-tool_12345678')).toBe(
-        true,
-      );
+      expect(simpleCacheKeyStrategy.validateKey?.('test-tool_12345678')).toBe(true);
       expect(simpleCacheKeyStrategy.validateKey?.('invalid-key')).toBe(false);
     });
   });
@@ -357,12 +337,8 @@ describe('缓存键策略', () => {
     });
 
     it('应该验证层次化键格式', () => {
-      expect(
-        hierarchicalCacheKeyStrategy.validateKey?.('ns:tool:123456789abc'),
-      ).toBe(true);
-      expect(hierarchicalCacheKeyStrategy.validateKey?.('invalid-key')).toBe(
-        false,
-      );
+      expect(hierarchicalCacheKeyStrategy.validateKey?.('ns:tool:123456789abc')).toBe(true);
+      expect(hierarchicalCacheKeyStrategy.validateKey?.('invalid-key')).toBe(false);
     });
   });
 });
@@ -382,11 +358,7 @@ describe('CacheKeyUtils', () => {
         keyManager.generateKey('tool1', { param: 'value3' }),
       ];
 
-      const tool1Keys = CacheKeyUtils.filterKeysForTool(
-        keys,
-        'tool1',
-        keyManager,
-      );
+      const tool1Keys = CacheKeyUtils.filterKeysForTool(keys, 'tool1', keyManager);
 
       expect(tool1Keys).toHaveLength(2);
     });

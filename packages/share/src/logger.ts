@@ -101,18 +101,14 @@ export const EnvironmentDetector = {
   getEnvironmentLogLevel(defaultLevel: LogLevel = LogLevel.INFO): LogLevel {
     // 如果设置了 LOG_LEVEL 环境变量，优先使用
     if (process.env.LOG_LEVEL) {
-      const envLevel =
-        LogLevel[process.env.LOG_LEVEL.toUpperCase() as keyof typeof LogLevel];
+      const envLevel = LogLevel[process.env.LOG_LEVEL.toUpperCase() as keyof typeof LogLevel];
       if (envLevel !== undefined) {
         return envLevel;
       }
     }
 
     // 测试环境中，如果没有启用调试模式，则使用 WARN 级别
-    if (
-      EnvironmentDetector.isTestEnvironment() &&
-      !EnvironmentDetector.isDebugMode()
-    ) {
+    if (EnvironmentDetector.isTestEnvironment() && !EnvironmentDetector.isDebugMode()) {
       return LogLevel.WARN;
     }
 
@@ -287,10 +283,7 @@ export class UnifiedLogger {
     this.formatter =
       this.config.format === 'json'
         ? new JsonFormatter()
-        : new TextFormatter(
-            this.config.enableColors,
-            this.config.enableTimestamp,
-          );
+        : new TextFormatter(this.config.enableColors, this.config.enableTimestamp);
 
     // 创建写入器
     if (this.config.enableConsole) {
@@ -310,11 +303,7 @@ export class UnifiedLogger {
   /**
    * 记录日志
    */
-  private log(
-    level: LogLevel,
-    message: string,
-    context?: Partial<LogEntry>,
-  ): void {
+  private log(level: LogLevel, message: string, context?: Partial<LogEntry>): void {
     if (!this.shouldLog(level)) return;
 
     const entry: LogEntry = {
@@ -461,10 +450,7 @@ export class CliLogger extends UnifiedLogger {
    */
   showBanner(version: string): void {
     // 在测试环境的静默模式下不显示横幅
-    if (
-      EnvironmentDetector.isTestEnvironment() &&
-      !EnvironmentDetector.isDebugMode()
-    ) {
+    if (EnvironmentDetector.isTestEnvironment() && !EnvironmentDetector.isDebugMode()) {
       return;
     }
 
@@ -493,10 +479,7 @@ export class CliLogger extends UnifiedLogger {
   showConfig(config: Record<string, unknown>): void {
     this.info('当前配置:');
     // 在测试环境的静默模式下不直接使用 console.log
-    if (
-      EnvironmentDetector.isTestEnvironment() &&
-      !EnvironmentDetector.isDebugMode()
-    ) {
+    if (EnvironmentDetector.isTestEnvironment() && !EnvironmentDetector.isDebugMode()) {
       return;
     }
     for (const [key, value] of Object.entries(config)) {
@@ -507,15 +490,10 @@ export class CliLogger extends UnifiedLogger {
   /**
    * 显示服务器列表
    */
-  showServers(
-    servers: Array<{ id: string; status: string; tools: number }>,
-  ): void {
+  showServers(servers: Array<{ id: string; status: string; tools: number }>): void {
     this.info('已配置的服务器:');
     // 在测试环境的静默模式下不直接使用 console.log
-    if (
-      EnvironmentDetector.isTestEnvironment() &&
-      !EnvironmentDetector.isDebugMode()
-    ) {
+    if (EnvironmentDetector.isTestEnvironment() && !EnvironmentDetector.isDebugMode()) {
       return;
     }
     for (const server of servers) {
@@ -527,15 +505,10 @@ export class CliLogger extends UnifiedLogger {
   /**
    * 显示工具列表
    */
-  showTools(
-    tools: Array<{ name: string; description?: string; serverId: string }>,
-  ): void {
+  showTools(tools: Array<{ name: string; description?: string; serverId: string }>): void {
     this.info('可用工具:');
     // 在测试环境的静默模式下不直接使用 console.log
-    if (
-      EnvironmentDetector.isTestEnvironment() &&
-      !EnvironmentDetector.isDebugMode()
-    ) {
+    if (EnvironmentDetector.isTestEnvironment() && !EnvironmentDetector.isDebugMode()) {
       return;
     }
     for (const tool of tools) {
@@ -549,10 +522,7 @@ export class CliLogger extends UnifiedLogger {
    */
   showHelp(commands: Array<{ name: string; description: string }>): void {
     // 在测试环境的静默模式下不直接使用 console.log
-    if (
-      EnvironmentDetector.isTestEnvironment() &&
-      !EnvironmentDetector.isDebugMode()
-    ) {
+    if (EnvironmentDetector.isTestEnvironment() && !EnvironmentDetector.isDebugMode()) {
       return;
     }
     console.log('\n可用命令:');
@@ -596,11 +566,7 @@ export class McpLogger extends UnifiedLogger {
   /**
    * 记录工具发现事件
    */
-  logToolDiscovery(
-    serverId: string,
-    toolCount: number,
-    context?: Record<string, unknown>,
-  ): void {
+  logToolDiscovery(serverId: string, toolCount: number, context?: Record<string, unknown>): void {
     const message = `Discovered ${toolCount} tools`;
     this.info(message, { serverId, ...context });
   }

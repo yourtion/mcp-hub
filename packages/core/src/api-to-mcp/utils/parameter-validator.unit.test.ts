@@ -3,8 +3,10 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import type { JsonSchema } from '../types/api-config.js';
+
 import { ParameterValidatorImpl } from './parameter-validator.js';
+
+import type { JsonSchema } from '../types/api-config.js';
 
 describe('ParameterValidatorImpl', () => {
   const validator = new ParameterValidatorImpl();

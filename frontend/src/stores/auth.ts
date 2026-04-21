@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+
 import * as authService from '@/services/auth';
+
 import type { LoginRequest, User } from '@/types/auth';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -44,11 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
   };
 
   // 设置认证状态
-  const setAuth = (authData: {
-    accessToken: string;
-    refreshToken: string;
-    user: User;
-  }) => {
+  const setAuth = (authData: { accessToken: string; refreshToken: string; user: User }) => {
     token.value = authData.accessToken;
     refreshToken.value = authData.refreshToken;
     user.value = authData.user;

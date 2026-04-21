@@ -48,7 +48,4 @@ export const HttpServerConfigSchema = BaseServerConfigSchema.extend({
  * 统一的 ServerConfig Schema
  * 使用 z.union 代替 z.discriminatedUnion，兼容 type 字段缺失的旧配置
  */
-export const ServerConfigSchema = z.union([
-  StdioServerConfigSchema,
-  HttpServerConfigSchema,
-]);
+export const ServerConfigSchema = z.union([StdioServerConfigSchema, HttpServerConfigSchema]);

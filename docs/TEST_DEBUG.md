@@ -42,11 +42,13 @@ VITEST_DEBUG=true pnpm --filter @mcp-core/mcp-hub-cli vitest --run src/config/cl
 ## 调试模式 vs 正常模式对比
 
 ### 正常模式（完全静默）
+
 - 只显示测试结果
 - 所有 console 输出都被静默（包括 console.log、console.info、console.debug、console.warn、console.error）
 - 输出非常清洁，专注于测试结果
 
 ### 调试模式（完全详细）
+
 - 显示所有 console 输出
 - 包括配置加载、缓存操作、服务初始化、错误信息等所有日志
 - 便于调试测试逻辑和排查问题
@@ -54,6 +56,7 @@ VITEST_DEBUG=true pnpm --filter @mcp-core/mcp-hub-cli vitest --run src/config/cl
 ## 示例对比
 
 ### 正常模式输出（完全静默）
+
 ```
 ✓ src/config/cli-config-manager.test.ts (15)
   ✓ CliConfigManager (15)
@@ -68,6 +71,7 @@ Duration  248ms
 ```
 
 ### 调试模式输出（完全详细）
+
 ```
 🐛 CLI 测试调试模式已启用 - 将显示所有日志输出
 
@@ -112,28 +116,33 @@ stderr | 配置验证失败: ZodError: [
 如果需要在测试中添加自定义的调试输出，可以使用原始的 console 对象：
 
 ```typescript
-import { originalConsole } from './vitest.setup'
+import { originalConsole } from './vitest.setup';
 
 // 在测试中使用原始 console
-originalConsole.log('这条日志总是会显示')
+originalConsole.log('这条日志总是会显示');
 ```
 
 ## 故障排除
 
 ### 调试模式不生效
+
 1. 确保环境变量设置正确：`VITEST_DEBUG=true`
 2. 检查是否在正确的包目录下运行命令
 3. 确认 vitest.setup.ts 文件存在且配置正确
 
 ### 输出过多
+
 1. 考虑只运行特定的测试文件而不是整个测试套件
 2. 使用 vitest 的过滤选项来限制测试范围
 
 ### 某些日志仍然被过滤
+
 1. 检查 vitest.setup.ts 中的错误过滤逻辑
 2. 确认日志消息没有被错误过滤规则匹配
+
 ## CLI
- 包的特殊处理
+
+包的特殊处理
 
 CLI 包使用自定义的 logger 系统，不能简单地通过 mock console 来控制日志输出。我们通过以下方式解决：
 
@@ -157,8 +166,10 @@ pnpm --filter @mcp-core/mcp-hub-cli test
 # 调试模式（显示所有日志）
 pnpm --filter @mcp-core/mcp-hub-cli test:debug
 ```
+
 ##
- 🎯 统一的 Logger 层面控制（推荐方式）
+
+🎯 统一的 Logger 层面控制（推荐方式）
 
 我们已经将所有模块从 mock console 的方式改为统一的 logger 层面控制，这样更加优雅且不会影响各模块的正常工作。
 
@@ -174,16 +185,19 @@ pnpm --filter @mcp-core/mcp-hub-cli test:debug
 ### 各模块实现
 
 #### Core 包 (`@mcp-core/mcp-hub-core`)
+
 - 使用 `StructuredLogger` 系统
 - 默认配置自动检测测试环境
 - 支持 JSON 和文本格式输出
 
 #### Backend 包 (`@mcp-core/mcp-hub-api`)
+
 - 使用 `ConsoleLogger` 系统
 - 专门针对 MCP 操作的日志方法
 - 支持服务器连接、工具发现等专用日志
 
 #### CLI 包 (`@mcp-core/mcp-hub-cli`)
+
 - 使用 `CliLogger` 系统
 - 支持彩色输出和特殊显示方法
 - 配置管理器也使用统一的 logger

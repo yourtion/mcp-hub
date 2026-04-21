@@ -3,6 +3,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { DomainWhitelistImpl } from './domain-whitelist.js';
 
 // Mock日志记录器
@@ -26,27 +27,19 @@ describe('DomainWhitelistImpl', () => {
     it('应该允许白名单中的域名', () => {
       domainWhitelist.addDomain('api.example.com');
 
-      expect(domainWhitelist.isAllowed('https://api.example.com/test')).toBe(
-        true,
-      );
-      expect(domainWhitelist.isAllowed('http://api.example.com/api/v1')).toBe(
-        true,
-      );
+      expect(domainWhitelist.isAllowed('https://api.example.com/test')).toBe(true);
+      expect(domainWhitelist.isAllowed('http://api.example.com/api/v1')).toBe(true);
     });
 
     it('应该拒绝不在白名单中的域名', () => {
       domainWhitelist.addDomain('api.example.com');
 
-      expect(domainWhitelist.isAllowed('https://malicious.com/test')).toBe(
-        false,
-      );
+      expect(domainWhitelist.isAllowed('https://malicious.com/test')).toBe(false);
       expect(domainWhitelist.isAllowed('http://api.other.com/api')).toBe(false);
     });
 
     it('应该在空白名单时拒绝所有域名', () => {
-      expect(domainWhitelist.isAllowed('https://api.example.com/test')).toBe(
-        false,
-      );
+      expect(domainWhitelist.isAllowed('https://api.example.com/test')).toBe(false);
       expect(domainWhitelist.isAllowed('http://localhost:3000')).toBe(false);
     });
 
@@ -104,29 +97,19 @@ describe('DomainWhitelistImpl', () => {
     it('应该支持子域名通配符', () => {
       domainWhitelist.addDomain('*.example.com');
 
-      expect(domainWhitelist.isAllowed('https://api.example.com/test')).toBe(
-        true,
-      );
-      expect(domainWhitelist.isAllowed('https://www.example.com/page')).toBe(
-        true,
-      );
-      expect(domainWhitelist.isAllowed('https://sub.api.example.com/api')).toBe(
-        true,
-      );
+      expect(domainWhitelist.isAllowed('https://api.example.com/test')).toBe(true);
+      expect(domainWhitelist.isAllowed('https://www.example.com/page')).toBe(true);
+      expect(domainWhitelist.isAllowed('https://sub.api.example.com/api')).toBe(true);
     });
 
     it('应该支持精确匹配和通配符混合', () => {
       domainWhitelist.addDomain('api.example.com'); // 精确匹配
       domainWhitelist.addDomain('*.test.com'); // 通配符匹配
 
-      expect(domainWhitelist.isAllowed('https://api.example.com/test')).toBe(
-        true,
-      );
+      expect(domainWhitelist.isAllowed('https://api.example.com/test')).toBe(true);
       expect(domainWhitelist.isAllowed('https://www.test.com/page')).toBe(true);
       expect(domainWhitelist.isAllowed('https://api.test.com/api')).toBe(true);
-      expect(domainWhitelist.isAllowed('https://www.example.com/test')).toBe(
-        false,
-      );
+      expect(domainWhitelist.isAllowed('https://www.example.com/test')).toBe(false);
     });
   });
 
@@ -135,9 +118,7 @@ describe('DomainWhitelistImpl', () => {
       const initialDomains = ['api.example.com', 'api.test.com', 'localhost'];
       const whitelist = new DomainWhitelistImpl(initialDomains);
 
-      expect(whitelist.getAllowedDomains()).toEqual(
-        expect.arrayContaining(initialDomains),
-      );
+      expect(whitelist.getAllowedDomains()).toEqual(expect.arrayContaining(initialDomains));
       expect(whitelist.getAllowedDomains()).toHaveLength(3);
     });
 

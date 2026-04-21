@@ -73,7 +73,8 @@ source ~/.bashrc  # 或 source ~/.zshrc
 
 ### Q: 默认的登录凭据是什么？
 
-**A:** 
+**A:**
+
 - **用户名**: `admin`
 - **密码**: `admin`
 
@@ -81,9 +82,10 @@ source ~/.bashrc  # 或 source ~/.zshrc
 
 ### Q: 如何更改管理员密码？
 
-**A:** 
+**A:**
 
 1. 生成新密码的哈希值：
+
 ```bash
 node -e "const bcrypt = require('bcryptjs'); console.log(bcrypt.hashSync('your-new-password', 10));"
 ```
@@ -91,6 +93,7 @@ node -e "const bcrypt = require('bcryptjs'); console.log(bcrypt.hashSync('your-n
 2. 编辑 `backend/config/system.json`，更新密码哈希
 
 3. 重启后端服务：
+
 ```bash
 pm2 restart mcp-hub-api
 ```
@@ -110,10 +113,11 @@ pm2 restart mcp-hub-api
 **A:** 可能的原因：
 
 1. **系统时间不正确**: JWT 依赖准确的系统时间
+
    ```bash
    # 检查系统时间
    date
-   
+
    # 同步时间（Linux）
    sudo ntpdate -s time.nist.gov
    ```
@@ -142,7 +146,7 @@ pm2 restart mcp-hub-api
 
 ### Q: 如何添加自定义 MCP 服务器？
 
-**A:** 
+**A:**
 
 1. 在 Web 界面中点击"添加服务器"
 2. 填写服务器配置：
@@ -165,6 +169,7 @@ pm2 restart mcp-hub-api
 **A:** 检查以下几点：
 
 1. **命令和参数是否正确**:
+
    ```bash
    # 手动测试命令
    npx -y @modelcontextprotocol/server-filesystem /path
@@ -175,19 +180,21 @@ pm2 restart mcp-hub-api
    - 验证环境变量格式
 
 3. **权限问题**:
+
    ```bash
    # 检查文件权限
    ls -la /path/to/server
-   
+
    # 添加执行权限
    chmod +x /path/to/server
    ```
 
 4. **查看日志**:
+
    ```bash
    # 后端日志
    pm2 logs mcp-hub-api
-   
+
    # 或查看文件日志
    tail -f /var/log/mcp-hub/app.log
    ```
@@ -203,7 +210,7 @@ pm2 restart mcp-hub-api
 
 ### Q: 如何更新服务器配置？
 
-**A:** 
+**A:**
 
 1. 在服务器列表中点击"编辑"
 2. 修改配置
@@ -245,12 +252,13 @@ pm2 restart mcp-hub-api
 
 ### Q: 工具执行超时怎么办？
 
-**A:** 
+**A:**
 
 1. **增加超时时间**: 在配置中设置更长的超时
+
    ```json
    {
-     "timeout": 60000  // 60 秒
+     "timeout": 60000 // 60 秒
    }
    ```
 
@@ -260,7 +268,7 @@ pm2 restart mcp-hub-api
 
 ### Q: 如何查看工具的执行历史？
 
-**A:** 
+**A:**
 
 1. 进入工具详情页面
 2. 点击"执行历史"标签
@@ -272,7 +280,7 @@ pm2 restart mcp-hub-api
 
 ### Q: 工具参数应该如何填写？
 
-**A:** 
+**A:**
 
 1. 查看工具的输入模式（Input Schema）
 2. 根据模式填写参数：
@@ -301,7 +309,7 @@ pm2 restart mcp-hub-api
 
 ### Q: 如何创建组？
 
-**A:** 
+**A:**
 
 1. 进入组管理页面
 2. 点击"创建组"
@@ -323,12 +331,13 @@ http://your-domain.com/:groupId/mcp
 ```
 
 例如：
+
 - `development` 组: `http://localhost:8181/development/mcp`
 - `production` 组: `http://localhost:8181/production/mcp`
 
 ### Q: 如何限制组可用的工具？
 
-**A:** 
+**A:**
 
 1. 编辑组配置
 2. 在"工具过滤"部分：
@@ -340,7 +349,7 @@ http://your-domain.com/:groupId/mcp
 
 ### Q: 验证密钥是如何工作的？
 
-**A:** 
+**A:**
 
 1. 为组设置验证密钥
 2. 客户端访问组端点时需要提供密钥：
@@ -364,7 +373,7 @@ http://your-domain.com/:groupId/mcp
 
 ### Q: 如何将 API 转换为 MCP 工具？
 
-**A:** 
+**A:**
 
 1. 进入 API 到 MCP 管理页面
 2. 点击"添加 API 配置"
@@ -388,8 +397,8 @@ http://your-domain.com/:groupId/mcp
       "type": "string",
       "required": true,
       "mapping": {
-        "target": "query",  // query, path, body, header
-        "name": "q"         // API 参数名
+        "target": "query", // query, path, body, header
+        "name": "q" // API 参数名
       }
     }
   }
@@ -397,6 +406,7 @@ http://your-domain.com/:groupId/mcp
 ```
 
 支持的映射目标：
+
 - `query`: URL 查询参数
 - `path`: URL 路径参数
 - `body`: 请求体参数
@@ -418,6 +428,7 @@ http://your-domain.com/:groupId/mcp
 **A:** 支持多种认证方式：
 
 1. **Bearer Token**:
+
    ```json
    {
      "auth": {
@@ -428,6 +439,7 @@ http://your-domain.com/:groupId/mcp
    ```
 
 2. **API Key**:
+
    ```json
    {
      "auth": {
@@ -464,10 +476,11 @@ http://your-domain.com/:groupId/mcp
 **A:** 优化建议：
 
 1. **减少实时监控频率**:
+
    ```json
    {
      "monitoring": {
-       "updateInterval": 5000  // 增加到 5 秒
+       "updateInterval": 5000 // 增加到 5 秒
      }
    }
    ```
@@ -486,19 +499,22 @@ http://your-domain.com/:groupId/mcp
 
 ### Q: 内存使用过高怎么办？
 
-**A:** 
+**A:**
 
 1. **检查内存使用**:
+
    ```bash
    pm2 monit
    ```
 
 2. **增加 Node.js 内存限制**:
+
    ```bash
    NODE_OPTIONS="--max-old-space-size=4096" pm2 restart mcp-hub-api
    ```
 
 3. **定期重启服务**:
+
    ```bash
    # 每天凌晨 3 点重启
    0 3 * * * pm2 restart mcp-hub-api
@@ -510,9 +526,10 @@ http://your-domain.com/:groupId/mcp
 
 ### Q: 如何提高并发处理能力？
 
-**A:** 
+**A:**
 
 1. **使用集群模式**:
+
    ```bash
    pm2 start dist/src/index.js -i max
    ```
@@ -531,13 +548,14 @@ http://your-domain.com/:groupId/mcp
 
 ### Q: 如何监控系统性能？
 
-**A:** 
+**A:**
 
 1. **使用内置监控**:
    - 仪表板性能指标
    - 实时监控图表
 
 2. **使用 PM2 监控**:
+
    ```bash
    pm2 monit
    pm2 status
@@ -555,18 +573,21 @@ http://your-domain.com/:groupId/mcp
 **A:** 检查：
 
 1. **端口是否被占用**:
+
    ```bash
    lsof -i :3000
    # 如果被占用，杀死进程或使用其他端口
    ```
 
 2. **配置文件是否有效**:
+
    ```bash
    # 验证 JSON 格式
    cat backend/config/system.json | jq .
    ```
 
 3. **依赖是否完整**:
+
    ```bash
    pnpm install
    ```
@@ -581,6 +602,7 @@ http://your-domain.com/:groupId/mcp
 **A:** 检查：
 
 1. **后端是否运行**:
+
    ```bash
    curl http://localhost:8181/health
    ```
@@ -598,9 +620,10 @@ http://your-domain.com/:groupId/mcp
 
 ### Q: 数据丢失怎么办？
 
-**A:** 
+**A:**
 
 1. **从备份恢复**:
+
    ```bash
    ./restore.sh /backup/mcp-hub/config_latest.tar.gz
    ```
@@ -615,14 +638,16 @@ http://your-domain.com/:groupId/mcp
 
 ### Q: SSL 证书错误？
 
-**A:** 
+**A:**
 
 1. **检查证书有效期**:
+
    ```bash
    openssl x509 -in /etc/ssl/certs/mcp-hub.crt -noout -dates
    ```
 
 2. **更新证书**:
+
    ```bash
    sudo certbot renew
    ```
@@ -648,7 +673,7 @@ http://your-domain.com/:groupId/mcp
 
 ### Q: 如何生成安全的 JWT 密钥？
 
-**A:** 
+**A:**
 
 ```bash
 # 生成 64 字节的随机密钥
@@ -659,6 +684,7 @@ node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
 ```
 
 将生成的密钥设置为环境变量：
+
 ```bash
 export JWT_SECRET="your-generated-secret"
 ```
@@ -673,21 +699,22 @@ location /api/ {
     allow 192.168.1.0/24;
     allow 10.0.0.0/8;
     deny all;
-    
+
     proxy_pass http://mcp_hub_backend;
 }
 ```
 
 ### Q: 如何防止暴力破解？
 
-**A:** 
+**A:**
 
 1. **实施速率限制**:
+
    ```json
    {
      "rateLimit": {
-       "windowMs": 900000,  // 15 分钟
-       "maxRequests": 5     // 最多 5 次尝试
+       "windowMs": 900000, // 15 分钟
+       "maxRequests": 5 // 最多 5 次尝试
      }
    }
    ```
@@ -712,9 +739,10 @@ location /api/ {
 
 ### Q: 如何实现零停机部署？
 
-**A:** 
+**A:**
 
 1. **使用 PM2 集群模式**:
+
    ```bash
    pm2 start dist/src/index.js -i max
    pm2 reload mcp-hub-api  # 滚动重启
@@ -731,7 +759,7 @@ location /api/ {
 
 ### Q: 如何配置自动备份？
 
-**A:** 
+**A:**
 
 创建备份脚本并设置 cron 任务：
 
@@ -754,7 +782,7 @@ crontab -e
 
 ### Q: 如何监控生产环境？
 
-**A:** 
+**A:**
 
 1. **应用监控**: PM2 或 Kubernetes 监控
 2. **日志监控**: ELK Stack 或 Loki
@@ -764,20 +792,23 @@ crontab -e
 
 ### Q: 如何扩展系统容量？
 
-**A:** 
+**A:**
 
 **水平扩展**:
+
 ```bash
 # 增加后端实例
 pm2 scale mcp-hub-api +2
 ```
 
 **垂直扩展**:
+
 - 升级服务器 CPU 和内存
 - 使用 SSD 存储
 - 优化网络带宽
 
 **数据库扩展**:
+
 - 使用读写分离
 - 实施分片策略
 - 添加缓存层
@@ -794,10 +825,11 @@ pm2 scale mcp-hub-api +2
    - [故障排除指南](TROUBLESHOOTING.md)
 
 2. **查看日志**:
+
    ```bash
    # 后端日志
    pm2 logs mcp-hub-api
-   
+
    # 系统日志
    tail -f /var/log/mcp-hub/app.log
    ```

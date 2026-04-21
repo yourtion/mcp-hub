@@ -3,6 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import { EnvironmentResolverImpl } from './environment-resolver.js';
 
 describe('EnvironmentResolverImpl', () => {
@@ -32,8 +33,7 @@ describe('EnvironmentResolverImpl', () => {
     });
 
     it('应该解析多个环境变量引用', () => {
-      const template =
-        '{{env.TEST_BASE_URL}}/api/v1?timeout={{env.TEST_TIMEOUT}}';
+      const template = '{{env.TEST_BASE_URL}}/api/v1?timeout={{env.TEST_TIMEOUT}}';
       const result = resolver.resolve(template);
       expect(result).toBe('https://api.test.com/api/v1?timeout=5000');
     });
@@ -84,10 +84,7 @@ describe('EnvironmentResolverImpl', () => {
 
     it('应该处理数组中的环境变量', () => {
       const config = {
-        servers: [
-          '{{env.TEST_BASE_URL}}/api/v1',
-          '{{env.TEST_BASE_URL}}/api/v2',
-        ],
+        servers: ['{{env.TEST_BASE_URL}}/api/v1', '{{env.TEST_BASE_URL}}/api/v2'],
       };
 
       const result = resolver.resolveObject(config);
@@ -130,9 +127,7 @@ describe('EnvironmentResolverImpl', () => {
     });
 
     it('应该处理非字符串输入', () => {
-      const variables = resolver.extractEnvironmentVariables(
-        123 as unknown as string,
-      );
+      const variables = resolver.extractEnvironmentVariables(123 as unknown as string);
       expect(variables).toEqual([]);
     });
   });

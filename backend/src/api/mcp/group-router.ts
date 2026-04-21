@@ -3,19 +3,18 @@
  * 处理 /:group/mcp 路由，提供基于组的MCP服务访问
  */
 
-import {
-  type ServerConfig as CoreServerConfig,
-  McpServiceManager,
-} from '@mcp-core/mcp-hub-core';
-import type { ServerConfig } from '@mcp-core/mcp-hub-share';
+import { type ServerConfig as CoreServerConfig, McpServiceManager } from '@mcp-core/mcp-hub-core';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { toFetchResponse, toReqRes } from 'fetch-to-node';
-import type { Context } from 'hono';
 import { Hono } from 'hono';
+
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
-import type { GroupConfigItem } from '../groups/index.js';
 import { GroupMcpService } from './group-service.js';
+
+import type { GroupConfigItem } from '../groups/index.js';
+import type { ServerConfig } from '@mcp-core/mcp-hub-share';
+import type { Context } from 'hono';
 
 /**
  * 将 share 包的 ServerConfig 转换为 core 包的 ServerConfig
@@ -114,10 +113,7 @@ async function validateGroupExists(groupId: string): Promise<boolean> {
 /**
  * 组验证中间件
  */
-async function groupValidationMiddleware(
-  c: Context,
-  next: () => Promise<void>,
-) {
+async function groupValidationMiddleware(c: Context, next: () => Promise<void>) {
   const groupId = c.req.param('group');
 
   if (!groupId) {
@@ -301,15 +297,13 @@ export async function shutdownGroupMcpRouter(): Promise<void> {
     logger.info('关闭组MCP路由服务');
 
     // 关闭所有组服务实例
-    const shutdownPromises = Array.from(groupServices.values()).map(
-      async (service) => {
-        try {
-          await service.shutdown();
-        } catch (error) {
-          logger.error('关闭组服务时出错', error as Error);
-        }
-      },
-    );
+    const shutdownPromises = Array.from(groupServices.values()).map(async (service) => {
+      try {
+        await service.shutdown();
+      } catch (error) {
+        logger.error('关闭组服务时出错', error as Error);
+      }
+    });
 
     await Promise.allSettled(shutdownPromises);
     groupServices.clear();

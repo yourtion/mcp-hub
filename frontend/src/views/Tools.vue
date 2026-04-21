@@ -7,11 +7,7 @@
           <p class="mcp-page__desc">可用工具概览</p>
         </div>
         <div class="mcp-page__actions">
-          <t-button
-            :loading="toolStore.loading"
-            variant="outline"
-            @click="handleRefresh"
-          >
+          <t-button :loading="toolStore.loading" variant="outline" @click="handleRefresh">
             <template #icon><RefreshIcon /></template>
             刷新
           </t-button>
@@ -91,12 +87,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { RefreshIcon, SearchIcon } from 'tdesign-icons-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next';
-import { useToolStore } from '@/stores/tool';
+import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
+
 import { ToolList, ToolMonitoring, ExecutionDetail } from '@/components/tools';
+import { useToolStore } from '@/stores/tool';
+
 import type { ToolInfo } from '@/types/tool';
 
 const router = useRouter();

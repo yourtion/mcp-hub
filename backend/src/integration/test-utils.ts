@@ -6,6 +6,7 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+
 import { ConsoleLogger, LogLevel } from '../utils/logger.js';
 
 // 测试配置目录路径
@@ -64,10 +65,7 @@ export function setupTestConfig(enableAuth: boolean = true): string {
       tools: [],
     },
   };
-  writeFileSync(
-    path.join(testConfigDir, 'group.json'),
-    JSON.stringify(groupConfig, null, 2),
-  );
+  writeFileSync(path.join(testConfigDir, 'group.json'), JSON.stringify(groupConfig, null, 2));
 
   // 2. mcp_server.json - 测试 MCP 服务器配置
   const mcpServerConfig = {
@@ -139,10 +137,7 @@ export function setupTestConfig(enableAuth: boolean = true): string {
       retentionDays: 7,
     },
   };
-  writeFileSync(
-    path.join(testConfigDir, 'system.json'),
-    JSON.stringify(systemConfig, null, 2),
-  );
+  writeFileSync(path.join(testConfigDir, 'system.json'), JSON.stringify(systemConfig, null, 2));
 
   return testConfigDir;
 }
@@ -168,11 +163,14 @@ export function cleanupTestConfig(): void {
  * @param authToken 认证token
  * @returns 带认证的请求函数
  */
-// biome-ignore lint/suspicious/noExplicitAny: test utility for dynamic app
-export function createAuthenticatedRequest(testApp: any, authToken: string) {
+// test utility for dynamic app type
+export function createAuthenticatedRequest(
+  testApp: { request: (path: string, init?: RequestInit) => Response | Promise<Response> },
+  authToken: string,
+) {
   return async (path: string, init?: RequestInit) => {
     const headers = {
-      ...(init?.headers || {}),
+      ...init?.headers,
       Authorization: `Bearer ${authToken}`,
     };
     return testApp.request(path, { ...init, headers });
@@ -203,8 +201,7 @@ export class SilentLogger {
 /**
  * 安全地解析JSON响应，处理可能的解析错误
  */
-// biome-ignore lint/suspicious/noExplicitAny: dynamic JSON parsing
-export async function safeJsonParse(response: Response): Promise<any> {
+export async function safeJsonParse(response: Response): Promise<unknown> {
   let text: string | null = null;
 
   try {
@@ -218,10 +215,7 @@ export async function safeJsonParse(response: Response): Promise<any> {
     return JSON.parse(text);
   } catch (error) {
     // 返回错误信息，使用已读取的文本（如果可用）
-    console.warn(
-      'JSON解析失败:',
-      error instanceof Error ? error.message : 'Unknown error',
-    );
+    console.warn('JSON解析失败:', error instanceof Error ? error.message : 'Unknown error');
 
     return {
       error: 'JSON_PARSE_ERROR',
@@ -303,10 +297,7 @@ export function createMockServer(id: string, status: string = 'connected') {
     lastConnected: new Date().toISOString(),
     toolCount: 2,
     isHealthy: status === 'connected',
-    tools: [
-      createMockTool(`${id}_tool_1`, id),
-      createMockTool(`${id}_tool_2`, id),
-    ],
+    tools: [createMockTool(`${id}_tool_1`, id), createMockTool(`${id}_tool_2`, id)],
   };
 }
 
@@ -314,8 +305,7 @@ export function createMockServer(id: string, status: string = 'connected') {
  * 验证API响应的基本结构
  */
 export function validateApiResponse(
-  // biome-ignore lint/suspicious/noExplicitAny: dynamic validation
-  data: any,
+  data: Record<string, unknown>,
   requiredFields: string[],
 ): boolean {
   if (!data || typeof data !== 'object') {

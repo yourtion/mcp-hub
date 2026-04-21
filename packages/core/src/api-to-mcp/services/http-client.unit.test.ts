@@ -3,12 +3,14 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createHttpClient, HttpClient } from './http-client.js';
+
 import type {
   HttpRequestConfig,
   RequestInterceptor,
   ResponseInterceptor,
 } from '../types/http-client.js';
-import { createHttpClient, HttpClient } from './http-client.js';
 
 // Mock fetch
 const mockFetch = vi.fn();
@@ -52,14 +54,11 @@ describe('HttpClient', () => {
 
   describe('request方法', () => {
     it('应该成功执行HTTP请求', async () => {
-      const mockResponse = new Response(
-        JSON.stringify({ message: 'success' }),
-        {
-          status: 200,
-          statusText: 'OK',
-          headers: { 'content-type': 'application/json' },
-        },
-      );
+      const mockResponse = new Response(JSON.stringify({ message: 'success' }), {
+        status: 200,
+        statusText: 'OK',
+        headers: { 'content-type': 'application/json' },
+      });
 
       mockFetch.mockResolvedValueOnce(mockResponse);
 
@@ -177,9 +176,7 @@ describe('HttpClient', () => {
 
       // 由于HttpClient现在是基于fetch的，我们不能直接访问axios实例
       // 这里我们只需要验证方法不抛出错误
-      expect(() =>
-        httpClient.addRequestInterceptor(requestInterceptor),
-      ).not.toThrow();
+      expect(() => httpClient.addRequestInterceptor(requestInterceptor)).not.toThrow();
     });
 
     it('应该支持添加响应拦截器', () => {
@@ -189,9 +186,7 @@ describe('HttpClient', () => {
 
       // 由于HttpClient现在是基于fetch的，我们不能直接访问axios实例
       // 这里我们只需要验证方法不抛出错误
-      expect(() =>
-        httpClient.addResponseInterceptor(responseInterceptor),
-      ).not.toThrow();
+      expect(() => httpClient.addResponseInterceptor(responseInterceptor)).not.toThrow();
     });
   });
 

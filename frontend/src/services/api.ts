@@ -3,6 +3,7 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios';
+
 import type { ApiResponse } from '@/types/api';
 
 // 创建axios实例
@@ -109,9 +110,7 @@ api.interceptors.response.use(
 export default api;
 
 // 通用API响应处理函数
-export const handleApiResponse = <T>(
-  response: AxiosResponse<ApiResponse<T>>,
-): T => {
+export const handleApiResponse = <T>(response: AxiosResponse<ApiResponse<T>>): T => {
   if (response.data.success && response.data.data !== undefined) {
     return response.data.data;
   }

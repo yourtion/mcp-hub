@@ -3,9 +3,11 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ApiToolRegistry } from './api-tool-registry.js';
+
 import type { ApiToolConfig } from '../types/api-config.js';
 import type { McpTool } from '../types/api-tool.js';
-import { ApiToolRegistry } from './api-tool-registry.js';
 
 describe('ApiToolRegistry', () => {
   let registry: ApiToolRegistry;
@@ -92,9 +94,7 @@ describe('ApiToolRegistry', () => {
 
       expect(result.valid).toBe(true);
       expect(registry.getToolCount()).toBe(1);
-      expect(registry.getTool('test-tool')?.description).toBe(
-        '更新后的测试工具',
-      );
+      expect(registry.getTool('test-tool')?.description).toBe('更新后的测试工具');
     });
 
     it('应该触发注册事件', () => {

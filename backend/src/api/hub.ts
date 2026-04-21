@@ -1,8 +1,6 @@
 import { Hono } from 'hono';
-import {
-  getHubService,
-  getHubServiceSafe,
-} from '../services/service-registry.js';
+
+import { getHubService, getHubServiceSafe } from '../services/service-registry.js';
 import { errorResponse, successResponse } from '../utils/api-response.js';
 import { logger } from '../utils/logger.js';
 import { shutdownGroupsApi } from './groups/index.js';
@@ -32,8 +30,7 @@ hubApi.get('/health', async (c) => {
             service: {
               status: 'initializing',
               isInitialized: false,
-              message:
-                'MCP Hub Service is still initializing or failed to initialize',
+              message: 'MCP Hub Service is still initializing or failed to initialize',
             },
             timestamp: new Date().toISOString(),
           },

@@ -19,10 +19,7 @@ describe('服务器配置验证', () => {
     enabled: z.boolean().optional().default(true),
   });
 
-  const ServerConfigSchema = z.union([
-    StdioServerConfigSchema,
-    HttpServerConfigSchema,
-  ]);
+  const ServerConfigSchema = z.union([StdioServerConfigSchema, HttpServerConfigSchema]);
 
   it('应该验证有效的stdio服务器配置', () => {
     const validConfig = {

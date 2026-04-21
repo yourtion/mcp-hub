@@ -3,11 +3,8 @@
  * 用于集成测试
  */
 
-import {
-  createServer,
-  type IncomingMessage,
-  type ServerResponse,
-} from 'node:http';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+
 import type { AddressInfo } from 'node:net';
 
 export interface MockEndpoint {
@@ -55,7 +52,7 @@ export class MockApiServer {
         if (error) {
           reject(error);
         } else {
-          this.port = (this.server?.address() as AddressInfo).port;
+          this.port = (this.server!.address() as AddressInfo).port;
           resolve(this.port);
         }
       });
@@ -107,11 +104,7 @@ export class MockApiServer {
   /**
    * 模拟错误响应
    */
-  simulateError(
-    path: string,
-    method = 'GET',
-    error: { status: number; message: string },
-  ): void {
+  simulateError(path: string, method = 'GET', error: { status: number; message: string }): void {
     this.setupEndpoint({
       path,
       method,
@@ -125,12 +118,7 @@ export class MockApiServer {
   /**
    * 模拟延迟响应
    */
-  simulateDelay(
-    path: string,
-    method = 'GET',
-    delay: number,
-    response: unknown,
-  ): void {
+  simulateDelay(path: string, method = 'GET', delay: number, response: unknown): void {
     this.setupEndpoint({
       path,
       method,
@@ -174,10 +162,7 @@ export class MockApiServer {
   /**
    * 处理HTTP请求
    */
-  private async handleRequest(
-    req: IncomingMessage,
-    res: ServerResponse,
-  ): Promise<void> {
+  private async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const method = req.method || 'GET';
     const url = req.url || '/';
     const path = new URL(url, 'http://localhost').pathname;

@@ -2,16 +2,13 @@
  * 认证服务
  */
 
-import type { DeepReadonly, SystemConfig } from '@mcp-core/mcp-hub-share';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import type {
-  JwtPayload,
-  LoginAttempt,
-  RefreshTokenPayload,
-  UserSession,
-} from '../types/auth.js';
+
 import { getAllConfig } from '../utils/config.js';
+
+import type { JwtPayload, LoginAttempt, RefreshTokenPayload, UserSession } from '../types/auth.js';
+import type { DeepReadonly, SystemConfig } from '@mcp-core/mcp-hub-share';
 
 // 从 SystemConfig 中提取用户凭据的只读类型
 type ReadonlyUserCredentials = DeepReadonly<SystemConfig>['users'][string];
@@ -139,15 +136,11 @@ export class AuthService {
 
     // 检查登录尝试限制
     if (this.isUserLocked(username)) {
-      throw new Error(
-        'Account temporarily locked due to too many failed attempts',
-      );
+      throw new Error('Account temporarily locked due to too many failed attempts');
     }
 
     // 查找用户
-    const user = Object.values(this.config.users).find(
-      (u) => u.username === username,
-    );
+    const user = Object.values(this.config.users).find((u) => u.username === username);
     if (!user) {
       this.recordLoginAttempt(username, false, ip, userAgent);
       throw new Error('Invalid username or password');
@@ -218,19 +211,14 @@ export class AuthService {
 
     try {
       // 验证刷新token
-      const payload = jwt.verify(
-        refreshToken,
-        this.config.auth.jwt.secret,
-      ) as RefreshTokenPayload;
+      const payload = jwt.verify(refreshToken, this.config.auth.jwt.secret) as RefreshTokenPayload;
 
       if (payload.type !== 'refresh') {
         throw new Error('Invalid token type');
       }
 
       // 查找用户
-      const user = Object.values(this.config.users).find(
-        (u) => u.id === payload.sub,
-      );
+      const user = Object.values(this.config.users).find((u) => u.id === payload.sub);
       if (!user) {
         throw new Error('User not found');
       }
@@ -269,9 +257,7 @@ export class AuthService {
     this.blacklistedTokens.add(accessToken);
 
     // 删除会话
-    const session = Array.from(this.sessions.values()).find(
-      (s) => s.accessToken === accessToken,
-    );
+    const session = Array.from(this.sessions.values()).find((s) => s.accessToken === accessToken);
     if (session) {
       this.sessions.delete(session.sessionId);
       this.blacklistedTokens.add(session.refreshToken);
@@ -292,15 +278,10 @@ export class AuthService {
     }
 
     try {
-      const payload = jwt.verify(
-        token,
-        this.config.auth.jwt.secret,
-      ) as JwtPayload;
+      const payload = jwt.verify(token, this.config.auth.jwt.secret) as JwtPayload;
 
       // 更新会话活动时间
-      const session = Array.from(this.sessions.values()).find(
-        (s) => s.accessToken === token,
-      );
+      const session = Array.from(this.sessions.values()).find((s) => s.accessToken === token);
       if (session) {
         session.lastActivity = Date.now();
       }
@@ -406,8 +387,7 @@ export class AuthService {
 
     // 获取最近的失败尝试
     const recentFailedAttempts = attempts.filter(
-      (attempt) =>
-        !attempt.success && now - attempt.timestamp < lockoutDuration,
+      (attempt) => !attempt.success && now - attempt.timestamp < lockoutDuration,
     );
 
     return recentFailedAttempts.length >= maxLoginAttempts;
@@ -437,8 +417,7 @@ export class AuthService {
     }
 
     // 清理过期的登录尝试记录
-    const lockoutDuration =
-      this.config?.auth.security.lockoutDuration || 900000;
+    const lockoutDuration = this.config?.auth.security.lockoutDuration || 900000;
     for (const [username, attempts] of this.loginAttempts.entries()) {
       const validAttempts = attempts.filter(
         (attempt) => now - attempt.timestamp < lockoutDuration * 2,
@@ -456,10 +435,7 @@ export class AuthService {
    */
   getUserById(userId: string): ReadonlyUserCredentials | null {
     if (!this.config) return null;
-    return (
-      Object.values(this.config.users).find((user) => user.id === userId) ||
-      null
-    );
+    return Object.values(this.config.users).find((user) => user.id === userId) || null;
   }
 
   /**
@@ -473,8 +449,6 @@ export class AuthService {
    * 获取用户的活跃会话
    */
   getUserSessions(userId: string): UserSession[] {
-    return Array.from(this.sessions.values()).filter(
-      (session) => session.userId === userId,
-    );
+    return Array.from(this.sessions.values()).filter((session) => session.userId === userId);
   }
 }

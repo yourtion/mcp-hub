@@ -3,15 +3,14 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { CachedApiExecutor, type CacheExecutorConfig } from './cached-api-executor.js';
+
 import type { ApiToolConfig } from '../types/api-config.js';
 import type { ApiResponse, HttpResponse } from '../types/http-client.js';
 import type { ApiExecutor } from './api-executor.js';
 import type { CacheKeyManager } from './cache-key-manager.js';
 import type { CacheManager } from './cache-manager.js';
-import {
-  CachedApiExecutor,
-  type CacheExecutorConfig,
-} from './cached-api-executor.js';
 
 // Mock日志记录器
 vi.mock('../../utils/logger.js', () => ({
@@ -72,11 +71,7 @@ describe('CachedApiExecutor', () => {
     };
 
     // 创建缓存执行器
-    cachedExecutor = new CachedApiExecutor(
-      mockBaseExecutor,
-      mockCacheManager,
-      mockKeyManager,
-    );
+    cachedExecutor = new CachedApiExecutor(mockBaseExecutor, mockCacheManager, mockKeyManager);
 
     // Mock配置和参数
     mockConfig = {
@@ -113,16 +108,10 @@ describe('CachedApiExecutor', () => {
       vi.mocked(mockKeyManager.generateKey).mockReturnValue('test-cache-key');
       vi.mocked(mockCacheManager.get).mockResolvedValue(cachedResponse);
 
-      const result = await cachedExecutor.executeApiCall(
-        mockConfig,
-        mockParameters,
-      );
+      const result = await cachedExecutor.executeApiCall(mockConfig, mockParameters);
 
       expect(result).toEqual(cachedResponse);
-      expect(mockKeyManager.generateKey).toHaveBeenCalledWith(
-        'test-tool',
-        mockParameters,
-      );
+      expect(mockKeyManager.generateKey).toHaveBeenCalledWith('test-tool', mockParameters);
       expect(mockCacheManager.get).toHaveBeenCalledWith('test-cache-key');
       expect(mockBaseExecutor.executeApiCall).not.toHaveBeenCalled();
     });
@@ -139,21 +128,11 @@ describe('CachedApiExecutor', () => {
       vi.mocked(mockCacheManager.get).mockResolvedValue(null);
       vi.mocked(mockBaseExecutor.executeApiCall).mockResolvedValue(apiResponse);
 
-      const result = await cachedExecutor.executeApiCall(
-        mockConfig,
-        mockParameters,
-      );
+      const result = await cachedExecutor.executeApiCall(mockConfig, mockParameters);
 
       expect(result).toEqual(apiResponse);
-      expect(mockBaseExecutor.executeApiCall).toHaveBeenCalledWith(
-        mockConfig,
-        mockParameters,
-      );
-      expect(mockCacheManager.set).toHaveBeenCalledWith(
-        'test-cache-key',
-        apiResponse,
-        300,
-      );
+      expect(mockBaseExecutor.executeApiCall).toHaveBeenCalledWith(mockConfig, mockParameters);
+      expect(mockCacheManager.set).toHaveBeenCalledWith('test-cache-key', apiResponse, 300);
     });
 
     it('应该缓存成功的响应', async () => {
@@ -169,11 +148,7 @@ describe('CachedApiExecutor', () => {
 
       await cachedExecutor.executeApiCall(mockConfig, mockParameters);
 
-      expect(mockCacheManager.set).toHaveBeenCalledWith(
-        'test-cache-key',
-        apiResponse,
-        300,
-      );
+      expect(mockCacheManager.set).toHaveBeenCalledWith('test-cache-key', apiResponse, 300);
     });
 
     it('应该根据配置决定是否缓存错误响应', async () => {
@@ -186,9 +161,7 @@ describe('CachedApiExecutor', () => {
 
       vi.mocked(mockKeyManager.generateKey).mockReturnValue('test-cache-key');
       vi.mocked(mockCacheManager.get).mockResolvedValue(null);
-      vi.mocked(mockBaseExecutor.executeApiCall).mockResolvedValue(
-        errorResponse,
-      );
+      vi.mocked(mockBaseExecutor.executeApiCall).mockResolvedValue(errorResponse);
 
       // 默认不缓存错误响应
       await cachedExecutor.executeApiCall(mockConfig, mockParameters);
@@ -208,15 +181,8 @@ describe('CachedApiExecutor', () => {
       );
 
       vi.mocked(mockCacheManager.set).mockClear();
-      await cachedExecutorWithErrorCache.executeApiCall(
-        mockConfig,
-        mockParameters,
-      );
-      expect(mockCacheManager.set).toHaveBeenCalledWith(
-        'test-cache-key',
-        errorResponse,
-        60,
-      );
+      await cachedExecutorWithErrorCache.executeApiCall(mockConfig, mockParameters);
+      expect(mockCacheManager.set).toHaveBeenCalledWith('test-cache-key', errorResponse, 60);
     });
   });
 
@@ -238,10 +204,7 @@ describe('CachedApiExecutor', () => {
 
       vi.mocked(mockBaseExecutor.executeApiCall).mockResolvedValue(apiResponse);
 
-      const result = await disabledCacheExecutor.executeApiCall(
-        mockConfig,
-        mockParameters,
-      );
+      const result = await disabledCacheExecutor.executeApiCall(mockConfig, mockParameters);
 
       expect(result).toEqual(apiResponse);
       expect(mockCacheManager.get).not.toHaveBeenCalled();
@@ -269,11 +232,7 @@ describe('CachedApiExecutor', () => {
 
       await cachedExecutor.executeApiCall(configWithCache, mockParameters);
 
-      expect(mockCacheManager.set).toHaveBeenCalledWith(
-        'test-cache-key',
-        apiResponse,
-        600,
-      );
+      expect(mockCacheManager.set).toHaveBeenCalledWith('test-cache-key', apiResponse, 600);
     });
 
     it('应该在工具禁用缓存时不缓存', async () => {
@@ -295,10 +254,7 @@ describe('CachedApiExecutor', () => {
       vi.mocked(mockCacheManager.get).mockResolvedValue(null);
       vi.mocked(mockBaseExecutor.executeApiCall).mockResolvedValue(apiResponse);
 
-      await cachedExecutor.executeApiCall(
-        configWithDisabledCache,
-        mockParameters,
-      );
+      await cachedExecutor.executeApiCall(configWithDisabledCache, mockParameters);
 
       expect(mockCacheManager.set).not.toHaveBeenCalled();
     });
@@ -340,10 +296,7 @@ describe('CachedApiExecutor', () => {
 
       vi.mocked(mockBaseExecutor.executeApiCall).mockResolvedValue(apiResponse);
 
-      const result = await cachedExecutor.executeApiCall(
-        mockConfig,
-        mockParameters,
-      );
+      const result = await cachedExecutor.executeApiCall(mockConfig, mockParameters);
 
       expect(result).toEqual(apiResponse);
       expect(mockBaseExecutor.executeApiCall).toHaveBeenCalled();
@@ -396,11 +349,7 @@ describe('CachedApiExecutor', () => {
     });
 
     it('应该支持缓存预热', async () => {
-      const parametersList = [
-        { param1: 'value1' },
-        { param1: 'value2' },
-        { param1: 'value3' },
-      ];
+      const parametersList = [{ param1: 'value1' }, { param1: 'value2' }, { param1: 'value3' }];
 
       vi.mocked(mockKeyManager.generateKey).mockReturnValue('test-key');
       vi.mocked(mockCacheManager.get).mockResolvedValue(null);
@@ -410,10 +359,7 @@ describe('CachedApiExecutor', () => {
         success: true,
       });
 
-      const result = await cachedExecutor.warmupCache(
-        mockConfig,
-        parametersList,
-      );
+      const result = await cachedExecutor.warmupCache(mockConfig, parametersList);
 
       expect(result.success).toBe(3);
       expect(result.failed).toBe(0);
@@ -450,10 +396,7 @@ describe('CachedApiExecutor', () => {
           error: 'API Error',
         });
 
-      const result = await freshCachedExecutor.warmupCache(
-        mockConfig,
-        parametersList,
-      );
+      const result = await freshCachedExecutor.warmupCache(mockConfig, parametersList);
 
       expect(result.success).toBe(1);
       expect(result.failed).toBe(1);
@@ -479,16 +422,10 @@ describe('CachedApiExecutor', () => {
       const mockRequest = { url: 'test', method: 'GET' as const };
       vi.mocked(mockBaseExecutor.buildHttpRequest).mockReturnValue(mockRequest);
 
-      const result = cachedExecutor.buildHttpRequest(
-        mockConfig,
-        mockParameters,
-      );
+      const result = cachedExecutor.buildHttpRequest(mockConfig, mockParameters);
 
       expect(result).toBe(mockRequest);
-      expect(mockBaseExecutor.buildHttpRequest).toHaveBeenCalledWith(
-        mockConfig,
-        mockParameters,
-      );
+      expect(mockBaseExecutor.buildHttpRequest).toHaveBeenCalledWith(mockConfig, mockParameters);
     });
 
     it('应该正确委托applyAuthentication', () => {
@@ -499,17 +436,12 @@ describe('CachedApiExecutor', () => {
         headers: { Authorization: 'Bearer test-token' },
       };
 
-      vi.mocked(mockBaseExecutor.applyAuthentication).mockReturnValue(
-        mockAuthenticatedRequest,
-      );
+      vi.mocked(mockBaseExecutor.applyAuthentication).mockReturnValue(mockAuthenticatedRequest);
 
       const result = cachedExecutor.applyAuthentication(mockRequest, mockAuth);
 
       expect(result).toBe(mockAuthenticatedRequest);
-      expect(mockBaseExecutor.applyAuthentication).toHaveBeenCalledWith(
-        mockRequest,
-        mockAuth,
-      );
+      expect(mockBaseExecutor.applyAuthentication).toHaveBeenCalledWith(mockRequest, mockAuth);
     });
 
     it('应该正确委托handleTimeoutAndRetry', async () => {
@@ -525,18 +457,14 @@ describe('CachedApiExecutor', () => {
       const result = await cachedExecutor.handleTimeoutAndRetry(mockRequest);
 
       expect(result).toBe(mockResponse);
-      expect(mockBaseExecutor.handleTimeoutAndRetry).toHaveBeenCalledWith(
-        mockRequest,
-      );
+      expect(mockBaseExecutor.handleTimeoutAndRetry).toHaveBeenCalledWith(mockRequest);
     });
   });
 
   describe('错误处理', () => {
     it('应该在缓存操作失败时回退到基础执行器', async () => {
       vi.mocked(mockKeyManager.generateKey).mockReturnValue('test-key');
-      vi.mocked(mockCacheManager.get).mockRejectedValue(
-        new Error('Cache error'),
-      );
+      vi.mocked(mockCacheManager.get).mockRejectedValue(new Error('Cache error'));
 
       const apiResponse: ApiResponse = {
         raw: {} as HttpResponse,
@@ -546,10 +474,7 @@ describe('CachedApiExecutor', () => {
 
       vi.mocked(mockBaseExecutor.executeApiCall).mockResolvedValue(apiResponse);
 
-      const result = await cachedExecutor.executeApiCall(
-        mockConfig,
-        mockParameters,
-      );
+      const result = await cachedExecutor.executeApiCall(mockConfig, mockParameters);
 
       expect(result).toEqual(apiResponse);
       expect(mockBaseExecutor.executeApiCall).toHaveBeenCalled();
@@ -565,14 +490,9 @@ describe('CachedApiExecutor', () => {
       vi.mocked(mockKeyManager.generateKey).mockReturnValue('test-key');
       vi.mocked(mockCacheManager.get).mockResolvedValue(null);
       vi.mocked(mockBaseExecutor.executeApiCall).mockResolvedValue(apiResponse);
-      vi.mocked(mockCacheManager.set).mockRejectedValue(
-        new Error('Cache set error'),
-      );
+      vi.mocked(mockCacheManager.set).mockRejectedValue(new Error('Cache set error'));
 
-      const result = await cachedExecutor.executeApiCall(
-        mockConfig,
-        mockParameters,
-      );
+      const result = await cachedExecutor.executeApiCall(mockConfig, mockParameters);
 
       // 应该仍然返回API响应，即使缓存设置失败
       expect(result).toEqual(apiResponse);
@@ -584,16 +504,14 @@ describe('CachedApiExecutor', () => {
       // 模拟缓存未命中
       vi.mocked(mockKeyManager.generateKey).mockReturnValue('test-key');
       vi.mocked(mockCacheManager.get).mockResolvedValue(null);
-      vi.mocked(mockBaseExecutor.executeApiCall).mockImplementation(
-        async () => {
-          await new Promise((resolve) => setTimeout(resolve, 50)); // 模拟API延迟
-          return {
-            raw: {} as HttpResponse,
-            data: { result: 'api' },
-            success: true,
-          };
-        },
-      );
+      vi.mocked(mockBaseExecutor.executeApiCall).mockImplementation(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50)); // 模拟API延迟
+        return {
+          raw: {} as HttpResponse,
+          data: { result: 'api' },
+          success: true,
+        };
+      });
 
       await cachedExecutor.executeApiCall(mockConfig, mockParameters);
 

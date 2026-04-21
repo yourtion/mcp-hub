@@ -1,10 +1,6 @@
 // 服务器管理相关的类型定义
 
-export type ServerStatus =
-  | 'connected'
-  | 'disconnected'
-  | 'connecting'
-  | 'error';
+export type ServerStatus = 'connected' | 'disconnected' | 'connecting' | 'error';
 
 export type ServerType = 'stdio' | 'sse' | 'streaming';
 

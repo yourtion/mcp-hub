@@ -4,7 +4,9 @@
  */
 
 import crypto from 'node:crypto';
+
 import { logger } from '../../utils/logger.js';
+
 import type { CacheKeyGenerator } from '../types/api-config.js';
 
 /**
@@ -47,10 +49,7 @@ export interface CacheKeyManager {
   isKeyForTool(key: string, toolId: string): boolean;
 
   /** 生成批量清理的键列表 */
-  generateKeysForTool(
-    toolId: string,
-    parametersList: Record<string, unknown>[],
-  ): string[];
+  generateKeysForTool(toolId: string, parametersList: Record<string, unknown>[]): string[];
 }
 
 /**
@@ -58,10 +57,7 @@ export interface CacheKeyManager {
  */
 export const defaultCacheKeyStrategy: CacheKeyStrategy = {
   name: 'default',
-  generateKey: (
-    toolId: string,
-    parameters: Record<string, unknown>,
-  ): string => {
+  generateKey: (toolId: string, parameters: Record<string, unknown>): string => {
     try {
       // 对参数进行排序以确保一致性
       const sortedParams = Object.keys(parameters)
@@ -84,13 +80,8 @@ export const defaultCacheKeyStrategy: CacheKeyStrategy = {
 
       return `${toolId}:${paramsHash}`;
     } catch (error) {
-      logger.error(
-        '生成缓存键时出错:',
-        error instanceof Error ? error : new Error(String(error)),
-      );
-      throw new Error(
-        `无法生成缓存键: ${error instanceof Error ? error.message : '未知错误'}`,
-      );
+      logger.error('生成缓存键时出错:', error instanceof Error ? error : new Error(String(error)));
+      throw new Error(`无法生成缓存键: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   },
   validateKey: (key: string): boolean => {
@@ -115,16 +106,9 @@ export const defaultCacheKeyStrategy: CacheKeyStrategy = {
  */
 export const simpleCacheKeyStrategy: CacheKeyStrategy = {
   name: 'simple',
-  generateKey: (
-    toolId: string,
-    parameters: Record<string, unknown>,
-  ): string => {
+  generateKey: (toolId: string, parameters: Record<string, unknown>): string => {
     const paramsStr = JSON.stringify(parameters);
-    const hash = crypto
-      .createHash('md5')
-      .update(paramsStr)
-      .digest('hex')
-      .substring(0, 8);
+    const hash = crypto.createHash('md5').update(paramsStr).digest('hex').substring(0, 8);
     return `${toolId}_${hash}`;
   },
   validateKey: (key: string): boolean => {
@@ -148,10 +132,7 @@ export const simpleCacheKeyStrategy: CacheKeyStrategy = {
  */
 export const hierarchicalCacheKeyStrategy: CacheKeyStrategy = {
   name: 'hierarchical',
-  generateKey: (
-    toolId: string,
-    parameters: Record<string, unknown>,
-  ): string => {
+  generateKey: (toolId: string, parameters: Record<string, unknown>): string => {
     try {
       // 提取可能的命名空间
       const namespace = (parameters.namespace as string) || 'default';
@@ -326,10 +307,7 @@ export class CacheKeyManagerImpl implements CacheKeyManager {
   /**
    * 生成批量清理的键列表
    */
-  generateKeysForTool(
-    toolId: string,
-    parametersList: Record<string, unknown>[],
-  ): string[] {
+  generateKeysForTool(toolId: string, parametersList: Record<string, unknown>[]): string[] {
     if (!toolId) {
       throw new Error('工具ID不能为空');
     }
@@ -373,21 +351,14 @@ export class CacheKeyUtils {
   /**
    * 从键列表中过滤出特定工具的键
    */
-  static filterKeysForTool(
-    keys: string[],
-    toolId: string,
-    keyManager: CacheKeyManager,
-  ): string[] {
+  static filterKeysForTool(keys: string[], toolId: string, keyManager: CacheKeyManager): string[] {
     return keys.filter((key) => keyManager.isKeyForTool(key, toolId));
   }
 
   /**
    * 按工具ID分组键
    */
-  static groupKeysByTool(
-    keys: string[],
-    keyManager: CacheKeyManager,
-  ): Record<string, string[]> {
+  static groupKeysByTool(keys: string[], keyManager: CacheKeyManager): Record<string, string[]> {
     const groups: Record<string, string[]> = {};
 
     for (const key of keys) {

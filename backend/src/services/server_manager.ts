@@ -1,15 +1,13 @@
-import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import type {
-  ServerManager as IServerManager,
-  ServerConnection,
-  Tool,
-} from '../types/mcp-hub.js';
+
 import { ServerStatus } from '../types/mcp-hub.js';
 import { logger } from '../utils/logger.js';
+
+import type { ServerManager as IServerManager, ServerConnection, Tool } from '../types/mcp-hub.js';
+import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 
 export class ServerManager implements IServerManager {
   private servers: Map<string, ServerConnection> = new Map();
@@ -49,8 +47,8 @@ export class ServerManager implements IServerManager {
       serverCount: this.serverConfigs.size,
     });
 
-    const initPromises = Array.from(this.serverConfigs.entries()).map(
-      ([serverId, config]) => this.initializeServer(serverId, config),
+    const initPromises = Array.from(this.serverConfigs.entries()).map(([serverId, config]) =>
+      this.initializeServer(serverId, config),
     );
 
     // Initialize all servers concurrently, but don't fail if some fail
@@ -66,10 +64,7 @@ export class ServerManager implements IServerManager {
     });
   }
 
-  private async initializeServer(
-    serverId: string,
-    config: ServerConfig,
-  ): Promise<void> {
+  private async initializeServer(serverId: string, config: ServerConfig): Promise<void> {
     // Skip disabled servers
     if (config.enabled === false) {
       logger.info('Skipping disabled server', { serverId });
@@ -106,9 +101,7 @@ export class ServerManager implements IServerManager {
     }
   }
 
-  private async connectServer(
-    serverConnection: ServerConnection,
-  ): Promise<void> {
+  private async connectServer(serverConnection: ServerConnection): Promise<void> {
     const { id: serverId, config } = serverConnection;
 
     try {
@@ -143,9 +136,7 @@ export class ServerManager implements IServerManager {
     }
   }
 
-  private async connectStdioServer(
-    serverConnection: ServerConnection,
-  ): Promise<void> {
+  private async connectStdioServer(serverConnection: ServerConnection): Promise<void> {
     const { config, client } = serverConnection;
 
     if (config.type !== 'stdio' && !('command' in config)) {
@@ -171,9 +162,7 @@ export class ServerManager implements IServerManager {
     await client.connect(transport);
   }
 
-  private async connectSseServer(
-    serverConnection: ServerConnection,
-  ): Promise<void> {
+  private async connectSseServer(serverConnection: ServerConnection): Promise<void> {
     const { config, client } = serverConnection;
 
     if (config.type !== 'sse' || !('url' in config)) {
@@ -188,9 +177,7 @@ export class ServerManager implements IServerManager {
     await client.connect(transport);
   }
 
-  private async connectStreamingServer(
-    serverConnection: ServerConnection,
-  ): Promise<void> {
+  private async connectStreamingServer(serverConnection: ServerConnection): Promise<void> {
     const { config, client } = serverConnection;
 
     if (config.type !== 'streaming' || !('url' in config)) {
@@ -205,9 +192,7 @@ export class ServerManager implements IServerManager {
     await client.connect(transport);
   }
 
-  private async discoverServerTools(
-    serverConnection: ServerConnection,
-  ): Promise<void> {
+  private async discoverServerTools(serverConnection: ServerConnection): Promise<void> {
     const { id: serverId, client } = serverConnection;
 
     try {
@@ -274,9 +259,7 @@ export class ServerManager implements IServerManager {
     }
 
     if (server.status !== ServerStatus.CONNECTED) {
-      throw new Error(
-        `Server ${serverId} is not connected (status: ${server.status})`,
-      );
+      throw new Error(`Server ${serverId} is not connected (status: ${server.status})`);
     }
 
     try {
@@ -352,68 +335,63 @@ export class ServerManager implements IServerManager {
 
     const SHUTDOWN_TIMEOUT = 5000; // 5 秒超时
 
-    const shutdownPromises = Array.from(this.servers.values()).map(
-      async (server) => {
-        try {
-          if (server.status === ServerStatus.CONNECTED) {
-            // 使用 Promise.race 添加超时保护
-            let timeoutId: NodeJS.Timeout | undefined;
-            await Promise.race([
-              server.client.close(),
-              new Promise<void>((_, reject) => {
-                timeoutId = setTimeout(
-                  () => reject(new Error('关闭超时')),
-                  SHUTDOWN_TIMEOUT,
-                );
-                timeoutId.unref?.();
-              }),
-            ]);
-            if (timeoutId) {
-              clearTimeout(timeoutId);
-            }
-            logger.logServerConnection(server.id, 'disconnected');
+    const shutdownPromises = Array.from(this.servers.values()).map(async (server) => {
+      try {
+        if (server.status === ServerStatus.CONNECTED) {
+          // 使用 Promise.race 添加超时保护
+          let timeoutId: NodeJS.Timeout | undefined;
+          await Promise.race([
+            server.client.close(),
+            new Promise<void>((_, reject) => {
+              timeoutId = setTimeout(() => reject(new Error('关闭超时')), SHUTDOWN_TIMEOUT);
+              timeoutId.unref?.();
+            }),
+          ]);
+          if (timeoutId) {
+            clearTimeout(timeoutId);
           }
-        } catch (error) {
-          logger.error('Error during server shutdown', error as Error, {
+          logger.logServerConnection(server.id, 'disconnected');
+        }
+      } catch (error) {
+        logger.error('Error during server shutdown', error as Error, {
+          serverId: server.id,
+        });
+
+        // 强制清理：如果是 stdio transport，尝试杀死进程
+        const errorMessage = (error as Error).message;
+        if (errorMessage === '关闭超时' || errorMessage.includes('timeout')) {
+          logger.warn('服务器关闭超时，尝试强制终止进程', {
             serverId: server.id,
           });
 
-          // 强制清理：如果是 stdio transport，尝试杀死进程
-          const errorMessage = (error as Error).message;
-          if (errorMessage === '关闭超时' || errorMessage.includes('timeout')) {
-            logger.warn('服务器关闭超时，尝试强制终止进程', {
-              serverId: server.id,
-            });
-
-            // 尝试访问并杀死子进程
-            try {
-              const transport = (
-                server.client as {
-                  transport?: {
-                    process?: { kill: (sig: string) => void; pid?: number };
-                  };
-                }
-              ).transport;
-              if (transport?.process) {
-                transport.process.kill('SIGKILL');
-                logger.warn('已强制杀死服务器进程', {
-                  serverId: server.id,
-                  pid: transport.process.pid,
-                });
-              } else {
-                logger.warn('无法访问服务器进程，可能已经终止', {
-                  serverId: server.id,
-                });
+          // 尝试访问并杀死子进程
+          try {
+            const transport = (
+              server.client as {
+                transport?: {
+                  process?: { kill: (sig: string) => void; pid?: number };
+                };
               }
-            } catch (killError) {
-              logger.error('强制终止进程失败', killError as Error, {
+            ).transport;
+            if (transport?.process) {
+              transport.process.kill('SIGKILL');
+              logger.warn('已强制杀死服务器进程', {
+                serverId: server.id,
+                pid: transport.process.pid,
+              });
+            } else {
+              logger.warn('无法访问服务器进程，可能已经终止', {
                 serverId: server.id,
               });
             }
+          } catch (killError) {
+            logger.error('强制终止进程失败', killError as Error, {
+              serverId: server.id,
+            });
           }
         }
-      },
-    );
+      }
+    });
 
     await Promise.allSettled(shutdownPromises);
     this.servers.clear();

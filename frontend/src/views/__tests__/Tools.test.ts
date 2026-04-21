@@ -2,8 +2,10 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryHistory, createRouter } from 'vue-router';
-import type { ToolExecution, ToolInfo } from '@/types/tool';
+
 import Tools from '../Tools.vue';
+
+import type { ToolExecution, ToolInfo } from '@/types/tool';
 
 // Mock child components
 vi.mock('@/components/tools/ToolList.vue', () => ({
@@ -254,9 +256,7 @@ describe('Tools', () => {
     });
 
     const vm = wrapper.vm as Record<string, unknown>;
-    const handleSearchChange = vm.handleSearchChange as (
-      value: string | number,
-    ) => void;
+    const handleSearchChange = vm.handleSearchChange as (value: string | number) => void;
     handleSearchChange('test-search');
 
     expect(mockUpdateFilters).toHaveBeenCalledWith({ search: 'test-search' });

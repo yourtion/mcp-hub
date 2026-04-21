@@ -1,9 +1,6 @@
 import { serve } from '@hono/node-server';
-import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share/config';
-import {
-  initializeDashboardServices,
-  shutdownDashboardServices,
-} from './api/dashboard/index.js';
+
+import { initializeDashboardServices, shutdownDashboardServices } from './api/dashboard/index.js';
 import { shutdownHubApi } from './api/hub.js';
 import { shutdownGroupMcpRouter } from './api/mcp/group-router.js';
 import { shutdownServersApi } from './api/servers/index.js';
@@ -19,6 +16,8 @@ import { getAllConfig } from './utils/config.js';
 import { logger } from './utils/logger.js';
 import { validateAllConfigs } from './validation/config.js';
 
+import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share/config';
+
 let httpServer: ReturnType<typeof serve> | null = null;
 
 /**
@@ -31,14 +30,8 @@ async function validateConfigurations() {
     const config = await getAllConfig();
 
     const systemConfigToValidate =
-      config.system && Object.keys(config.system).length > 0
-        ? config.system
-        : undefined;
-    const validationResult = validateAllConfigs(
-      config.mcps,
-      config.groups,
-      systemConfigToValidate,
-    );
+      config.system && Object.keys(config.system).length > 0 ? config.system : undefined;
+    const validationResult = validateAllConfigs(config.mcps, config.groups, systemConfigToValidate);
 
     if (!validationResult.success) {
       const errorMessage = `配置验证失败: ${validationResult.errors.join(', ')}`;
@@ -83,10 +76,7 @@ async function initializeHubService(validatedConfig: {
     const initPromise = service.initialize();
     let timeoutId: NodeJS.Timeout | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(
-        () => reject(new Error('MCP Hub 服务初始化超时 (60秒)')),
-        60000,
-      );
+      timeoutId = setTimeout(() => reject(new Error('MCP Hub 服务初始化超时 (60秒)')), 60000);
       timeoutId.unref?.();
     });
 

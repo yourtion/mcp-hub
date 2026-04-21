@@ -5,15 +5,11 @@
 
 import jsonata from 'jsonata';
 import { z } from 'zod/v4';
+
+import { ApiToolConfigSchema, ApiToolsConfigSchema } from './api-config-schemas.js';
+
 import type { ApiToolConfig, ApiToolsConfig } from '../types/api-config.js';
-import type {
-  ValidationResult,
-  ValidationResultWithData,
-} from '../types/api-tool.js';
-import {
-  ApiToolConfigSchema,
-  ApiToolsConfigSchema,
-} from './api-config-schemas.js';
+import type { ValidationResult, ValidationResultWithData } from '../types/api-tool.js';
 
 /**
  * 配置验证器接口
@@ -23,17 +19,13 @@ export interface ConfigValidator {
    * 验证完整的API工具配置文件
    * @param config 配置对象
    */
-  validateApiToolsConfig(
-    config: unknown,
-  ): ValidationResultWithData<ApiToolsConfig>;
+  validateApiToolsConfig(config: unknown): ValidationResultWithData<ApiToolsConfig>;
 
   /**
    * 验证单个API工具配置
    * @param config 单个工具配置
    */
-  validateApiToolConfig(
-    config: unknown,
-  ): ValidationResultWithData<ApiToolConfig>;
+  validateApiToolConfig(config: unknown): ValidationResultWithData<ApiToolConfig>;
 
   /**
    * 验证JSONata表达式语法
@@ -52,25 +44,18 @@ export interface ConfigValidator {
    * @param schema Zod schema
    * @param data 要验证的数据
    */
-  validateWithSchema<T>(
-    schema: z.ZodType<T>,
-    data: unknown,
-  ): ValidationResultWithData<T>;
+  validateWithSchema<T>(schema: z.ZodType<T>, data: unknown): ValidationResultWithData<T>;
 }
 
 /**
  * 配置验证器实现类
  */
 export class ConfigValidatorImpl implements ConfigValidator {
-  validateApiToolsConfig(
-    config: unknown,
-  ): ValidationResultWithData<ApiToolsConfig> {
+  validateApiToolsConfig(config: unknown): ValidationResultWithData<ApiToolsConfig> {
     return this.validateWithSchema(ApiToolsConfigSchema, config);
   }
 
-  validateApiToolConfig(
-    config: unknown,
-  ): ValidationResultWithData<ApiToolConfig> {
+  validateApiToolConfig(config: unknown): ValidationResultWithData<ApiToolConfig> {
     return this.validateWithSchema(ApiToolConfigSchema, config);
   }
 
@@ -128,8 +113,7 @@ export class ConfigValidatorImpl implements ConfigValidator {
         errors: [
           {
             path: 'jsonata',
-            message:
-              error instanceof Error ? error.message : 'JSONata表达式验证失败',
+            message: error instanceof Error ? error.message : 'JSONata表达式验证失败',
             code: 'VALIDATION_ERROR',
           },
         ],
@@ -158,10 +142,7 @@ export class ConfigValidatorImpl implements ConfigValidator {
     }
   }
 
-  validateWithSchema<T>(
-    schema: z.ZodType<T>,
-    data: unknown,
-  ): ValidationResultWithData<T> {
+  validateWithSchema<T>(schema: z.ZodType<T>, data: unknown): ValidationResultWithData<T> {
     try {
       const validatedData = schema.parse(data);
       return {

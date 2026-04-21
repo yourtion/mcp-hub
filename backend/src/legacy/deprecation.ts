@@ -1,5 +1,6 @@
-import type { MiddlewareHandler } from 'hono';
 import { logger } from '../utils/logger.js';
+
+import type { MiddlewareHandler } from 'hono';
 
 /**
  * Deprecation 中间件 - 为 legacy 端点添加弃用标记

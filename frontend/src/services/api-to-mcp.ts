@@ -1,3 +1,5 @@
+import api, { handleApiResponse } from './api';
+
 import type { ApiResponse } from '@/types/api';
 import type {
   ApiConfigListResponse,
@@ -9,7 +11,6 @@ import type {
   TestApiConfigResponse,
   UpdateApiConfigRequest,
 } from '@/types/api-to-mcp';
-import api, { handleApiResponse } from './api';
 
 /**
  * API到MCP服务类
@@ -19,9 +20,7 @@ export class ApiToMcpService {
    * 获取API配置列表
    */
   async getConfigs(): Promise<ApiConfigListResponse> {
-    const response = await api.get<ApiResponse<ApiConfigListResponse>>(
-      '/api-to-mcp/configs',
-    );
+    const response = await api.get<ApiResponse<ApiConfigListResponse>>('/api-to-mcp/configs');
     return handleApiResponse(response);
   }
 
@@ -29,9 +28,7 @@ export class ApiToMcpService {
    * 获取API配置详情
    */
   async getConfigDetails(configId: string): Promise<ApiToolConfig> {
-    const response = await api.get<ApiResponse<ApiToolConfig>>(
-      `/api-to-mcp/configs/${configId}`,
-    );
+    const response = await api.get<ApiResponse<ApiToolConfig>>(`/api-to-mcp/configs/${configId}`);
     return handleApiResponse(response);
   }
 
@@ -65,12 +62,10 @@ export class ApiToMcpService {
   /**
    * 删除API配置
    */
-  async deleteConfig(
-    configId: string,
-  ): Promise<{ id: string; message: string }> {
-    const response = await api.delete<
-      ApiResponse<{ id: string; message: string }>
-    >(`/api-to-mcp/configs/${configId}`);
+  async deleteConfig(configId: string): Promise<{ id: string; message: string }> {
+    const response = await api.delete<ApiResponse<{ id: string; message: string }>>(
+      `/api-to-mcp/configs/${configId}`,
+    );
     return handleApiResponse(response);
   }
 
@@ -105,23 +100,26 @@ export class ApiToMcpService {
         formData.append('options', JSON.stringify(importConfig.options));
       }
 
-      const response = await api.post<
-        ApiResponse<{ configs: ApiToolConfig[]; message: string }>
-      >('/api-to-mcp/configs/import', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
+      const response = await api.post<ApiResponse<{ configs: ApiToolConfig[]; message: string }>>(
+        '/api-to-mcp/configs/import',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         },
-      });
+      );
       return handleApiResponse(response);
     } else {
       // 字符串源（如URL或JSON）
-      const response = await api.post<
-        ApiResponse<{ configs: ApiToolConfig[]; message: string }>
-      >('/api-to-mcp/configs/import', {
-        source: importConfig.source,
-        format: importConfig.format,
-        options: importConfig.options,
-      });
+      const response = await api.post<ApiResponse<{ configs: ApiToolConfig[]; message: string }>>(
+        '/api-to-mcp/configs/import',
+        {
+          source: importConfig.source,
+          format: importConfig.format,
+          options: importConfig.options,
+        },
+      );
       return handleApiResponse(response);
     }
   }
@@ -156,9 +154,10 @@ export class ApiToMcpService {
   async generateToolPreview(
     configId: string,
   ): Promise<{ tools: McpToolPreview[]; message: string }> {
-    const response = await api.post<
-      ApiResponse<{ tools: McpToolPreview[]; message: string }>
-    >(`/api/to-mcp/configs/${configId}/preview`, {});
+    const response = await api.post<ApiResponse<{ tools: McpToolPreview[]; message: string }>>(
+      `/api/to-mcp/configs/${configId}/preview`,
+      {},
+    );
     return handleApiResponse(response);
   }
 

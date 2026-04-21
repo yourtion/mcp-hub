@@ -8,11 +8,7 @@ import type {
   ToolExecutionEvent,
 } from '@/types/dashboard';
 
-export type SSEEventType =
-  | 'server_status'
-  | 'tool_execution'
-  | 'system_alert'
-  | 'health_check';
+export type SSEEventType = 'server_status' | 'tool_execution' | 'system_alert' | 'health_check';
 
 export type SSEEventHandler<T = unknown> = (event: T) => void;
 
@@ -38,10 +34,7 @@ export class SSEService {
    */
   connect(subscriptions: SSEEventType[] = []): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (
-        this.eventSource &&
-        this.eventSource.readyState === EventSource.OPEN
-      ) {
+      if (this.eventSource && this.eventSource.readyState === EventSource.OPEN) {
         resolve();
         return;
       }
@@ -145,10 +138,7 @@ export class SSEService {
   /**
    * 添加事件监听器
    */
-  addEventListener<T = unknown>(
-    eventType: SSEEventType,
-    handler: SSEEventHandler<T>,
-  ): void {
+  addEventListener<T = unknown>(eventType: SSEEventType, handler: SSEEventHandler<T>): void {
     const handlers = this.handlers.get(eventType);
     if (handlers) {
       handlers.add(handler as SSEEventHandler);
@@ -158,10 +148,7 @@ export class SSEService {
   /**
    * 移除事件监听器
    */
-  removeEventListener<T = unknown>(
-    eventType: SSEEventType,
-    handler: SSEEventHandler<T>,
-  ): void {
+  removeEventListener<T = unknown>(eventType: SSEEventType, handler: SSEEventHandler<T>): void {
     const handlers = this.handlers.get(eventType);
     if (handlers) {
       handlers.delete(handler as SSEEventHandler);

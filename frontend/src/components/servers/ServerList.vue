@@ -36,10 +36,7 @@
       style="margin-top: var(--space-3)"
     >
       <template #name="{ row }">
-        <span
-          class="server-list__name"
-          @click="emit('edit', row)"
-        >
+        <span class="server-list__name" @click="emit('edit', row)">
           {{ row.name }}
         </span>
       </template>
@@ -86,21 +83,11 @@
           >
             <template #icon><LinkUnlinkIcon /></template>
           </t-button>
-          <t-button
-            variant="text"
-            shape="square"
-            size="small"
-            @click="emit('edit', row)"
-          >
+          <t-button variant="text" shape="square" size="small" @click="emit('edit', row)">
             <template #icon><EditIcon /></template>
           </t-button>
           <t-popconfirm content="确认删除此服务器？" @confirm="emit('delete', row.id)">
-            <t-button
-              variant="text"
-              shape="square"
-              size="small"
-              theme="danger"
-            >
+            <t-button variant="text" shape="square" size="small" theme="danger">
               <template #icon><DeleteIcon /></template>
             </t-button>
           </t-popconfirm>
@@ -130,7 +117,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
 import {
   SearchIcon,
   LinkIcon,
@@ -139,6 +125,8 @@ import {
   DeleteIcon,
   ServerIcon,
 } from 'tdesign-icons-vue-next';
+import { ref, computed } from 'vue';
+
 import type { ServerInfo, ServerStatus } from '@/types/server';
 
 const props = defineProps<{
@@ -178,9 +166,7 @@ const filteredServers = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     result = result.filter(
-      (s) =>
-        s.name.toLowerCase().includes(query) ||
-        s.id.toLowerCase().includes(query),
+      (s) => s.name.toLowerCase().includes(query) || s.id.toLowerCase().includes(query),
     );
   }
 

@@ -1,12 +1,7 @@
 <template>
   <header class="app-header">
     <div class="app-header__left">
-      <Button
-        variant="text"
-        shape="square"
-        size="medium"
-        @click="$emit('toggle-sidebar')"
-      >
+      <Button variant="text" shape="square" size="medium" @click="$emit('toggle-sidebar')">
         <template #icon>
           <MenuUnfoldIcon v-if="collapsed" />
           <MenuFoldIcon v-else />
@@ -16,22 +11,14 @@
     </div>
     <div class="app-header__right">
       <div class="app-header__theme-btn">
-        <Button
-          variant="text"
-          shape="square"
-          size="medium"
-          @click="toggleTheme"
-        >
+        <Button variant="text" shape="square" size="medium" @click="toggleTheme">
           <template #icon>
             <SunnyIcon v-if="isDark" />
             <MoonIcon v-else />
           </template>
         </Button>
       </div>
-      <Dropdown
-        :options="userDropdownOptions"
-        @click="handleDropdownClick"
-      >
+      <Dropdown :options="userDropdownOptions" @click="handleDropdownClick">
         <div class="app-header__user-btn">
           <Button variant="text" size="medium">
             <template #icon>
@@ -48,8 +35,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { Button, Dropdown } from 'tdesign-vue-next';
 import {
   MenuFoldIcon,
   MenuUnfoldIcon,
@@ -58,9 +43,12 @@ import {
   UserIcon,
   PoweroffIcon,
 } from 'tdesign-icons-vue-next';
+import { Button, Dropdown } from 'tdesign-vue-next';
+import { computed } from 'vue';
+
+import Breadcrumb from './Breadcrumb.vue';
 import { useTheme } from '@/composables/useTheme';
 import { useAuthStore } from '@/stores/auth';
-import Breadcrumb from './Breadcrumb.vue';
 
 defineProps<{
   collapsed: boolean;

@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger.js';
+
 import type {
   ActivityEvent,
   HealthCheckEvent,
@@ -6,7 +8,6 @@ import type {
   SystemAlertEvent,
   ToolExecutionEvent,
 } from '../types/dashboard.js';
-import { logger } from '../utils/logger.js';
 
 /**
  * SSE客户端连接信息
@@ -142,10 +143,7 @@ export class SSEEventManager {
 
     // 发送给所有订阅的客户端
     for (const [clientId, client] of this.clients) {
-      if (
-        client.subscriptions.size === 0 ||
-        client.subscriptions.has(event.type)
-      ) {
+      if (client.subscriptions.size === 0 || client.subscriptions.has(event.type)) {
         this.sendToClient(clientId, event);
       }
     }
@@ -267,10 +265,7 @@ export class SSEEventManager {
   /**
    * 更新客户端订阅
    */
-  updateClientSubscriptions(
-    clientId: string,
-    subscriptions: string[],
-  ): boolean {
+  updateClientSubscriptions(clientId: string, subscriptions: string[]): boolean {
     const client = this.clients.get(clientId);
     if (!client) {
       return false;
@@ -383,10 +378,7 @@ export class SSEEventManager {
     const recentEvents = this.eventHistory.slice(-10); // 最近10个事件
 
     for (const event of recentEvents) {
-      if (
-        client.subscriptions.size === 0 ||
-        client.subscriptions.has(event.type)
-      ) {
+      if (client.subscriptions.size === 0 || client.subscriptions.has(event.type)) {
         this.sendToClient(clientId, event);
       }
     }

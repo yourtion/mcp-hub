@@ -82,10 +82,7 @@ export const SecurityConfigSchema = z.object({
 /**
  * 缓存键生成函数类型
  */
-export type CacheKeyGenerator = (
-  toolId: string,
-  parameters: Record<string, unknown>,
-) => string;
+export type CacheKeyGenerator = (toolId: string, parameters: Record<string, unknown>) => string;
 
 /**
  * 缓存配置的Zod schema
@@ -143,9 +140,7 @@ const JsonSchemaPropertySchema: z.ZodType<JsonSchemaProperty> = z.lazy(() =>
     items: JsonSchemaPropertySchema.optional(),
     properties: z.record(z.string(), JsonSchemaPropertySchema).optional(),
     required: z.array(z.string()).optional(),
-    additionalProperties: z
-      .union([z.boolean(), JsonSchemaPropertySchema])
-      .optional(),
+    additionalProperties: z.union([z.boolean(), JsonSchemaPropertySchema]).optional(),
   }),
 );
 

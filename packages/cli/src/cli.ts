@@ -6,8 +6,9 @@
  */
 
 import { CliConfigManager } from './config/cli-config-manager';
-import type { ConfigTemplateType } from './config/config-template';
 import { CliMcpServer } from './server/cli-mcp-server';
+
+import type { ConfigTemplateType } from './config/config-template';
 import type { CliError } from './types';
 
 /**
@@ -76,11 +77,7 @@ function parseArgs(args: string[]): CliOptions {
       case '--template':
         if (i + 1 < args.length) {
           const templateType = args[++i] as ConfigTemplateType;
-          if (
-            ['basic', 'advanced', 'development', 'production'].includes(
-              templateType,
-            )
-          ) {
+          if (['basic', 'advanced', 'development', 'production'].includes(templateType)) {
             options.templateType = templateType;
           } else {
             throw new Error(`无效的模板类型: ${templateType}`);
@@ -109,10 +106,7 @@ function parseArgs(args: string[]): CliOptions {
         break;
       default:
         // 如果不是选项，则作为配置文件路径
-        if (
-          !arg.startsWith('-') &&
-          options.configPath === './mcp_service.json'
-        ) {
+        if (!arg.startsWith('-') && options.configPath === './mcp_service.json') {
           options.configPath = arg;
         }
         break;
@@ -294,9 +288,7 @@ async function initConfig(
     console.log('\n📝 下一步:');
     console.log('  1. 根据需要修改配置文件');
     console.log('  2. 运行: mcp-hub');
-    console.log(
-      '\n💡 提示: 使用 mcp-hub --list-presets 查看所有可用的服务器预设',
-    );
+    console.log('\n💡 提示: 使用 mcp-hub --list-presets 查看所有可用的服务器预设');
   }
 }
 

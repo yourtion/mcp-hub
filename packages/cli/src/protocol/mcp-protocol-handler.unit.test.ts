@@ -2,9 +2,11 @@
  * MCP协议处理器单元测试
  */
 
-import type { McpServiceManager } from '@mcp-core/mcp-hub-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { McpErrorCode, McpProtocolHandler } from './mcp-protocol-handler';
+
+import type { McpServiceManager } from '@mcp-core/mcp-hub-core';
 
 // Mock核心服务管理器
 const mockCoreService = {
@@ -79,13 +81,9 @@ describe('McpProtocolHandler', () => {
     });
 
     it('应该在获取工具失败时抛出MCP错误', async () => {
-      vi.mocked(mockCoreService.getAllTools).mockRejectedValue(
-        new Error('获取失败'),
-      );
+      vi.mocked(mockCoreService.getAllTools).mockRejectedValue(new Error('获取失败'));
 
-      await expect(handler.handleListTools()).rejects.toThrow(
-        '获取工具列表失败',
-      );
+      await expect(handler.handleListTools()).rejects.toThrow('获取工具列表失败');
     });
   });
 
@@ -144,13 +142,9 @@ describe('McpProtocolHandler', () => {
       const args = {};
 
       vi.mocked(mockCoreService.isToolAvailable).mockResolvedValue(true);
-      vi.mocked(mockCoreService.executeToolCall).mockRejectedValue(
-        new Error('执行异常'),
-      );
+      vi.mocked(mockCoreService.executeToolCall).mockRejectedValue(new Error('执行异常'));
 
-      await expect(handler.handleCallTool(toolName, args)).rejects.toThrow(
-        '工具执行失败',
-      );
+      await expect(handler.handleCallTool(toolName, args)).rejects.toThrow('工具执行失败');
     });
   });
 
@@ -163,9 +157,7 @@ describe('McpProtocolHandler', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('协议错误');
-      expect(result.content[0].text).toContain(
-        McpErrorCode.TOOL_NOT_FOUND.toString(),
-      );
+      expect(result.content[0].text).toContain(McpErrorCode.TOOL_NOT_FOUND.toString());
     });
 
     it('应该处理普通错误', () => {
@@ -201,9 +193,7 @@ describe('McpProtocolHandler', () => {
     });
 
     it('应该在参数不是对象时抛出错误', () => {
-      expect(() => handler.validateCallToolParams(null)).toThrow(
-        '请求参数无效：参数必须是对象',
-      );
+      expect(() => handler.validateCallToolParams(null)).toThrow('请求参数无效：参数必须是对象');
       expect(() => handler.validateCallToolParams('string')).toThrow(
         '请求参数无效：参数必须是对象',
       );
@@ -234,9 +224,7 @@ describe('McpProtocolHandler', () => {
         activeConnections: 2,
       };
 
-      vi.mocked(mockCoreService.getServiceStatus).mockReturnValue(
-        mockServiceStatus,
-      );
+      vi.mocked(mockCoreService.getServiceStatus).mockReturnValue(mockServiceStatus);
 
       const status = handler.getStatus();
 

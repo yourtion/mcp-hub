@@ -3,6 +3,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { type SecurityEvent, SecurityEventType } from '../../types/security.js';
 import { SecurityLoggerImpl } from './security-logger.js';
 
@@ -99,24 +100,14 @@ describe('SecurityLoggerImpl', () => {
     it('应该记录认证失败事件', async () => {
       const error = new Error('认证失败');
 
-      securityLogger.logAuthFailure(
-        'test-tool',
-        'client-123',
-        error,
-        '192.168.1.1',
-      );
+      securityLogger.logAuthFailure('test-tool', 'client-123', error, '192.168.1.1');
 
       const stats = await securityLogger.getSecurityStats(3600);
       expect(stats.authFailures).toBe(1);
     });
 
     it('应该记录访问被拒绝事件', async () => {
-      securityLogger.logAccessDenied(
-        'test-tool',
-        'client-123',
-        '域名不在白名单',
-        '192.168.1.1',
-      );
+      securityLogger.logAccessDenied('test-tool', 'client-123', '域名不在白名单', '192.168.1.1');
 
       const stats = await securityLogger.getSecurityStats(3600);
       expect(stats.accessDenied).toBe(1);
@@ -163,11 +154,7 @@ describe('SecurityLoggerImpl', () => {
       });
 
       // 记录一些安全事件
-      securityLogger.logAuthFailure(
-        'test-tool',
-        'client-123',
-        new Error('认证失败'),
-      );
+      securityLogger.logAuthFailure('test-tool', 'client-123', new Error('认证失败'));
 
       const stats = await securityLogger.getSecurityStats(3600); // 1小时
 
@@ -248,9 +235,7 @@ describe('SecurityLoggerImpl', () => {
 
       // 应该触发多次认证失败告警
       expect(alerts.length).toBeGreaterThan(0);
-      expect(
-        alerts.some((alert) => alert.type === 'MULTIPLE_AUTH_FAILURES'),
-      ).toBe(true);
+      expect(alerts.some((alert) => alert.type === 'MULTIPLE_AUTH_FAILURES')).toBe(true);
     });
 
     it('应该在可疑活动时触发告警', () => {
@@ -292,9 +277,7 @@ describe('SecurityLoggerImpl', () => {
 
       // 应该触发频率限制滥用告警
       expect(alerts.length).toBeGreaterThan(0);
-      expect(alerts.some((alert) => alert.type === 'RATE_LIMIT_ABUSE')).toBe(
-        true,
-      );
+      expect(alerts.some((alert) => alert.type === 'RATE_LIMIT_ABUSE')).toBe(true);
     });
   });
 

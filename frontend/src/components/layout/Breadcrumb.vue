@@ -12,10 +12,10 @@
 </template>
 
 <script setup lang="ts">
+import { HomeIcon, ChevronRightIcon } from 'tdesign-icons-vue-next';
+import { Breadcrumb, BreadcrumbItem } from 'tdesign-vue-next';
 import { computed, h } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Breadcrumb, BreadcrumbItem } from 'tdesign-vue-next';
-import { HomeIcon, ChevronRightIcon } from 'tdesign-icons-vue-next';
 
 interface BreadcrumbCrumb {
   path: string;

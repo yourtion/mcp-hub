@@ -4,11 +4,8 @@
 
 import { LogLevel } from '@mcp-core/mcp-hub-share';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  CliLogger,
-  createCliLoggerFromOptions,
-  DEFAULT_CLI_LOGGER_CONFIG,
-} from './logger';
+
+import { CliLogger, createCliLoggerFromOptions, DEFAULT_CLI_LOGGER_CONFIG } from './logger';
 
 describe('CliLogger', () => {
   let logger: CliLogger;
@@ -34,34 +31,26 @@ describe('CliLogger', () => {
   it('应该记录成功消息', () => {
     logger.success('操作成功');
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('✅ 操作成功'),
-    );
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('✅ 操作成功'));
   });
 
   it('应该记录警告消息', () => {
     logger.warning('这是一个警告');
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('⚠️  这是一个警告'),
-    );
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('⚠️  这是一个警告'));
   });
 
   it('应该记录失败消息', () => {
     const error = new Error('测试错误');
     logger.failure('操作失败', error);
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('❌ 操作失败'),
-    );
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('❌ 操作失败'));
   });
 
   it('应该记录进度消息', () => {
     logger.progress('正在处理...');
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('🔄 正在处理...'),
-    );
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('🔄 正在处理...'));
   });
 
   it('应该显示启动横幅', () => {
@@ -82,12 +71,8 @@ describe('CliLogger', () => {
 
     nonTestLogger.showBanner('1.0.0');
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('MCP Hub CLI'),
-    );
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('版本 1.0.0'),
-    );
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('MCP Hub CLI'));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('版本 1.0.0'));
 
     // 恢复环境变量
     if (originalEnv) process.env.NODE_ENV = originalEnv;
@@ -104,9 +89,7 @@ describe('CliLogger', () => {
     logger.showConfig(config);
 
     // 只检查 info 日志调用，因为在测试环境中 console.log 被阻止
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('当前配置:'),
-    );
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('当前配置:'));
   });
 
   it('应该显示服务器列表', () => {
@@ -118,9 +101,7 @@ describe('CliLogger', () => {
     logger.showServers(servers);
 
     // 只检查 info 日志调用，因为在测试环境中 console.log 被阻止
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('已配置的服务器:'),
-    );
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('已配置的服务器:'));
   });
 
   it('应该显示工具列表', () => {
@@ -132,9 +113,7 @@ describe('CliLogger', () => {
     logger.showTools(tools);
 
     // 只检查 info 日志调用，因为在测试环境中 console.log 被阻止
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('可用工具:'),
-    );
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('可用工具:'));
   });
 
   it('应该显示帮助信息', () => {
@@ -160,9 +139,7 @@ describe('CliLogger', () => {
 
     nonTestLogger.showHelp(commands);
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('可用命令:'),
-    );
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('可用命令:'));
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining('start                启动MCP服务器'),
     );

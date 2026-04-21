@@ -1,3 +1,5 @@
+import api, { handleApiResponse } from './api';
+
 import type { ApiResponse } from '@/types/api';
 import type {
   ToolErrorResponse,
@@ -15,14 +17,11 @@ import type {
   ToolTestRequest,
   ToolTestResponse,
 } from '@/types/tool';
-import api, { handleApiResponse } from './api';
 
 /**
  * 获取工具列表
  */
-export async function getTools(
-  params?: ToolFilterParams,
-): Promise<ToolListResponse> {
+export async function getTools(params?: ToolFilterParams): Promise<ToolListResponse> {
   const response = await api.get<ApiResponse<ToolListResponse>>('/tools', {
     params,
   });
@@ -36,22 +35,16 @@ export async function getToolsByServer(
   serverId: string,
   groupId?: string,
 ): Promise<ToolListResponse> {
-  const response = await api.get<ApiResponse<ToolListResponse>>(
-    `/tools/server/${serverId}`,
-    {
-      params: { groupId },
-    },
-  );
+  const response = await api.get<ApiResponse<ToolListResponse>>(`/tools/server/${serverId}`, {
+    params: { groupId },
+  });
   return handleApiResponse(response);
 }
 
 /**
  * 获取工具详细信息
  */
-export async function getToolDetail(
-  toolName: string,
-  groupId?: string,
-): Promise<ToolInfo> {
+export async function getToolDetail(toolName: string, groupId?: string): Promise<ToolInfo> {
   const response = await api.get<ApiResponse<ToolInfo>>(`/tools/${toolName}`, {
     params: { groupId },
   });
@@ -92,34 +85,24 @@ export async function testTool(
 export async function getToolHistory(
   params?: ToolHistoryFilterParams,
 ): Promise<ToolHistoryResponse> {
-  const response = await api.get<ApiResponse<ToolHistoryResponse>>(
-    '/tools-admin/history',
-    {
-      params,
-    },
-  );
+  const response = await api.get<ApiResponse<ToolHistoryResponse>>('/tools-admin/history', {
+    params,
+  });
   return handleApiResponse(response);
 }
 
 /**
  * 获取特定执行记录详情
  */
-export async function getExecutionDetail(
-  executionId: string,
-): Promise<ToolHistoryResponse> {
-  const response = await api.get<ApiResponse<ToolHistoryResponse>>(
-    `/tools/history/${executionId}`,
-  );
+export async function getExecutionDetail(executionId: string): Promise<ToolHistoryResponse> {
+  const response = await api.get<ApiResponse<ToolHistoryResponse>>(`/tools/history/${executionId}`);
   return handleApiResponse(response);
 }
 
 /**
  * 获取工具统计信息
  */
-export async function getToolStats(
-  groupId?: string,
-  serverId?: string,
-): Promise<ToolStats> {
+export async function getToolStats(groupId?: string, serverId?: string): Promise<ToolStats> {
   const response = await api.get<ApiResponse<ToolStats>>('/tools-admin/stats', {
     params: { groupId, serverId },
   });
@@ -129,30 +112,20 @@ export async function getToolStats(
 /**
  * 获取工具监控信息
  */
-export async function getToolMonitoring(
-  groupId?: string,
-): Promise<ToolMonitoring> {
-  const response = await api.get<ApiResponse<ToolMonitoring>>(
-    '/tools-admin/monitoring',
-    {
-      params: { groupId },
-    },
-  );
+export async function getToolMonitoring(groupId?: string): Promise<ToolMonitoring> {
+  const response = await api.get<ApiResponse<ToolMonitoring>>('/tools-admin/monitoring', {
+    params: { groupId },
+  });
   return handleApiResponse(response);
 }
 
 /**
  * 获取工具健康检查信息
  */
-export async function getToolHealth(
-  groupId?: string,
-): Promise<ToolHealthResponse> {
-  const response = await api.get<ApiResponse<ToolHealthResponse>>(
-    '/tools-admin/health',
-    {
-      params: { groupId },
-    },
-  );
+export async function getToolHealth(groupId?: string): Promise<ToolHealthResponse> {
+  const response = await api.get<ApiResponse<ToolHealthResponse>>('/tools-admin/health', {
+    params: { groupId },
+  });
   return handleApiResponse(response);
 }
 
@@ -164,12 +137,9 @@ export async function getToolPerformance(
   groupId?: string,
   serverId?: string,
 ): Promise<ToolPerformance> {
-  const response = await api.get<ApiResponse<ToolPerformance>>(
-    '/tools-admin/performance',
-    {
-      params: { timeRange, groupId, serverId },
-    },
-  );
+  const response = await api.get<ApiResponse<ToolPerformance>>('/tools-admin/performance', {
+    params: { timeRange, groupId, serverId },
+  });
   return handleApiResponse(response);
 }
 
@@ -184,11 +154,8 @@ export async function getToolErrors(params?: {
   groupId?: string;
   severity?: string;
 }): Promise<ToolErrorResponse> {
-  const response = await api.get<ApiResponse<ToolErrorResponse>>(
-    '/tools-admin/errors',
-    {
-      params,
-    },
-  );
+  const response = await api.get<ApiResponse<ToolErrorResponse>>('/tools-admin/errors', {
+    params,
+  });
   return handleApiResponse(response);
 }

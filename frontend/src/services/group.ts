@@ -1,5 +1,7 @@
 // 组管理API服务
 
+import api, { handleApiResponse } from './api';
+
 import type {
   ConfigureGroupToolsRequest,
   CreateGroupRequest,
@@ -22,7 +24,6 @@ import type {
   SetGroupValidationKeyRequest,
   UpdateGroupRequest,
 } from '@/types/group';
-import api, { handleApiResponse } from './api';
 
 /**
  * 获取组列表
@@ -43,9 +44,7 @@ export async function getGroup(groupId: string): Promise<GroupDetailInfo> {
 /**
  * 创建新组
  */
-export async function createGroup(
-  data: CreateGroupRequest,
-): Promise<GroupOperationResponse> {
+export async function createGroup(data: CreateGroupRequest): Promise<GroupOperationResponse> {
   const response = await api.post('/groups', data);
   return handleApiResponse<GroupOperationResponse>(response);
 }
@@ -76,9 +75,7 @@ export async function deleteGroup(groupId: string): Promise<{
 /**
  * 获取组的健康检查状态
  */
-export async function getGroupHealth(
-  groupId: string,
-): Promise<GroupHealthResponse> {
+export async function getGroupHealth(groupId: string): Promise<GroupHealthResponse> {
   const response = await api.get(`/groups/${groupId}/health`);
   return handleApiResponse<GroupHealthResponse>(response);
 }
@@ -86,9 +83,7 @@ export async function getGroupHealth(
 /**
  * 获取组的工具列表
  */
-export async function getGroupTools(
-  groupId: string,
-): Promise<GroupToolsResponse> {
+export async function getGroupTools(groupId: string): Promise<GroupToolsResponse> {
   const response = await api.get(`/groups/${groupId}/tools`);
   return handleApiResponse<GroupToolsResponse>(response);
 }
@@ -96,9 +91,7 @@ export async function getGroupTools(
 /**
  * 获取组的服务器列表
  */
-export async function getGroupServers(
-  groupId: string,
-): Promise<GroupServersResponse> {
+export async function getGroupServers(groupId: string): Promise<GroupServersResponse> {
   const response = await api.get(`/groups/${groupId}/servers`);
   return handleApiResponse<GroupServersResponse>(response);
 }
@@ -131,10 +124,7 @@ export async function validateGroupToolAccess(
   groupId: string,
   data: GroupToolAccessValidationRequest,
 ): Promise<GroupToolAccessValidationResponse> {
-  const response = await api.post(
-    `/groups/${groupId}/validate-tool-access`,
-    data,
-  );
+  const response = await api.post(`/groups/${groupId}/validate-tool-access`, data);
   return handleApiResponse<GroupToolAccessValidationResponse>(response);
 }
 

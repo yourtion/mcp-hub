@@ -5,8 +5,10 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod/v4';
-import type { AuthService } from '../../services/auth.js';
+
 import { successResponse } from '../../utils/api-response.js';
+
+import type { AuthService } from '../../services/auth.js';
 
 /**
  * 登录请求验证模式
@@ -60,13 +62,8 @@ export function createAuthApi(authService: AuthService) {
 
       // 记录失败登录日志
       const { username } = c.req.valid('json');
-      const ip =
-        c.req.header('X-Forwarded-For') ||
-        c.req.header('X-Real-IP') ||
-        'unknown';
-      console.warn(
-        `[AUTH] 用户登录失败: ${username} (${ip}) - ${errorMessage}`,
-      );
+      const ip = c.req.header('X-Forwarded-For') || c.req.header('X-Real-IP') || 'unknown';
+      console.warn(`[AUTH] 用户登录失败: ${username} (${ip}) - ${errorMessage}`);
 
       // 根据错误类型返回不同的错误码
       let errorCode = 'AUTH_LOGIN_FAILED';
@@ -113,8 +110,7 @@ export function createAuthApi(authService: AuthService) {
         refreshToken: result.refreshToken,
       });
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Token刷新失败';
+      const errorMessage = error instanceof Error ? error.message : 'Token刷新失败';
 
       console.warn(`[AUTH] Token刷新失败: ${errorMessage}`);
 
@@ -301,8 +297,7 @@ export function createAuthApi(authService: AuthService) {
         },
       });
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : '获取用户信息失败';
+      const errorMessage = error instanceof Error ? error.message : '获取用户信息失败';
 
       let errorCode = 'AUTH_INVALID_TOKEN';
       const statusCode = 401;

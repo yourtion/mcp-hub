@@ -108,12 +108,7 @@ export interface LogQuery {
 
 // SSE事件类型
 export interface SSEEvent {
-  type:
-    | 'server_status'
-    | 'tool_execution'
-    | 'system_alert'
-    | 'activity'
-    | 'health_check';
+  type: 'server_status' | 'tool_execution' | 'system_alert' | 'activity' | 'health_check';
   data: unknown;
   timestamp: string;
 }

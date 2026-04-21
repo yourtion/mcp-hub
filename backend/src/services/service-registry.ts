@@ -1,5 +1,5 @@
-import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 import type { McpHubService } from './mcp_hub_service.js';
+import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 
 /**
  * 全局服务注册表
@@ -16,9 +16,7 @@ let hubService: McpHubService | null = null;
  */
 export function setHubService(service: McpHubService): void {
   if (hubService) {
-    throw new Error(
-      'HubService already registered. Call shutdownHubService() first.',
-    );
+    throw new Error('HubService already registered. Call shutdownHubService() first.');
   }
   hubService = service;
 }
@@ -29,9 +27,7 @@ export function setHubService(service: McpHubService): void {
  */
 export function getHubService(): McpHubService {
   if (!hubService) {
-    throw new Error(
-      'HubService not initialized. Service must be initialized at startup.',
-    );
+    throw new Error('HubService not initialized. Service must be initialized at startup.');
   }
   return hubService;
 }
@@ -63,11 +59,7 @@ export async function createHubService(config: {
   // 动态导入避免循环依赖
   const { McpHubService } = await import('./mcp_hub_service.js');
 
-  const service = new McpHubService(
-    config.servers,
-    config.groups,
-    config.apiToolsConfigPath,
-  );
+  const service = new McpHubService(config.servers, config.groups, config.apiToolsConfigPath);
 
   return service;
 }

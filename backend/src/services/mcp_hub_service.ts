@@ -1,14 +1,3 @@
-import type {
-  DeepReadonly,
-  GroupConfig,
-  ServerConfig,
-} from '@mcp-core/mcp-hub-share';
-import type {
-  Group,
-  McpHubService as IMcpHubService,
-  Tool,
-  ToolResult,
-} from '../types/mcp-hub.js';
 import { ServerStatus } from '../types/mcp-hub.js';
 import { logger } from '../utils/logger.js';
 import { ApiToolIntegrationService } from './api_tool_integration_service.js';
@@ -17,6 +6,9 @@ import { HealthMonitorService } from './health-monitor-service.js';
 import { MessageAuditService } from './message-audit-service.js';
 import { ServerManager } from './server_manager.js';
 import { ToolManager } from './tool_manager.js';
+
+import type { Group, McpHubService as IMcpHubService, Tool, ToolResult } from '../types/mcp-hub.js';
+import type { DeepReadonly, GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 
 // Error types for better error handling
 export class McpHubError extends Error {
@@ -32,10 +24,7 @@ export class McpHubError extends Error {
 
 export class ServiceNotInitializedError extends McpHubError {
   constructor() {
-    super(
-      'MCP Hub Service must be initialized before use',
-      'SERVICE_NOT_INITIALIZED',
-    );
+    super('MCP Hub Service must be initialized before use', 'SERVICE_NOT_INITIALIZED');
   }
 }
 
@@ -47,21 +36,18 @@ export class GroupNotFoundError extends McpHubError {
 
 export class ToolNotFoundError extends McpHubError {
   constructor(toolName: string, groupId: string) {
-    super(
-      `Tool '${toolName}' not found in group '${groupId}'`,
-      'TOOL_NOT_FOUND',
-      { toolName, groupId },
-    );
+    super(`Tool '${toolName}' not found in group '${groupId}'`, 'TOOL_NOT_FOUND', {
+      toolName,
+      groupId,
+    });
   }
 }
 
 export class ServiceInitializationError extends McpHubError {
   constructor(message: string, cause?: Error) {
-    super(
-      `Service initialization failed: ${message}`,
-      'INITIALIZATION_FAILED',
-      { cause: cause?.message },
-    );
+    super(`Service initialization failed: ${message}`, 'INITIALIZATION_FAILED', {
+      cause: cause?.message,
+    });
   }
 }
 
@@ -75,10 +61,7 @@ export class McpHubService implements IMcpHubService {
   private isInitialized = false;
   private readonly DEFAULT_GROUP = 'default';
   private shutdownInProgress = false;
-  private serverConfigs: Record<string, ServerConfig> = {} as Record<
-    string,
-    ServerConfig
-  >;
+  private serverConfigs: Record<string, ServerConfig> = {} as Record<string, ServerConfig>;
   private groupConfigs: GroupConfig = {} as GroupConfig;
 
   constructor(
@@ -92,21 +75,14 @@ export class McpHubService implements IMcpHubService {
     this.serverManager = new ServerManager(this.serverConfigs);
     this.groupManager = new GroupManager(this.groupConfigs, this.serverManager);
     this.apiToolService = new ApiToolIntegrationService();
-    this.toolManager = new ToolManager(
-      this.serverManager,
-      this.groupManager,
-      this.apiToolService,
-    );
+    this.toolManager = new ToolManager(this.serverManager, this.groupManager, this.apiToolService);
     this.messageAudit = new MessageAuditService();
     this.healthMonitor = new HealthMonitorService(
       this.serverManager,
       this.groupManager,
       async () => {
         // 健康检查回调：清理工具缓存
-        if (
-          this.toolManager &&
-          typeof this.toolManager.clearCache === 'function'
-        ) {
+        if (this.toolManager && typeof this.toolManager.clearCache === 'function') {
           this.toolManager.clearCache();
           logger.debug('Tool cache cleared due to server disconnections');
         }
@@ -123,9 +99,7 @@ export class McpHubService implements IMcpHubService {
 
   async initialize(): Promise<void> {
     if (this.isInitialized) {
-      logger.warn(
-        'McpHubService already initialized, skipping re-initialization',
-      );
+      logger.warn('McpHubService already initialized, skipping re-initialization');
       return;
     }
 
@@ -144,8 +118,7 @@ export class McpHubService implements IMcpHubService {
       logger.info('Server manager initialized', {
         totalServers: Object.keys(this.serverConfigs).length,
         connectedServers,
-        failedServers:
-          Object.keys(this.serverConfigs).length - connectedServers,
+        failedServers: Object.keys(this.serverConfigs).length - connectedServers,
       });
 
       logger.debug('Initializing group manager');
@@ -190,10 +163,7 @@ export class McpHubService implements IMcpHubService {
 
       await this.cleanupFailedInitialization();
 
-      throw new ServiceInitializationError(
-        (error as Error).message,
-        error as Error,
-      );
+      throw new ServiceInitializationError((error as Error).message, error as Error);
     }
   }
 
@@ -225,10 +195,7 @@ export class McpHubService implements IMcpHubService {
       const shutdownPromise = this.performGracefulShutdown();
       let timeoutId: NodeJS.Timeout | undefined;
       const timeoutPromise = new Promise<void>((_, reject) => {
-        timeoutId = setTimeout(
-          () => reject(new Error('Shutdown timeout')),
-          10000,
-        );
+        timeoutId = setTimeout(() => reject(new Error('Shutdown timeout')), 10000);
         timeoutId.unref?.();
       });
 
@@ -242,9 +209,7 @@ export class McpHubService implements IMcpHubService {
       errors.push(shutdownError);
 
       try {
-        logger.warn(
-          'Attempting force shutdown due to graceful shutdown failure',
-        );
+        logger.warn('Attempting force shutdown due to graceful shutdown failure');
         await this.performForceShutdown();
       } catch (forceError) {
         logger.error('Force shutdown also failed', forceError as Error);
@@ -401,11 +366,7 @@ export class McpHubService implements IMcpHubService {
       await this.validateToolExecution(toolName, targetGroupId, executionId);
 
       const startTime = Date.now();
-      const result = await this.toolManager.executeTool(
-        targetGroupId,
-        toolName,
-        args,
-      );
+      const result = await this.toolManager.executeTool(targetGroupId, toolName, args);
       const duration = Date.now() - startTime;
 
       const status = result.isError ? 'failed' : 'completed';
@@ -413,9 +374,7 @@ export class McpHubService implements IMcpHubService {
         executionId,
         durationMs: duration,
         resultSize: JSON.stringify(result.content).length,
-        contentTypes: result.content.map(
-          (c: { type: string }) => c.type || 'unknown',
-        ),
+        contentTypes: result.content.map((c: { type: string }) => c.type || 'unknown'),
       });
 
       if (result.isError) {
@@ -477,10 +436,7 @@ export class McpHubService implements IMcpHubService {
     }
   }
 
-  async getToolDetails(
-    toolName: string,
-    groupId?: string,
-  ): Promise<Tool | null> {
+  async getToolDetails(toolName: string, groupId?: string): Promise<Tool | null> {
     this.ensureInitialized();
 
     const targetGroupId = groupId || this.DEFAULT_GROUP;
@@ -519,9 +475,7 @@ export class McpHubService implements IMcpHubService {
     groupCount: number;
     totalTools: number;
   } {
-    const serverHealth = this.isInitialized
-      ? this.getServerHealth()
-      : new Map();
+    const serverHealth = this.isInitialized ? this.getServerHealth() : new Map();
     const connectedServers = Array.from(serverHealth.values()).filter(
       (status) => status === ServerStatus.CONNECTED,
     ).length;
@@ -530,9 +484,7 @@ export class McpHubService implements IMcpHubService {
       isInitialized: this.isInitialized,
       serverCount: Object.keys(this.serverConfigs).length,
       connectedServers,
-      groupCount: this.isInitialized
-        ? this.groupManager.getAllGroups().size
-        : 0,
+      groupCount: this.isInitialized ? this.groupManager.getAllGroups().size : 0,
       totalTools: 0,
     };
   }
@@ -545,9 +497,7 @@ export class McpHubService implements IMcpHubService {
     totalTools: number;
     apiTools: number;
   }> {
-    const serverHealth = this.isInitialized
-      ? this.getServerHealth()
-      : new Map();
+    const serverHealth = this.isInitialized ? this.getServerHealth() : new Map();
     const connectedServers = Array.from(serverHealth.values()).filter(
       (status) => status === ServerStatus.CONNECTED,
     ).length;
@@ -580,9 +530,7 @@ export class McpHubService implements IMcpHubService {
       isInitialized: this.isInitialized,
       serverCount: Object.keys(this.serverConfigs).length,
       connectedServers,
-      groupCount: this.isInitialized
-        ? this.groupManager.getAllGroups().size
-        : 0,
+      groupCount: this.isInitialized ? this.groupManager.getAllGroups().size : 0,
       totalTools: totalMcpTools + apiToolCount,
       apiTools: apiToolCount,
     };
@@ -686,22 +634,18 @@ export class McpHubService implements IMcpHubService {
       const allServers = this.serverManager.getAllServers();
       const allGroups = this.groupManager.getAllGroups();
 
-      const serverDetails = Array.from(allServers.entries()).map(
-        ([id, server]) => ({
-          id,
-          status: server.status,
-          lastConnected: server.lastConnected?.toISOString(),
-          error: server.lastError?.message,
-          toolCount: server.tools.length,
-        }),
-      );
+      const serverDetails = Array.from(allServers.entries()).map(([id, server]) => ({
+        id,
+        status: server.status,
+        lastConnected: server.lastConnected?.toISOString(),
+        error: server.lastError?.message,
+        toolCount: server.tools.length,
+      }));
 
       const connectedServers = serverDetails.filter(
         (s) => s.status === ServerStatus.CONNECTED,
       ).length;
-      const failedServers = serverDetails.filter(
-        (s) => s.status === ServerStatus.ERROR,
-      ).length;
+      const failedServers = serverDetails.filter((s) => s.status === ServerStatus.ERROR).length;
 
       const groupDetails = await Promise.all(
         Array.from(allGroups.entries()).map(async ([id, group]) => {
@@ -745,9 +689,7 @@ export class McpHubService implements IMcpHubService {
           errors: apiHealth.errors || [],
         };
       } catch (error) {
-        apiToolDiagnostics.errors.push(
-          `API工具诊断失败: ${(error as Error).message}`,
-        );
+        apiToolDiagnostics.errors.push(`API工具诊断失败: ${(error as Error).message}`);
       }
 
       const diagnostics = {
@@ -782,11 +724,9 @@ export class McpHubService implements IMcpHubService {
       return diagnostics;
     } catch (error) {
       logger.error('Failed to generate service diagnostics', error as Error);
-      throw new McpHubError(
-        'Failed to generate diagnostics',
-        'DIAGNOSTICS_FAILED',
-        { originalError: (error as Error).message },
-      );
+      throw new McpHubError('Failed to generate diagnostics', 'DIAGNOSTICS_FAILED', {
+        originalError: (error as Error).message,
+      });
     }
   }
 
@@ -905,13 +845,9 @@ export class McpHubService implements IMcpHubService {
     const totalServers = Object.keys(this.serverConfigs).length;
 
     if (connectedServers === 0) {
-      warnings.push(
-        'No servers are connected - service will have limited functionality',
-      );
+      warnings.push('No servers are connected - service will have limited functionality');
     } else if (connectedServers < totalServers) {
-      warnings.push(
-        `Only ${connectedServers} of ${totalServers} servers are connected`,
-      );
+      warnings.push(`Only ${connectedServers} of ${totalServers} servers are connected`);
     }
 
     const loadedGroups = this.groupManager.getAllGroups().size;
@@ -936,9 +872,7 @@ export class McpHubService implements IMcpHubService {
           totalGroups,
         },
       );
-      throw new ServiceInitializationError(
-        `Critical health issues: ${issues.join(', ')}`,
-      );
+      throw new ServiceInitializationError(`Critical health issues: ${issues.join(', ')}`);
     }
 
     if (warnings.length > 0) {
@@ -968,10 +902,7 @@ export class McpHubService implements IMcpHubService {
       }
       logger.debug('Cleanup completed successfully');
     } catch (cleanupError) {
-      logger.error(
-        'Error during initialization cleanup',
-        cleanupError as Error,
-      );
+      logger.error('Error during initialization cleanup', cleanupError as Error);
     }
   }
 
@@ -1060,33 +991,28 @@ export class McpHubService implements IMcpHubService {
 
     try {
       const allServers = this.serverManager.getAllServers();
-      const forceClosePromises = Array.from(allServers.values()).map(
-        async (server) => {
-          try {
-            if (server.client && typeof server.client.close === 'function') {
-              let timeoutId: NodeJS.Timeout | undefined;
-              await Promise.race([
-                server.client.close(),
-                new Promise((_, reject) => {
-                  timeoutId = setTimeout(
-                    () => reject(new Error('Force close timeout')),
-                    2000,
-                  );
-                  timeoutId.unref?.();
-                }),
-              ]);
-              if (timeoutId) {
-                clearTimeout(timeoutId);
-              }
+      const forceClosePromises = Array.from(allServers.values()).map(async (server) => {
+        try {
+          if (server.client && typeof server.client.close === 'function') {
+            let timeoutId: NodeJS.Timeout | undefined;
+            await Promise.race([
+              server.client.close(),
+              new Promise((_, reject) => {
+                timeoutId = setTimeout(() => reject(new Error('Force close timeout')), 2000);
+                timeoutId.unref?.();
+              }),
+            ]);
+            if (timeoutId) {
+              clearTimeout(timeoutId);
             }
-          } catch (error) {
-            logger.debug('Force close server connection failed', {
-              serverId: server.id,
-              error: (error as Error).message,
-            });
           }
-        },
-      );
+        } catch (error) {
+          logger.debug('Force close server connection failed', {
+            serverId: server.id,
+            error: (error as Error).message,
+          });
+        }
+      });
 
       await Promise.allSettled(forceClosePromises);
       logger.debug('Force shutdown completed');

@@ -4,6 +4,7 @@
 
 import { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
+
 import { debugApi } from './index.js';
 
 describe('调试API', () => {

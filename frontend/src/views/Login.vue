@@ -47,13 +47,7 @@
         </t-form-item>
 
         <t-form-item>
-          <t-button
-            theme="primary"
-            type="submit"
-            block
-            size="large"
-            :loading="loading"
-          >
+          <t-button theme="primary" type="submit" block size="large" :loading="loading">
             登录
           </t-button>
         </t-form-item>
@@ -63,10 +57,12 @@
 </template>
 
 <script setup lang="ts">
+import { UserIcon, LockOnIcon } from 'tdesign-icons-vue-next';
 import { ref, reactive } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { UserIcon, LockOnIcon } from 'tdesign-icons-vue-next';
+
 import { useAuthStore } from '@/stores/auth';
+
 import type { FormInstanceFunctions, FormRule } from 'tdesign-vue-next';
 
 const router = useRouter();
@@ -87,11 +83,7 @@ const formRules: Record<string, FormRule[]> = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 };
 
-const handleLogin = async ({
-  validateResult,
-}: {
-  validateResult: boolean;
-}) => {
+const handleLogin = async ({ validateResult }: { validateResult: boolean }) => {
   if (validateResult !== true) {
     return;
   }
@@ -105,12 +97,10 @@ const handleLogin = async ({
       password: formData.password,
     });
 
-    const redirect =
-      (route.query.redirect as string) || '/dashboard';
+    const redirect = (route.query.redirect as string) || '/dashboard';
     await router.push(redirect);
   } catch (err: unknown) {
-    errorMessage.value =
-      err instanceof Error ? err.message : '登录失败，请检查用户名和密码';
+    errorMessage.value = err instanceof Error ? err.message : '登录失败，请检查用户名和密码';
   } finally {
     loading.value = false;
   }
@@ -124,17 +114,8 @@ const handleLogin = async ({
   justify-content: center;
   min-height: 100vh;
   background:
-    radial-gradient(
-      ellipse at 30% 20%,
-      var(--accent-subtle) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      ellipse at 70% 80%,
-      var(--accent-subtle) 0%,
-      transparent 50%
-    ),
-    var(--bg-canvas);
+    radial-gradient(ellipse at 30% 20%, var(--accent-subtle) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, var(--accent-subtle) 0%, transparent 50%), var(--bg-canvas);
 }
 
 .login-card {

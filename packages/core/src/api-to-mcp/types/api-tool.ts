@@ -2,8 +2,8 @@
  * API工具相关的类型定义
  */
 
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { JsonSchemaProperty } from './api-config.js';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 /**
  * MCP工具输入参数schema

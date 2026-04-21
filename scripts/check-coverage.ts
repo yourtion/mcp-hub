@@ -46,9 +46,7 @@ function displayPackageCoverage(pkg: PackageInfo): CoverageSummary | null {
   }
 
   try {
-    const coverage: CoverageSummary = JSON.parse(
-      readFileSync(coverageFile, 'utf-8'),
-    );
+    const coverage: CoverageSummary = JSON.parse(readFileSync(coverageFile, 'utf-8'));
     const { total } = coverage;
 
     console.log(`\n📊 ${pkg.displayName} 覆盖率报告:`);
@@ -80,17 +78,13 @@ function main() {
   if (coverageData.length > 0) {
     // 计算总体覆盖率（简单平均）
     const totalBranches =
-      coverageData.reduce((sum, c) => sum + c.total.branches.pct, 0) /
-      coverageData.length;
+      coverageData.reduce((sum, c) => sum + c.total.branches.pct, 0) / coverageData.length;
     const totalFunctions =
-      coverageData.reduce((sum, c) => sum + c.total.functions.pct, 0) /
-      coverageData.length;
+      coverageData.reduce((sum, c) => sum + c.total.functions.pct, 0) / coverageData.length;
     const totalLines =
-      coverageData.reduce((sum, c) => sum + c.total.lines.pct, 0) /
-      coverageData.length;
+      coverageData.reduce((sum, c) => sum + c.total.lines.pct, 0) / coverageData.length;
     const totalStatements =
-      coverageData.reduce((sum, c) => sum + c.total.statements.pct, 0) /
-      coverageData.length;
+      coverageData.reduce((sum, c) => sum + c.total.statements.pct, 0) / coverageData.length;
 
     console.log('\n' + '='.repeat(50));
     console.log('🎯 项目总体覆盖率 (平均值):');

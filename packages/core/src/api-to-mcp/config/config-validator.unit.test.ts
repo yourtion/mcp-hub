@@ -3,8 +3,10 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import type { ApiToolConfig, ApiToolsConfig } from '../types/api-config.js';
+
 import { ConfigValidatorImpl } from './config-validator.js';
+
+import type { ApiToolConfig, ApiToolsConfig } from '../types/api-config.js';
 
 describe('ConfigValidatorImpl', () => {
   const validator = new ConfigValidatorImpl();
@@ -100,8 +102,7 @@ describe('ConfigValidatorImpl', () => {
           required: ['city'],
         },
         response: {
-          jsonata:
-            '{ "temperature": current.temp_c, "condition": current.condition.text }',
+          jsonata: '{ "temperature": current.temp_c, "condition": current.condition.text }',
         },
       };
 
@@ -145,9 +146,7 @@ describe('ConfigValidatorImpl', () => {
     });
 
     it('应该拒绝非字符串类型', () => {
-      const result = validator.validateJsonataExpression(
-        null as unknown as string,
-      );
+      const result = validator.validateJsonataExpression(null as unknown as string);
       expect(result.valid).toBe(false);
       expect(result.errors[0].code).toBe('INVALID_TYPE');
     });

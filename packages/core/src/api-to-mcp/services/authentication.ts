@@ -4,6 +4,7 @@
  */
 
 import { createLogger } from '../../utils/logger.js';
+
 import type { AuthConfig } from '../types/api-config.js';
 import type { HttpRequestConfig } from '../types/http-client.js';
 
@@ -124,9 +125,7 @@ export class BasicAuthStrategy implements AuthenticationStrategy {
       throw new Error('Basic认证需要提供用户名和密码');
     }
 
-    const credentials = Buffer.from(
-      `${config.username}:${config.password}`,
-    ).toString('base64');
+    const credentials = Buffer.from(`${config.username}:${config.password}`).toString('base64');
     const headers = { ...request.headers };
     headers.Authorization = `Basic ${credentials}`;
 
@@ -212,10 +211,7 @@ export class AuthenticationManager {
   /**
    * 应用认证到HTTP请求
    */
-  applyAuthentication(
-    request: HttpRequestConfig,
-    authConfig: AuthConfig,
-  ): HttpRequestConfig {
+  applyAuthentication(request: HttpRequestConfig, authConfig: AuthConfig): HttpRequestConfig {
     const strategy = this.strategies.get(authConfig.type);
     if (!strategy) {
       throw new Error(`不支持的认证类型: ${authConfig.type}`);

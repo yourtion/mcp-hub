@@ -4,11 +4,7 @@
  */
 
 import type { ValidationResult } from '../types/api-tool.js';
-import type {
-  TemplateContext,
-  TemplateRenderResult,
-  TemplateVariable,
-} from '../types/template.js';
+import type { TemplateContext, TemplateRenderResult, TemplateVariable } from '../types/template.js';
 
 /**
  * 模板引擎接口
@@ -119,10 +115,7 @@ export class TemplateEngineImpl implements TemplateEngine {
     return variables;
   }
 
-  private resolveVariable(
-    variablePath: string,
-    context: TemplateContext,
-  ): unknown {
+  private resolveVariable(variablePath: string, context: TemplateContext): unknown {
     const parts = variablePath.split('.');
 
     if (parts.length < 2) {

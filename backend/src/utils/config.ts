@@ -1,11 +1,9 @@
 import path from 'node:path';
-import type { DeepReadonly } from '@mcp-core/mcp-hub-share';
-import type {
-  GroupConfig,
-  McpConfig,
-  SystemConfig,
-} from '@mcp-core/mcp-hub-share/config';
+
 import { JsonStorage } from './json_storage.js';
+
+import type { DeepReadonly } from '@mcp-core/mcp-hub-share';
+import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share/config';
 
 /**
  * 将 DeepReadonly 类型转换为可变类型
@@ -53,10 +51,7 @@ function getGroupConfigInstance(): JsonStorage<GroupConfig> {
   if (!groupConfigInstance) {
     const configDir = getConfigDir();
     const groupPath = path.resolve(configDir, 'group.json');
-    groupConfigInstance = new JsonStorage<GroupConfig>(
-      groupPath,
-      {} as GroupConfig,
-    );
+    groupConfigInstance = new JsonStorage<GroupConfig>(groupPath, {} as GroupConfig);
   }
   return groupConfigInstance;
 }
@@ -68,10 +63,7 @@ function getSystemConfigInstance(): JsonStorage<SystemConfig> {
   if (!systemConfigInstance) {
     const configDir = getConfigDir();
     const systemPath = path.resolve(configDir, 'system.json');
-    systemConfigInstance = new JsonStorage<SystemConfig>(
-      systemPath,
-      {} as SystemConfig,
-    );
+    systemConfigInstance = new JsonStorage<SystemConfig>(systemPath, {} as SystemConfig);
   }
   return systemConfigInstance;
 }

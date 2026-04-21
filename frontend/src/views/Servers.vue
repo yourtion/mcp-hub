@@ -29,18 +29,10 @@
       class="server-summary"
       style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap"
     >
-      <t-tag theme="primary" variant="light">
-        总计 {{ serverStore.summary.total }}
-      </t-tag>
-      <t-tag theme="success" variant="light">
-        已连接 {{ serverStore.summary.connected }}
-      </t-tag>
-      <t-tag theme="warning" variant="light">
-        连接中 {{ serverStore.summary.connecting }}
-      </t-tag>
-      <t-tag theme="danger" variant="light">
-        错误 {{ serverStore.summary.error }}
-      </t-tag>
+      <t-tag theme="primary" variant="light"> 总计 {{ serverStore.summary.total }} </t-tag>
+      <t-tag theme="success" variant="light"> 已连接 {{ serverStore.summary.connected }} </t-tag>
+      <t-tag theme="warning" variant="light"> 连接中 {{ serverStore.summary.connecting }} </t-tag>
+      <t-tag theme="danger" variant="light"> 错误 {{ serverStore.summary.error }} </t-tag>
     </div>
 
     <ServerList
@@ -62,16 +54,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
-import { MessagePlugin } from 'tdesign-vue-next';
 import { AddIcon, RefreshIcon } from 'tdesign-icons-vue-next';
-import { useServerStore } from '@/stores/server';
+import { MessagePlugin } from 'tdesign-vue-next';
+import { ref, watch, onMounted } from 'vue';
+
 import { ServerList, ServerFormDialog } from '@/components/servers';
-import type {
-  ServerInfo,
-  CreateServerRequest,
-  UpdateServerRequest,
-} from '@/types/server';
+import { useServerStore } from '@/stores/server';
+
+import type { ServerInfo, CreateServerRequest, UpdateServerRequest } from '@/types/server';
 
 const serverStore = useServerStore();
 
@@ -109,9 +99,7 @@ async function handleDisconnect(id: string) {
   }
 }
 
-async function handleSubmit(
-  data: CreateServerRequest | UpdateServerRequest,
-) {
+async function handleSubmit(data: CreateServerRequest | UpdateServerRequest) {
   try {
     if (formMode.value === 'create') {
       const createData = data as CreateServerRequest;

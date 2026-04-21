@@ -3,12 +3,10 @@
  */
 
 import { describe, expect, it } from 'vitest';
+
+import { ConfigurationError, ErrorHandlerImpl, ErrorSeverity } from './error-handler.js';
+
 import type { ValidationResult } from '../types/api-tool.js';
-import {
-  ConfigurationError,
-  ErrorHandlerImpl,
-  ErrorSeverity,
-} from './error-handler.js';
 
 describe('ErrorHandlerImpl', () => {
   let errorHandler: ErrorHandlerImpl;
@@ -250,9 +248,7 @@ describe('ErrorHandlerImpl', () => {
 
       const summary = errorHandler.createErrorSummary(errors);
 
-      expect(summary).toBe(
-        '配置验证发现 1个严重错误、1个高级错误、1个中级错误、1个警告',
-      );
+      expect(summary).toBe('配置验证发现 1个严重错误、1个高级错误、1个中级错误、1个警告');
     });
   });
 });
@@ -275,11 +271,7 @@ describe('ConfigurationError', () => {
       suggestions: ['请检查配置格式'],
     };
 
-    const error = new ConfigurationError(
-      '配置验证失败',
-      report,
-      '/path/to/config.json',
-    );
+    const error = new ConfigurationError('配置验证失败', report, '/path/to/config.json');
 
     expect(error.name).toBe('ConfigurationError');
     expect(error.message).toBe('配置验证失败');

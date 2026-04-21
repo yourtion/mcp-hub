@@ -1,12 +1,10 @@
 <template>
-  <t-tag :theme="theme" variant="light" size="small">
-    {{ label }} ({{ healthScore }})
-  </t-tag>
+  <t-tag :theme="theme" variant="light" size="small"> {{ label }} ({{ healthScore }}) </t-tag>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Tag as TTag } from 'tdesign-vue-next';
+import { computed } from 'vue';
 
 const props = defineProps<{
   isHealthy: boolean;

@@ -3,12 +3,13 @@
  * 使用核心包功能为特定组提供MCP服务
  */
 
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod/v4';
+
+import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 // JSON Schema types
 interface JsonSchema {
@@ -34,13 +35,12 @@ interface JsonSchemaProperty {
 }
 
 // 读取 package.json
-const pkg = JSON.parse(
-  readFileSync(join(process.cwd(), 'package.json'), 'utf-8'),
-);
+const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf-8'));
 
-import type { Group } from '@mcp-core/mcp-hub-share';
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
+
+import type { Group } from '@mcp-core/mcp-hub-share';
 
 /**
  * 组MCP服务状态
@@ -251,10 +251,7 @@ export class GroupMcpService {
       try {
         const tools = await this.getAvailableTools();
         const toolList = tools
-          .map(
-            (tool) =>
-              `- ${tool.name} (来自 ${tool.serverId}): ${tool.description || '无描述'}`,
-          )
+          .map((tool) => `- ${tool.name} (来自 ${tool.serverId}): ${tool.description || '无描述'}`)
           .join('\n');
 
         return {
@@ -386,10 +383,7 @@ export class GroupMcpService {
             content: [
               {
                 type: 'text' as const,
-                text:
-                  typeof result === 'string'
-                    ? result
-                    : JSON.stringify(result, null, 2),
+                text: typeof result === 'string' ? result : JSON.stringify(result, null, 2),
               },
             ],
           };
@@ -429,9 +423,7 @@ export class GroupMcpService {
   /**
    * 转换JSON Schema到Zod Schema
    */
-  private convertToZodSchema(
-    inputSchema: JsonSchema,
-  ): Record<string, z.ZodType> {
+  private convertToZodSchema(inputSchema: JsonSchema): Record<string, z.ZodType> {
     if (!inputSchema || !inputSchema.properties) {
       return {};
     }

@@ -4,6 +4,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { app } from '../app.js';
 import {
   cleanupTestConfig,
@@ -68,9 +69,7 @@ describe('API端点集成测试', () => {
 
     it('应该能够处理ping请求的高频访问', async () => {
       const requestCount = 10; // 减少请求数量
-      const promises = Array.from({ length: requestCount }, () =>
-        testApp.request('/api/ping'),
-      );
+      const promises = Array.from({ length: requestCount }, () => testApp.request('/api/ping'));
 
       const responses = await Promise.all(promises);
 
@@ -167,9 +166,7 @@ describe('API端点集成测试', () => {
       expect(listData.data.groups.length).toBeGreaterThan(0);
 
       const firstGroup = listData.data.groups[0];
-      const response = await authRequest(
-        `/api/groups/${firstGroup.id}/servers`,
-      );
+      const response = await authRequest(`/api/groups/${firstGroup.id}/servers`);
 
       expect(response.status).toBe(200);
       const data = await safeJsonParse(response);
@@ -265,9 +262,7 @@ describe('API端点集成测试', () => {
 
     it('应该能够处理大量数据请求', async () => {
       const largeGroupId = 'a'.repeat(100); // 减少长度
-      const response = await authRequest(
-        `/api/groups/${encodeURIComponent(largeGroupId)}`,
-      );
+      const response = await authRequest(`/api/groups/${encodeURIComponent(largeGroupId)}`);
 
       expect([400, 404, 414]).toContain(response.status);
     });

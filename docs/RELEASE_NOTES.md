@@ -88,6 +88,7 @@
 ### 📦 依赖更新
 
 #### 前端
+
 - Vue 3.5.17
 - TDesign Vue Next 1.16.1
 - Pinia 3.0.3
@@ -95,6 +96,7 @@
 - Axios 1.6.7
 
 #### 后端
+
 - Hono 4.7.8
 - @modelcontextprotocol/sdk 1.16.0
 - jsonwebtoken 9.0.2
@@ -119,11 +121,13 @@
 从旧版本升级：
 
 1. **备份配置**:
+
    ```bash
    cp -r backend/config backend/config.backup
    ```
 
 2. **更新代码**:
+
    ```bash
    git pull origin main
    pnpm install

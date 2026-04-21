@@ -18,14 +18,14 @@ graph TB
         E[HTTP客户端 Axios]
         F[SSE客户端]
     end
-    
+
     subgraph "后端API层"
         G[Hono Web框架]
         H[JWT认证中间件]
         I[API路由处理器]
         J[SSE事件推送]
     end
-    
+
     subgraph "业务逻辑层"
         K[MCP服务管理器]
         L[组管理器]
@@ -33,13 +33,13 @@ graph TB
         N[API到MCP服务管理器]
         O[配置管理器]
     end
-    
+
     subgraph "数据层"
         P[JSON配置文件]
         Q[内存缓存]
         R[MCP协议客户端]
     end
-    
+
     A --> G
     E --> I
     F --> J
@@ -58,6 +58,7 @@ graph TB
 ### 前端架构
 
 #### 目录结构
+
 ```
 frontend/src/
 ├── components/          # 通用组件
@@ -82,6 +83,7 @@ frontend/src/
 ```
 
 #### 技术栈
+
 - **Vue 3** - 响应式前端框架
 - **TDesign Vue Next** - 企业级UI组件库
 - **Pinia** - 状态管理
@@ -93,6 +95,7 @@ frontend/src/
 ### 后端架构扩展
 
 #### 新增API路由结构
+
 ```
 backend/src/api/
 ├── auth/               # 认证相关API
@@ -122,6 +125,7 @@ backend/src/api/
 #### 1. 布局组件
 
 **MainLayout.vue**
+
 ```vue
 <template>
   <t-layout>
@@ -141,6 +145,7 @@ backend/src/api/
 ```
 
 **功能特性:**
+
 - 响应式布局适配
 - 侧边栏折叠/展开
 - 面包屑导航
@@ -150,6 +155,7 @@ backend/src/api/
 #### 2. 认证组件
 
 **LoginForm.vue**
+
 ```vue
 <template>
   <t-form @submit="handleLogin">
@@ -167,12 +173,14 @@ backend/src/api/
 #### 3. 服务器管理组件
 
 **ServerList.vue**
+
 - 服务器列表展示
 - 实时状态更新
 - 连接/断开操作
 - 服务器配置编辑
 
 **ServerForm.vue**
+
 - 服务器配置表单
 - 参数验证
 - 连接测试功能
@@ -180,12 +188,14 @@ backend/src/api/
 #### 4. 工具管理组件
 
 **ToolList.vue**
+
 - 工具列表展示
 - 按服务器分组
 - 工具详情查看
 - 工具测试功能
 
 **ToolTester.vue**
+
 - 交互式工具测试
 - 参数输入表单
 - 结果展示
@@ -194,16 +204,19 @@ backend/src/api/
 #### 5. API到MCP管理组件
 
 **ApiConfigList.vue**
+
 - API配置列表
 - 配置状态显示
 - 快速操作按钮
 
 **ApiConfigForm.vue**
+
 - API配置表单
 - 参数映射编辑器
 - 测试功能集成
 
 **ParameterMapper.vue**
+
 - 可视化参数映射
 - 拖拽式配置
 - 实时预览
@@ -485,6 +498,7 @@ interface ToolExecutionEvent {
 ### 前端状态管理
 
 #### 认证状态 (AuthStore)
+
 ```typescript
 interface AuthState {
   isAuthenticated: boolean;
@@ -501,6 +515,7 @@ interface User {
 ```
 
 #### 服务器状态 (ServerStore)
+
 ```typescript
 interface ServerState {
   servers: Map<string, ServerInfo>;
@@ -510,6 +525,7 @@ interface ServerState {
 ```
 
 #### 工具状态 (ToolStore)
+
 ```typescript
 interface ToolState {
   tools: Map<string, ToolInfo>;
@@ -530,6 +546,7 @@ interface ToolExecution {
 ```
 
 #### 组状态 (GroupStore)
+
 ```typescript
 interface GroupState {
   groups: Map<string, GroupInfo>;
@@ -539,6 +556,7 @@ interface GroupState {
 ```
 
 #### API到MCP状态 (ApiToMcpStore)
+
 ```typescript
 interface ApiToMcpState {
   configs: Map<string, ApiConfigInfo>;
@@ -558,6 +576,7 @@ interface TestResult {
 ### 后端数据扩展
 
 #### JWT认证配置
+
 ```typescript
 interface JwtConfig {
   secret: string;
@@ -576,6 +595,7 @@ interface UserCredentials {
 ```
 
 #### 系统配置扩展
+
 ```typescript
 interface SystemConfig {
   server: {
@@ -623,6 +643,7 @@ interface SystemConfig {
 ### 后端错误处理
 
 1. **标准化错误响应**
+
 ```typescript
 interface ErrorResponse {
   success: false;
@@ -637,10 +658,10 @@ interface ErrorResponse {
 ```
 
 2. **错误分类**
-   - 认证错误 (AUTH_*)
-   - 验证错误 (VALIDATION_*)
-   - 业务逻辑错误 (BUSINESS_*)
-   - 系统错误 (SYSTEM_*)
+   - 认证错误 (AUTH\_\*)
+   - 验证错误 (VALIDATION\_\*)
+   - 业务逻辑错误 (BUSINESS\_\*)
+   - 系统错误 (SYSTEM\_\*)
 
 ## 测试策略
 

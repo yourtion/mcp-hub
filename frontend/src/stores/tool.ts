@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+
 import * as ToolService from '@/services/tool';
+
 import type {
   ToolExecuteRequest,
   ToolExecuteResponse,
@@ -44,9 +46,7 @@ export const useToolStore = defineStore('tool', () => {
 
     // 按服务器过滤
     if (filters.value.serverId) {
-      result = result.filter(
-        (tool) => tool.serverId === filters.value.serverId,
-      );
+      result = result.filter((tool) => tool.serverId === filters.value.serverId);
     }
 
     // 按状态过滤
@@ -142,11 +142,9 @@ export const useToolStore = defineStore('tool', () => {
 
       // 更新按服务器分组的工具
       toolsByServer.value.clear();
-      Object.entries(response.toolsByServer || {}).forEach(
-        ([serverId, serverTools]) => {
-          toolsByServer.value.set(serverId, serverTools);
-        },
-      );
+      Object.entries(response.toolsByServer || {}).forEach(([serverId, serverTools]) => {
+        toolsByServer.value.set(serverId, serverTools);
+      });
 
       return response;
     } catch (err) {
@@ -319,18 +317,10 @@ export const useToolStore = defineStore('tool', () => {
   /**
    * 获取性能分析
    */
-  const fetchPerformance = async (
-    timeRange?: string,
-    groupId?: string,
-    serverId?: string,
-  ) => {
+  const fetchPerformance = async (timeRange?: string, groupId?: string, serverId?: string) => {
     try {
       clearError();
-      const result = await ToolService.getToolPerformance(
-        timeRange,
-        groupId,
-        serverId,
-      );
+      const result = await ToolService.getToolPerformance(timeRange, groupId, serverId);
       performance.value = result;
       return result;
     } catch (err) {

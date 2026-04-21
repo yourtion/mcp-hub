@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+
 import { ConfigValidatorImpl } from './config/config-validator.js';
 import { ApiConfigManagerImpl } from './services/api-config-manager.js';
 import { ApiToMcpServiceManagerImpl } from './services/api-to-mcp-service-manager.js';
@@ -60,9 +61,7 @@ describe('API转MCP服务模块', () => {
       const tool = generator.generateMcpTool(apiConfig);
       expect(tool.name).toBe('test-tool');
       expect(tool.description).toContain('这是一个测试工具');
-      expect(tool.description).toContain(
-        'API端点: GET https://api.example.com/test',
-      );
+      expect(tool.description).toContain('API端点: GET https://api.example.com/test');
     });
   });
 
@@ -163,8 +162,7 @@ describe('API转MCP服务模块', () => {
       const invalidExpression = '';
 
       const validResult = validator.validateJsonataExpression(validExpression);
-      const invalidResult =
-        validator.validateJsonataExpression(invalidExpression);
+      const invalidResult = validator.validateJsonataExpression(invalidExpression);
 
       expect(validResult.valid).toBe(true);
       expect(invalidResult.valid).toBe(false);

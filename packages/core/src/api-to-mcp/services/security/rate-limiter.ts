@@ -4,9 +4,10 @@
  */
 
 import { logger } from '../../../utils/logger.js';
+import { SecurityEventType } from '../../types/security.js';
+
 import type { RateLimitConfig } from '../../types/api-config.js';
 import type { RateLimitStatus, SecurityEvent } from '../../types/security.js';
-import { SecurityEventType } from '../../types/security.js';
 
 /**
  * 频率限制记录
@@ -98,10 +99,7 @@ export class RateLimiterImpl implements RateLimiter {
   private anomalyConfig: AnomalyDetectionConfig;
   private securityEventCallback?: (event: SecurityEvent) => void;
 
-  constructor(
-    config?: Partial<RateLimitConfig>,
-    anomalyConfig?: Partial<AnomalyDetectionConfig>,
-  ) {
+  constructor(config?: Partial<RateLimitConfig>, anomalyConfig?: Partial<AnomalyDetectionConfig>) {
     this.config = {
       windowSeconds: 60,
       maxRequests: 100,
@@ -188,10 +186,7 @@ export class RateLimiterImpl implements RateLimiter {
     this.records.delete(key);
   }
 
-  async getRemainingRequests(
-    toolId: string,
-    clientId?: string,
-  ): Promise<number> {
+  async getRemainingRequests(toolId: string, clientId?: string): Promise<number> {
     if (!this.config.enabled) {
       return Number.MAX_SAFE_INTEGER;
     }
@@ -235,20 +230,13 @@ export class RateLimiterImpl implements RateLimiter {
 
     return {
       limited: !isExpired && record.count >= limits.maxRequests,
-      remaining: isExpired
-        ? limits.maxRequests
-        : Math.max(0, limits.maxRequests - record.count),
-      resetTime: new Date(
-        record.windowStart.getTime() + limits.windowSeconds * 1000,
-      ),
+      remaining: isExpired ? limits.maxRequests : Math.max(0, limits.maxRequests - record.count),
+      resetTime: new Date(record.windowStart.getTime() + limits.windowSeconds * 1000),
       windowStart: isExpired ? now : record.windowStart,
     };
   }
 
-  async detectAnomalies(
-    toolId: string,
-    clientId?: string,
-  ): Promise<SecurityEvent[]> {
+  async detectAnomalies(toolId: string, clientId?: string): Promise<SecurityEvent[]> {
     if (!this.anomalyConfig.enabled) {
       return [];
     }
@@ -262,9 +250,7 @@ export class RateLimiterImpl implements RateLimiter {
 
     const events: SecurityEvent[] = [];
     const now = new Date();
-    const detectionWindow = new Date(
-      now.getTime() - this.anomalyConfig.detectionWindow * 1000,
-    );
+    const detectionWindow = new Date(now.getTime() - this.anomalyConfig.detectionWindow * 1000);
 
     // 检查连续违规
     if (record.violationCount >= this.anomalyConfig.violationThreshold) {
@@ -313,10 +299,7 @@ export class RateLimiterImpl implements RateLimiter {
         maxRequests: this.getLimitsForTool(toolId).maxRequests,
         violationCount: record.violationCount,
       },
-      severity:
-        record.violationCount > this.anomalyConfig.violationThreshold
-          ? 'high'
-          : 'medium',
+      severity: record.violationCount > this.anomalyConfig.violationThreshold ? 'high' : 'medium',
     };
 
     if (this.securityEventCallback) {

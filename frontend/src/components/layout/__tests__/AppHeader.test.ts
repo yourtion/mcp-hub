@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryHistory, createRouter } from 'vue-router';
+
 import AppHeader from '../AppHeader.vue';
 
 // Mock Breadcrumb child component
@@ -26,9 +27,7 @@ vi.mock('@/composables/useTheme', () => ({
 const createTestRouter = () =>
   createRouter({
     history: createMemoryHistory(),
-    routes: [
-      { path: '/dashboard', component: { template: '<div>Dashboard</div>' } },
-    ],
+    routes: [{ path: '/dashboard', component: { template: '<div>Dashboard</div>' } }],
   });
 
 describe('AppHeader', () => {

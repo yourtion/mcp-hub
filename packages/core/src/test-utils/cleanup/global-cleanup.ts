@@ -43,10 +43,7 @@ export function cleanupWithTimeout(
   return Promise.race<void>([
     cleanupFn(),
     new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`Cleanup timeout after ${timeout}ms`)),
-        timeout,
-      ),
+      setTimeout(() => reject(new Error(`Cleanup timeout after ${timeout}ms`)), timeout),
     ),
   ]);
 }

@@ -1,5 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useGroupStore } from '../group';
 
 // Mock group service
@@ -25,10 +26,7 @@ vi.mock('@/services/group', () => ({
 import * as groupService from '@/services/group';
 
 // Get mocked functions
-const mockGroupService = groupService as Record<
-  string,
-  ReturnType<typeof vi.fn>
->;
+const mockGroupService = groupService as Record<string, ReturnType<typeof vi.fn>>;
 
 describe('Group Store', () => {
   beforeEach(() => {
@@ -293,10 +291,7 @@ describe('Group Store', () => {
     const groupStore = useGroupStore();
     const result = await groupStore.updateGroup(groupId, updateRequest);
 
-    expect(mockGroupService.updateGroup).toHaveBeenCalledWith(
-      groupId,
-      updateRequest,
-    );
+    expect(mockGroupService.updateGroup).toHaveBeenCalledWith(groupId, updateRequest);
     expect(result).toEqual(mockResponse);
     expect(groupStore.loading).toBe(false);
   });
@@ -407,15 +402,9 @@ describe('Group Store', () => {
     mockGroupService.setGroupValidationKey.mockResolvedValue(mockResponse);
 
     const groupStore = useGroupStore();
-    const result = await groupStore.setGroupValidationKey(
-      groupId,
-      setKeyRequest,
-    );
+    const result = await groupStore.setGroupValidationKey(groupId, setKeyRequest);
 
-    expect(mockGroupService.setGroupValidationKey).toHaveBeenCalledWith(
-      groupId,
-      setKeyRequest,
-    );
+    expect(mockGroupService.setGroupValidationKey).toHaveBeenCalledWith(groupId, setKeyRequest);
     expect(result).toEqual(mockResponse);
   });
 
@@ -449,9 +438,7 @@ describe('Group Store', () => {
     const groupStore = useGroupStore();
     const result = await groupStore.generateGroupValidationKey(groupId);
 
-    expect(mockGroupService.generateGroupValidationKey).toHaveBeenCalledWith(
-      groupId,
-    );
+    expect(mockGroupService.generateGroupValidationKey).toHaveBeenCalledWith(groupId);
     expect(result).toEqual(mockResponse);
   });
 

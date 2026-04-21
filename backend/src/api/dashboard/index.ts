@@ -1,11 +1,13 @@
 import { Hono } from 'hono';
+
 import { DashboardService } from '../../services/dashboard_service.js';
 import { EventIntegrationService } from '../../services/event_integration_service.js';
-import type { McpHubService } from '../../services/mcp_hub_service.js';
 import { SSEEventManager } from '../../services/sse_event_manager.js';
-import type { LogQuery } from '../../types/dashboard.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { logger } from '../../utils/logger.js';
+
+import type { McpHubService } from '../../services/mcp_hub_service.js';
+import type { LogQuery } from '../../types/dashboard.js';
 
 export const dashboardApi = new Hono();
 
@@ -39,10 +41,7 @@ export function initializeDashboardServices(hubService: McpHubService): void {
 
   dashboardService = new DashboardService(hubService);
   sseEventManager = new SSEEventManager();
-  eventIntegrationService = new EventIntegrationService(
-    dashboardService,
-    sseEventManager,
-  );
+  eventIntegrationService = new EventIntegrationService(dashboardService, sseEventManager);
 
   // 记录系统启动
   eventIntegrationService.recordSystemStart();
@@ -116,15 +115,12 @@ function getDashboardService(): DashboardService {
         apiTools: 0,
       }),
       getGroups: () => [],
-      getServers: () => [
-        { id: 'test-server-1', name: 'Test Server 1', status: 'connected' },
-      ],
+      getServers: () => [{ id: 'test-server-1', name: 'Test Server 1', status: 'connected' }],
       getTools: () => [
         { name: 'test_tool_1', description: 'Test Tool 1' },
         { name: 'test_tool_2', description: 'Test Tool 2' },
       ],
-      getServerHealth: () =>
-        new Map([['test-server-1', { status: 'connected', isHealthy: true }]]),
+      getServerHealth: () => new Map([['test-server-1', { status: 'connected', isHealthy: true }]]),
     } as unknown as McpHubService;
 
     dashboardService = new DashboardService(mockHubService);
@@ -210,12 +206,8 @@ dashboardApi.get('/logs', async (c) => {
       category: c.req.query('category'),
       startTime: c.req.query('startTime'),
       endTime: c.req.query('endTime'),
-      limit: c.req.query('limit')
-        ? parseInt(c.req.query('limit') || '100')
-        : undefined,
-      offset: c.req.query('offset')
-        ? parseInt(c.req.query('offset') || '0')
-        : undefined,
+      limit: c.req.query('limit') ? parseInt(c.req.query('limit') || '100') : undefined,
+      offset: c.req.query('offset') ? parseInt(c.req.query('offset') || '0') : undefined,
       search: c.req.query('search'),
     };
 
@@ -243,9 +235,7 @@ dashboardApi.get('/activities', async (c) => {
     logger.debug('获取最近活动请求');
 
     const service = getDashboardService();
-    const limit = c.req.query('limit')
-      ? parseInt(c.req.query('limit') || '50')
-      : 50;
+    const limit = c.req.query('limit') ? parseInt(c.req.query('limit') || '50') : 50;
 
     const activities = service.getRecentActivities(limit);
 
@@ -292,9 +282,7 @@ dashboardApi.get('/events', async (c) => {
 
     // 解析订阅参数
     const subscriptionsParam = c.req.query('subscriptions');
-    const subscriptions = subscriptionsParam
-      ? subscriptionsParam.split(',')
-      : [];
+    const subscriptions = subscriptionsParam ? subscriptionsParam.split(',') : [];
 
     const { response, clientId } = eventManager.createConnection(subscriptions);
 
@@ -381,14 +369,7 @@ dashboardApi.post('/test-tool-execution', async (c) => {
     });
 
     const eventManager = getSSEEventManager();
-    eventManager.broadcastToolExecution(
-      toolName,
-      serverId,
-      groupId,
-      success,
-      executionTime,
-      error,
-    );
+    eventManager.broadcastToolExecution(toolName, serverId, groupId, success, executionTime, error);
 
     const service = getDashboardService();
     service.recordToolExecution(toolName, executionTime, success);
@@ -430,12 +411,7 @@ dashboardApi.post('/test-server-status', async (c) => {
     service.addActivity({
       type: status === 'connected' ? 'server_connected' : 'server_disconnected',
       message: `服务器 ${serverId} 状态变更: ${previousStatus} -> ${status}`,
-      severity:
-        status === 'connected'
-          ? 'info'
-          : status === 'error'
-            ? 'error'
-            : 'warning',
+      severity: status === 'connected' ? 'info' : status === 'error' ? 'error' : 'warning',
     });
 
     return successResponse(c, {
@@ -497,12 +473,7 @@ dashboardApi.get('/system-info', async (c) => {
 dashboardApi.post('/add-log', async (c) => {
   try {
     const body = await c.req.json();
-    const {
-      level = 'info',
-      message = '测试日志',
-      category = 'test',
-      metadata,
-    } = body;
+    const { level = 'info', message = '测试日志', category = 'test', metadata } = body;
 
     logger.debug('添加自定义日志', { level, message, category });
 
@@ -575,9 +546,7 @@ dashboardApi.get('/health-detailed', async (c) => {
           details: {
             pid: process.pid,
             uptime: Math.floor(process.uptime()),
-            memoryUsage: Math.round(
-              (memUsage.heapUsed / memUsage.heapTotal) * 100,
-            ),
+            memoryUsage: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100),
           },
         },
       },
@@ -616,10 +585,7 @@ dashboardApi.get('/memory', async (c) => {
         arrayBuffers: Math.round(currentMemory.arrayBuffers / 1024 / 1024),
         heapUsageRatio:
           currentMemory.heapTotal > 0
-            ? (
-                (currentMemory.heapUsed / currentMemory.heapTotal) *
-                100
-              ).toFixed(1)
+            ? ((currentMemory.heapUsed / currentMemory.heapTotal) * 100).toFixed(1)
             : '0.0',
       },
       timestamp: new Date(currentMemory.timestamp).toISOString(),

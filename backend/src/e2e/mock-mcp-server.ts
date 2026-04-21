@@ -174,11 +174,7 @@ export class EnhancedMockMcpServer {
   /**
    * 通用请求处理器
    */
-  private async handleRequest<T>(
-    method: string,
-    params: unknown,
-    handler: () => T,
-  ): Promise<T> {
+  private async handleRequest<T>(method: string, params: unknown, handler: () => T): Promise<T> {
     const startTime = Date.now();
 
     // 检查服务器是否崩溃
@@ -290,9 +286,7 @@ export class EnhancedMockMcpServer {
    * 更新平均响应时间
    */
   private updateAvgResponseTime(duration: number): void {
-    const total =
-      this.stats.avgResponseTime * (this.stats.successfulRequests - 1) +
-      duration;
+    const total = this.stats.avgResponseTime * (this.stats.successfulRequests - 1) + duration;
     this.stats.avgResponseTime = total / this.stats.successfulRequests;
   }
 
@@ -421,9 +415,7 @@ export class MockServerManager {
    * 启动所有服务器
    */
   async startAll(): Promise<void> {
-    const startPromises = Array.from(this.servers.values()).map((server) =>
-      server.start(),
-    );
+    const startPromises = Array.from(this.servers.values()).map((server) => server.start());
     await Promise.all(startPromises);
   }
 
@@ -431,9 +423,7 @@ export class MockServerManager {
    * 停止所有服务器
    */
   async stopAll(): Promise<void> {
-    const stopPromises = Array.from(this.servers.values()).map((server) =>
-      server.stop(),
-    );
+    const stopPromises = Array.from(this.servers.values()).map((server) => server.stop());
     await Promise.all(stopPromises);
   }
 

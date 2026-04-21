@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger.js';
+
 import type { DashboardService } from './dashboard_service.js';
 import type { SSEEventManager } from './sse_event_manager.js';
 
@@ -31,12 +32,7 @@ export class EventIntegrationService {
     this.dashboardService.addActivity({
       type: 'server_connected', // 根据状态选择合适的类型
       message: `服务器 ${serverId} 状态变更: ${previousStatus || '未知'} -> ${newStatus}`,
-      severity:
-        newStatus === 'connected'
-          ? 'info'
-          : newStatus === 'error'
-            ? 'error'
-            : 'warning',
+      severity: newStatus === 'connected' ? 'info' : newStatus === 'error' ? 'error' : 'warning',
       metadata: {
         serverId,
         newStatus,
@@ -46,12 +42,7 @@ export class EventIntegrationService {
     });
 
     // 广播SSE事件
-    this.sseEventManager.broadcastServerStatus(
-      serverId,
-      newStatus,
-      previousStatus,
-      error,
-    );
+    this.sseEventManager.broadcastServerStatus(serverId, newStatus, previousStatus, error);
 
     // 如果是错误状态，发送系统告警
     if (newStatus === 'error' && error) {
@@ -128,11 +119,7 @@ export class EventIntegrationService {
   /**
    * 记录系统错误
    */
-  recordSystemError(
-    message: string,
-    category: string,
-    metadata?: Record<string, unknown>,
-  ): void {
+  recordSystemError(message: string, category: string, metadata?: Record<string, unknown>): void {
     logger.debug('记录系统错误', {
       message,
       category,
@@ -151,12 +138,7 @@ export class EventIntegrationService {
     });
 
     // 广播系统告警
-    this.sseEventManager.broadcastSystemAlert(
-      'error',
-      message,
-      category,
-      metadata,
-    );
+    this.sseEventManager.broadcastSystemAlert('error', message, category, metadata);
   }
 
   /**
@@ -202,11 +184,7 @@ export class EventIntegrationService {
     });
 
     // 广播系统告警
-    this.sseEventManager.broadcastSystemAlert(
-      'info',
-      'MCP Hub 系统已启动',
-      'system_lifecycle',
-    );
+    this.sseEventManager.broadcastSystemAlert('info', 'MCP Hub 系统已启动', 'system_lifecycle');
   }
 
   /**
@@ -228,19 +206,13 @@ export class EventIntegrationService {
     // 如果有状态变更，记录活动
     if (changes.length > 0) {
       const changeMessages = changes.map(
-        (change) =>
-          `${change.component}: ${change.previousStatus} -> ${change.currentStatus}`,
+        (change) => `${change.component}: ${change.previousStatus} -> ${change.currentStatus}`,
       );
 
       this.dashboardService.addActivity({
         type: 'system_start', // 使用现有类型
         message: `健康检查状态变更: ${changeMessages.join(', ')}`,
-        severity:
-          status === 'healthy'
-            ? 'info'
-            : status === 'warning'
-              ? 'warning'
-              : 'error',
+        severity: status === 'healthy' ? 'info' : status === 'warning' ? 'warning' : 'error',
         metadata: {
           status,
           changes,

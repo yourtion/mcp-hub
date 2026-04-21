@@ -12,22 +12,22 @@ The MCP Service Implementation will transform the current simple MCP server into
 graph TB
     Client[API Client] --> Hub[MCP Hub Service]
     Hub --> GM[Group Manager]
-    Hub --> SM[Server Manager] 
+    Hub --> SM[Server Manager]
     Hub --> TM[Tool Manager]
-    
+
     SM --> MCP1[MCP Server 1<br/>time-mcp]
     SM --> MCP2[MCP Server 2<br/>fetch]
     SM --> MCP3[MCP Server N<br/>...]
-    
+
     GM --> Config1[group.json]
     SM --> Config2[mcp_server.json]
-    
+
     subgraph "Group Organization"
         G1[default group<br/>all servers]
         G2[time-tools group<br/>time-mcp only]
         G3[web-tools group<br/>fetch only]
     end
-    
+
     GM --> G1
     GM --> G2
     GM --> G3
@@ -42,7 +42,7 @@ sequenceDiagram
     participant GM as Group Manager
     participant SM as Server Manager
     participant MCP as External MCP Server
-    
+
     Client->>Hub: List tools for group "time-tools"
     Hub->>GM: Get group configuration
     GM->>Hub: Return servers: ["time-mcp"]
@@ -51,7 +51,7 @@ sequenceDiagram
     MCP->>SM: Available tools response
     SM->>Hub: Filtered tools for group
     Hub->>Client: Tools list response
-    
+
     Client->>Hub: Execute tool "get_time" in group "time-tools"
     Hub->>GM: Validate tool access in group
     GM->>Hub: Access granted
@@ -67,12 +67,14 @@ sequenceDiagram
 ### 1. Server Manager (`ServerManager`)
 
 **Responsibilities:**
+
 - Initialize and manage connections to external MCP servers
 - Handle server lifecycle (connect, disconnect, reconnect)
 - Maintain server health status
 - Execute tool calls on specific servers
 
 **Interface:**
+
 ```typescript
 interface ServerManager {
   initialize(): Promise<void>;
@@ -96,19 +98,21 @@ enum ServerStatus {
   CONNECTING = 'connecting',
   CONNECTED = 'connected',
   DISCONNECTED = 'disconnected',
-  ERROR = 'error'
+  ERROR = 'error',
 }
 ```
 
 ### 2. Group Manager (`GroupManager`)
 
 **Responsibilities:**
+
 - Load and validate group configurations
 - Resolve which servers belong to each group
 - Filter tools based on group restrictions
 - Validate tool access permissions
 
 **Interface:**
+
 ```typescript
 interface GroupManager {
   initialize(): Promise<void>;
@@ -132,12 +136,14 @@ interface Group {
 ### 3. Tool Manager (`ToolManager`)
 
 **Responsibilities:**
+
 - Aggregate tools from multiple servers
 - Apply group-based filtering
 - Handle tool execution routing
 - Manage tool schema validation
 
 **Interface:**
+
 ```typescript
 interface ToolManager {
   getToolsForGroup(groupId: string): Promise<Tool[]>;
@@ -162,12 +168,14 @@ interface ToolResult {
 ### 4. Enhanced MCP Service (`McpHubService`)
 
 **Responsibilities:**
+
 - Coordinate between all managers
 - Provide unified API interface
 - Handle error aggregation and logging
 - Manage service lifecycle
 
 **Interface:**
+
 ```typescript
 interface McpHubService {
   initialize(): Promise<void>;
@@ -258,7 +266,7 @@ interface ErrorHandler {
 
 // Error response format
 interface ErrorResponse {
-  jsonrpc: "2.0";
+  jsonrpc: '2.0';
   error: {
     code: number;
     message: string;
@@ -320,21 +328,25 @@ interface MockMcpServer {
 ## Implementation Phases
 
 ### Phase 1: Core Infrastructure
+
 - Server Manager with basic connection handling
 - Configuration loading and validation
 - Basic error handling framework
 
 ### Phase 2: Group Management
+
 - Group Manager implementation
 - Tool filtering by group
 - Group-based access validation
 
 ### Phase 3: Tool Execution
+
 - Tool Manager with execution routing
 - Comprehensive error handling
 - Tool result aggregation
 
 ### Phase 4: Resilience & Monitoring
+
 - Health checks and reconnection logic
 - Comprehensive logging
 - Performance monitoring

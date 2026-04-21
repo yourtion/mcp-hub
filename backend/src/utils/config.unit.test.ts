@@ -23,11 +23,7 @@ describe('getAllConfig', () => {
   it('api-tools.json 文件不存在时应返回 apiToolsConfigPath 路径', async () => {
     // Mock fs.access 抛出 ENOENT（文件不存在）
     vi.doMock('node:fs/promises', () => ({
-      access: vi
-        .fn()
-        .mockRejectedValue(
-          Object.assign(new Error('ENOENT'), { code: 'ENOENT' }),
-        ),
+      access: vi.fn().mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' })),
     }));
 
     const { getAllConfig } = await import('./config.js');
@@ -52,11 +48,7 @@ describe('getAllConfig', () => {
 
   it('始终返回 mcps, groups, system 配置', async () => {
     vi.doMock('node:fs/promises', () => ({
-      access: vi
-        .fn()
-        .mockRejectedValue(
-          Object.assign(new Error('ENOENT'), { code: 'ENOENT' }),
-        ),
+      access: vi.fn().mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' })),
     }));
 
     const { getAllConfig } = await import('./config.js');

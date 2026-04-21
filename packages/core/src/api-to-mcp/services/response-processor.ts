@@ -4,6 +4,7 @@
  */
 
 import jsonata from 'jsonata';
+
 import type { ValidationResult } from '../types/api-tool.js';
 import type { HttpResponse } from '../types/http-client.js';
 
@@ -91,11 +92,7 @@ export class McpError extends Error {
   /**
    * 从HTTP状态码创建MCP错误
    */
-  static fromHttpStatus(
-    status: number,
-    message?: string,
-    data?: unknown,
-  ): McpError {
+  static fromHttpStatus(status: number, message?: string, data?: unknown): McpError {
     let code: McpErrorCode;
     let defaultMessage: string;
 
@@ -149,20 +146,14 @@ export interface ResponseProcessor {
    * @param response HTTP响应
    * @param jsonataExpression JSONata表达式
    */
-  processWithJsonata(
-    response: unknown,
-    jsonataExpression: string,
-  ): Promise<unknown>;
+  processWithJsonata(response: unknown, jsonataExpression: string): Promise<unknown>;
 
   /**
    * 使用JSONata处理响应数据（带错误处理）
    * @param response HTTP响应
    * @param jsonataExpression JSONata表达式
    */
-  processWithJsonataSafe(
-    response: unknown,
-    jsonataExpression: string,
-  ): Promise<unknown>;
+  processWithJsonataSafe(response: unknown, jsonataExpression: string): Promise<unknown>;
 
   /**
    * 处理错误响应
@@ -176,10 +167,7 @@ export interface ResponseProcessor {
    * @param response HTTP响应
    * @param errorPath 错误信息提取路径
    */
-  processErrorResponseAsMcp(
-    response: HttpResponse,
-    errorPath?: string,
-  ): McpError;
+  processErrorResponseAsMcp(response: HttpResponse, errorPath?: string): McpError;
 
   /**
    * 验证JSONata表达式
@@ -192,10 +180,7 @@ export interface ResponseProcessor {
    * @param response HTTP响应
    * @param jsonataExpression 可选的JSONata表达式
    */
-  processResponse(
-    response: HttpResponse,
-    jsonataExpression?: string,
-  ): Promise<unknown>;
+  processResponse(response: HttpResponse, jsonataExpression?: string): Promise<unknown>;
 
   /**
    * 处理复杂数据转换，包含降级机制
@@ -217,17 +202,12 @@ export class ResponseProcessorImpl implements ResponseProcessor {
   /**
    * 使用JSONata处理响应数据
    */
-  async processWithJsonata(
-    response: unknown,
-    jsonataExpression: string,
-  ): Promise<unknown> {
+  async processWithJsonata(response: unknown, jsonataExpression: string): Promise<unknown> {
     try {
       // 验证JSONata表达式
       const validation = this.validateJsonataExpression(jsonataExpression);
       if (!validation.valid) {
-        throw new Error(
-          `JSONata表达式无效: ${validation.errors.map((e) => e.message).join(', ')}`,
-        );
+        throw new Error(`JSONata表达式无效: ${validation.errors.map((e) => e.message).join(', ')}`);
       }
 
       // 编译JSONata表达式
@@ -246,10 +226,7 @@ export class ResponseProcessorImpl implements ResponseProcessor {
   /**
    * 使用JSONata处理响应数据（带错误处理）
    */
-  async processWithJsonataSafe(
-    response: unknown,
-    jsonataExpression: string,
-  ): Promise<unknown> {
+  async processWithJsonataSafe(response: unknown, jsonataExpression: string): Promise<unknown> {
     try {
       return await this.processWithJsonata(response, jsonataExpression);
     } catch (error) {
@@ -281,10 +258,7 @@ export class ResponseProcessorImpl implements ResponseProcessor {
   /**
    * 处理错误响应并转换为MCP错误
    */
-  processErrorResponseAsMcp(
-    response: HttpResponse,
-    errorPath?: string,
-  ): McpError {
+  processErrorResponseAsMcp(response: HttpResponse, errorPath?: string): McpError {
     let errorMessage = `API调用失败: ${response.status} ${response.statusText}`;
     let extractedData: unknown;
 
@@ -327,21 +301,14 @@ export class ResponseProcessorImpl implements ResponseProcessor {
 
     // 如果没有通过错误路径提取到错误信息，且响应数据是对象，尝试从常见字段提取
     if (
-      errorMessage ===
-        `API调用失败: ${response.status} ${response.statusText}` &&
+      errorMessage === `API调用失败: ${response.status} ${response.statusText}` &&
       response.data &&
       typeof response.data === 'object'
     ) {
       const data = response.data as Record<string, unknown>;
 
       // 尝试从顶级字段提取错误信息
-      const commonErrorFields = [
-        'error',
-        'message',
-        'msg',
-        'detail',
-        'description',
-      ];
+      const commonErrorFields = ['error', 'message', 'msg', 'detail', 'description'];
 
       for (const field of commonErrorFields) {
         if (data[field]) {
@@ -352,25 +319,14 @@ export class ResponseProcessorImpl implements ResponseProcessor {
           } else if (typeof data[field] === 'object' && data[field] !== null) {
             // 如果字段是对象，尝试从对象中提取message
             const errorObj = data[field] as Record<string, unknown>;
-            for (const subField of [
-              'message',
-              'msg',
-              'description',
-              'detail',
-            ]) {
-              if (
-                errorObj[subField] &&
-                typeof errorObj[subField] === 'string'
-              ) {
+            for (const subField of ['message', 'msg', 'description', 'detail']) {
+              if (errorObj[subField] && typeof errorObj[subField] === 'string') {
                 errorMessage = errorObj[subField] as string;
                 extractedData = errorObj[subField];
                 break;
               }
             }
-            if (
-              errorMessage !==
-              `API调用失败: ${response.status} ${response.statusText}`
-            ) {
+            if (errorMessage !== `API调用失败: ${response.status} ${response.statusText}`) {
               break;
             }
           }
@@ -425,8 +381,7 @@ export class ResponseProcessorImpl implements ResponseProcessor {
         errors: [
           {
             path: 'jsonata',
-            message:
-              error instanceof Error ? error.message : '无效的JSONata表达式',
+            message: error instanceof Error ? error.message : '无效的JSONata表达式',
             code: 'INVALID_JSONATA_SYNTAX',
           },
         ],
@@ -437,10 +392,7 @@ export class ResponseProcessorImpl implements ResponseProcessor {
   /**
    * 处理响应数据（统一入口）
    */
-  async processResponse(
-    response: HttpResponse,
-    jsonataExpression?: string,
-  ): Promise<unknown> {
+  async processResponse(response: HttpResponse, jsonataExpression?: string): Promise<unknown> {
     // 如果响应不成功，处理错误
     if (response.status >= 400) {
       throw this.processErrorResponseAsMcp(response);
@@ -576,9 +528,7 @@ export class ResponseProcessorImpl implements ResponseProcessor {
     if (lines.length === 0) return false;
 
     // 检查是否大部分行都包含 = 或 :
-    const kvLines = lines.filter(
-      (line) => line.includes('=') || line.includes(':'),
-    );
+    const kvLines = lines.filter((line) => line.includes('=') || line.includes(':'));
 
     return kvLines.length / lines.length > 0.5;
   }

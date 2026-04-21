@@ -3,11 +3,13 @@
 ## 📐 设计原则
 
 ### 1. 一致性优先
+
 - 所有UI组件必须通过设计系统组件使用，不直接使用TDesign
 - 统一的间距、颜色、字体、动画
 - 统一的交互模式和反馈方式
 
 ### 2. 分层架构
+
 ```
 应用层 (Views/Pages)
     ↓
@@ -21,6 +23,7 @@ Vue 3 Core
 ```
 
 ### 3. 组件分类
+
 - **Layout Components** - 布局容器
 - **Data Display** - 数据展示
 - **Form Components** - 表单输入
@@ -33,6 +36,7 @@ Vue 3 Core
 ## 🎨 设计令牌系统
 
 ### 颜色系统
+
 ```less
 // 主色
 @primary-color: #409eff;
@@ -59,17 +63,19 @@ Vue 3 Core
 ```
 
 ### 间距系统 (8px基准)
+
 ```less
-@spacing-xs: 4px;   // 0.5x
-@spacing-sm: 8px;   // 1x
-@spacing-md: 12px;  // 1.5x
-@spacing-lg: 16px;  // 2x
-@spacing-xl: 20px;  // 2.5x
+@spacing-xs: 4px; // 0.5x
+@spacing-sm: 8px; // 1x
+@spacing-md: 12px; // 1.5x
+@spacing-lg: 16px; // 2x
+@spacing-xl: 20px; // 2.5x
 @spacing-xxl: 24px; // 3x
 @spacing-xxxl: 32px; // 4x
 ```
 
 ### 字体系统
+
 ```less
 @font-size-xs: 12px;
 @font-size-sm: 13px;
@@ -87,6 +93,7 @@ Vue 3 Core
 ```
 
 ### 圆角系统
+
 ```less
 @radius-sm: 2px;
 @radius-base: 4px;
@@ -97,6 +104,7 @@ Vue 3 Core
 ```
 
 ### 阴影系统
+
 ```less
 @shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
 @shadow-base: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -112,14 +120,17 @@ Vue 3 Core
 ### 布局组件 (Layout)
 
 #### 1. AppLayout
+
 **用途**: 应用主布局框架
 **特性**:
+
 - 顶部导航栏
 - 侧边菜单栏
 - 主内容区域
 - 页脚
 
 **Props**:
+
 ```typescript
 interface AppLayoutProps {
   showHeader?: boolean;
@@ -132,13 +143,16 @@ interface AppLayoutProps {
 ```
 
 #### 2. ContentLayout
+
 **用途**: 内容区域布局
 **特性**:
+
 - PageHeader集成
 - 内容padding
 - 滚动区域
 
 **Props**:
+
 ```typescript
 interface ContentLayoutProps {
   title?: string;
@@ -150,9 +164,11 @@ interface ContentLayoutProps {
 ```
 
 #### 3. TwoColumnLayout
+
 **用途**: 双列布局（主内容 + 侧边栏）
 
 **Props**:
+
 ```typescript
 interface TwoColumnLayoutProps {
   mainWidth?: string;
@@ -167,8 +183,10 @@ interface TwoColumnLayoutProps {
 ### 数据展示组件 (Data Display)
 
 #### 1. DataTable
+
 **用途**: 统一数据表格
 **特性**:
+
 - 统一的列配置
 - 内置分页
 - 内置筛选
@@ -176,6 +194,7 @@ interface TwoColumnLayoutProps {
 - 批量操作
 
 **Props**:
+
 ```typescript
 interface DataTableProps {
   data: any[];
@@ -204,13 +223,16 @@ interface Column {
 ```
 
 #### 2. DetailView
+
 **用途**: 详情视图
 **特性**:
+
 - 字段分组
 - 自定义渲染
 - 编辑模式
 
 **Props**:
+
 ```typescript
 interface DetailViewProps {
   data: Record<string, any>;
@@ -230,12 +252,15 @@ interface DetailField {
 ```
 
 #### 3. StatCard
+
 **用途**: 统计卡片（已实现）
 
 #### 4. Timeline
+
 **用途**: 时间线展示
 
 **Props**:
+
 ```typescript
 interface TimelineProps {
   items: TimelineItem[];
@@ -258,14 +283,17 @@ interface TimelineItem {
 ### 表单组件 (Form Components)
 
 #### 1. FormDialog
+
 **用途**: 统一表单对话框
 **特性**:
+
 - 标准化布局
 - 表单验证
 - 提交/取消逻辑
 - 加载状态
 
 **Props**:
+
 ```typescript
 interface FormDialogProps {
   visible: boolean;
@@ -281,7 +309,18 @@ interface FormDialogProps {
 interface FormField {
   name: string;
   label: string;
-  type: 'input' | 'textarea' | 'select' | 'number' | 'date' | 'switch' | 'checkbox' | 'radio' | 'upload' | 'json-editor' | 'code-editor';
+  type:
+    | 'input'
+    | 'textarea'
+    | 'select'
+    | 'number'
+    | 'date'
+    | 'switch'
+    | 'checkbox'
+    | 'radio'
+    | 'upload'
+    | 'json-editor'
+    | 'code-editor';
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
@@ -294,9 +333,11 @@ interface FormField {
 ```
 
 #### 2. FormSection
+
 **用途**: 表单分组
 
 **Props**:
+
 ```typescript
 interface FormSectionProps {
   title: string;
@@ -307,16 +348,20 @@ interface FormSectionProps {
 ```
 
 #### 3. FormBuilder
+
 **用途**: 动态表单构建器
 **特性**:
+
 - 基于配置生成表单
 - 支持复杂布局
 - 动态字段
 
 #### 4. SearchBar
+
 **用途**: 搜索栏
 
 **Props**:
+
 ```typescript
 interface SearchBarProps {
   fields: SearchField[];
@@ -331,9 +376,11 @@ interface SearchBarProps {
 ### 反馈组件 (Feedback)
 
 #### 1. LoadingPage
+
 **用途**: 页面加载状态
 
 **Props**:
+
 ```typescript
 interface LoadingPageProps {
   text?: string;
@@ -343,9 +390,11 @@ interface LoadingPageProps {
 ```
 
 #### 2. EmptyPage
+
 **用途**: 空状态页面
 
 **Props**:
+
 ```typescript
 interface EmptyPageProps {
   type?: 'no-data' | 'no-result' | 'no-permission' | 'error';
@@ -357,9 +406,11 @@ interface EmptyPageProps {
 ```
 
 #### 3. ErrorPage
+
 **用途**: 错误页面
 
 **Props**:
+
 ```typescript
 interface ErrorPageProps {
   code?: number;
@@ -371,9 +422,11 @@ interface ErrorPageProps {
 ```
 
 #### 4. ConfirmDialog
+
 **用途**: 确认对话框
 
 **Props**:
+
 ```typescript
 interface ConfirmDialogProps {
   visible: boolean;
@@ -391,9 +444,11 @@ interface ConfirmDialogProps {
 ### 导航组件 (Navigation)
 
 #### 1. Breadcrumb
+
 **用途**: 面包屑导航
 
 **Props**:
+
 ```typescript
 interface BreadcrumbProps {
   items: BreadcrumbItem[];
@@ -408,9 +463,11 @@ interface BreadcrumbItem {
 ```
 
 #### 2. TabNav
+
 **用途**: 标签页导航
 
 **Props**:
+
 ```typescript
 interface TabNavProps {
   items: TabItem[];
@@ -422,6 +479,7 @@ interface TabNavProps {
 ```
 
 #### 3. SideMenu
+
 **用途**: 侧边菜单
 
 ---
@@ -429,9 +487,11 @@ interface TabNavProps {
 ### 操作组件 (Action)
 
 #### 1. ActionButton
+
 **用途**: 统一操作按钮
 
 **Props**:
+
 ```typescript
 interface ActionButtonProps {
   action: string;
@@ -446,9 +506,11 @@ interface ActionButtonProps {
 ```
 
 #### 2. ActionGroup
+
 **用途**: 操作按钮组
 
 **Props**:
+
 ```typescript
 interface ActionGroupProps {
   actions: Action[];
@@ -462,6 +524,7 @@ interface ActionGroupProps {
 ## 📐 布局规范
 
 ### 页面布局结构
+
 ```vue
 <template>
   <AppLayout>
@@ -473,11 +536,7 @@ interface ActionGroupProps {
       <!-- 侧边菜单 -->
     </template>
 
-    <ContentLayout
-      :title="pageTitle"
-      :description="pageDescription"
-      :actions="pageActions"
-    >
+    <ContentLayout :title="pageTitle" :description="pageDescription" :actions="pageActions">
       <!-- 页面内容 -->
       <DataTable />
       或
@@ -494,6 +553,7 @@ interface ActionGroupProps {
 ```
 
 ### 列表页面标准结构
+
 ```vue
 <template>
   <ContentLayout>
@@ -521,6 +581,7 @@ interface ActionGroupProps {
 ```
 
 ### 表单页面标准结构
+
 ```vue
 <template>
   <ContentLayout :title="formTitle">
@@ -541,19 +602,27 @@ interface ActionGroupProps {
 ## 🎯 组件命名规范
 
 ### BEM + Namespace规范
+
 ```less
 // 设计系统组件前缀: .ds-
-.ds-page-header { }
-.ds-stat-card { }
-.ds-data-table { }
+.ds-page-header {
+}
+.ds-stat-card {
+}
+.ds-data-table {
+}
 
 // 业务组件前缀: 页面模块
-.server-list__table { }
-.group-detail__info { }
-.tool-test__result { }
+.server-list__table {
+}
+.group-detail__info {
+}
+.tool-test__result {
+}
 ```
 
 ### 组件文件命名
+
 ```
 设计系统组件: PascalCase + 描述性名称
 - PageHeader.vue
@@ -571,6 +640,7 @@ interface ActionGroupProps {
 ## 📊 重构优先级
 
 ### P0 - 核心组件（必须）
+
 1. ✅ PageHeader - 已完成
 2. ✅ StatCard - 已完成
 3. ⏳ DataTable - 待开发
@@ -578,6 +648,7 @@ interface ActionGroupProps {
 5. ⏳ DetailView - 待开发
 
 ### P1 - 常用组件（重要）
+
 6. ContentLayout
 7. FilterBar
 8. LoadingPage
@@ -585,6 +656,7 @@ interface ActionGroupProps {
 10. ActionButton
 
 ### P2 - 增强组件（可选）
+
 11. Timeline
 12. TabNav
 13. Breadcrumb
@@ -596,11 +668,13 @@ interface ActionGroupProps {
 ## 🔄 迁移策略
 
 ### 阶段1: 核心组件开发
+
 - 开发P0优先级组件
 - 建立组件文档
 - 编写单元测试
 
 ### 阶段2: 页面迁移
+
 - 按页面类型分组迁移
 - 每次迁移一个页面类型
   - 所有列表页面
@@ -609,6 +683,7 @@ interface ActionGroupProps {
 - 保持测试通过
 
 ### 阶段3: 清理优化
+
 - 删除旧组件
 - 清理未使用代码
 - 性能优化
@@ -620,40 +695,50 @@ interface ActionGroupProps {
 每个组件必须包含：
 
 ### 1. README.md
+
 ```markdown
 # ComponentName
 
 ## 基本用法
+
 \`\`\`vue
 <example>
 \`\`\`
 
 ## API
+
 ### Props
+
 | 参数 | 说明 | 类型 | 默认值 |
-|------|------|------|--------|
+| ---- | ---- | ---- | ------ |
 
 ### Events
+
 | 事件名 | 说明 | 参数 |
-|--------|------|------|
+| ------ | ---- | ---- |
 
 ### Slots
+
 | 插槽名 | 说明 | 作用域参数 |
-|--------|------|-----------|
+| ------ | ---- | ---------- |
+
 \`\`\`
 
 ## 设计规范
+
 - 何时使用
 - 使用场景
 - 最佳实践
 ```
 
 ### 2. 示例代码
+
 - 基本用法示例
 - 高级用法示例
 - 边界情况示例
 
 ### 3. 单元测试
+
 - 覆盖率 >80%
 - 测试主要交互
 - 测试边界情况
@@ -663,6 +748,7 @@ interface ActionGroupProps {
 ## 🎨 主题系统
 
 ### CSS变量映射
+
 ```less
 :root {
   // 间距
@@ -682,6 +768,7 @@ interface ActionGroupProps {
 ```
 
 ### 暗色主题支持
+
 ```less
 [data-theme='dark'] {
   --ds-color-bg-page: #1a1a1a;

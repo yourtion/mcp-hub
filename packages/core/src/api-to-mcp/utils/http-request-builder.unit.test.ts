@@ -3,9 +3,11 @@
  */
 
 import { describe, expect, it } from 'vitest';
+
+import { HttpRequestBuilderImpl } from './http-request-builder.js';
+
 import type { ApiEndpointConfig } from '../types/api-config.js';
 import type { TemplateContext } from '../types/template.js';
-import { HttpRequestBuilderImpl } from './http-request-builder.js';
 
 describe('HttpRequestBuilderImpl', () => {
   const builder = new HttpRequestBuilderImpl();
@@ -63,9 +65,7 @@ describe('HttpRequestBuilderImpl', () => {
       const result = builder.buildRequest(config, context);
 
       expect(result.success).toBe(true);
-      expect(result.request?.url).toBe(
-        'https://api.example.com/search?q=john&limit=10&type=user',
-      );
+      expect(result.request?.url).toBe('https://api.example.com/search?q=john&limit=10&type=user');
       expect(result.usedVariables).toContain('data.query');
       expect(result.usedVariables).toContain('data.limit');
     });
@@ -121,9 +121,7 @@ describe('HttpRequestBuilderImpl', () => {
       const result = builder.buildRequest(config, context);
 
       expect(result.success).toBe(true);
-      expect(result.request?.data).toBe(
-        'User Bob has been created with ID 456',
-      );
+      expect(result.request?.data).toBe('User Bob has been created with ID 456');
       expect(result.usedVariables).toContain('data.name');
       expect(result.usedVariables).toContain('data.id');
     });
@@ -206,11 +204,7 @@ describe('HttpRequestBuilderImpl', () => {
 
       expect(result.success).toBe(true);
       expect(result.request?.data).toEqual({
-        items: [
-          { name: 'First', type: 'A' },
-          { name: 'Second', type: 'B' },
-          'Static item',
-        ],
+        items: [{ name: 'First', type: 'A' }, { name: 'Second', type: 'B' }, 'Static item'],
         metadata: {
           count: 3,
           source: 'batch-api',
@@ -238,11 +232,10 @@ describe('HttpRequestBuilderImpl', () => {
 
   describe('buildUrl', () => {
     it('应该构建简单的URL', () => {
-      const result = builder.buildUrl(
-        'https://api.example.com/users/{{data.id}}',
-        undefined,
-        { data: { id: '123' }, env: {} },
-      );
+      const result = builder.buildUrl('https://api.example.com/users/{{data.id}}', undefined, {
+        data: { id: '123' },
+        env: {},
+      });
 
       expect(result.url).toBe('https://api.example.com/users/123');
       expect(result.usedVariables).toContain('data.id');
@@ -259,9 +252,7 @@ describe('HttpRequestBuilderImpl', () => {
         { data: { query: 'test', active: 'true' }, env: {} },
       );
 
-      expect(result.url).toBe(
-        'https://api.example.com/search?q=test&limit=10&active=true',
-      );
+      expect(result.url).toBe('https://api.example.com/search?q=test&limit=10&active=true');
       expect(result.usedVariables).toContain('data.query');
       expect(result.usedVariables).toContain('data.active');
     });
@@ -273,9 +264,7 @@ describe('HttpRequestBuilderImpl', () => {
         { data: { param: 'test' }, env: {} },
       );
 
-      expect(result.url).toBe(
-        'https://api.example.com/search?existing=value&new=test',
-      );
+      expect(result.url).toBe('https://api.example.com/search?existing=value&new=test');
     });
 
     it('应该跳过空的查询参数值', () => {
@@ -289,9 +278,7 @@ describe('HttpRequestBuilderImpl', () => {
         { data: { query: 'search' }, env: {} },
       );
 
-      expect(result.url).toBe(
-        'https://api.example.com/search?q=search&valid=test',
-      );
+      expect(result.url).toBe('https://api.example.com/search?q=search&valid=test');
     });
   });
 

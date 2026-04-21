@@ -42,11 +42,7 @@ export class JsonStorage<T> {
       const fileContent = await fs.readFile(this.filePath, 'utf-8');
       return JSON.parse(fileContent) as T;
     } catch (error: unknown) {
-      if (
-        error instanceof Error &&
-        'code' in error &&
-        error.code === 'ENOENT'
-      ) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         // 文件不存在
         if (this.defaultValue !== undefined) {
           await this.write(this.defaultValue); // 写入默认值到新文件

@@ -82,10 +82,7 @@ export class ConfigValidator {
   /**
    * 验证基础结构
    */
-  private validateBasicStructure(
-    config: unknown,
-    result: ValidationResult,
-  ): void {
+  private validateBasicStructure(config: unknown, result: ValidationResult): void {
     if (config === null || config === undefined) {
       result.valid = false;
       result.errors.push({
@@ -196,11 +193,7 @@ export class ConfigValidator {
     const config = serverConfig as Record<string, unknown>;
 
     // 验证必需字段
-    if (
-      !config.command ||
-      typeof config.command !== 'string' ||
-      config.command.trim() === ''
-    ) {
+    if (!config.command || typeof config.command !== 'string' || config.command.trim() === '') {
       result.valid = false;
       result.errors.push({
         path: [...basePath, 'command'],
@@ -221,10 +214,7 @@ export class ConfigValidator {
       });
     }
 
-    if (
-      config.env !== undefined &&
-      (typeof config.env !== 'object' || config.env === null)
-    ) {
+    if (config.env !== undefined && (typeof config.env !== 'object' || config.env === null)) {
       result.valid = false;
       result.errors.push({
         path: [...basePath, 'env'],
@@ -248,11 +238,7 @@ export class ConfigValidator {
     }
 
     // 添加警告
-    if (
-      config.timeout &&
-      typeof config.timeout === 'number' &&
-      config.timeout < 5000
-    ) {
+    if (config.timeout && typeof config.timeout === 'number' && config.timeout < 5000) {
       result.warnings.push({
         path: [...basePath, 'timeout'],
         message: '超时时间可能过短',
@@ -260,11 +246,7 @@ export class ConfigValidator {
       });
     }
 
-    if (
-      config.timeout &&
-      typeof config.timeout === 'number' &&
-      config.timeout > 300000
-    ) {
+    if (config.timeout && typeof config.timeout === 'number' && config.timeout > 300000) {
       result.warnings.push({
         path: [...basePath, 'timeout'],
         message: '超时时间可能过长',
@@ -324,10 +306,7 @@ export class ConfigValidator {
   /**
    * 验证传输配置
    */
-  private validateTransport(
-    transport: unknown,
-    result: ValidationResult,
-  ): void {
+  private validateTransport(transport: unknown, result: ValidationResult): void {
     if (!transport) {
       // 传输配置是可选的，使用默认值
       return;
@@ -361,10 +340,7 @@ export class ConfigValidator {
   /**
    * 验证业务逻辑
    */
-  private validateBusinessLogic(
-    config: CliConfig,
-    result: ValidationResult,
-  ): void {
+  private validateBusinessLogic(config: CliConfig, result: ValidationResult): void {
     // 检查服务器ID命名规范
     for (const serverId of Object.keys(config.servers)) {
       if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(serverId)) {
@@ -427,8 +403,7 @@ export class ConfigValidator {
     if (result.warnings.length > 0) {
       lines.push('\n警告:');
       for (const warning of result.warnings) {
-        const path =
-          warning.path.length > 0 ? `[${warning.path.join('.')}] ` : '';
+        const path = warning.path.length > 0 ? `[${warning.path.join('.')}] ` : '';
         lines.push(`  • ${path}${warning.message}`);
         if (warning.suggestion) {
           lines.push(`    建议: ${warning.suggestion}`);

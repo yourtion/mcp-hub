@@ -46,9 +46,7 @@ export class DomainWhitelistImpl implements DomainWhitelist {
   private allowedDomains: Set<string> = new Set();
 
   constructor(initialDomains: string[] = []) {
-    initialDomains.forEach((domain) =>
-      this.allowedDomains.add(domain.toLowerCase()),
-    );
+    initialDomains.forEach((domain) => this.allowedDomains.add(domain.toLowerCase()));
   }
 
   isAllowed(url: string): boolean {

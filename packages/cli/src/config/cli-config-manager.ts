@@ -3,21 +3,17 @@
  * 负责加载、验证和管理CLI配置
  */
 
+import { createCliLogger } from '@mcp-core/mcp-hub-share';
+import { CliConfigSchema, CliServerConfigSchema } from '@mcp-core/mcp-hub-share/config';
 import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { createCliLogger } from '@mcp-core/mcp-hub-share';
-import {
-  CliConfigSchema,
-  CliServerConfigSchema,
-} from '@mcp-core/mcp-hub-share/config';
 import { z } from 'zod/v4';
-import type { CliConfig, CliError } from '../types';
+
 import { CliErrorCode } from '../types';
-import {
-  ConfigTemplateGenerator,
-  type ConfigTemplateType,
-} from './config-template';
+import { ConfigTemplateGenerator, type ConfigTemplateType } from './config-template';
 import { ConfigValidator, type ValidationResult } from './config-validator';
+
+import type { CliConfig, CliError } from '../types';
 
 /**
  * CLI配置管理器类
@@ -66,10 +62,7 @@ export class CliConfigManager {
       }
 
       // 验证配置结构
-      const validatedConfig = this.validateConfigStructure(
-        rawConfig,
-        resolvedPath,
-      );
+      const validatedConfig = this.validateConfigStructure(rawConfig, resolvedPath);
 
       // 缓存配置
       this.configCache.set(resolvedPath, validatedConfig);
@@ -198,10 +191,7 @@ export class CliConfigManager {
   /**
    * 验证配置结构
    */
-  private validateConfigStructure(
-    rawConfig: unknown,
-    configPath: string,
-  ): CliConfig {
+  private validateConfigStructure(rawConfig: unknown, configPath: string): CliConfig {
     try {
       return CliConfigSchema.parse(rawConfig);
     } catch (error) {
@@ -228,11 +218,7 @@ export class CliConfigManager {
   /**
    * 创建配置错误
    */
-  private createConfigError(
-    code: CliErrorCode,
-    message: string,
-    details?: unknown,
-  ): CliError {
+  private createConfigError(code: CliErrorCode, message: string, details?: unknown): CliError {
     const error = new Error(message) as CliError;
     error.code = code;
     error.details = details;
@@ -262,10 +248,7 @@ export class CliConfigManager {
   /**
    * 合并配置
    */
-  mergeConfigs(
-    baseConfig: CliConfig,
-    overrideConfig: Partial<CliConfig>,
-  ): CliConfig {
+  mergeConfigs(baseConfig: CliConfig, overrideConfig: Partial<CliConfig>): CliConfig {
     return {
       servers: { ...baseConfig.servers, ...overrideConfig.servers },
       logging: { ...baseConfig.logging, ...overrideConfig.logging },

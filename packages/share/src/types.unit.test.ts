@@ -4,14 +4,14 @@
  */
 
 import { describe, expect, it } from 'vitest';
+
 import type { DeepReadonly } from './types.js';
 
 describe('DeepReadonly', () => {
   it('应该保持原始类型不变', () => {
     const num: DeepReadonly<number> = 42 as unknown as DeepReadonly<number>;
     const str: DeepReadonly<string> = 'test' as unknown as DeepReadonly<string>;
-    const bool: DeepReadonly<boolean> =
-      true as unknown as DeepReadonly<boolean>;
+    const bool: DeepReadonly<boolean> = true as unknown as DeepReadonly<boolean>;
 
     expect(num).toBe(42);
     expect(str).toBe('test');
@@ -20,9 +20,7 @@ describe('DeepReadonly', () => {
 
   it('应该使数组只读', () => {
     // 测试类型编译正确
-    const arr: DeepReadonly<number[]> = [1, 2, 3] as unknown as DeepReadonly<
-      number[]
-    >;
+    const arr: DeepReadonly<number[]> = [1, 2, 3] as unknown as DeepReadonly<number[]>;
 
     expect(arr).toEqual([1, 2, 3]);
   });

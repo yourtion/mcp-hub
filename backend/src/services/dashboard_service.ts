@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger.js';
+
 import type {
   Activity,
   DashboardStats,
@@ -5,7 +7,6 @@ import type {
   LogQuery,
   SystemHealth,
 } from '../types/dashboard.js';
-import { logger } from '../utils/logger.js';
 import type { McpHubService } from './mcp_hub_service.js';
 
 /**
@@ -47,21 +48,16 @@ export class DashboardService {
       // 计算性能指标
       const averageResponseTime =
         this.performanceStats.totalRequests > 0
-          ? this.performanceStats.totalResponseTime /
-            this.performanceStats.totalRequests
+          ? this.performanceStats.totalResponseTime / this.performanceStats.totalRequests
           : 0;
 
       const errorRate =
         this.performanceStats.totalRequests > 0
-          ? (this.performanceStats.errorCount /
-              this.performanceStats.totalRequests) *
-            100
+          ? (this.performanceStats.errorCount / this.performanceStats.totalRequests) * 100
           : 0;
 
       // 获取热门工具统计
-      const topTools = Array.from(
-        this.performanceStats.toolExecutions.entries(),
-      )
+      const topTools = Array.from(this.performanceStats.toolExecutions.entries())
         .map(([name, stats]) => ({
           name,
           calls: stats.calls,
@@ -252,9 +248,7 @@ export class DashboardService {
 
       if (Object.values(checks).some((check) => check.status === 'error')) {
         overallStatus = 'error';
-      } else if (
-        Object.values(checks).some((check) => check.status === 'warning')
-      ) {
+      } else if (Object.values(checks).some((check) => check.status === 'warning')) {
         overallStatus = 'warning';
       }
 
@@ -340,11 +334,7 @@ export class DashboardService {
   /**
    * 记录工具执行统计
    */
-  recordToolExecution(
-    toolName: string,
-    executionTime: number,
-    success: boolean,
-  ): void {
+  recordToolExecution(toolName: string, executionTime: number, success: boolean): void {
     this.performanceStats.totalRequests++;
     this.performanceStats.totalResponseTime += executionTime;
 
@@ -400,24 +390,18 @@ export class DashboardService {
 
     // 按分类过滤
     if (query.category) {
-      filteredLogs = filteredLogs.filter(
-        (log) => log.category === query.category,
-      );
+      filteredLogs = filteredLogs.filter((log) => log.category === query.category);
     }
 
     // 按时间范围过滤
     if (query.startTime) {
       const startTime = new Date(query.startTime);
-      filteredLogs = filteredLogs.filter(
-        (log) => new Date(log.timestamp) >= startTime,
-      );
+      filteredLogs = filteredLogs.filter((log) => new Date(log.timestamp) >= startTime);
     }
 
     if (query.endTime) {
       const endTime = new Date(query.endTime);
-      filteredLogs = filteredLogs.filter(
-        (log) => new Date(log.timestamp) <= endTime,
-      );
+      filteredLogs = filteredLogs.filter((log) => new Date(log.timestamp) <= endTime);
     }
 
     // 按关键词搜索
@@ -431,10 +415,7 @@ export class DashboardService {
     }
 
     // 排序（最新的在前）
-    filteredLogs.sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-    );
+    filteredLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
     const total = filteredLogs.length;
 
@@ -476,9 +457,7 @@ export class DashboardService {
     );
 
     // 清理一周前的日志
-    this.logs = this.logs.filter(
-      (log) => new Date(log.timestamp).getTime() > oneWeekAgo,
-    );
+    this.logs = this.logs.filter((log) => new Date(log.timestamp).getTime() > oneWeekAgo);
 
     logger.info('数据清理完成', {
       remainingActivities: this.activities.length,
@@ -492,15 +471,12 @@ export class DashboardService {
   getPerformanceStats() {
     const averageResponseTime =
       this.performanceStats.totalRequests > 0
-        ? this.performanceStats.totalResponseTime /
-          this.performanceStats.totalRequests
+        ? this.performanceStats.totalResponseTime / this.performanceStats.totalRequests
         : 0;
 
     const errorRate =
       this.performanceStats.totalRequests > 0
-        ? (this.performanceStats.errorCount /
-            this.performanceStats.totalRequests) *
-          100
+        ? (this.performanceStats.errorCount / this.performanceStats.totalRequests) * 100
         : 0;
 
     // 获取热门工具统计

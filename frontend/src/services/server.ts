@@ -1,5 +1,7 @@
 // 服务器管理API服务
 
+import api, { handleApiResponse } from './api';
+
 import type {
   CreateServerRequest,
   ServerInfo,
@@ -12,7 +14,6 @@ import type {
   ValidateServerRequest,
   ValidateServerResponse,
 } from '@/types/server';
-import api, { handleApiResponse } from './api';
 
 /**
  * 获取服务器列表
@@ -33,9 +34,7 @@ export async function getServer(id: string): Promise<ServerInfo> {
 /**
  * 创建新服务器
  */
-export async function createServer(
-  data: CreateServerRequest,
-): Promise<ServerOperationResponse> {
+export async function createServer(data: CreateServerRequest): Promise<ServerOperationResponse> {
   const response = await api.post('/servers', data);
   return handleApiResponse<ServerOperationResponse>(response);
 }
@@ -54,9 +53,7 @@ export async function updateServer(
 /**
  * 删除服务器
  */
-export async function deleteServer(
-  id: string,
-): Promise<ServerOperationResponse> {
+export async function deleteServer(id: string): Promise<ServerOperationResponse> {
   const response = await api.delete(`/servers/${id}`);
   return handleApiResponse<ServerOperationResponse>(response);
 }
@@ -72,9 +69,7 @@ export async function getServerStatus(id: string): Promise<ServerStatusInfo> {
 /**
  * 连接服务器
  */
-export async function connectServer(
-  id: string,
-): Promise<ServerOperationResponse> {
+export async function connectServer(id: string): Promise<ServerOperationResponse> {
   const response = await api.post(`/servers/${id}/connect`);
   return handleApiResponse<ServerOperationResponse>(response);
 }
@@ -82,9 +77,7 @@ export async function connectServer(
 /**
  * 断开服务器连接
  */
-export async function disconnectServer(
-  id: string,
-): Promise<ServerOperationResponse> {
+export async function disconnectServer(id: string): Promise<ServerOperationResponse> {
   const response = await api.post(`/servers/${id}/disconnect`);
   return handleApiResponse<ServerOperationResponse>(response);
 }
@@ -92,9 +85,7 @@ export async function disconnectServer(
 /**
  * 测试服务器连接
  */
-export async function testServer(
-  config: TestServerRequest,
-): Promise<TestServerResponse> {
+export async function testServer(config: TestServerRequest): Promise<TestServerResponse> {
   const response = await api.post('/servers/test', config);
   return handleApiResponse<TestServerResponse>(response);
 }

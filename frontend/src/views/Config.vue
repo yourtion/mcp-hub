@@ -113,14 +113,7 @@
             <p class="mcp-empty__desc">点击"创建备份"按钮生成第一份配置备份</p>
           </div>
 
-          <t-table
-            v-else
-            :data="backups"
-            :columns="backupColumns"
-            row-key="id"
-            hover
-            stripe
-          >
+          <t-table v-else :data="backups" :columns="backupColumns" row-key="id" hover stripe>
             <template #configTypes="{ row }">
               <t-tag
                 v-for="ct in row.configTypes"
@@ -143,9 +136,7 @@
 
             <template #actions="{ row }">
               <t-popconfirm content="确认从此备份恢复配置？" @confirm="handleRestore(row.id)">
-                <t-button variant="text" size="small" theme="primary">
-                  恢复
-                </t-button>
+                <t-button variant="text" size="small" theme="primary"> 恢复 </t-button>
               </t-popconfirm>
             </template>
           </t-table>
@@ -161,7 +152,14 @@
       width="600px"
     >
       <div v-if="validationResult">
-        <div class="config-page__validation-status" :class="validationResult.valid ? 'config-page__validation-status--valid' : 'config-page__validation-status--invalid'">
+        <div
+          class="config-page__validation-status"
+          :class="
+            validationResult.valid
+              ? 'config-page__validation-status--valid'
+              : 'config-page__validation-status--invalid'
+          "
+        >
           <CheckCircleIcon v-if="validationResult.valid" />
           <CloseCircleIcon v-else />
           <span>{{ validationResult.valid ? '验证通过' : '验证失败' }}</span>
@@ -193,7 +191,10 @@
 
         <div v-if="validationResult.impact" class="config-page__validation-section">
           <h4 class="config-page__validation-section-title">影响分析</h4>
-          <div v-if="validationResult.impact.requiresRestart" class="config-page__validation-item config-page__validation-item--warning">
+          <div
+            v-if="validationResult.impact.requiresRestart"
+            class="config-page__validation-item config-page__validation-item--warning"
+          >
             <span class="config-page__validation-message">此更改需要重启服务才能生效</span>
           </div>
           <div v-if="validationResult.impact.potentialIssues.length > 0">
@@ -212,7 +213,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import {
+  CheckCircleIcon,
+  SaveIcon,
+  AddIcon,
+  RefreshIcon,
+  FolderIcon,
+  CloseCircleIcon,
+} from 'tdesign-icons-vue-next';
 import {
   Tabs as TTabs,
   TabPanel as TTabPanel,
@@ -225,15 +233,10 @@ import {
   Popconfirm as TPopconfirm,
   MessagePlugin,
 } from 'tdesign-vue-next';
-import {
-  CheckCircleIcon,
-  SaveIcon,
-  AddIcon,
-  RefreshIcon,
-  FolderIcon,
-  CloseCircleIcon,
-} from 'tdesign-icons-vue-next';
+import { onMounted, ref } from 'vue';
+
 import { configService } from '@/services/config';
+
 import type {
   ConfigBackup,
   ConfigData,
@@ -352,7 +355,9 @@ async function fetchBackups(): Promise<void> {
 
 async function handleCreateBackup(): Promise<void> {
   try {
-    const result = await configService.createBackup({ description: `手动备份 - ${new Date().toLocaleString('zh-CN')}` });
+    const result = await configService.createBackup({
+      description: `手动备份 - ${new Date().toLocaleString('zh-CN')}`,
+    });
     MessagePlugin.success(`备份创建成功: ${result.backupId}`);
     await fetchBackups();
   } catch (err) {

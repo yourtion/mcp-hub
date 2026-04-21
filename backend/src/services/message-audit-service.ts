@@ -96,8 +96,7 @@ export class MessageAuditService {
     topTools: Array<{ name: string; calls: number; avgTime: number }>;
   } {
     return {
-      totalRequests: this.messages.filter((msg) => msg.type === 'request')
-        .length,
+      totalRequests: this.messages.filter((msg) => msg.type === 'request').length,
       averageResponseTime: 0,
       errorRate: 0,
       topTools: [],

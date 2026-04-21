@@ -2,9 +2,11 @@
  * CLI传输层单元测试
  */
 
-import type { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { CliTransport } from './cli-transport';
+
+import type { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
 
 // Mock MCP SDK
 const mockTransport = {
@@ -83,9 +85,7 @@ describe('CliTransport', () => {
     it('应该在未初始化时抛出错误', async () => {
       const uninitializedTransport = new CliTransport();
 
-      await expect(uninitializedTransport.start()).rejects.toThrow(
-        '传输层必须先初始化',
-      );
+      await expect(uninitializedTransport.start()).rejects.toThrow('传输层必须先初始化');
     });
 
     it('应该跳过重复启动', async () => {
@@ -146,9 +146,9 @@ describe('CliTransport', () => {
     it('应该在未初始化时抛出错误', async () => {
       const uninitializedTransport = new CliTransport();
 
-      await expect(
-        uninitializedTransport.sendMessage(testMessage),
-      ).rejects.toThrow('传输层未初始化');
+      await expect(uninitializedTransport.sendMessage(testMessage)).rejects.toThrow(
+        '传输层未初始化',
+      );
     });
 
     it('应该在未启动时抛出错误', async () => {
@@ -156,9 +156,7 @@ describe('CliTransport', () => {
       await transport.initialize();
       // 不启动传输层
 
-      await expect(transport.sendMessage(testMessage)).rejects.toThrow(
-        '传输层未启动',
-      );
+      await expect(transport.sendMessage(testMessage)).rejects.toThrow('传输层未启动');
     });
   });
 

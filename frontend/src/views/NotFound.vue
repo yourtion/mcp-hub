@@ -4,9 +4,7 @@
       <div class="not-found-code">404</div>
       <h1 class="not-found-title">页面未找到</h1>
       <p class="not-found-desc">抱歉，您访问的页面不存在</p>
-      <t-button theme="primary" size="large" @click="goDashboard">
-        返回仪表板
-      </t-button>
+      <t-button theme="primary" size="large" @click="goDashboard"> 返回仪表板 </t-button>
     </div>
   </div>
 </template>

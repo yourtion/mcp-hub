@@ -4,12 +4,9 @@
  */
 
 import { McpServiceManager as McpServiceManagerImpl } from '../services/mcp/service-manager.js';
+
 import type { GroupConfig, McpServerConfig } from '../types/config.js';
-import type {
-  McpServiceManager,
-  ToolInfo,
-  ToolResult,
-} from '../types/service.js';
+import type { McpServiceManager, ToolInfo, ToolResult } from '../types/service.js';
 
 /**
  * MCP服务工厂接口

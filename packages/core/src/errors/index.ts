@@ -469,10 +469,7 @@ export class UnifiedErrorHandler implements ErrorHandler {
     if (this.logger) {
       this.logger(`[${context.component}] ${context.operation} 失败`, logData);
     } else {
-      console.error(
-        `[${context.component}] ${context.operation} 失败:`,
-        logData,
-      );
+      console.error(`[${context.component}] ${context.operation} 失败:`, logData);
     }
   }
 
@@ -507,10 +504,10 @@ export class UnifiedErrorHandler implements ErrorHandler {
           config.maxDelay,
         );
 
-        this.logError(
-          new Error(`重试第 ${attempt} 次失败，${delay}ms 后重试`),
-          { ...context, metadata: { ...context.metadata, attempt, delay } },
-        );
+        this.logError(new Error(`重试第 ${attempt} 次失败，${delay}ms 后重试`), {
+          ...context,
+          metadata: { ...context.metadata, attempt, delay },
+        });
 
         await this.sleep(delay);
       }
@@ -538,21 +535,14 @@ export class UnifiedErrorHandler implements ErrorHandler {
       });
 
       if (fallbackStrategy.fallbackFunction) {
-        return fallbackStrategy.fallbackFunction(
-          error as McpHubCoreError,
-          context,
-        ) as T;
+        return fallbackStrategy.fallbackFunction(error as McpHubCoreError, context) as T;
       }
 
       return fallbackStrategy.fallbackValue as T;
     }
   }
 
-  formatErrorResponse(
-    error: Error,
-    context?: ErrorContext,
-    requestId?: string,
-  ): ErrorResponse {
+  formatErrorResponse(error: Error, context?: ErrorContext, requestId?: string): ErrorResponse {
     if (error instanceof McpHubCoreError) {
       return {
         success: false,

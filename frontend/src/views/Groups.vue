@@ -13,11 +13,7 @@
           <template #icon><AddIcon /></template>
           创建组
         </t-button>
-        <t-button
-          variant="outline"
-          @click="groupStore.fetchGroups()"
-          :loading="groupStore.loading"
-        >
+        <t-button variant="outline" @click="groupStore.fetchGroups()" :loading="groupStore.loading">
           <template #icon><RefreshIcon /></template>
           刷新
         </t-button>
@@ -26,15 +22,9 @@
 
     <!-- Summary tags -->
     <div class="group-summary">
-      <t-tag theme="primary" variant="light">
-        总计 {{ groupStore.summary.totalGroups }}
-      </t-tag>
-      <t-tag theme="success" variant="light">
-        健康 {{ groupStore.summary.healthyGroups }}
-      </t-tag>
-      <t-tag theme="danger" variant="light">
-        异常 {{ groupStore.summary.unhealthyGroups }}
-      </t-tag>
+      <t-tag theme="primary" variant="light"> 总计 {{ groupStore.summary.totalGroups }} </t-tag>
+      <t-tag theme="success" variant="light"> 健康 {{ groupStore.summary.healthyGroups }} </t-tag>
+      <t-tag theme="danger" variant="light"> 异常 {{ groupStore.summary.unhealthyGroups }} </t-tag>
     </div>
 
     <GroupList
@@ -53,34 +43,26 @@
       @submit="handleSubmit"
     />
 
-    <GroupMemberManager
-      v-model:visible="showMemberManager"
-      :group-id="activeGroupId"
-    />
+    <GroupMemberManager v-model:visible="showMemberManager" :group-id="activeGroupId" />
 
-    <GroupValidationManager
-      v-model:visible="showValidationManager"
-      :group-id="activeGroupId"
-    />
+    <GroupValidationManager v-model:visible="showValidationManager" :group-id="activeGroupId" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import { MessagePlugin } from 'tdesign-vue-next';
 import { AddIcon, RefreshIcon } from 'tdesign-icons-vue-next';
-import { useGroupStore } from '@/stores/group';
+import { MessagePlugin } from 'tdesign-vue-next';
+import { ref, onMounted, watch } from 'vue';
+
 import {
   GroupList,
   GroupFormDialog,
   GroupMemberManager,
   GroupValidationManager,
 } from '@/components/groups';
-import type {
-  GroupInfo,
-  CreateGroupRequest,
-  UpdateGroupRequest,
-} from '@/types/group';
+import { useGroupStore } from '@/stores/group';
+
+import type { GroupInfo, CreateGroupRequest, UpdateGroupRequest } from '@/types/group';
 
 const groupStore = useGroupStore();
 

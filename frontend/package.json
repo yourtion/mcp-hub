@@ -2,14 +2,14 @@
   "name": "@mcp-core/mcp-hub-web",
   "version": "0.0.1",
   "private": true,
-  "type": "module",
   "files": [
     "dist",
     "README.md"
   ],
+  "type": "module",
   "scripts": {
     "build": "rsbuild build",
-    "check": "biome check --write",
+    "check": "oxlint --fix src/ && oxfmt src/",
     "dev": "rsbuild dev --open",
     "preview": "rsbuild preview",
     "test": "vitest --run"
@@ -31,15 +31,11 @@
     "@rsbuild/plugin-vue": "^1.0.7",
     "@types/node": "^20.11.17",
     "@vitejs/plugin-vue": "^6.0.1",
-    "@vue/eslint-config-typescript": "^14.5.1",
     "@vue/test-utils": "^2.4.6",
     "date-fns": "^4.1.0",
     "echarts": "^6.0.0",
-    "eslint-plugin-vue": "^10.2.0",
-    "globals": "^16.2.0",
     "jsdom": "^25.0.1",
     "less": "^4.2.0",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.34.1"
+    "typescript": "^5.8.3"
   }
 }

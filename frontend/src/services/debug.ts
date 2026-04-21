@@ -1,3 +1,5 @@
+import api, { handleApiResponse } from './api';
+
 import type { ApiResponse } from '@/types/api';
 import type {
   DebugErrorAnalysisResponse,
@@ -6,7 +8,6 @@ import type {
   ToolTestRequest,
   ToolTestResponse,
 } from '@/types/debug';
-import api, { handleApiResponse } from './api';
 
 // 获取MCP协议消息
 export const getMcpMessages = async (
@@ -26,30 +27,21 @@ export const getMcpMessages = async (
 };
 
 // 测试工具执行
-export const testTool = async (
-  request: ToolTestRequest,
-): Promise<ToolTestResponse> => {
-  const response = await api.post<ApiResponse<ToolTestResponse>>(
-    '/debug/tool-test',
-    request,
-  );
+export const testTool = async (request: ToolTestRequest): Promise<ToolTestResponse> => {
+  const response = await api.post<ApiResponse<ToolTestResponse>>('/debug/tool-test', request);
   return handleApiResponse(response);
 };
 
 // 获取性能统计
-export const getPerformanceStats =
-  async (): Promise<DebugPerformanceStatsResponse> => {
-    const response = await api.get<ApiResponse<DebugPerformanceStatsResponse>>(
-      '/debug/performance-stats',
-    );
-    return handleApiResponse(response);
-  };
+export const getPerformanceStats = async (): Promise<DebugPerformanceStatsResponse> => {
+  const response = await api.get<ApiResponse<DebugPerformanceStatsResponse>>(
+    '/debug/performance-stats',
+  );
+  return handleApiResponse(response);
+};
 
 // 获取错误分析
-export const getErrorAnalysis =
-  async (): Promise<DebugErrorAnalysisResponse> => {
-    const response = await api.get<ApiResponse<DebugErrorAnalysisResponse>>(
-      '/debug/error-analysis',
-    );
-    return handleApiResponse(response);
-  };
+export const getErrorAnalysis = async (): Promise<DebugErrorAnalysisResponse> => {
+  const response = await api.get<ApiResponse<DebugErrorAnalysisResponse>>('/debug/error-analysis');
+  return handleApiResponse(response);
+};

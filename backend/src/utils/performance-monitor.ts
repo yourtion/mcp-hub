@@ -79,8 +79,7 @@ export class PerformanceMonitor {
 
     return {
       totalRequests,
-      averageResponseTime:
-        durations.reduce((sum, d) => sum + d, 0) / durations.length,
+      averageResponseTime: durations.reduce((sum, d) => sum + d, 0) / durations.length,
       minResponseTime: Math.min(...durations),
       maxResponseTime: Math.max(...durations),
       successRate: (successCount / totalRequests) * 100,
@@ -111,8 +110,7 @@ export class PerformanceMonitor {
 
       stats[key] = {
         totalRequests,
-        averageResponseTime:
-          durations.reduce((sum, d) => sum + d, 0) / durations.length,
+        averageResponseTime: durations.reduce((sum, d) => sum + d, 0) / durations.length,
         minResponseTime: Math.min(...durations),
         maxResponseTime: Math.max(...durations),
         successRate: (successCount / totalRequests) * 100,

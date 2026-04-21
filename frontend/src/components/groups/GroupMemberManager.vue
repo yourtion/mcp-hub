@@ -14,15 +14,9 @@
     <template v-else>
       <!-- Summary -->
       <div class="group-members__summary" v-if="servers.length > 0">
-        <t-tag theme="primary" variant="light">
-          总计 {{ serverStats.total }}
-        </t-tag>
-        <t-tag theme="success" variant="light">
-          已连接 {{ serverStats.connected }}
-        </t-tag>
-        <t-tag theme="danger" variant="light">
-          未连接 {{ serverStats.disconnected }}
-        </t-tag>
+        <t-tag theme="primary" variant="light"> 总计 {{ serverStats.total }} </t-tag>
+        <t-tag theme="success" variant="light"> 已连接 {{ serverStats.connected }} </t-tag>
+        <t-tag theme="danger" variant="light"> 未连接 {{ serverStats.disconnected }} </t-tag>
       </div>
 
       <!-- Server list -->
@@ -47,11 +41,7 @@
         </template>
 
         <template #isHealthy="{ row }">
-          <t-tag
-            :theme="row.isHealthy ? 'success' : 'danger'"
-            variant="light"
-            size="small"
-          >
+          <t-tag :theme="row.isHealthy ? 'success' : 'danger'" variant="light" size="small">
             {{ row.isHealthy ? '健康' : '异常' }}
           </t-tag>
         </template>
@@ -68,10 +58,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
-import { MessagePlugin } from 'tdesign-vue-next';
 import { ServerIcon } from 'tdesign-icons-vue-next';
+import { MessagePlugin } from 'tdesign-vue-next';
+import { ref, watch, computed } from 'vue';
+
 import { useGroupStore } from '@/stores/group';
+
 import type { GroupServerInfo } from '@/types/group';
 
 const props = defineProps<{
@@ -116,9 +108,7 @@ watch(
         const response = await groupStore.getGroupServers(props.groupId);
         servers.value = response.servers;
       } catch (err: unknown) {
-        MessagePlugin.error(
-          err instanceof Error ? err.message : '获取组服务器列表失败',
-        );
+        MessagePlugin.error(err instanceof Error ? err.message : '获取组服务器列表失败');
       } finally {
         dialogLoading.value = false;
       }

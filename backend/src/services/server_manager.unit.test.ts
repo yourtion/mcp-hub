@@ -1,8 +1,10 @@
-import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { ServerStatus } from '../types/mcp-hub.js';
 import { ServerManager } from './server_manager.js';
+
+import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 
 // Mock the MCP SDK
 // 使用一个工厂函数来创建 mock Client，支持 vitest 4.x 的 new 调用
@@ -22,9 +24,7 @@ vi.mock('@modelcontextprotocol/sdk/client/sse.js', () => ({
   SSEClientTransport: vi.fn(function (this: Record<string, unknown>) {}),
 }));
 vi.mock('@modelcontextprotocol/sdk/client/streamableHttp.js', () => ({
-  StreamableHTTPClientTransport: vi.fn(function (
-    this: Record<string, unknown>,
-  ) {}),
+  StreamableHTTPClientTransport: vi.fn(function (this: Record<string, unknown>) {}),
 }));
 vi.mock('../utils/logger.js');
 
@@ -169,9 +169,7 @@ describe('ServerManager', () => {
 
     it('should handle tool discovery failures', async () => {
       mockClient.connect.mockResolvedValue(undefined);
-      mockClient.listTools.mockRejectedValue(
-        new Error('Tool discovery failed'),
-      );
+      mockClient.listTools.mockRejectedValue(new Error('Tool discovery failed'));
 
       await serverManager.initialize();
 
@@ -190,12 +188,8 @@ describe('ServerManager', () => {
 
       await serverManager.initialize();
 
-      expect(serverManager.getServerStatus('test-server-1')).toBe(
-        ServerStatus.CONNECTED,
-      );
-      expect(serverManager.getServerStatus('non-existent')).toBe(
-        ServerStatus.DISCONNECTED,
-      );
+      expect(serverManager.getServerStatus('test-server-1')).toBe(ServerStatus.CONNECTED);
+      expect(serverManager.getServerStatus('non-existent')).toBe(ServerStatus.DISCONNECTED);
     });
   });
 
@@ -210,11 +204,9 @@ describe('ServerManager', () => {
       const mockResult = { content: [{ type: 'text', text: 'Success' }] };
       mockClient.callTool.mockResolvedValue(mockResult);
 
-      const result = await serverManager.executeToolOnServer(
-        'test-server-1',
-        'test-tool',
-        { arg1: 'value1' },
-      );
+      const result = await serverManager.executeToolOnServer('test-server-1', 'test-tool', {
+        arg1: 'value1',
+      });
 
       expect(result).toEqual(mockResult);
       expect(mockClient.callTool).toHaveBeenCalledWith({
@@ -224,9 +216,9 @@ describe('ServerManager', () => {
     });
 
     it('should throw error for non-existent server', async () => {
-      await expect(
-        serverManager.executeToolOnServer('non-existent', 'tool', {}),
-      ).rejects.toThrow('Server non-existent not found');
+      await expect(serverManager.executeToolOnServer('non-existent', 'tool', {})).rejects.toThrow(
+        'Server non-existent not found',
+      );
     });
 
     it('should throw error for disconnected server', async () => {
@@ -237,9 +229,9 @@ describe('ServerManager', () => {
         server.status = ServerStatus.DISCONNECTED;
       }
 
-      await expect(
-        serverManager.executeToolOnServer('test-server-1', 'tool', {}),
-      ).rejects.toThrow('Server test-server-1 is not connected');
+      await expect(serverManager.executeToolOnServer('test-server-1', 'tool', {})).rejects.toThrow(
+        'Server test-server-1 is not connected',
+      );
     });
 
     it('should handle tool execution failures', async () => {
@@ -253,9 +245,7 @@ describe('ServerManager', () => {
 
   describe('getServerTools', () => {
     beforeEach(async () => {
-      const mockTools = [
-        { name: 'tool1', description: 'Test tool 1', inputSchema: {} },
-      ];
+      const mockTools = [{ name: 'tool1', description: 'Test tool 1', inputSchema: {} }];
 
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: mockTools });
@@ -271,9 +261,9 @@ describe('ServerManager', () => {
     });
 
     it('should throw error for non-existent server', async () => {
-      await expect(
-        serverManager.getServerTools('non-existent'),
-      ).rejects.toThrow('Server non-existent not found');
+      await expect(serverManager.getServerTools('non-existent')).rejects.toThrow(
+        'Server non-existent not found',
+      );
     });
 
     it('should return empty array for disconnected server', async () => {
@@ -332,9 +322,7 @@ describe('ServerManager', () => {
       const server = servers.get('test-server-1');
 
       expect(server?.lastConnected).toBeInstanceOf(Date);
-      expect(server?.lastConnected?.getTime()).toBeGreaterThanOrEqual(
-        beforeConnect.getTime(),
-      );
+      expect(server?.lastConnected?.getTime()).toBeGreaterThanOrEqual(beforeConnect.getTime());
     });
 
     it('should reset reconnect attempts on successful connection', async () => {
@@ -426,9 +414,7 @@ describe('ServerManager', () => {
         },
       };
 
-      const mockTools = [
-        { name: 'sse-tool', description: 'SSE tool', inputSchema: {} },
-      ];
+      const mockTools = [{ name: 'sse-tool', description: 'SSE tool', inputSchema: {} }];
 
       const sseManager = new ServerManager(sseConfig);
       mockClient.connect.mockResolvedValue(undefined);
@@ -483,9 +469,7 @@ describe('ServerManager', () => {
       };
 
       const streamingManager = new ServerManager(streamingConfig);
-      mockClient.connect.mockRejectedValue(
-        new Error('Streaming connection failed'),
-      );
+      mockClient.connect.mockRejectedValue(new Error('Streaming connection failed'));
 
       await streamingManager.initialize();
 
@@ -651,9 +635,7 @@ describe('ServerManager', () => {
     it('should handle transport creation failures', async () => {
       // 直接在 serverManager 内部模拟 transport 创建失败
       // 通过 mock connect 方法来模拟底层连接失败
-      mockClient.connect.mockRejectedValueOnce(
-        new Error('Transport creation failed'),
-      );
+      mockClient.connect.mockRejectedValueOnce(new Error('Transport creation failed'));
 
       await serverManager.initialize();
 

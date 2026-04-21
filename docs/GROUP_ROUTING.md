@@ -26,7 +26,7 @@ MCP Hub 的组路由功能允许您通过特定的组路径 (`/:group/mcp`) 访�
       "servers": ["filesystem", "git", "npm"],
       "allowedTools": [
         "read_file",
-        "write_file", 
+        "write_file",
         "list_directory",
         "git_status",
         "git_commit",
@@ -39,17 +39,12 @@ MCP Hub 的组路由功能允许您通过特定的组路径 (`/:group/mcp`) 访�
       "name": "研究工具组",
       "description": "信息收集和研究工具",
       "servers": ["brave-search", "wikipedia", "arxiv"],
-      "allowedTools": [
-        "search",
-        "lookup",
-        "get_article",
-        "search_papers"
-      ],
+      "allowedTools": ["search", "lookup", "get_article", "search_papers"],
       "validationKey": "research-secret-key-456",
       "enabled": true
     },
     "admin": {
-      "name": "管理工具组", 
+      "name": "管理工具组",
       "description": "系统管理和监控工具",
       "servers": ["system-monitor", "log-analyzer"],
       "allowedTools": ["*"],
@@ -63,15 +58,15 @@ MCP Hub 的组路由功能允许您通过特定的组路径 (`/:group/mcp`) 访�
 
 ### 配置字段说明
 
-| 字段 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| `name` | string | 是 | 组的显示名称 |
-| `description` | string | 否 | 组的描述信息 |
-| `servers` | string[] | 是 | 该组使用的 MCP 服务器列表 |
-| `allowedTools` | string[] | 否 | 允许的工具列表，`["*"]` 表示允许所有工具 |
-| `validationKey` | string | 否 | 组的验证密钥 |
-| `enabled` | boolean | 否 | 是否启用该组（默认 true） |
-| `requireAuth` | boolean | 否 | 是否需要身份验证（默认 false） |
+| 字段            | 类型     | 必需 | 说明                                     |
+| --------------- | -------- | ---- | ---------------------------------------- |
+| `name`          | string   | 是   | 组的显示名称                             |
+| `description`   | string   | 否   | 组的描述信息                             |
+| `servers`       | string[] | 是   | 该组使用的 MCP 服务器列表                |
+| `allowedTools`  | string[] | 否   | 允许的工具列表，`["*"]` 表示允许所有工具 |
+| `validationKey` | string   | 否   | 组的验证密钥                             |
+| `enabled`       | boolean  | 否   | 是否启用该组（默认 true）                |
+| `requireAuth`   | boolean  | 否   | 是否需要身份验证（默认 false）           |
 
 ### MCP 服务器配置
 
@@ -139,7 +134,7 @@ curl http://localhost:8181/development/mcp/list_tools
       }
     },
     {
-      "name": "write_file", 
+      "name": "write_file",
       "description": "写入文件内容",
       "inputSchema": {
         "type": "object",
@@ -212,7 +207,7 @@ curl http://localhost:8181/api/groups
       "serverCount": 3
     },
     {
-      "id": "research", 
+      "id": "research",
       "name": "研究工具组",
       "description": "信息收集和研究工具",
       "enabled": true,
@@ -260,7 +255,7 @@ curl http://localhost:8181/api/groups/development/health
       "responseTime": 45
     },
     "git": {
-      "status": "connected", 
+      "status": "connected",
       "responseTime": 32
     },
     "npm": {
@@ -317,7 +312,7 @@ curl http://localhost:8181/nonexistent/mcp/list_tools
 ```bash
 # 响应 (503)
 {
-  "error": "SERVICE_UNAVAILABLE", 
+  "error": "SERVICE_UNAVAILABLE",
   "message": "组 'development' 的服务器连接失败",
   "code": 503,
   "details": {
@@ -442,7 +437,7 @@ curl http://localhost:8181/api/groups/development/logs?limit=10
       "success": true
     },
     {
-      "timestamp": "2024-01-15T10:29:32Z", 
+      "timestamp": "2024-01-15T10:29:32Z",
       "level": "error",
       "message": "工具调用失败",
       "tool": "write_file",
@@ -493,7 +488,7 @@ curl http://localhost:8181/development/mcp/list_tools
 curl -X POST http://localhost:8181/development/mcp/call_tool \
   -d '{"name": "read_file", "arguments": {"path": "/src/main.ts"}}'
 
-# 测试组 - 测试相关工具  
+# 测试组 - 测试相关工具
 curl http://localhost:8181/testing/mcp/call_tool \
   -d '{"name": "run_tests", "arguments": {"suite": "unit"}}'
 

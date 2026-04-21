@@ -6,11 +6,10 @@ import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ApiToMcpServiceManagerImpl, ServiceStatus } from './api-to-mcp-service-manager.js';
+
 import type { ApiToolsConfig } from '../types/api-config.js';
-import {
-  ApiToMcpServiceManagerImpl,
-  ServiceStatus,
-} from './api-to-mcp-service-manager.js';
 
 // Mock fetch
 const mockFetch = vi.fn();
@@ -257,16 +256,11 @@ describe('ApiToMcpServiceManagerImpl', () => {
 
       const updatedTools = await serviceManager.getApiTools();
       expect(updatedTools).toHaveLength(2);
-      expect(updatedTools.map((t) => t.name)).toEqual([
-        'updated-tool',
-        'new-tool',
-      ]);
+      expect(updatedTools.map((t) => t.name)).toEqual(['updated-tool', 'new-tool']);
     });
 
     it('应该在未初始化时拒绝重新加载配置', async () => {
-      await expect(serviceManager.reloadConfig()).rejects.toThrow(
-        '服务管理器未运行',
-      );
+      await expect(serviceManager.reloadConfig()).rejects.toThrow('服务管理器未运行');
     });
   });
 
@@ -331,10 +325,7 @@ describe('ApiToMcpServiceManagerImpl', () => {
 
     it('应该验证工具参数', () => {
       const validParams = { query: 'test query' };
-      const result = serviceManager.validateToolParameters(
-        'test-tool',
-        validParams,
-      );
+      const result = serviceManager.validateToolParameters('test-tool', validParams);
 
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
@@ -342,20 +333,14 @@ describe('ApiToMcpServiceManagerImpl', () => {
 
     it('应该检测无效的工具参数', () => {
       const invalidParams = {}; // 缺少必需的query参数
-      const result = serviceManager.validateToolParameters(
-        'test-tool',
-        invalidParams,
-      );
+      const result = serviceManager.validateToolParameters('test-tool', invalidParams);
 
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
     });
 
     it('应该在工具不存在时返回验证错误', () => {
-      const result = serviceManager.validateToolParameters(
-        'non-existent-tool',
-        {},
-      );
+      const result = serviceManager.validateToolParameters('non-existent-tool', {});
 
       expect(result.valid).toBe(false);
       expect(result.errors[0].code).toBe('TOOL_NOT_FOUND');
@@ -502,23 +487,17 @@ describe('ApiToMcpServiceManagerImpl', () => {
 
   describe('错误处理', () => {
     it('应该在未初始化时拒绝获取工具', async () => {
-      await expect(serviceManager.getApiTools()).rejects.toThrow(
-        '服务管理器未运行',
-      );
+      await expect(serviceManager.getApiTools()).rejects.toThrow('服务管理器未运行');
     });
 
     it('应该在未初始化时拒绝执行工具', async () => {
-      await expect(serviceManager.executeApiTool('test', {})).rejects.toThrow(
-        '服务管理器未运行',
-      );
+      await expect(serviceManager.executeApiTool('test', {})).rejects.toThrow('服务管理器未运行');
     });
 
     it('应该处理配置文件格式错误', async () => {
       await fs.writeFile(configPath, '{ invalid json }');
 
-      await expect(serviceManager.initialize(configPath)).rejects.toThrow(
-        '初始化失败',
-      );
+      await expect(serviceManager.initialize(configPath)).rejects.toThrow('初始化失败');
 
       const health = serviceManager.getHealthStatus();
       expect(health.status).toBe(ServiceStatus.ERROR);
@@ -536,9 +515,7 @@ describe('ApiToMcpServiceManagerImpl', () => {
       // 写入无效配置
       await fs.writeFile(configPath, '{ invalid }');
 
-      await expect(serviceManager.reloadConfig()).rejects.toThrow(
-        '重新加载失败',
-      );
+      await expect(serviceManager.reloadConfig()).rejects.toThrow('重新加载失败');
 
       const health = serviceManager.getHealthStatus();
       expect(health.status).toBe(ServiceStatus.ERROR);
@@ -556,9 +533,7 @@ describe('ApiToMcpServiceManagerImpl', () => {
       // 防止 fake timer 推进期间 promise 无 handler 导致 unhandled rejection
       restartPromise.catch(() => {});
       await vi.advanceTimersByTimeAsync(1500);
-      await expect(restartPromise).rejects.toThrow(
-        '无法重启：配置文件路径未设置',
-      );
+      await expect(restartPromise).rejects.toThrow('无法重启：配置文件路径未设置');
 
       vi.useRealTimers();
     });
@@ -567,9 +542,7 @@ describe('ApiToMcpServiceManagerImpl', () => {
   describe('并发和资源管理', () => {
     it('应该处理并发的工具执行请求', async () => {
       // Mock fetch 以避免真实网络请求
-      mockFetch.mockResolvedValue(
-        new Response(JSON.stringify({ result: 'ok' }), { status: 200 }),
-      );
+      mockFetch.mockResolvedValue(new Response(JSON.stringify({ result: 'ok' }), { status: 200 }));
 
       const config: ApiToolsConfig = {
         version: '1.0',

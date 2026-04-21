@@ -3,10 +3,11 @@
  * 支持URL路径参数替换、查询参数和请求头的模板处理，以及JSON请求体的参数替换
  */
 
+import { TemplateEngineImpl } from './template-engine.js';
+
 import type { ApiEndpointConfig } from '../types/api-config.js';
 import type { HttpRequestConfig } from '../types/http-client.js';
 import type { TemplateContext } from '../types/template.js';
-import { TemplateEngineImpl } from './template-engine.js';
 
 /**
  * HTTP请求构建结果
@@ -31,10 +32,7 @@ export interface HttpRequestBuilder {
    * @param config API端点配置
    * @param context 模板上下文
    */
-  buildRequest(
-    config: ApiEndpointConfig,
-    context: TemplateContext,
-  ): HttpRequestBuildResult;
+  buildRequest(config: ApiEndpointConfig, context: TemplateContext): HttpRequestBuildResult;
 
   /**
    * 构建URL（包含路径参数和查询参数）
@@ -75,10 +73,7 @@ export interface HttpRequestBuilder {
 export class HttpRequestBuilderImpl implements HttpRequestBuilder {
   private readonly templateEngine = new TemplateEngineImpl();
 
-  buildRequest(
-    config: ApiEndpointConfig,
-    context: TemplateContext,
-  ): HttpRequestBuildResult {
+  buildRequest(config: ApiEndpointConfig, context: TemplateContext): HttpRequestBuildResult {
     const allUsedVariables: string[] = [];
     let error: string | undefined;
 
@@ -146,9 +141,7 @@ export class HttpRequestBuilderImpl implements HttpRequestBuilder {
       for (const [key, value] of Object.entries(queryParams)) {
         const paramResult = this.templateEngine.render(value, context);
         if (!paramResult.success) {
-          throw new Error(
-            `查询参数 '${key}' 模板渲染失败: ${paramResult.error}`,
-          );
+          throw new Error(`查询参数 '${key}' 模板渲染失败: ${paramResult.error}`);
         }
         processedParams[key] = paramResult.result;
         usedVariables.push(...paramResult.usedVariables);
@@ -217,11 +210,7 @@ export class HttpRequestBuilderImpl implements HttpRequestBuilder {
 
     if (typeof body === 'object' && body !== null) {
       // 对象类型的请求体，递归处理每个属性
-      const processedBody = this.processObjectTemplate(
-        body,
-        context,
-        usedVariables,
-      );
+      const processedBody = this.processObjectTemplate(body, context, usedVariables);
       return {
         body: processedBody,
         usedVariables,
@@ -243,17 +232,11 @@ export class HttpRequestBuilderImpl implements HttpRequestBuilder {
         // 字符串值，进行模板替换
         const templateResult = this.templateEngine.render(value, context);
         if (!templateResult.success) {
-          throw new Error(
-            `对象属性 '${key}' 模板渲染失败: ${templateResult.error}`,
-          );
+          throw new Error(`对象属性 '${key}' 模板渲染失败: ${templateResult.error}`);
         }
         result[key] = templateResult.result;
         usedVariables.push(...templateResult.usedVariables);
-      } else if (
-        typeof value === 'object' &&
-        value !== null &&
-        !Array.isArray(value)
-      ) {
+      } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         // 嵌套对象，递归处理
         result[key] = this.processObjectTemplate(
           value as Record<string, unknown>,
@@ -285,16 +268,8 @@ export class HttpRequestBuilderImpl implements HttpRequestBuilder {
         }
         usedVariables.push(...templateResult.usedVariables);
         return templateResult.result;
-      } else if (
-        typeof item === 'object' &&
-        item !== null &&
-        !Array.isArray(item)
-      ) {
-        return this.processObjectTemplate(
-          item as Record<string, unknown>,
-          context,
-          usedVariables,
-        );
+      } else if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+        return this.processObjectTemplate(item as Record<string, unknown>, context, usedVariables);
       } else if (Array.isArray(item)) {
         return this.processArrayTemplate(item, context, usedVariables);
       } else {

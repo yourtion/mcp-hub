@@ -89,11 +89,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
 import { ChevronLeftIcon, CheckCircleIcon, PlayIcon } from 'tdesign-icons-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next';
+import { computed, h, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+
 import { useToolStore } from '@/stores/tool';
+
 import type { ToolInfo, JsonSchemaProperty } from '@/types/tool';
 import type { PrimaryTableCol, TableRowData } from 'tdesign-vue-next';
 

@@ -7,6 +7,7 @@ import { mkdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import { DefaultConfigGenerator } from './default-generator.js';
 
 describe('DefaultConfigGenerator', () => {
@@ -136,9 +137,7 @@ describe('DefaultConfigGenerator', () => {
       const result = await generator.initConfigFiles();
 
       expect(result.createdFiles).toHaveLength(2);
-      expect(
-        result.createdFiles.some((file) => file.includes('group.json')),
-      ).toBe(true);
+      expect(result.createdFiles.some((file) => file.includes('group.json'))).toBe(true);
 
       // 验证组配置文件存在
       const groupConfigPath = join(testDir, 'group.json');
@@ -222,15 +221,9 @@ describe('DefaultConfigGenerator', () => {
       const config = JSON.parse(content);
 
       // 验证 fetch 服务器配置
-      expect((config.servers.fetch as Record<string, unknown>).command).toBe(
-        'uvx',
-      );
-      expect((config.servers.fetch as Record<string, unknown>).args).toContain(
-        'mcp-server-fetch',
-      );
-      expect((config.servers.fetch as Record<string, unknown>).disabled).toBe(
-        false,
-      );
+      expect((config.servers.fetch as Record<string, unknown>).command).toBe('uvx');
+      expect((config.servers.fetch as Record<string, unknown>).args).toContain('mcp-server-fetch');
+      expect((config.servers.fetch as Record<string, unknown>).disabled).toBe(false);
     });
 
     it('环境变量应该正确配置', async () => {
@@ -353,9 +346,9 @@ describe('DefaultConfigGenerator', () => {
       expect(st).toBeDefined();
       expect(st?.name).toBe('Sequential Thinking');
       expect(st?.description).toBe('Sequential thinking capabilities');
-      if ('command' in (st?.config ?? {})) {
-        expect((st?.config as Record<string, unknown>).command).toBe('npx');
-        expect((st?.config as Record<string, unknown>).args).toContain(
+      if (st && 'command' in st.config) {
+        expect((st.config as Record<string, unknown>).command).toBe('npx');
+        expect((st.config as Record<string, unknown>).args).toContain(
           '@modelcontextprotocol/server-sequential-thinking',
         );
       }
@@ -368,11 +361,9 @@ describe('DefaultConfigGenerator', () => {
       expect(ctx).toBeDefined();
       expect(ctx?.name).toBe('Context7');
       expect(ctx?.description).toContain('documentation');
-      if ('url' in (ctx?.config ?? {})) {
-        expect((ctx?.config as Record<string, unknown>).url).toBe(
-          'https://mcp.context7.com/mcp',
-        );
-        expect((ctx?.config as Record<string, unknown>).type).toBe('streaming');
+      if (ctx && 'url' in ctx.config) {
+        expect((ctx.config as Record<string, unknown>).url).toBe('https://mcp.context7.com/mcp');
+        expect((ctx.config as Record<string, unknown>).type).toBe('streaming');
       }
       expect(ctx?.requiresAdditionalConfig).toBeUndefined();
     });
@@ -400,9 +391,7 @@ describe('DefaultConfigGenerator', () => {
 
       expect(github?.requiresAdditionalConfig).toBe(true);
       expect(github?.config.env?.GITHUB_PERSONAL_ACCESS_TOKEN).toBeDefined();
-      expect(github?.additionalConfigNote).toContain(
-        'GITHUB_PERSONAL_ACCESS_TOKEN',
-      );
+      expect(github?.additionalConfigNote).toContain('GITHUB_PERSONAL_ACCESS_TOKEN');
     });
   });
 });

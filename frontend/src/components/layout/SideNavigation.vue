@@ -6,17 +6,8 @@
         <span v-if="!collapsed" class="side-navigation__logo-text">MCP Hub</span>
       </transition>
     </div>
-    <Menu
-      :value="activeRoute"
-      :collapsed="collapsed"
-      theme="dark"
-      @change="handleMenuChange"
-    >
-      <MenuItem
-        v-for="item in navItems"
-        :key="item.path"
-        :value="item.path"
-      >
+    <Menu :value="activeRoute" :collapsed="collapsed" theme="dark" @change="handleMenuChange">
+      <MenuItem v-for="item in navItems" :key="item.path" :value="item.path">
         <template #icon>
           <component :is="item.icon" />
         </template>
@@ -27,9 +18,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type Component } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { Menu, MenuItem } from 'tdesign-vue-next';
 import {
   ViewModuleIcon,
   ServerIcon,
@@ -39,6 +27,9 @@ import {
   BugIcon,
   SettingIcon,
 } from 'tdesign-icons-vue-next';
+import { Menu, MenuItem } from 'tdesign-vue-next';
+import { computed, type Component } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 interface NavItem {
   path: string;
@@ -69,9 +60,7 @@ const activeRoute = computed(() => {
   if (exactMatch) {
     return exactMatch.path;
   }
-  const prefixMatch = navItems.find(
-    (item) => matched.startsWith(item.path) && item.path !== '/',
-  );
+  const prefixMatch = navItems.find((item) => matched.startsWith(item.path) && item.path !== '/');
   return prefixMatch?.path ?? '/dashboard';
 });
 

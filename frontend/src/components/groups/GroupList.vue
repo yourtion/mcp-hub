@@ -3,12 +3,7 @@
     <!-- Toolbar: search -->
     <div class="mcp-toolbar" style="padding: var(--space-4) var(--space-5) 0">
       <div class="mcp-toolbar__left">
-        <t-input
-          v-model="searchQuery"
-          placeholder="搜索组名称或ID"
-          clearable
-          style="width: 260px"
-        >
+        <t-input v-model="searchQuery" placeholder="搜索组名称或ID" clearable style="width: 260px">
           <template #prefix-icon>
             <SearchIcon />
           </template>
@@ -27,10 +22,7 @@
       style="margin-top: var(--space-3)"
     >
       <template #name="{ row }">
-        <span
-          class="group-list__name"
-          @click="emit('edit', row)"
-        >
+        <span class="group-list__name" @click="emit('edit', row)">
           {{ row.name }}
         </span>
       </template>
@@ -48,9 +40,7 @@
       </template>
 
       <template #tools="{ row }">
-        <span class="group-list__tools">
-          {{ row.filteredToolCount }}/{{ row.toolCount }}
-        </span>
+        <span class="group-list__tools"> {{ row.filteredToolCount }}/{{ row.toolCount }} </span>
       </template>
 
       <template #health="{ row }">
@@ -60,7 +50,10 @@
       </template>
 
       <template #validation="{ row }">
-        <span v-if="row.validation.enabled" class="group-list__validation group-list__validation--enabled">
+        <span
+          v-if="row.validation.enabled"
+          class="group-list__validation group-list__validation--enabled"
+        >
           <CheckCircleIcon />
           已启用
         </span>
@@ -73,12 +66,7 @@
       <template #actions="{ row }">
         <div class="group-list__actions">
           <t-tooltip content="编辑">
-            <t-button
-              variant="text"
-              shape="square"
-              size="small"
-              @click="emit('edit', row)"
-            >
+            <t-button variant="text" shape="square" size="small" @click="emit('edit', row)">
               <template #icon><EditIcon /></template>
             </t-button>
           </t-tooltip>
@@ -103,12 +91,7 @@
             </t-button>
           </t-tooltip>
           <t-popconfirm content="确认删除此组？" @confirm="emit('delete', row.id)">
-            <t-button
-              variant="text"
-              shape="square"
-              size="small"
-              theme="danger"
-            >
+            <t-button variant="text" shape="square" size="small" theme="danger">
               <template #icon><DeleteIcon /></template>
             </t-button>
           </t-popconfirm>
@@ -138,7 +121,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
 import {
   SearchIcon,
   EditIcon,
@@ -149,6 +131,8 @@ import {
   ControlPlatformIcon,
   LockOnIcon,
 } from 'tdesign-icons-vue-next';
+import { ref, computed } from 'vue';
+
 import type { GroupInfo } from '@/types/group';
 
 const props = defineProps<{
@@ -179,9 +163,7 @@ const filteredGroups = computed(() => {
   if (!searchQuery.value) return props.groups;
   const query = searchQuery.value.toLowerCase();
   return props.groups.filter(
-    (g) =>
-      g.name.toLowerCase().includes(query) ||
-      g.id.toLowerCase().includes(query),
+    (g) => g.name.toLowerCase().includes(query) || g.id.toLowerCase().includes(query),
   );
 });
 

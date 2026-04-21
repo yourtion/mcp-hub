@@ -4,6 +4,7 @@
 
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { AuthService } from '../services/auth.js';
 import {
   corsMiddleware,
@@ -17,11 +18,9 @@ import {
 vi.mock('bcryptjs', () => ({
   default: {
     hash: vi.fn().mockResolvedValue('$2a$10$mockedhashvalue'),
-    compare: vi
-      .fn()
-      .mockImplementation(async (password: string, _hash: string) => {
-        return password === 'password' || password === 'admin123';
-      }),
+    compare: vi.fn().mockImplementation(async (password: string, _hash: string) => {
+      return password === 'password' || password === 'admin123';
+    }),
   },
 }));
 
@@ -162,9 +161,7 @@ describe('认证中间件', () => {
 
       const data = await res.json();
       expect(data.success).toBe(false);
-      expect(
-        ['AUTH_INVALID_TOKEN', 'AUTH_TOKEN_EXPIRED'].includes(data.error.code),
-      ).toBe(true);
+      expect(['AUTH_INVALID_TOKEN', 'AUTH_TOKEN_EXPIRED'].includes(data.error.code)).toBe(true);
     });
 
     it('应该拒绝已撤销的token', async () => {
@@ -321,9 +318,7 @@ describe('认证中间件', () => {
       expect(res.headers.get('Access-Control-Allow-Methods')).toBe(
         'GET, POST, PUT, DELETE, OPTIONS',
       );
-      expect(res.headers.get('Access-Control-Allow-Headers')).toBe(
-        'Content-Type, Authorization',
-      );
+      expect(res.headers.get('Access-Control-Allow-Headers')).toBe('Content-Type, Authorization');
     });
 
     it('应该处理OPTIONS预检请求', async () => {

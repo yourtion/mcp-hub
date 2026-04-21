@@ -4,13 +4,9 @@
  */
 import { vi } from 'vitest';
 
-const isDebugMode =
-  process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true';
+const isDebugMode = process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true';
 
-if (
-  (process.env.NODE_ENV === 'test' || process.env.VITEST) &&
-  !isDebugMode
-) {
+if ((process.env.NODE_ENV === 'test' || process.env.VITEST) && !isDebugMode) {
   console.log = vi.fn();
   console.info = vi.fn();
   console.debug = vi.fn();

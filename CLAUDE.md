@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Core Development
+
 - `pnpm dev:api` - Start API server in development mode with hot reload
 - `pnpm dev:fe` - Start frontend in development mode
 - `pnpm dev:cli` - Start CLI package in development mode
@@ -12,20 +13,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm build:production` - Build all packages for production deployment
 
 ### Testing & Quality
+
 - `pnpm test` - Run all tests (uses vitest 4.x with projects)
 - `pnpm test:watch` - Run tests in watch mode
 - `pnpm test:e2e` - Run E2E tests only
 - `pnpm test:coverage` - Run tests with coverage reports
 - `pnpm test:debug` - Run tests in debug mode (VITEST_DEBUG=true)
-- `pnpm check` - Run linting and formatting with Biome
-- `pnpm check:all` - Run Biome check on entire codebase
+- `pnpm check` - Run linting with oxlint and formatting with oxfmt
+- `pnpm check:all` - Run oxlint and oxfmt on entire codebase
 
 ### Package-specific Commands
+
 - `pnpm --filter @mcp-core/mcp-hub-core dev` - Watch mode compilation for core package
 - `pnpm --filter @mcp-core/mcp-hub-cli test:e2e` - End-to-end tests for CLI package
 - `pnpm --filter @mcp-core/mcp-hub-api test:mcp` - MCP protocol tests for API package
 
 ### Deployment
+
 - `pnpm start:api` - Start API server in production
 - `pnpm start:cli` - Start CLI server in production
 
@@ -46,17 +50,20 @@ The project follows a modular architecture with clear separation of concerns:
 ### Key Design Patterns
 
 #### Service Layer Architecture
+
 - **MCP Service Manager**: Centralized management of MCP server connections
 - **Server Connection Manager**: Handles connection pooling and lifecycle management
 - **Tool Registry**: Manages tool discovery, validation, and execution
 - **Group Manager**: Handles group-based routing and access control
 
 #### Configuration System
+
 - **Multi-layer Configuration**: Supports both legacy config files and new validated configuration
 - **Environment-based Overrides**: Supports environment variable overrides for deployment
 - **Validation**: Uses Zod schemas for comprehensive configuration validation
 
 #### Error Handling
+
 - **Unified Error System**: Centralized error handling with proper error codes and categories
 - **Graceful Degradation**: Services continue operating even when some MCP servers fail
 - **Error Recovery**: Automatic reconnection and retry mechanisms
@@ -94,8 +101,9 @@ The API server provides two main endpoint patterns:
 2. **Group-based Endpoints** (`/:group/mcp`) - Group-specific endpoints with access control
 
 Key API routes:
+
 - `/api/groups` - Group management
-- `/api/servers` - MCP server management  
+- `/api/servers` - MCP server management
 - `/api/tools` - Tool discovery and testing
 - `/api/auth` - Authentication endpoints
 
@@ -135,6 +143,7 @@ The project uses Vitest 4.x with a centralized configuration:
 - **Coverage Reports**: Code coverage tracking with V8 provider
 
 Testing conventions:
+
 - Use `function` keyword (not arrow functions) for `vi.fn().mockImplementation()` to support `new` calls
 - Use `useTestContext()` for managing test resources that need cleanup
 - Never use `expect(true).toBe(true)` - always assert actual behavior

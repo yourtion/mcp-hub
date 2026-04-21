@@ -1,11 +1,13 @@
-import type { McpConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 import { Hono } from 'hono';
 import { z } from 'zod/v4';
+
 import { ServerManager } from '../../services/server_manager.js';
 import { ServerStatus } from '../../types/mcp-hub.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { getAllConfig, saveConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
+
+import type { McpConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 
 export const serversApi = new Hono();
 
@@ -25,9 +27,7 @@ async function getServerManager(): Promise<ServerManager> {
     const config = await getAllConfig();
 
     // 创建服务器管理器实例
-    serverManager = new ServerManager(
-      config.mcps.servers as Record<string, ServerConfig>,
-    );
+    serverManager = new ServerManager(config.mcps.servers as Record<string, ServerConfig>);
 
     // 初始化服务器管理器
     await serverManager.initialize();
@@ -58,10 +58,7 @@ const HttpServerConfigSchema = z.object({
   enabled: z.boolean().optional().default(true),
 });
 
-const ServerConfigSchema = z.union([
-  StdioServerConfigSchema,
-  HttpServerConfigSchema,
-]);
+const ServerConfigSchema = z.union([StdioServerConfigSchema, HttpServerConfigSchema]);
 
 // 创建服务器请求验证模式
 const CreateServerRequestSchema = z.object({
@@ -83,28 +80,24 @@ serversApi.get('/', async (c) => {
     const manager = await getServerManager();
     const servers = manager.getAllServers();
 
-    const serverList = Array.from(servers.entries()).map(
-      ([serverId, serverConnection]) => ({
-        id: serverId,
-        name: serverId, // 使用ID作为名称，后续可以扩展
-        type: serverConnection.config.type,
-        status: serverConnection.status,
-        config: serverConnection.config,
-        tools: serverConnection.tools.map((tool) => ({
-          name: tool.name,
-          description: tool.description,
-        })),
-        lastConnected: serverConnection.lastConnected?.toISOString(),
-        lastError: serverConnection.lastError?.message,
-        toolCount: serverConnection.tools.length,
-      }),
-    );
+    const serverList = Array.from(servers.entries()).map(([serverId, serverConnection]) => ({
+      id: serverId,
+      name: serverId, // 使用ID作为名称，后续可以扩展
+      type: serverConnection.config.type,
+      status: serverConnection.status,
+      config: serverConnection.config,
+      tools: serverConnection.tools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+      })),
+      lastConnected: serverConnection.lastConnected?.toISOString(),
+      lastError: serverConnection.lastError?.message,
+      toolCount: serverConnection.tools.length,
+    }));
 
     logger.info('服务器列表获取成功', {
       serverCount: serverList.length,
-      connectedServers: serverList.filter(
-        (s) => s.status === ServerStatus.CONNECTED,
-      ).length,
+      connectedServers: serverList.filter((s) => s.status === ServerStatus.CONNECTED).length,
     });
 
     return successResponse(c, {
@@ -112,14 +105,9 @@ serversApi.get('/', async (c) => {
       total: serverList.length,
       summary: {
         total: serverList.length,
-        connected: serverList.filter((s) => s.status === ServerStatus.CONNECTED)
-          .length,
-        connecting: serverList.filter(
-          (s) => s.status === ServerStatus.CONNECTING,
-        ).length,
-        disconnected: serverList.filter(
-          (s) => s.status === ServerStatus.DISCONNECTED,
-        ).length,
+        connected: serverList.filter((s) => s.status === ServerStatus.CONNECTED).length,
+        connecting: serverList.filter((s) => s.status === ServerStatus.CONNECTING).length,
+        disconnected: serverList.filter((s) => s.status === ServerStatus.DISCONNECTED).length,
         error: serverList.filter((s) => s.status === ServerStatus.ERROR).length,
       },
     });
@@ -225,9 +213,7 @@ serversApi.post('/', async (c) => {
     };
 
     // 创建可变副本用于保存
-    const mutableConfig = JSON.parse(
-      JSON.stringify(updatedMcpConfig),
-    ) as McpConfig;
+    const mutableConfig = JSON.parse(JSON.stringify(updatedMcpConfig)) as McpConfig;
     await saveConfig('mcp_server.json', mutableConfig);
 
     // 重新初始化服务器管理器以包含新服务器
@@ -305,9 +291,7 @@ serversApi.put('/:id', async (c) => {
     };
 
     // 创建可变副本用于保存
-    const mutableConfig = JSON.parse(
-      JSON.stringify(updatedMcpConfig),
-    ) as McpConfig;
+    const mutableConfig = JSON.parse(JSON.stringify(updatedMcpConfig)) as McpConfig;
     await saveConfig('mcp_server.json', mutableConfig);
 
     // 重新初始化服务器管理器以应用新配置
@@ -352,17 +336,14 @@ serversApi.delete('/:id', async (c) => {
     }
 
     // 从配置中删除服务器
-    const { [serverId]: removedServer, ...remainingServers } =
-      currentConfig.mcps.servers;
+    const { [serverId]: removedServer, ...remainingServers } = currentConfig.mcps.servers;
     const updatedMcpConfig = {
       ...currentConfig.mcps,
       servers: remainingServers,
     };
 
     // 创建可变副本用于保存
-    const mutableConfig = JSON.parse(
-      JSON.stringify(updatedMcpConfig),
-    ) as McpConfig;
+    const mutableConfig = JSON.parse(JSON.stringify(updatedMcpConfig)) as McpConfig;
     await saveConfig('mcp_server.json', mutableConfig);
 
     // 重新初始化服务器管理器
@@ -547,13 +528,9 @@ serversApi.post('/:id/disconnect', async (c) => {
         serverId,
       });
     } catch (disconnectError) {
-      logger.error(
-        '服务器断开连接时发生错误，但仍标记为已断开',
-        disconnectError as Error,
-        {
-          serverId,
-        },
-      );
+      logger.error('服务器断开连接时发生错误，但仍标记为已断开', disconnectError as Error, {
+        serverId,
+      });
       serverConnection.status = ServerStatus.DISCONNECTED;
       serverConnection.tools = [];
     }
@@ -733,13 +710,11 @@ serversApi.post('/validate', async (c) => {
 
     if (!validationResult.success) {
       // 转换Zod错误为友好的错误信息
-      validationResponse.errors = validationResult.error.issues.map(
-        (error) => ({
-          field: error.path.join('.'),
-          message: error.message,
-          code: error.code,
-        }),
-      );
+      validationResponse.errors = validationResult.error.issues.map((error) => ({
+        field: error.path.join('.'),
+        message: error.message,
+        code: error.code,
+      }));
     } else {
       const config = validationResult.data;
 
@@ -755,10 +730,7 @@ serversApi.post('/validate', async (c) => {
         }
 
         // 检查常见的命令
-        if (
-          config.command === 'npx' &&
-          (!config.args || config.args.length === 0)
-        ) {
+        if (config.command === 'npx' && (!config.args || config.args.length === 0)) {
           validationResponse.errors.push({
             field: 'args',
             message: 'npx命令需要指定要执行的包名',
@@ -767,10 +739,7 @@ serversApi.post('/validate', async (c) => {
           validationResponse.isValid = false;
         }
 
-        if (
-          config.command === 'uvx' &&
-          (!config.args || config.args.length === 0)
-        ) {
+        if (config.command === 'uvx' && (!config.args || config.args.length === 0)) {
           validationResponse.errors.push({
             field: 'args',
             message: 'uvx命令需要指定要执行的包名',

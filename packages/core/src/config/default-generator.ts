@@ -6,7 +6,9 @@
 import { existsSync } from 'node:fs';
 import { access, mkdir, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+
 import { ConfigError, ErrorCode } from '../errors/index.js';
+
 import type { Group, McpServerConfig, ServerConfig } from '../types/index.js';
 
 /**
@@ -106,16 +108,11 @@ export class DefaultConfigGenerator {
       description: 'File system operations',
       config: {
         command: 'npx',
-        args: [
-          '-y',
-          '@modelcontextprotocol/server-filesystem',
-          '/path/to/allowed/directory',
-        ],
+        args: ['-y', '@modelcontextprotocol/server-filesystem', '/path/to/allowed/directory'],
         disabled: false,
       },
       requiresAdditionalConfig: true,
-      additionalConfigNote:
-        '请将 /path/to/allowed/directory 替换为实际的文件系统路径',
+      additionalConfigNote: '请将 /path/to/allowed/directory 替换为实际的文件系统路径',
     },
     memory: {
       id: 'memory',
@@ -160,12 +157,7 @@ export class DefaultConfigGenerator {
   };
 
   // 默认使用的服务器预设（用于 --init）
-  private readonly defaultPresets = [
-    'fetch',
-    'time',
-    'sequential-thinking',
-    'context7',
-  ];
+  private readonly defaultPresets = ['fetch', 'time', 'sequential-thinking', 'context7'];
 
   constructor(options: GeneratorOptions = {}) {
     this.options = {
@@ -192,10 +184,7 @@ export class DefaultConfigGenerator {
       await this.ensureConfigDir(this.options.configDir);
 
       // 生成 mcp_service.json
-      const serviceConfigPath = join(
-        this.options.configDir,
-        'mcp_service.json',
-      );
+      const serviceConfigPath = join(this.options.configDir, 'mcp_service.json');
       const serviceConfig = this.generateMcpServiceConfig();
       const serviceResult = await this.writeConfigFile(
         serviceConfigPath,
@@ -227,8 +216,7 @@ export class DefaultConfigGenerator {
       }
     } catch (error) {
       // 捕获所有错误并添加到结果中
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       result.errors.push(errorMessage);
     }
 
@@ -304,11 +292,9 @@ export class DefaultConfigGenerator {
   private generateServerConfig(presetId: string): ServerConfig {
     const preset = this.serverPresets[presetId];
     if (!preset) {
-      throw new ConfigError(
-        ErrorCode.INVALID_SERVER_CONFIG,
-        `无效的服务器预设: ${presetId}`,
-        { presetId },
-      );
+      throw new ConfigError(ErrorCode.INVALID_SERVER_CONFIG, `无效的服务器预设: ${presetId}`, {
+        presetId,
+      });
     }
 
     return { ...preset.config };
@@ -330,13 +316,11 @@ export class DefaultConfigGenerator {
         await mkdir(dir, { recursive: true });
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      throw new ConfigError(
-        ErrorCode.CONFIG_FILE_NOT_FOUND,
-        `配置目录无法创建: ${dir}`,
-        { dir, error: errorMessage },
-      );
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ConfigError(ErrorCode.CONFIG_FILE_NOT_FOUND, `配置目录无法创建: ${dir}`, {
+        dir,
+        error: errorMessage,
+      });
     }
   }
 
@@ -355,23 +339,18 @@ export class DefaultConfigGenerator {
   /**
    * 安全写入文件（使用临时文件+重命名确保原子性）
    */
-  private async safeWriteFile(
-    filePath: string,
-    content: string,
-  ): Promise<void> {
+  private async safeWriteFile(filePath: string, content: string): Promise<void> {
     const tempPath = `${filePath}.tmp`;
 
     try {
       await writeFile(tempPath, content, 'utf-8');
       await rename(tempPath, filePath);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      throw new ConfigError(
-        ErrorCode.INTERNAL_SERVER_ERROR,
-        `无法写入配置文件: ${filePath}`,
-        { filePath, error: errorMessage },
-      );
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ConfigError(ErrorCode.INTERNAL_SERVER_ERROR, `无法写入配置文件: ${filePath}`, {
+        filePath,
+        error: errorMessage,
+      });
     }
   }
 

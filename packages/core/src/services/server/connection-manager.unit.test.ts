@@ -3,7 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ServerConfig } from '../../types';
+
 import {
   ConnectionFailedError,
   ConnectionManagerError,
@@ -12,6 +12,8 @@ import {
   type ServerConnectionInfo,
   ServerConnectionManager,
 } from './connection-manager';
+
+import type { ServerConfig } from '../../types';
 
 // 模拟控制台方法（完整的 console 对象）
 const mockConsole = {
@@ -61,9 +63,7 @@ describe('ServerConnectionManager', () => {
       await connectionManager.initialize();
 
       expect(mockConsole.info).toHaveBeenCalledWith('初始化服务器连接管理器');
-      expect(mockConsole.info).toHaveBeenCalledWith(
-        '服务器连接管理器初始化完成',
-      );
+      expect(mockConsole.info).toHaveBeenCalledWith('服务器连接管理器初始化完成');
     });
 
     it('应该跳过重复初始化', async () => {
@@ -75,9 +75,7 @@ describe('ServerConnectionManager', () => {
       // 尝试再次初始化
       await connectionManager.initialize();
 
-      expect(mockConsole.warn).toHaveBeenCalledWith(
-        '服务器连接管理器已初始化，跳过重复初始化',
-      );
+      expect(mockConsole.warn).toHaveBeenCalledWith('服务器连接管理器已初始化，跳过重复初始化');
     });
 
     it('应该在未初始化时抛出错误', async () => {
@@ -123,10 +121,9 @@ describe('ServerConnectionManager', () => {
       // 重新创建连接
       await connectionManager.createConnection('test-server', mockServerConfig);
 
-      expect(mockConsole.warn).toHaveBeenCalledWith(
-        '服务器连接已存在，将重新创建',
-        { serverId: 'test-server' },
-      );
+      expect(mockConsole.warn).toHaveBeenCalledWith('服务器连接已存在，将重新创建', {
+        serverId: 'test-server',
+      });
     });
 
     it('应该处理连接创建失败', async () => {
@@ -134,9 +131,9 @@ describe('ServerConnectionManager', () => {
       const originalPerformConnection = (
         connectionManager as unknown as { performConnection: unknown }
       ).performConnection;
-      (
-        connectionManager as unknown as { performConnection: unknown }
-      ).performConnection = vi.fn().mockRejectedValue(new Error('连接失败'));
+      (connectionManager as unknown as { performConnection: unknown }).performConnection = vi
+        .fn()
+        .mockRejectedValue(new Error('连接失败'));
 
       await expect(
         connectionManager.createConnection('test-server', mockServerConfig),
@@ -147,9 +144,8 @@ describe('ServerConnectionManager', () => {
       expect(status.error).toBe('连接失败');
 
       // 恢复原方法
-      (
-        connectionManager as unknown as { performConnection: unknown }
-      ).performConnection = originalPerformConnection;
+      (connectionManager as unknown as { performConnection: unknown }).performConnection =
+        originalPerformConnection;
     });
 
     it('应该成功关闭连接', async () => {
@@ -195,8 +191,7 @@ describe('ServerConnectionManager', () => {
     });
 
     it('应该返回不存在连接的状态', () => {
-      const status =
-        connectionManager.getConnectionStatus('nonexistent-server');
+      const status = connectionManager.getConnectionStatus('nonexistent-server');
       expect(status).toEqual({
         connected: false,
         lastConnected: null,
@@ -257,8 +252,7 @@ describe('ServerConnectionManager', () => {
     });
 
     it('应该对不存在的服务器返回不健康状态', async () => {
-      const isHealthy =
-        await connectionManager.healthCheck('nonexistent-server');
+      const isHealthy = await connectionManager.healthCheck('nonexistent-server');
       expect(isHealthy).toBe(false);
     });
 
@@ -289,9 +283,9 @@ describe('ServerConnectionManager', () => {
     });
 
     it('应该在服务器不存在时抛出错误', async () => {
-      await expect(
-        connectionManager.getServerTools('nonexistent-server'),
-      ).rejects.toThrow(ConnectionNotFoundError);
+      await expect(connectionManager.getServerTools('nonexistent-server')).rejects.toThrow(
+        ConnectionNotFoundError,
+      );
     });
 
     it('应该在服务器未连接时返回空工具列表', async () => {
@@ -320,11 +314,9 @@ describe('ServerConnectionManager', () => {
     it('应该成功执行工具调用', async () => {
       await connectionManager.createConnection('test-server', mockServerConfig);
 
-      const result = await connectionManager.executeToolOnServer(
-        'test-server',
-        'test-tool',
-        { param: 'value' },
-      );
+      const result = await connectionManager.executeToolOnServer('test-server', 'test-tool', {
+        param: 'value',
+      });
 
       expect(result).toMatchObject({
         content: [
@@ -339,11 +331,7 @@ describe('ServerConnectionManager', () => {
 
     it('应该在服务器不存在时抛出错误', async () => {
       await expect(
-        connectionManager.executeToolOnServer(
-          'nonexistent-server',
-          'test-tool',
-          {},
-        ),
+        connectionManager.executeToolOnServer('nonexistent-server', 'test-tool', {}),
       ).rejects.toThrow(ConnectionNotFoundError);
     });
 
@@ -441,9 +429,9 @@ describe('ServerConnectionManager', () => {
     });
 
     it('应该在服务器不存在时抛出错误', async () => {
-      await expect(
-        connectionManager.reconnectServer('nonexistent-server'),
-      ).rejects.toThrow(ConnectionNotFoundError);
+      await expect(connectionManager.reconnectServer('nonexistent-server')).rejects.toThrow(
+        ConnectionNotFoundError,
+      );
     });
 
     it('应该在达到最大重连次数时抛出错误', async () => {
@@ -455,9 +443,9 @@ describe('ServerConnectionManager', () => {
         connection.reconnectAttempts = 3; // MAX_RECONNECT_ATTEMPTS
       }
 
-      await expect(
-        connectionManager.reconnectServer('test-server'),
-      ).rejects.toThrow(ConnectionManagerError);
+      await expect(connectionManager.reconnectServer('test-server')).rejects.toThrow(
+        ConnectionManagerError,
+      );
     });
   });
 
@@ -465,9 +453,7 @@ describe('ServerConnectionManager', () => {
     it('应该在未初始化时跳过关闭', async () => {
       await connectionManager.shutdown();
 
-      expect(mockConsole.warn).toHaveBeenCalledWith(
-        '连接管理器未初始化，跳过关闭',
-      );
+      expect(mockConsole.warn).toHaveBeenCalledWith('连接管理器未初始化，跳过关闭');
     });
 
     it('应该成功关闭连接管理器', async () => {
@@ -515,12 +501,9 @@ describe('ServerConnectionManager', () => {
 
   describe('错误处理', () => {
     it('应该正确创建ConnectionManagerError', () => {
-      const error = new ConnectionManagerError(
-        '测试错误',
-        'TEST_ERROR',
-        'test-server',
-        { key: 'value' },
-      );
+      const error = new ConnectionManagerError('测试错误', 'TEST_ERROR', 'test-server', {
+        key: 'value',
+      });
 
       expect(error.name).toBe('ConnectionManagerError');
       expect(error.message).toBe('测试错误');

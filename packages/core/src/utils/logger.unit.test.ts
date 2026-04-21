@@ -229,9 +229,7 @@ describe('McpLogger', () => {
   it('应该正确记录工具发现事件', () => {
     mcpLogger.logToolDiscovery('server1', 5);
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Discovered 5 tools'),
-    );
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Discovered 5 tools'));
   });
 
   it('应该正确记录工具执行事件', () => {
@@ -247,9 +245,7 @@ describe('McpLogger', () => {
     mcpLogger.logConfigReload(['server1', 'server2']);
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'Configuration reloaded with changes: server1, server2',
-      ),
+      expect.stringContaining('Configuration reloaded with changes: server1, server2'),
     );
   });
 });

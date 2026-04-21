@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { GroupManager, ServerManager, Tool } from '../types/mcp-hub.js';
+
 import { ServerStatus } from '../types/mcp-hub.js';
 import { ToolManager } from './tool_manager.js';
+
+import type { GroupManager, ServerManager, Tool } from '../types/mcp-hub.js';
 
 // Mock the logger
 vi.mock('../utils/logger.js');
@@ -112,14 +114,8 @@ describe('ToolManager', () => {
       }),
       getAllGroups: vi.fn().mockReturnValue(
         new Map([
-          [
-            'default',
-            { id: 'default', servers: ['server1', 'server2'], tools: [] },
-          ],
-          [
-            'filtered',
-            { id: 'filtered', servers: ['server1'], tools: ['tool1'] },
-          ],
+          ['default', { id: 'default', servers: ['server1', 'server2'], tools: [] }],
+          ['filtered', { id: 'filtered', servers: ['server1'], tools: ['tool1'] }],
         ]),
       ),
       getGroupTools: vi.fn().mockImplementation((groupId: string) => {
@@ -128,13 +124,11 @@ describe('ToolManager', () => {
         if (groupId === 'empty') return Promise.resolve([]);
         throw new Error(`Group ${groupId} not found`);
       }),
-      validateToolAccess: vi
-        .fn()
-        .mockImplementation((groupId: string, toolName: string) => {
-          if (groupId === 'filtered') return toolName === 'tool1';
-          if (groupId === 'default') return true;
-          return false;
-        }),
+      validateToolAccess: vi.fn().mockImplementation((groupId: string, toolName: string) => {
+        if (groupId === 'filtered') return toolName === 'tool1';
+        if (groupId === 'default') return true;
+        return false;
+      }),
       getGroupServers: vi.fn().mockImplementation((groupId: string) => {
         if (groupId === 'default') return ['server1', 'server2'];
         if (groupId === 'filtered') return ['server1'];
@@ -193,9 +187,9 @@ describe('ToolManager', () => {
     });
 
     it('should throw error for non-existent group', async () => {
-      await expect(
-        toolManager.getToolsForGroup('non-existent'),
-      ).rejects.toThrow('Group non-existent not found');
+      await expect(toolManager.getToolsForGroup('non-existent')).rejects.toThrow(
+        'Group non-existent not found',
+      );
     });
 
     it('should handle group manager errors', async () => {
@@ -203,9 +197,7 @@ describe('ToolManager', () => {
         new Error('Group manager error'),
       );
 
-      await expect(toolManager.getToolsForGroup('default')).rejects.toThrow(
-        'Group manager error',
-      );
+      await expect(toolManager.getToolsForGroup('default')).rejects.toThrow('Group manager error');
     });
   });
 
@@ -224,11 +216,9 @@ describe('ToolManager', () => {
 
       expect(result.isError).toBe(false);
       expect(result.content).toEqual([{ type: 'text', text: 'Success' }]);
-      expect(mockServerManager.executeToolOnServer).toHaveBeenCalledWith(
-        'server1',
-        'tool1',
-        { arg1: 'test' },
-      );
+      expect(mockServerManager.executeToolOnServer).toHaveBeenCalledWith('server1', 'tool1', {
+        arg1: 'test',
+      });
     });
 
     it('should validate group access before execution', async () => {
@@ -251,9 +241,7 @@ describe('ToolManager', () => {
       const result = await toolManager.executeTool('default', 'tool1', {}); // Missing required arg1
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain(
-        'Missing required argument: arg1',
-      );
+      expect(result.content[0].text).toContain('Missing required argument: arg1');
       expect(mockServerManager.executeToolOnServer).not.toHaveBeenCalled();
     });
 
@@ -267,9 +255,7 @@ describe('ToolManager', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain(
-        'Tool execution failed after 2 attempts',
-      );
+      expect(result.content[0].text).toContain('Tool execution failed after 2 attempts');
     });
 
     it('should retry on retryable errors', async () => {
@@ -294,9 +280,7 @@ describe('ToolManager', () => {
       const result = await resultPromise;
 
       expect(result.isError).toBe(false);
-      expect(result.content).toEqual([
-        { type: 'text', text: 'Success on retry' },
-      ]);
+      expect(result.content).toEqual([{ type: 'text', text: 'Success on retry' }]);
       expect(mockServerManager.executeToolOnServer).toHaveBeenCalledTimes(2);
 
       vi.useRealTimers();
@@ -321,11 +305,9 @@ describe('ToolManager', () => {
       });
 
       expect(result.isError).toBe(false);
-      expect(mockServerManager.executeToolOnServer).toHaveBeenCalledWith(
-        'server1',
-        'tool3',
-        { anyArg: 'value' },
-      );
+      expect(mockServerManager.executeToolOnServer).toHaveBeenCalledWith('server1', 'tool3', {
+        anyArg: 'value',
+      });
     });
   });
 
@@ -336,10 +318,7 @@ describe('ToolManager', () => {
     });
 
     it('should return undefined for non-existent tool', () => {
-      const serverId = toolManager.findToolServer(
-        'non-existent-tool',
-        'default',
-      );
+      const serverId = toolManager.findToolServer('non-existent-tool', 'default');
       expect(serverId).toBeUndefined();
     });
 
@@ -482,16 +461,10 @@ describe('ToolManager', () => {
     });
 
     it('should check tool availability in group', async () => {
-      const isAvailable = await toolManager.isToolAvailableInGroup(
-        'default',
-        'tool1',
-      );
+      const isAvailable = await toolManager.isToolAvailableInGroup('default', 'tool1');
       expect(isAvailable).toBe(true);
 
-      const isNotAvailable = await toolManager.isToolAvailableInGroup(
-        'filtered',
-        'tool2',
-      );
+      const isNotAvailable = await toolManager.isToolAvailableInGroup('filtered', 'tool2');
       expect(isNotAvailable).toBe(false);
     });
 
@@ -541,9 +514,7 @@ describe('ToolManager', () => {
         arg1: 'test',
       });
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain(
-        'Tool execution failed after 2 attempts',
-      );
+      expect(result.content[0].text).toContain('Tool execution failed after 2 attempts');
     });
 
     it('should handle group manager failures gracefully', async () => {
@@ -567,9 +538,7 @@ describe('ToolManager', () => {
       expect(result.content[0].text).toBe('Simple string result');
 
       // Test number result
-      vi.mocked(mockServerManager.executeToolOnServer).mockResolvedValueOnce(
-        42,
-      );
+      vi.mocked(mockServerManager.executeToolOnServer).mockResolvedValueOnce(42);
       result = await toolManager.executeTool('default', 'tool1', {
         arg1: 'test',
       });
@@ -586,9 +555,7 @@ describe('ToolManager', () => {
       expect(result.content[0].text).toContain('value');
 
       // Test null result
-      vi.mocked(mockServerManager.executeToolOnServer).mockResolvedValueOnce(
-        null,
-      );
+      vi.mocked(mockServerManager.executeToolOnServer).mockResolvedValueOnce(null);
       result = await toolManager.executeTool('default', 'tool1', {
         arg1: 'test',
       });

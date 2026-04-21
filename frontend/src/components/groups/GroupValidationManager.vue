@@ -16,19 +16,13 @@
       <div class="group-validation__status">
         <div class="group-validation__field">
           <span class="group-validation__label">验证状态</span>
-          <t-tag
-            :theme="validationEnabled ? 'success' : 'default'"
-            variant="light"
-          >
+          <t-tag :theme="validationEnabled ? 'success' : 'default'" variant="light">
             {{ validationEnabled ? '已启用' : '未启用' }}
           </t-tag>
         </div>
         <div class="group-validation__field">
           <span class="group-validation__label">密钥状态</span>
-          <t-tag
-            :theme="hasKey ? 'success' : 'default'"
-            variant="light"
-          >
+          <t-tag :theme="hasKey ? 'success' : 'default'" variant="light">
             {{ hasKey ? '已设置' : '未设置' }}
           </t-tag>
         </div>
@@ -73,22 +67,13 @@
 
       <!-- Generate key -->
       <div class="group-validation__section">
-        <t-button
-          variant="outline"
-          block
-          :loading="actionLoading"
-          @click="handleGenerateKey"
-        >
+        <t-button variant="outline" block :loading="actionLoading" @click="handleGenerateKey">
           生成随机密钥
         </t-button>
         <div v-if="generatedKey" class="group-validation__generated">
           <span class="group-validation__generated-label">已生成密钥：</span>
           <code class="group-validation__generated-key">{{ generatedKey }}</code>
-          <t-button
-            variant="text"
-            size="small"
-            @click="copyToClipboard(generatedKey)"
-          >
+          <t-button variant="text" size="small" @click="copyToClipboard(generatedKey)">
             复制
           </t-button>
         </div>
@@ -116,8 +101,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
 import { MessagePlugin } from 'tdesign-vue-next';
+import { ref, watch, computed } from 'vue';
+
 import { useGroupStore } from '@/stores/group';
 
 const props = defineProps<{
@@ -137,9 +123,7 @@ const hasKey = ref(false);
 const validationKey = ref('');
 const generatedKey = ref('');
 
-const currentGroup = computed(() =>
-  groupStore.groupList.find((g) => g.id === props.groupId),
-);
+const currentGroup = computed(() => groupStore.groupList.find((g) => g.id === props.groupId));
 
 // Load current validation status when dialog opens
 watch(
@@ -176,9 +160,7 @@ async function handleToggleValidation(enabled: boolean) {
     validationEnabled.value = enabled;
     MessagePlugin.success(enabled ? '验证已启用' : '验证已禁用');
   } catch (err: unknown) {
-    MessagePlugin.error(
-      err instanceof Error ? err.message : '切换验证状态失败',
-    );
+    MessagePlugin.error(err instanceof Error ? err.message : '切换验证状态失败');
   } finally {
     actionLoading.value = false;
   }
@@ -198,9 +180,7 @@ async function handleSetKey() {
     generatedKey.value = '';
     MessagePlugin.success('验证密钥已设置');
   } catch (err: unknown) {
-    MessagePlugin.error(
-      err instanceof Error ? err.message : '设置验证密钥失败',
-    );
+    MessagePlugin.error(err instanceof Error ? err.message : '设置验证密钥失败');
   } finally {
     actionLoading.value = false;
   }
@@ -215,9 +195,7 @@ async function handleGenerateKey() {
     hasKey.value = response.data.validation.hasKey;
     MessagePlugin.success('验证密钥已生成');
   } catch (err: unknown) {
-    MessagePlugin.error(
-      err instanceof Error ? err.message : '生成验证密钥失败',
-    );
+    MessagePlugin.error(err instanceof Error ? err.message : '生成验证密钥失败');
   } finally {
     actionLoading.value = false;
   }
@@ -232,9 +210,7 @@ async function handleDeleteKey() {
     generatedKey.value = '';
     MessagePlugin.success('验证密钥已删除');
   } catch (err: unknown) {
-    MessagePlugin.error(
-      err instanceof Error ? err.message : '删除验证密钥失败',
-    );
+    MessagePlugin.error(err instanceof Error ? err.message : '删除验证密钥失败');
   } finally {
     actionLoading.value = false;
   }

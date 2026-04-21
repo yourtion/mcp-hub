@@ -61,11 +61,7 @@ class E2ETestRunner {
     console.log('🔍 验证测试环境...');
 
     // 检查必要文件
-    const requiredFiles = [
-      'package.json',
-      'vitest.config.ts',
-      'src/e2e/index.test.ts',
-    ];
+    const requiredFiles = ['package.json', 'vitest.config.ts', 'src/e2e/index.test.ts'];
 
     for (const file of requiredFiles) {
       const filePath = join(this.backendDir, file);

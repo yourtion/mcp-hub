@@ -1,4 +1,5 @@
 import { mergeConfig } from 'vitest/config';
+
 import configShared from '../../vitest.shared.js';
 
 export default mergeConfig(configShared, {
@@ -11,13 +12,7 @@ export default mergeConfig(configShared, {
       reporter: ['text', 'json', 'json-summary', 'html', 'lcov'],
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],
-      exclude: [
-        'node_modules/',
-        'dist/',
-        '**/*.d.ts',
-        '**/*.test.ts',
-        'vitest.config.ts',
-      ],
+      exclude: ['node_modules/', 'dist/', '**/*.d.ts', '**/*.test.ts', 'vitest.config.ts'],
       thresholds: {
         global: {
           branches: 80,

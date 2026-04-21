@@ -8,11 +8,7 @@ import type { CliConfig } from '../types';
 /**
  * 配置模板类型
  */
-export type ConfigTemplateType =
-  | 'basic'
-  | 'advanced'
-  | 'development'
-  | 'production';
+export type ConfigTemplateType = 'basic' | 'advanced' | 'development' | 'production';
 
 /**
  * 配置模板生成器

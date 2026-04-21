@@ -8,13 +8,7 @@
     @close="handleClose"
     @confirm="handleConfirm"
   >
-    <t-form
-      ref="formRef"
-      :data="formData"
-      :rules="formRules"
-      label-align="top"
-      :label-width="0"
-    >
+    <t-form ref="formRef" :data="formData" :rules="formRules" label-align="top" :label-width="0">
       <t-form-item label="服务器 ID" name="id">
         <t-input
           v-model="formData.id"
@@ -24,18 +18,11 @@
       </t-form-item>
 
       <t-form-item label="类型" name="type">
-        <t-select
-          v-model="formData.type"
-          :options="typeOptions"
-          placeholder="选择服务器类型"
-        />
+        <t-select v-model="formData.type" :options="typeOptions" placeholder="选择服务器类型" />
       </t-form-item>
 
       <t-form-item v-if="formData.type === 'stdio'" label="命令 (Command)" name="command">
-        <t-input
-          v-model="formData.command"
-          placeholder="例如: npx, python"
-        />
+        <t-input v-model="formData.command" placeholder="例如: npx, python" />
       </t-form-item>
 
       <t-form-item v-if="formData.type === 'stdio'" label="参数 (Args)" name="args">
@@ -45,14 +32,19 @@
         />
       </t-form-item>
 
-      <t-form-item v-if="formData.type === 'sse' || formData.type === 'streaming'" label="URL" name="url">
-        <t-input
-          v-model="formData.url"
-          placeholder="例如: http://localhost:3000/sse"
-        />
+      <t-form-item
+        v-if="formData.type === 'sse' || formData.type === 'streaming'"
+        label="URL"
+        name="url"
+      >
+        <t-input v-model="formData.url" placeholder="例如: http://localhost:3000/sse" />
       </t-form-item>
 
-      <t-form-item v-if="formData.type === 'sse' || formData.type === 'streaming'" label="请求头 (Headers)" name="headers">
+      <t-form-item
+        v-if="formData.type === 'sse' || formData.type === 'streaming'"
+        label="请求头 (Headers)"
+        name="headers"
+      >
         <t-textarea
           v-model="formData.headersText"
           placeholder='JSON 格式，例如: {"Authorization": "Bearer xxx"}'
@@ -76,15 +68,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, computed } from 'vue';
 import { MessagePlugin } from 'tdesign-vue-next';
-import type { FormInstanceFunctions, FormRule } from 'tdesign-vue-next';
+import { ref, reactive, watch, computed } from 'vue';
+
 import type {
   ServerInfo,
   ServerType,
   CreateServerRequest,
   UpdateServerRequest,
 } from '@/types/server';
+import type { FormInstanceFunctions, FormRule } from 'tdesign-vue-next';
 
 const props = defineProps<{
   visible: boolean;
@@ -99,9 +92,7 @@ const emit = defineEmits<{
 
 const formRef = ref<FormInstanceFunctions | null>(null);
 
-const dialogTitle = computed(() =>
-  props.mode === 'create' ? '添加服务器' : '编辑服务器',
-);
+const dialogTitle = computed(() => (props.mode === 'create' ? '添加服务器' : '编辑服务器'));
 
 const typeOptions = [
   { label: 'Stdio', value: 'stdio' },
@@ -149,12 +140,8 @@ watch(
       formData.command = config.command ?? '';
       formData.argsText = config.args?.join(', ') ?? '';
       formData.url = config.url ?? '';
-      formData.headersText = config.headers
-        ? JSON.stringify(config.headers, null, 2)
-        : '';
-      formData.envText = config.env
-        ? JSON.stringify(config.env, null, 2)
-        : '';
+      formData.headersText = config.headers ? JSON.stringify(config.headers, null, 2) : '';
+      formData.envText = config.env ? JSON.stringify(config.env, null, 2) : '';
       formData.enabled = config.enabled;
     } else if (isVisible && props.mode === 'create') {
       resetForm();
@@ -189,9 +176,13 @@ function buildConfig() {
   return {
     type: formData.type,
     command: isStdio ? formData.command : undefined,
-    args: isStdio && formData.argsText.trim()
-      ? formData.argsText.split(',').map((s) => s.trim()).filter(Boolean)
-      : undefined,
+    args:
+      isStdio && formData.argsText.trim()
+        ? formData.argsText
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : undefined,
     url: isRemote ? formData.url : undefined,
     headers: isRemote ? parseJsonField(formData.headersText) : undefined,
     env: parseJsonField(formData.envText),

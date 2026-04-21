@@ -1,27 +1,20 @@
 import path from 'node:path';
 import { mergeConfig } from 'vitest/config';
+
 import configShared from '../vitest.shared.js';
 
 export default mergeConfig(configShared, {
   resolve: {
     alias: {
       '@mcp-core/mcp-hub-core': path.resolve(__dirname, '../packages/core/src'),
-      '@mcp-core/mcp-hub-share': path.resolve(
-        __dirname,
-        '../packages/share/src',
-      ),
+      '@mcp-core/mcp-hub-share': path.resolve(__dirname, '../packages/share/src'),
     },
   },
   test: {
     name: 'api-unit',
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.test.ts'],
-    exclude: [
-      'src/e2e/**',
-      'src/integration/**',
-      'src/mcp.test.ts',
-      'src/sse.test.ts',
-    ],
+    exclude: ['src/e2e/**', 'src/integration/**', 'src/mcp.test.ts', 'src/sse.test.ts'],
     testTimeout: 30000,
     hookTimeout: 10000,
     teardownTimeout: 5000,

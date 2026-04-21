@@ -6,7 +6,11 @@
         <span class="execution-detail__server">{{ execution.serverId }}</span>
         <span
           class="execution-detail__badge"
-          :class="execution.isError ? 'execution-detail__badge--error' : 'execution-detail__badge--success'"
+          :class="
+            execution.isError
+              ? 'execution-detail__badge--error'
+              : 'execution-detail__badge--success'
+          "
         >
           {{ execution.isError ? '执行失败' : '执行成功' }}
         </span>
@@ -21,11 +25,7 @@
 
     <!-- Result Content -->
     <div v-if="hasResults" class="execution-detail__results">
-      <div
-        v-for="(item, index) in resultItems"
-        :key="index"
-        class="execution-detail__result-item"
-      >
+      <div v-for="(item, index) in resultItems" :key="index" class="execution-detail__result-item">
         <!-- Text result -->
         <template v-if="item.type === 'text' && item.text">
           <pre class="mcp-code">{{ item.text }}</pre>
@@ -63,6 +63,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+
 import type { ToolExecution, ToolExecuteResponse, ToolResult } from '@/types/tool';
 
 type ExecutionData = ToolExecution | ToolExecuteResponse;
@@ -228,7 +229,11 @@ const imageSrc = (item: ToolResult): string => {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

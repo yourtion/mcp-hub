@@ -89,25 +89,17 @@ async function validateBuildArtifacts(): Promise<ValidationResult> {
   try {
     // 检查核心包构建产物
     const coreDistExists = await checkFileExists('packages/core/dist/index.js');
-    const coreTypesExists = await checkFileExists(
-      'packages/core/dist/index.d.ts',
-    );
+    const coreTypesExists = await checkFileExists('packages/core/dist/index.d.ts');
 
     // 检查CLI包构建产物
     const cliDistExists = await checkFileExists('packages/cli/dist/index.js');
-    const cliTypesExists = await checkFileExists(
-      'packages/cli/dist/index.d.ts',
-    );
+    const cliTypesExists = await checkFileExists('packages/cli/dist/index.d.ts');
 
     // 检查后端构建产物
     const backendDistExists = await checkFileExists('backend/dist/index.js');
 
     const allExists =
-      coreDistExists &&
-      coreTypesExists &&
-      cliDistExists &&
-      cliTypesExists &&
-      backendDistExists;
+      coreDistExists && coreTypesExists && cliDistExists && cliTypesExists && backendDistExists;
 
     return {
       test: '构建产物验证',
@@ -177,15 +169,9 @@ async function validateBackwardCompatibility(): Promise<ValidationResult> {
 async function validateConfigCompatibility(): Promise<boolean> {
   try {
     // 检查现有配置文件是否能正常解析
-    const mcpConfigExists = await checkFileExists(
-      'backend/config/mcp_server.json',
-    );
-    const groupConfigExists = await checkFileExists(
-      'backend/config/group.json',
-    );
-    const systemConfigExists = await checkFileExists(
-      'backend/config/system.json',
-    );
+    const mcpConfigExists = await checkFileExists('backend/config/mcp_server.json');
+    const groupConfigExists = await checkFileExists('backend/config/group.json');
+    const systemConfigExists = await checkFileExists('backend/config/system.json');
 
     return mcpConfigExists && groupConfigExists && systemConfigExists;
   } catch {
@@ -201,9 +187,7 @@ async function validateApiCompatibility(): Promise<boolean> {
     // 检查关键API文件是否存在
     const mcpApiExists = await checkFileExists('backend/src/mcp.ts');
     const hubApiExists = await checkFileExists('backend/src/api/hub.ts');
-    const groupApiExists = await checkFileExists(
-      'backend/src/api/groups/index.ts',
-    );
+    const groupApiExists = await checkFileExists('backend/src/api/groups/index.ts');
 
     return mcpApiExists && hubApiExists && groupApiExists;
   } catch {
@@ -234,11 +218,7 @@ async function validatePerformanceMetrics(): Promise<ValidationResult> {
 
   try {
     // 运行性能测试
-    const result = await executeCommand(
-      'npx',
-      ['tsx', 'scripts/performance-test.ts'],
-      60000,
-    );
+    const result = await executeCommand('npx', ['tsx', 'scripts/performance-test.ts'], 60000);
 
     // 检查性能测试结果
     const performanceGood =
@@ -329,9 +309,7 @@ async function validateDeploymentEnvironment(): Promise<ValidationResult> {
     return {
       test: '部署环境验证',
       success: envValid,
-      message: envValid
-        ? `环境验证通过 (Node: ${nodeVersion})`
-        : '环境验证失败',
+      message: envValid ? `环境验证通过 (Node: ${nodeVersion})` : '环境验证失败',
       duration: Date.now() - startTime,
     };
   } catch (error) {
@@ -453,9 +431,7 @@ function generateDeploymentReport(report: DeploymentReport): void {
   report.results.forEach((result, index) => {
     const status = result.success ? '✅' : '❌';
     const duration = `${Math.round(result.duration)}ms`;
-    console.log(
-      `${index + 1}. ${status} ${result.test} - ${result.message} (${duration})`,
-    );
+    console.log(`${index + 1}. ${status} ${result.test} - ${result.message} (${duration})`);
   });
 
   // 保存报告到文件

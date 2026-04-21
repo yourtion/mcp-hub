@@ -5,6 +5,7 @@
 
 // 基于fetch的HTTP客户端不需要额外导入
 import { createLogger } from '../../utils/logger.js';
+
 import type {
   HttpConnection,
   HttpRequestConfig,
@@ -111,8 +112,7 @@ export class HttpClient {
           } else {
             fetchOptions.body = JSON.stringify(processedConfig.data);
             // 确保Content-Type是application/json
-            (fetchOptions.headers as Record<string, string>)['Content-Type'] =
-              'application/json';
+            (fetchOptions.headers as Record<string, string>)['Content-Type'] = 'application/json';
           }
         }
 
@@ -224,15 +224,11 @@ export class HttpClient {
     const connections = Array.from(this.connections.values());
     const active = connections.filter(
       (conn) =>
-        conn.active &&
-        now - conn.lastUsedAt.getTime() <
-          this.config.connectionPool.idleTimeout,
+        conn.active && now - conn.lastUsedAt.getTime() < this.config.connectionPool.idleTimeout,
     );
     const idle = connections.filter(
       (conn) =>
-        !conn.active ||
-        now - conn.lastUsedAt.getTime() >=
-          this.config.connectionPool.idleTimeout,
+        !conn.active || now - conn.lastUsedAt.getTime() >= this.config.connectionPool.idleTimeout,
     );
 
     return {
@@ -251,10 +247,7 @@ export class HttpClient {
     const toRemove: string[] = [];
 
     for (const [id, connection] of this.connections) {
-      if (
-        now - connection.lastUsedAt.getTime() >=
-        this.config.connectionPool.idleTimeout
-      ) {
+      if (now - connection.lastUsedAt.getTime() >= this.config.connectionPool.idleTimeout) {
         toRemove.push(id);
       }
     }
@@ -362,8 +355,6 @@ export class HttpClient {
 /**
  * 创建HTTP客户端实例
  */
-export function createHttpClient(
-  config?: Partial<HttpClientConfig>,
-): HttpClient {
+export function createHttpClient(config?: Partial<HttpClientConfig>): HttpClient {
   return new HttpClient(config);
 }

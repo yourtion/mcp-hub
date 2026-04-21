@@ -66,9 +66,7 @@
                     <span class="mcp-status__dot" />
                     <span>{{ serverData.serverStatus }}</span>
                   </span>
-                  <span class="server-header__count">
-                    {{ serverData.tools.length }} 个工具
-                  </span>
+                  <span class="server-header__count"> {{ serverData.tools.length }} 个工具 </span>
                 </div>
               </template>
               <t-table
@@ -96,7 +94,9 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue';
+
 import { useToolStore } from '@/stores/tool';
+
 import type { PrimaryTableCol, TableRowData } from 'tdesign-vue-next';
 
 const toolStore = useToolStore();

@@ -7,6 +7,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { expect } from 'vitest';
+
 import { ConsoleLogger, LogLevel } from '../utils/logger.js';
 
 // 测试配置目录路径
@@ -65,10 +66,7 @@ export function setupTestConfig(enableAuth: boolean = true): string {
       tools: [],
     },
   };
-  writeFileSync(
-    path.join(testConfigDir, 'group.json'),
-    JSON.stringify(groupConfig, null, 2),
-  );
+  writeFileSync(path.join(testConfigDir, 'group.json'), JSON.stringify(groupConfig, null, 2));
 
   // 2. mcp_server.json - 测试 MCP 服务器配置
   const mcpServerConfig = {
@@ -147,10 +145,7 @@ export function setupTestConfig(enableAuth: boolean = true): string {
       retentionDays: 7,
     },
   };
-  writeFileSync(
-    path.join(testConfigDir, 'system.json'),
-    JSON.stringify(systemConfig, null, 2),
-  );
+  writeFileSync(path.join(testConfigDir, 'system.json'), JSON.stringify(systemConfig, null, 2));
 
   return testConfigDir;
 }
@@ -176,12 +171,14 @@ export function cleanupTestConfig(): void {
  * @param authToken 认证token
  * @returns 带认证的请求函数
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- e2e test utility, dynamic app type
-// biome-ignore lint/suspicious/noExplicitAny: test utility for dynamic app
-export function createAuthenticatedRequest(testApp: any, authToken: string) {
+// test utility for dynamic app type
+export function createAuthenticatedRequest(
+  testApp: { request: (path: string, init?: RequestInit) => Response | Promise<Response> },
+  authToken: string,
+) {
   return async (path: string, init?: RequestInit) => {
     const headers = {
-      ...(init?.headers || {}),
+      ...init?.headers,
       Authorization: `Bearer ${authToken}`,
     };
     return testApp.request(path, { ...init, headers });
@@ -296,10 +293,7 @@ export function createMockServer(id: string, status: string = 'connected') {
     lastConnected: new Date().toISOString(),
     toolCount: 2,
     isHealthy: status === 'connected',
-    tools: [
-      createMockTool(`${id}_tool_1`, id),
-      createMockTool(`${id}_tool_2`, id),
-    ],
+    tools: [createMockTool(`${id}_tool_1`, id), createMockTool(`${id}_tool_2`, id)],
   };
 }
 
@@ -406,9 +400,7 @@ export async function executeScenarioStep<T>(
 /**
  * 生成测试报告
  */
-export function generateTestReport(
-  scenario: ReturnType<typeof createTestScenario>,
-) {
+export function generateTestReport(scenario: ReturnType<typeof createTestScenario>) {
   const totalDuration = Date.now() - scenario.startTime;
   const successCount = scenario.results.filter((r) => r.success).length;
   const failureCount = scenario.results.filter((r) => !r.success).length;
@@ -418,15 +410,11 @@ export function generateTestReport(
     totalSteps: scenario.results.length,
     successCount,
     failureCount,
-    successRate:
-      scenario.results.length > 0
-        ? (successCount / scenario.results.length) * 100
-        : 0,
+    successRate: scenario.results.length > 0 ? (successCount / scenario.results.length) * 100 : 0,
     totalDuration,
     averageStepDuration:
       scenario.results.length > 0
-        ? scenario.results.reduce((sum, r) => sum + r.duration, 0) /
-          scenario.results.length
+        ? scenario.results.reduce((sum, r) => sum + r.duration, 0) / scenario.results.length
         : 0,
     steps: scenario.results,
   };
@@ -503,8 +491,7 @@ export function generatePerformanceReport(
   }
 
   const durations = measurements.map((m) => m.duration);
-  const averageDuration =
-    durations.reduce((sum, d) => sum + d, 0) / durations.length;
+  const averageDuration = durations.reduce((sum, d) => sum + d, 0) / durations.length;
   const minDuration = Math.min(...durations);
   const maxDuration = Math.max(...durations);
 

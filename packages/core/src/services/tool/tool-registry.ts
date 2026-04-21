@@ -66,21 +66,19 @@ export class ToolNotFoundError extends ToolRegistryError {
 
 export class ToolValidationError extends ToolRegistryError {
   constructor(toolName: string, validationError: string) {
-    super(
-      `工具 '${toolName}' 验证失败: ${validationError}`,
-      'TOOL_VALIDATION_FAILED',
-      { toolName, validationError },
-    );
+    super(`工具 '${toolName}' 验证失败: ${validationError}`, 'TOOL_VALIDATION_FAILED', {
+      toolName,
+      validationError,
+    });
   }
 }
 
 export class DuplicateToolError extends ToolRegistryError {
   constructor(toolName: string, serverId: string) {
-    super(
-      `工具 '${toolName}' 在服务器 '${serverId}' 上已存在`,
-      'DUPLICATE_TOOL',
-      { toolName, serverId },
-    );
+    super(`工具 '${toolName}' 在服务器 '${serverId}' 上已存在`, 'DUPLICATE_TOOL', {
+      toolName,
+      serverId,
+    });
   }
 }
 
@@ -160,10 +158,7 @@ export interface ToolRegistryInterface {
   /**
    * 获取工具执行历史
    */
-  getToolExecutionHistory(
-    toolName?: string,
-    serverId?: string,
-  ): ToolExecutionContext[];
+  getToolExecutionHistory(toolName?: string, serverId?: string): ToolExecutionContext[];
 
   /**
    * 清理工具注册表
@@ -178,10 +173,7 @@ export class ToolRegistry implements ToolRegistryInterface {
   private tools = new Map<string, ToolInfo>();
   private serverTools = new Map<string, Set<string>>();
   private toolExecutions = new Map<string, ToolExecutionContext[]>();
-  private executionStats = new Map<
-    string,
-    { count: number; errors: number; totalTime: number }
-  >();
+  private executionStats = new Map<string, { count: number; errors: number; totalTime: number }>();
   private initialized = false;
   private logger = createLogger({ component: 'Core' });
 
@@ -414,9 +406,7 @@ export class ToolRegistry implements ToolRegistryInterface {
 
       // 检查未知参数
       const knownParams = new Set(tool.parameters.map((p) => p.name));
-      const unknownParams = Object.keys(args).filter(
-        (key) => !knownParams.has(key),
-      );
+      const unknownParams = Object.keys(args).filter((key) => !knownParams.has(key));
       if (unknownParams.length > 0) {
         warnings.push(`未知参数: ${unknownParams.join(', ')}`);
       }
@@ -544,8 +534,7 @@ export class ToolRegistry implements ToolRegistryInterface {
       totalExecutionTime += stats.totalTime;
     }
 
-    const averageExecutionTime =
-      totalExecutions > 0 ? totalExecutionTime / totalExecutions : 0;
+    const averageExecutionTime = totalExecutions > 0 ? totalExecutionTime / totalExecutions : 0;
 
     return {
       totalTools: this.tools.size,
@@ -601,10 +590,7 @@ export class ToolRegistry implements ToolRegistryInterface {
     });
   }
 
-  getToolExecutionHistory(
-    toolName?: string,
-    serverId?: string,
-  ): ToolExecutionContext[] {
+  getToolExecutionHistory(toolName?: string, serverId?: string): ToolExecutionContext[] {
     this.ensureInitialized();
 
     if (toolName && serverId) {
@@ -620,9 +606,7 @@ export class ToolRegistry implements ToolRegistryInterface {
     }
 
     // 按时间排序
-    return allExecutions.sort(
-      (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
-    );
+    return allExecutions.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }
 
   cleanup(): void {
@@ -641,10 +625,7 @@ export class ToolRegistry implements ToolRegistryInterface {
 
   private ensureInitialized(): void {
     if (!this.initialized) {
-      throw new ToolRegistryError(
-        '工具注册表必须在使用前初始化',
-        'NOT_INITIALIZED',
-      );
+      throw new ToolRegistryError('工具注册表必须在使用前初始化', 'NOT_INITIALIZED');
     }
   }
 
@@ -661,22 +642,14 @@ export class ToolRegistry implements ToolRegistryInterface {
     if (tool.parameters) {
       for (const param of tool.parameters) {
         if (!param.name || typeof param.name !== 'string') {
-          throw new ToolValidationError(
-            tool.name,
-            `参数名称无效: ${param.name}`,
-          );
+          throw new ToolValidationError(tool.name, `参数名称无效: ${param.name}`);
         }
 
         if (
           !param.type ||
-          !['string', 'number', 'boolean', 'object', 'array'].includes(
-            param.type,
-          )
+          !['string', 'number', 'boolean', 'object', 'array'].includes(param.type)
         ) {
-          throw new ToolValidationError(
-            tool.name,
-            `参数类型无效: ${param.type}`,
-          );
+          throw new ToolValidationError(tool.name, `参数类型无效: ${param.type}`);
         }
       }
     }
@@ -701,16 +674,12 @@ export class ToolRegistry implements ToolRegistryInterface {
 
     // 按包含的工具名称过滤
     if (filter.toolNames && filter.toolNames.length > 0) {
-      filteredTools = filteredTools.filter((tool) =>
-        filter.toolNames?.includes(tool.name),
-      );
+      filteredTools = filteredTools.filter((tool) => filter.toolNames?.includes(tool.name));
     }
 
     // 按排除的工具名称过滤
     if (filter.excludeToolNames && filter.excludeToolNames.length > 0) {
-      filteredTools = filteredTools.filter(
-        (tool) => !filter.excludeToolNames?.includes(tool.name),
-      );
+      filteredTools = filteredTools.filter((tool) => !filter.excludeToolNames?.includes(tool.name));
     }
 
     // 是否包含已弃用的工具
@@ -767,11 +736,7 @@ export class ToolRegistry implements ToolRegistryInterface {
         break;
 
       case 'object':
-        if (
-          typeof value !== 'object' ||
-          value === null ||
-          Array.isArray(value)
-        ) {
+        if (typeof value !== 'object' || value === null || Array.isArray(value)) {
           return {
             isValid: false,
             error: `参数 '${name}' 必须是对象类型`,

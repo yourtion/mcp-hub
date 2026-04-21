@@ -51,11 +51,13 @@
 ### 硬件要求
 
 **最小配置**:
+
 - CPU: 2 核心
 - 内存: 2GB RAM
 - 存储: 10GB 可用空间
 
 **推荐配置**:
+
 - CPU: 4 核心
 - 内存: 4GB RAM
 - 存储: 20GB 可用空间（SSD）
@@ -70,7 +72,7 @@
 
 ### 网络要求
 
-- **端口**: 
+- **端口**:
   - 3000 (后端 API，内部)
   - 80/443 (HTTP/HTTPS，外部)
 - **防火墙**: 允许必要的入站和出站连接
@@ -206,7 +208,7 @@ server {
     location / {
         root /var/www/mcp-hub/frontend/dist;
         try_files $uri $uri/ /index.html;
-        
+
         # 缓存静态资源
         location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
             expires 1y;
@@ -225,7 +227,7 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
-        
+
         # 超时设置
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
@@ -300,7 +302,7 @@ services:
     container_name: mcp-hub-api
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -313,7 +315,7 @@ services:
     networks:
       - mcp-hub-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8181/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8181/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -323,8 +325,8 @@ services:
     container_name: mcp-hub-web
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/ssl:ro
@@ -378,37 +380,37 @@ spec:
         app: mcp-hub-api
     spec:
       containers:
-      - name: api
-        image: mcp-hub-api:latest
-        ports:
-        - containerPort: 3000
-        env:
-        - name: NODE_ENV
-          value: "production"
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: mcp-hub-secrets
-              key: jwt-secret
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "250m"
-          limits:
-            memory: "1Gi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: api
+          image: mcp-hub-api:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: 'production'
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-hub-secrets
+                  key: jwt-secret
+          resources:
+            requests:
+              memory: '512Mi'
+              cpu: '250m'
+            limits:
+              memory: '1Gi'
+              cpu: '500m'
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
 ---
 apiVersion: v1
 kind: Service
@@ -418,9 +420,9 @@ spec:
   selector:
     app: mcp-hub-api
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 3000
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
   type: LoadBalancer
 ```
 
@@ -553,18 +555,21 @@ sudo iptables -A INPUT -j DROP
 ### 3. 应用安全
 
 **JWT 密钥管理**:
+
 ```bash
 # 生成强随机密钥
 openssl rand -base64 64
 ```
 
 **密码策略**:
+
 - 最小长度: 12 字符
 - 包含大小写字母、数字和特殊字符
 - 定期更换密码
 - 使用密码管理器
 
 **访问控制**:
+
 - 实施最小权限原则
 - 使用角色基础访问控制 (RBAC)
 - 定期审计用户权限
@@ -591,7 +596,7 @@ import rateLimit from 'express-rate-limit';
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 分钟
   max: 100, // 限制 100 个请求
-  message: '请求过于频繁，请稍后再试'
+  message: '请求过于频繁，请稍后再试',
 });
 
 app.use('/api/', limiter);
@@ -659,11 +664,11 @@ scrape_configs:
 集成 Sentry 进行错误追踪：
 
 ```typescript
-import * as Sentry from "@sentry/node";
+import * as Sentry from '@sentry/node';
 
 Sentry.init({
-  dsn: "your-sentry-dsn",
-  environment: "production",
+  dsn: 'your-sentry-dsn',
+  environment: 'production',
   tracesSampleRate: 1.0,
 });
 ```
@@ -805,11 +810,13 @@ const redis = new Redis({
 #### 1. 服务无法启动
 
 检查日志：
+
 ```bash
 pm2 logs mcp-hub-api --lines 100
 ```
 
 常见原因：
+
 - 端口被占用
 - 配置文件错误
 - 权限问题
@@ -818,11 +825,13 @@ pm2 logs mcp-hub-api --lines 100
 #### 2. 内存泄漏
 
 监控内存使用：
+
 ```bash
 pm2 monit
 ```
 
 解决方案：
+
 - 定期重启服务
 - 检查代码中的内存泄漏
 - 增加内存限制
@@ -830,6 +839,7 @@ pm2 monit
 #### 3. 性能下降
 
 分析性能：
+
 ```bash
 # 使用 Node.js 性能分析
 node --prof dist/src/index.js
@@ -841,6 +851,7 @@ node --prof-process isolate-*.log > profile.txt
 #### 4. SSL 证书问题
 
 检查证书：
+
 ```bash
 # 查看证书信息
 openssl x509 -in /etc/ssl/certs/mcp-hub.crt -text -noout
@@ -854,6 +865,7 @@ openssl s_client -connect mcp-hub.example.com:443
 如果系统出现严重问题：
 
 1. **回滚到上一个版本**:
+
    ```bash
    git checkout <previous-version>
    pnpm install
@@ -862,6 +874,7 @@ openssl s_client -connect mcp-hub.example.com:443
    ```
 
 2. **从备份恢复**:
+
    ```bash
    ./restore.sh /backup/mcp-hub/config_latest.tar.gz
    ```
@@ -931,6 +944,7 @@ upstream mcp_hub_backend {
 ### 垂直扩展
 
 增加服务器资源：
+
 - 升级 CPU
 - 增加内存
 - 使用 SSD 存储
@@ -941,42 +955,46 @@ upstream mcp_hub_backend {
 安全升级流程：
 
 1. **准备阶段**:
+
    ```bash
    # 备份当前版本
    ./backup.sh
-   
+
    # 在测试环境验证新版本
    ```
 
 2. **升级阶段**:
+
    ```bash
    # 拉取新版本
    git pull origin main
-   
+
    # 安装依赖
    pnpm install
-   
+
    # 构建
    pnpm build
    ```
 
 3. **部署阶段**:
+
    ```bash
    # 滚动更新（零停机）
    pm2 reload mcp-hub-api
-   
+
    # 或重启
    pm2 restart mcp-hub-api
    ```
 
 4. **验证阶段**:
+
    ```bash
    # 检查服务状态
    pm2 status
-   
+
    # 查看日志
    pm2 logs mcp-hub-api --lines 50
-   
+
    # 测试关键功能
    curl https://mcp-hub.example.com/health
    ```

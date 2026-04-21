@@ -4,8 +4,9 @@
  */
 
 import { logger } from '../../../utils/logger.js';
-import type { SecurityEvent } from '../../types/security.js';
 import { SecurityEventType } from '../../types/security.js';
+
+import type { SecurityEvent } from '../../types/security.js';
 
 /**
  * 敏感数据脱敏配置
@@ -153,11 +154,7 @@ interface SecurityStats {
  */
 interface SecurityAlert {
   /** 告警类型 */
-  type:
-    | 'HIGH_ERROR_RATE'
-    | 'MULTIPLE_AUTH_FAILURES'
-    | 'SUSPICIOUS_ACTIVITY'
-    | 'RATE_LIMIT_ABUSE';
+  type: 'HIGH_ERROR_RATE' | 'MULTIPLE_AUTH_FAILURES' | 'SUSPICIOUS_ACTIVITY' | 'RATE_LIMIT_ABUSE';
   /** 告警级别 */
   level: 'warning' | 'critical';
   /** 告警消息 */
@@ -184,13 +181,7 @@ export class SecurityLoggerImpl implements SecurityLogger {
     monitoringConfig?: Partial<SecurityMonitoringConfig>,
   ) {
     this.sensitiveConfig = {
-      sensitiveFields: [
-        'password',
-        'token',
-        'apiKey',
-        'secret',
-        'authorization',
-      ],
+      sensitiveFields: ['password', 'token', 'apiKey', 'secret', 'authorization'],
       maskChar: '*',
       keepChars: 4,
       ...sensitiveConfig,
@@ -308,10 +299,7 @@ export class SecurityLoggerImpl implements SecurityLogger {
     this.securityEvents.push(sanitizedEvent);
 
     // 根据严重程度选择日志级别
-    const logLevel =
-      event.severity === 'critical' || event.severity === 'high'
-        ? 'error'
-        : 'warn';
+    const logLevel = event.severity === 'critical' || event.severity === 'high' ? 'error' : 'warn';
     if (logLevel === 'error') {
       logger.error('安全事件');
     } else {
@@ -329,18 +317,13 @@ export class SecurityLoggerImpl implements SecurityLogger {
     const startTime = new Date(now.getTime() - timeWindow * 1000);
 
     // 过滤时间范围内的日志
-    const recentLogs = this.apiCallLogs.filter(
-      (log) => log.timestamp >= startTime,
-    );
-    const recentEvents = this.securityEvents.filter(
-      (event) => event.timestamp >= startTime,
-    );
+    const recentLogs = this.apiCallLogs.filter((log) => log.timestamp >= startTime);
+    const recentEvents = this.securityEvents.filter((event) => event.timestamp >= startTime);
 
     const totalRequests = recentLogs.length;
     const successfulRequests = recentLogs.filter((log) => log.success).length;
     const failedRequests = totalRequests - successfulRequests;
-    const errorRate =
-      totalRequests > 0 ? (failedRequests / totalRequests) * 100 : 0;
+    const errorRate = totalRequests > 0 ? (failedRequests / totalRequests) * 100 : 0;
 
     const authFailures = recentEvents.filter(
       (event) => event.type === SecurityEventType.AUTH_FAILURE,
@@ -390,9 +373,7 @@ export class SecurityLoggerImpl implements SecurityLogger {
 
     if (typeof data === 'object') {
       const sanitized: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(
-        data as Record<string, unknown>,
-      )) {
+      for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
         if (this.isSensitiveField(key)) {
           sanitized[key] = this.maskValue(value);
         } else {
@@ -422,14 +403,10 @@ export class SecurityLoggerImpl implements SecurityLogger {
     }
 
     const keepStart = value.substring(0, this.sensitiveConfig.keepChars);
-    const keepEnd = value.substring(
-      value.length - this.sensitiveConfig.keepChars,
-    );
+    const keepEnd = value.substring(value.length - this.sensitiveConfig.keepChars);
     const maskLength = value.length - this.sensitiveConfig.keepChars * 2;
 
-    return (
-      keepStart + this.sensitiveConfig.maskChar.repeat(maskLength) + keepEnd
-    );
+    return keepStart + this.sensitiveConfig.maskChar.repeat(maskLength) + keepEnd;
   }
 
   private maskSensitiveString(str: string): string {
@@ -455,17 +432,11 @@ export class SecurityLoggerImpl implements SecurityLogger {
       return;
     }
 
-    const {
-      timeWindow,
-      errorRate: threshold,
-      minRequests,
-    } = this.monitoringConfig.alertThresholds;
+    const { timeWindow, errorRate: threshold, minRequests } = this.monitoringConfig.alertThresholds;
     const now = new Date();
     const startTime = new Date(now.getTime() - timeWindow * 1000);
 
-    const recentLogs = this.apiCallLogs.filter(
-      (log) => log.timestamp >= startTime,
-    );
+    const recentLogs = this.apiCallLogs.filter((log) => log.timestamp >= startTime);
 
     if (recentLogs.length >= minRequests) {
       const failedRequests = recentLogs.filter((log) => !log.success).length;
@@ -569,14 +540,10 @@ export class SecurityLoggerImpl implements SecurityLogger {
     const cutoffTime = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24小时前
 
     // 清理旧的API调用日志
-    this.apiCallLogs = this.apiCallLogs.filter(
-      (log) => log.timestamp >= cutoffTime,
-    );
+    this.apiCallLogs = this.apiCallLogs.filter((log) => log.timestamp >= cutoffTime);
 
     // 清理旧的安全事件
-    this.securityEvents = this.securityEvents.filter(
-      (event) => event.timestamp >= cutoffTime,
-    );
+    this.securityEvents = this.securityEvents.filter((event) => event.timestamp >= cutoffTime);
 
     logger.debug('清理旧日志完成');
   }

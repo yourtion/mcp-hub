@@ -144,11 +144,7 @@ export class StructuredLogger {
   /**
    * 记录工具发现事件
    */
-  logToolDiscovery(
-    serverId: string,
-    toolCount: number,
-    context?: Partial<LogEntry>,
-  ): void {
+  logToolDiscovery(serverId: string, toolCount: number, context?: Partial<LogEntry>): void {
     this.info(`Discovered ${toolCount} tools from server ${serverId}`, {
       serverId,
       context: { toolCount, ...context?.context },
@@ -193,11 +189,7 @@ export class StructuredLogger {
   /**
    * 开始操作记录
    */
-  startOperation(
-    operation: string,
-    component: string,
-    context?: Partial<LogEntry>,
-  ): string {
+  startOperation(operation: string, component: string, context?: Partial<LogEntry>): string {
     const requestId = this.generateRequestId();
     this.info(`Starting ${operation}`, {
       operation,
@@ -277,8 +269,7 @@ export function createLogger(config?: Partial<LoggerConfig>): StructuredLogger {
  */
 export const logger = createLogger({
   level: process.env.LOG_LEVEL
-    ? LogLevel[process.env.LOG_LEVEL.toUpperCase() as keyof typeof LogLevel] ||
-      LogLevel.INFO
+    ? LogLevel[process.env.LOG_LEVEL.toUpperCase() as keyof typeof LogLevel] || LogLevel.INFO
     : EnvironmentDetector.getEnvironmentLogLevel(LogLevel.INFO),
   enableConsole: EnvironmentDetector.getEnvironmentConsoleEnabled(true),
   enableFile: !!process.env.LOG_FILE,

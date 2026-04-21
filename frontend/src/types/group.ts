@@ -255,10 +255,7 @@ export interface GroupToolAccessValidationResponse {
     groupId: string;
     toolName: string;
     hasAccess: boolean;
-    reason:
-      | 'ACCESS_GRANTED'
-      | 'TOOL_NOT_FOUND_IN_GROUP'
-      | 'TOOL_NOT_IN_WHITELIST';
+    reason: 'ACCESS_GRANTED' | 'TOOL_NOT_FOUND_IN_GROUP' | 'TOOL_NOT_IN_WHITELIST';
     message: string;
     validation: {
       groupHasValidation: boolean;
@@ -331,12 +328,7 @@ export interface GroupKeyValidationResponse {
   data: {
     groupId: string;
     valid: boolean;
-    reason:
-      | 'KEY_VALID'
-      | 'INVALID_KEY'
-      | 'VALIDATION_DISABLED'
-      | 'NO_KEY_SET'
-      | 'DECRYPTION_ERROR';
+    reason: 'KEY_VALID' | 'INVALID_KEY' | 'VALIDATION_DISABLED' | 'NO_KEY_SET' | 'DECRYPTION_ERROR';
     message: string;
   };
   timestamp: string;

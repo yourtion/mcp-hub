@@ -40,6 +40,7 @@ POST /api/auth/login
 ```
 
 **请求体**:
+
 ```json
 {
   "username": "admin",
@@ -48,6 +49,7 @@ POST /api/auth/login
 ```
 
 **响应**:
+
 ```json
 {
   "success": true,
@@ -73,6 +75,7 @@ POST /api/auth/refresh
 ```
 
 **请求体**:
+
 ```json
 {
   "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -80,6 +83,7 @@ POST /api/auth/refresh
 ```
 
 **响应**:
+
 ```json
 {
   "success": true,
@@ -100,11 +104,13 @@ POST /api/auth/logout
 ```
 
 **请求头**:
+
 ```http
 Authorization: Bearer <access-token>
 ```
 
 **响应**:
+
 ```json
 {
   "success": true,
@@ -122,11 +128,13 @@ GET /api/auth/me
 ```
 
 **请求头**:
+
 ```http
 Authorization: Bearer <access-token>
 ```
 
 **响应**:
+
 ```json
 {
   "success": true,
@@ -155,6 +163,7 @@ GET /mcp/list_tools
 ```
 
 **响应**:
+
 ```json
 {
   "tools": [
@@ -185,6 +194,7 @@ POST /mcp/call_tool
 ```
 
 **请求体**:
+
 ```json
 {
   "name": "read_file",
@@ -195,6 +205,7 @@ POST /mcp/call_tool
 ```
 
 **响应**:
+
 ```json
 {
   "content": [
@@ -217,9 +228,11 @@ GET /:group/mcp/list_tools
 ```
 
 **路径参数**:
+
 - `group` (string): 组标识符
 
 **响应**:
+
 ```json
 {
   "tools": [
@@ -253,15 +266,18 @@ POST /:group/mcp/call_tool
 ```
 
 **路径参数**:
+
 - `group` (string): 组标识符
 
 **请求头**:
+
 ```http
 Content-Type: application/json
 X-Validation-Key: group-validation-key  # 如果组需要验证
 ```
 
 **请求体**:
+
 ```json
 {
   "name": "read_file",
@@ -272,6 +288,7 @@ X-Validation-Key: group-validation-key  # 如果组需要验证
 ```
 
 **响应**:
+
 ```json
 {
   "content": [
@@ -299,6 +316,7 @@ GET /api/groups
 ```
 
 **响应**:
+
 ```json
 {
   "groups": [
@@ -313,7 +331,7 @@ GET /api/groups
     },
     {
       "id": "research",
-      "name": "研究工具组", 
+      "name": "研究工具组",
       "description": "信息收集和研究工具",
       "enabled": true,
       "toolCount": 4,
@@ -334,22 +352,18 @@ GET /api/groups/:group
 ```
 
 **路径参数**:
+
 - `group` (string): 组标识符
 
 **响应**:
+
 ```json
 {
   "id": "development",
   "name": "开发工具组",
   "description": "软件开发相关工具",
   "servers": ["filesystem", "git", "npm"],
-  "allowedTools": [
-    "read_file",
-    "write_file",
-    "list_directory",
-    "git_status",
-    "git_commit"
-  ],
+  "allowedTools": ["read_file", "write_file", "list_directory", "git_status", "git_commit"],
   "enabled": true,
   "requireAuth": false,
   "stats": {
@@ -371,9 +385,11 @@ GET /api/groups/:group/health
 ```
 
 **路径参数**:
+
 - `group` (string): 组标识符
 
 **响应**:
+
 ```json
 {
   "group": "development",
@@ -410,9 +426,11 @@ GET /api/groups/:group/stats
 ```
 
 **查询参数**:
+
 - `period` (string, 可选): 统计周期 (`1h`, `24h`, `7d`, `30d`)，默认 `24h`
 
 **响应**:
+
 ```json
 {
   "group": "development",
@@ -457,12 +475,14 @@ GET /api/groups/:group/logs
 ```
 
 **查询参数**:
+
 - `limit` (number, 可选): 返回的日志条数，默认 50，最大 1000
 - `offset` (number, 可选): 偏移量，默认 0
 - `level` (string, 可选): 日志级别过滤 (`debug`, `info`, `warn`, `error`)
 - `since` (string, 可选): 起始时间 (ISO 8601 格式)
 
 **响应**:
+
 ```json
 {
   "logs": [
@@ -482,7 +502,7 @@ GET /api/groups/:group/logs
     },
     {
       "timestamp": "2024-01-15T10:29:32Z",
-      "level": "error", 
+      "level": "error",
       "message": "工具调用失败",
       "tool": "write_file",
       "error": "权限被拒绝",
@@ -509,6 +529,7 @@ GET /health
 ```
 
 **响应**:
+
 ```json
 {
   "status": "healthy",
@@ -538,6 +559,7 @@ GET /api/system/info
 ```
 
 **响应**:
+
 ```json
 {
   "version": "1.0.0",
@@ -568,9 +590,11 @@ GET /api/system/metrics
 ```
 
 **查询参数**:
+
 - `period` (string, 可选): 指标周期 (`1m`, `5m`, `1h`, `24h`)，默认 `5m`
 
 **响应**:
+
 ```json
 {
   "period": "5m",
@@ -617,6 +641,7 @@ GET /api/system/metrics
 获取所有已配置的 MCP 服务器列表。
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -647,6 +672,7 @@ GET /api/system/metrics
 创建新的 MCP 服务器配置。
 
 **请求体:**
+
 ```json
 {
   "id": "git-server",
@@ -661,6 +687,7 @@ GET /api/system/metrics
 ```
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -687,9 +714,11 @@ GET /api/system/metrics
 更新现有服务器的配置。
 
 **路径参数:**
+
 - `id` (字符串): 服务器 ID
 
 **请求体:**
+
 ```json
 {
   "name": "Git 服务器（更新）",
@@ -707,9 +736,11 @@ GET /api/system/metrics
 删除服务器配置。
 
 **路径参数:**
+
 - `id` (字符串): 服务器 ID
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -725,9 +756,11 @@ GET /api/system/metrics
 连接到指定的 MCP 服务器。
 
 **路径参数:**
+
 - `id` (字符串): 服务器 ID
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -746,9 +779,11 @@ GET /api/system/metrics
 断开与 MCP 服务器的连接。
 
 **路径参数:**
+
 - `id` (字符串): 服务器 ID
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -766,6 +801,7 @@ GET /api/system/metrics
 测试服务器配置是否有效。
 
 **请求体:**
+
 ```json
 {
   "config": {
@@ -776,6 +812,7 @@ GET /api/system/metrics
 ```
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -799,10 +836,12 @@ GET /api/system/metrics
 获取所有可用的 MCP 工具列表。
 
 **查询参数:**
+
 - `serverId` (可选, 字符串): 按服务器 ID 过滤
 - `groupId` (可选, 字符串): 按组 ID 过滤
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -838,9 +877,11 @@ GET /api/system/metrics
 获取指定工具的详细信息。
 
 **路径参数:**
+
 - `toolName` (字符串): 工具名称
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -880,9 +921,11 @@ GET /api/system/metrics
 执行指定的 MCP 工具。
 
 **路径参数:**
+
 - `toolName` (字符串): 工具名称
 
 **请求体:**
+
 ```json
 {
   "serverId": "filesystem",
@@ -893,6 +936,7 @@ GET /api/system/metrics
 ```
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -923,9 +967,11 @@ GET /api/system/metrics
 获取当前系统配置。
 
 **查询参数:**
+
 - `category` (可选, 字符串): 配置分类 (`system`, `servers`, `groups`, `auth`)
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -953,6 +999,7 @@ GET /api/system/metrics
 更新系统配置。
 
 **请求体:**
+
 ```json
 {
   "category": "system",
@@ -965,6 +1012,7 @@ GET /api/system/metrics
 ```
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -980,6 +1028,7 @@ GET /api/system/metrics
 验证配置的有效性。
 
 **请求体:**
+
 ```json
 {
   "category": "servers",
@@ -993,6 +1042,7 @@ GET /api/system/metrics
 ```
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -1012,9 +1062,11 @@ GET /api/system/metrics
 获取配置变更历史。
 
 **查询参数:**
+
 - `limit` (可选, 数字): 返回的历史记录数量，默认 50
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -1046,6 +1098,7 @@ GET /api/system/metrics
 创建配置备份。
 
 **请求体:**
+
 ```json
 {
   "description": "部署前备份"
@@ -1053,6 +1106,7 @@ GET /api/system/metrics
 ```
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -1075,6 +1129,7 @@ GET /api/system/metrics
 从备份恢复配置。
 
 **请求体:**
+
 ```json
 {
   "backupId": "backup_123"
@@ -1082,6 +1137,7 @@ GET /api/system/metrics
 ```
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -1101,6 +1157,7 @@ GET /api/system/metrics
 获取系统概览统计信息。
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -1136,11 +1193,13 @@ GET /api/system/metrics
 建立 Server-Sent Events 连接以接收实时事件。
 
 **事件类型:**
+
 - `server_status`: 服务器状态变更
 - `tool_execution`: 工具执行事件
 - `system_alert`: 系统告警
 
 **事件示例:**
+
 ```
 event: server_status
 data: {"serverId":"filesystem","status":"connected","timestamp":"2024-01-15T10:30:00Z"}
@@ -1156,11 +1215,13 @@ data: {"toolName":"read_file","serverId":"filesystem","success":true,"executionT
 获取系统日志。
 
 **查询参数:**
+
 - `limit` (可选, 数字): 返回的日志条数，默认 100
 - `level` (可选, 字符串): 日志级别过滤 (`debug`, `info`, `warn`, `error`)
 - `since` (可选, 字符串): 起始时间 (ISO 8601 格式)
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -1192,11 +1253,13 @@ data: {"toolName":"read_file","serverId":"filesystem","success":true,"executionT
 获取跟踪的 MCP 协议消息列表，用于调试和监控 MCP 协议交互。
 
 **查询参数:**
+
 - `limit` (可选, 数字): 返回消息的最大数量，默认为 50
 - `serverId` (可选, 字符串): 按服务器 ID 过滤消息
 - `type` (可选, 字符串): 按消息类型过滤 ('request', 'response', 'notification')
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -1226,18 +1289,21 @@ data: {"toolName":"read_file","serverId":"filesystem","success":true,"executionT
 测试工具执行并获取详细的执行结果和性能指标。
 
 **请求体:**
+
 ```json
 {
   "toolName": "get_current_time",
-  "serverId": "time-mcp",     // 可选
-  "groupId": "default",       // 可选
-  "arguments": {              // 可选
+  "serverId": "time-mcp", // 可选
+  "groupId": "default", // 可选
+  "arguments": {
+    // 可选
     "format": "ISO"
   }
 }
 ```
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -1270,6 +1336,7 @@ data: {"toolName":"read_file","serverId":"filesystem","success":true,"executionT
 获取系统性能统计信息，包括请求量、响应时间和错误率。
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -1303,6 +1370,7 @@ data: {"toolName":"read_file","serverId":"filesystem","success":true,"executionT
 分析系统中的错误模式，识别常见的错误类型和问题。
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -1355,26 +1423,26 @@ data: {"toolName":"read_file","serverId":"filesystem","success":true,"executionT
 
 ### 常见错误代码
 
-| 错误代码 | HTTP 状态码 | 描述 |
-|----------|-------------|------|
-| `AUTH_LOGIN_FAILED` | 401 | 登录失败 |
-| `AUTH_INVALID_CREDENTIALS` | 401 | 用户名或密码错误 |
-| `AUTH_ACCOUNT_LOCKED` | 423 | 账户被锁定 |
-| `AUTH_MISSING_TOKEN` | 401 | 缺少认证令牌 |
-| `AUTH_INVALID_TOKEN` | 401 | 无效的认证令牌 |
-| `AUTH_TOKEN_EXPIRED` | 401 | 认证令牌已过期 |
-| `AUTH_TOKEN_REVOKED` | 401 | 认证令牌已被撤销 |
-| `AUTH_INVALID_REFRESH_TOKEN` | 401 | 无效的刷新令牌 |
-| `AUTH_USER_NOT_FOUND` | 404 | 用户不存在 |
-| `GROUP_NOT_FOUND` | 404 | 指定的组不存在 |
-| `TOOL_NOT_FOUND` | 404 | 指定的工具不存在 |
-| `TOOL_NOT_ALLOWED` | 403 | 工具不在组的允许列表中 |
-| `INVALID_VALIDATION_KEY` | 401 | 验证密钥无效或缺失 |
-| `INVALID_ARGUMENTS` | 400 | 工具参数无效 |
-| `SERVER_ERROR` | 500 | MCP 服务器内部错误 |
-| `SERVICE_UNAVAILABLE` | 503 | 服务不可用 |
-| `TIMEOUT` | 408 | 请求超时 |
-| `RATE_LIMIT_EXCEEDED` | 429 | 请求频率超限 |
+| 错误代码                     | HTTP 状态码 | 描述                   |
+| ---------------------------- | ----------- | ---------------------- |
+| `AUTH_LOGIN_FAILED`          | 401         | 登录失败               |
+| `AUTH_INVALID_CREDENTIALS`   | 401         | 用户名或密码错误       |
+| `AUTH_ACCOUNT_LOCKED`        | 423         | 账户被锁定             |
+| `AUTH_MISSING_TOKEN`         | 401         | 缺少认证令牌           |
+| `AUTH_INVALID_TOKEN`         | 401         | 无效的认证令牌         |
+| `AUTH_TOKEN_EXPIRED`         | 401         | 认证令牌已过期         |
+| `AUTH_TOKEN_REVOKED`         | 401         | 认证令牌已被撤销       |
+| `AUTH_INVALID_REFRESH_TOKEN` | 401         | 无效的刷新令牌         |
+| `AUTH_USER_NOT_FOUND`        | 404         | 用户不存在             |
+| `GROUP_NOT_FOUND`            | 404         | 指定的组不存在         |
+| `TOOL_NOT_FOUND`             | 404         | 指定的工具不存在       |
+| `TOOL_NOT_ALLOWED`           | 403         | 工具不在组的允许列表中 |
+| `INVALID_VALIDATION_KEY`     | 401         | 验证密钥无效或缺失     |
+| `INVALID_ARGUMENTS`          | 400         | 工具参数无效           |
+| `SERVER_ERROR`               | 500         | MCP 服务器内部错误     |
+| `SERVICE_UNAVAILABLE`        | 503         | 服务不可用             |
+| `TIMEOUT`                    | 408         | 请求超时               |
+| `RATE_LIMIT_EXCEEDED`        | 429         | 请求频率超限           |
 
 ## 速率限制
 
@@ -1422,7 +1490,7 @@ X-RateLimit-Reset: 1642248000
 ```javascript
 const ws = new WebSocket('ws://localhost:8181/api/groups/development/logs/stream');
 
-ws.onmessage = function(event) {
+ws.onmessage = function (event) {
   const log = JSON.parse(event.data);
   console.log('新日志:', log);
 };
@@ -1433,7 +1501,7 @@ ws.onmessage = function(event) {
 ```javascript
 const ws = new WebSocket('ws://localhost:8181/api/system/metrics/stream');
 
-ws.onmessage = function(event) {
+ws.onmessage = function (event) {
   const metrics = JSON.parse(event.data);
   console.log('系统指标:', metrics);
 };
@@ -1457,7 +1525,7 @@ const tools = await client.listTools('development');
 
 // 调用工具
 const result = await client.callTool('development', 'read_file', {
-  path: '/workspace/README.md'
+  path: '/workspace/README.md',
 });
 ```
 

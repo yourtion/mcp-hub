@@ -84,10 +84,7 @@ export const EnvironmentDetector = {
     try {
       // 浏览器环境优先检查
       if (typeof window !== 'undefined') {
-        return (
-          (window as unknown as Record<string, unknown>)
-            .__vitest_environment__ === true
-        );
+        return (window as unknown as Record<string, unknown>).__vitest_environment__ === true;
       }
 
       // Node.js 环境检查（确保 process 存在且有效）
@@ -109,17 +106,12 @@ export const EnvironmentDetector = {
     try {
       // 浏览器环境优先检查
       if (typeof window !== 'undefined') {
-        return (
-          (window as unknown as Record<string, unknown>).__vitest_debug__ ===
-          true
-        );
+        return (window as unknown as Record<string, unknown>).__vitest_debug__ === true;
       }
 
       // Node.js 环境检查
       if (typeof process !== 'undefined' && process?.env) {
-        return (
-          process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true'
-        );
+        return process.env.VITEST_DEBUG === 'true' || process.env.DEBUG === 'true';
       }
 
       // localStorage 检查（浏览器环境）
@@ -144,10 +136,7 @@ export const EnvironmentDetector = {
     try {
       // 安全地检查 process.env.LOG_LEVEL
       if (typeof process !== 'undefined' && process?.env?.LOG_LEVEL) {
-        const envLevel =
-          LogLevel[
-            process.env.LOG_LEVEL.toUpperCase() as keyof typeof LogLevel
-          ];
+        const envLevel = LogLevel[process.env.LOG_LEVEL.toUpperCase() as keyof typeof LogLevel];
         if (envLevel !== undefined) {
           return envLevel;
         }
@@ -157,8 +146,7 @@ export const EnvironmentDetector = {
       if (typeof localStorage !== 'undefined') {
         const logLevelStr = localStorage.getItem('LOG_LEVEL');
         if (logLevelStr) {
-          const envLevel =
-            LogLevel[logLevelStr.toUpperCase() as keyof typeof LogLevel];
+          const envLevel = LogLevel[logLevelStr.toUpperCase() as keyof typeof LogLevel];
           if (envLevel !== undefined) {
             return envLevel;
           }
@@ -352,10 +340,7 @@ export class FrontendLogger {
     this.formatter =
       this.config.format === 'json'
         ? new JsonFormatter()
-        : new TextFormatter(
-            this.config.enableColors,
-            this.config.enableTimestamp,
-          );
+        : new TextFormatter(this.config.enableColors, this.config.enableTimestamp);
 
     // 创建写入器
     if (this.config.enableConsole) {
@@ -373,11 +358,7 @@ export class FrontendLogger {
   /**
    * 记录日志
    */
-  private log(
-    level: LogLevel,
-    message: string,
-    context?: Partial<LogEntry>,
-  ): void {
+  private log(level: LogLevel, message: string, context?: Partial<LogEntry>): void {
     if (!this.shouldLog(level)) return;
 
     const entry: LogEntry = {
@@ -562,9 +543,7 @@ export class FrontendLogger {
 /**
  * 创建前端日志记录器的工厂函数
  */
-export function createFrontendLogger(
-  config?: Partial<LoggerConfig>,
-): FrontendLogger {
+export function createFrontendLogger(config?: Partial<LoggerConfig>): FrontendLogger {
   return new FrontendLogger(config);
 }
 

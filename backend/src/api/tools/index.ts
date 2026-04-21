@@ -1,12 +1,11 @@
 import { Hono } from 'hono';
+
 import { getHubService } from '../../services/service-registry.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { logger } from '../../utils/logger.js';
+import { addExecutionRecord, type ToolExecutionRecord } from '../tools-admin/index.js';
+
 import type { GroupToolInfo } from '../mcp/group-service.js';
-import {
-  addExecutionRecord,
-  type ToolExecutionRecord,
-} from '../tools-admin/index.js';
 
 export const toolsApi = new Hono();
 
@@ -131,10 +130,7 @@ toolsApi.get('/server/:serverId', async (c) => {
     // 为工具添加状态信息
     const toolsWithStatus = tools.map((tool) => ({
       ...tool,
-      status:
-        serverStatus === 'connected'
-          ? ('available' as const)
-          : ('unavailable' as const),
+      status: serverStatus === 'connected' ? ('available' as const) : ('unavailable' as const),
     }));
 
     logger.info('按服务器获取工具列表', {
@@ -190,9 +186,7 @@ toolsApi.get('/:toolName', async (c) => {
     // 获取服务器状态
     const isApiTool = tool.serverId === 'api-tools';
     const serverHealth = service.getServerHealth();
-    const serverStatus = isApiTool
-      ? 'available'
-      : (serverHealth.get(tool.serverId) ?? 'unknown');
+    const serverStatus = isApiTool ? 'available' : (serverHealth.get(tool.serverId) ?? 'unknown');
 
     logger.info('获取工具详细信息', {
       toolName,
@@ -440,10 +434,7 @@ async function validateToolArguments(
       for (const requiredField of schema.required) {
         if (!(requiredField in args)) {
           errors.push(`缺少必需参数: ${requiredField}`);
-        } else if (
-          args[requiredField] === null ||
-          args[requiredField] === undefined
-        ) {
+        } else if (args[requiredField] === null || args[requiredField] === undefined) {
           errors.push(`必需参数 '${requiredField}' 不能为空`);
         }
       }
@@ -468,9 +459,7 @@ async function validateToolArguments(
     if (schema.additionalProperties === false && schema.properties) {
       const allowedProps = Object.keys(schema.properties);
       const providedProps = Object.keys(args);
-      const extraProps = providedProps.filter(
-        (prop) => !allowedProps.includes(prop),
-      );
+      const extraProps = providedProps.filter((prop) => !allowedProps.includes(prop));
 
       if (extraProps.length > 0) {
         warnings.push(`提供了额外的参数: ${extraProps.join(', ')}`);
@@ -552,11 +541,7 @@ function validateArgumentType(
       break;
 
     case 'object':
-      if (
-        actualType !== 'object' ||
-        argValue === null ||
-        Array.isArray(argValue)
-      ) {
+      if (actualType !== 'object' || argValue === null || Array.isArray(argValue)) {
         return {
           isValid: false,
           error: `参数 '${argName}' 必须是对象，实际类型: ${actualType}`,

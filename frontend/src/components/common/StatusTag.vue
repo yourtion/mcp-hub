@@ -5,8 +5,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Tag as TTag } from 'tdesign-vue-next';
+import { computed } from 'vue';
 
 type StatusValue =
   | 'connected'

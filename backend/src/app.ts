@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+
 import { apiToMcpRoutes } from './api/api-to-mcp/index.js';
 import { createAuthApi } from './api/auth/index.js';
 import { configApi } from './api/config/index.js';
@@ -9,8 +10,8 @@ import { hubApi } from './api/hub.js';
 import { groupMcpRouter } from './api/mcp/group-router.js';
 import { performanceApi } from './api/performance/index.js';
 import { serversApi } from './api/servers/index.js';
-import { toolsApi } from './api/tools/index.js';
 import { toolsAdminApi } from './api/tools-admin/index.js';
+import { toolsApi } from './api/tools/index.js';
 import { mcp } from './legacy/index.js';
 import { createAuthMiddleware } from './middleware/auth.js';
 import { requestIdMiddleware } from './middleware/request-id.js';

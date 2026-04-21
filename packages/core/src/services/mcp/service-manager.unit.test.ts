@@ -3,7 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { McpServerConfig, ServerConfig } from '../../types';
+
 import {
   McpServiceError,
   McpServiceManager,
@@ -12,6 +12,8 @@ import {
   ServiceNotInitializedError,
   ToolNotFoundError,
 } from './service-manager';
+
+import type { McpServerConfig, ServerConfig } from '../../types';
 
 // 模拟logger方法
 const mockLogger = {
@@ -133,9 +135,7 @@ describe('McpServiceManager', () => {
       // 尝试再次初始化
       await serviceManager.initializeFromConfig(mockConfig);
 
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        'MCP服务管理器已初始化，跳过重复初始化',
-      );
+      expect(mockLogger.warn).toHaveBeenCalledWith('MCP服务管理器已初始化，跳过重复初始化');
     });
 
     it('应该跳过禁用的服务器', async () => {
@@ -158,21 +158,19 @@ describe('McpServiceManager', () => {
       };
 
       // 模拟服务器初始化失败
-      const originalInitializeServer = (
-        serviceManager as unknown as { initializeServer: unknown }
-      ).initializeServer;
-      (
-        serviceManager as unknown as { initializeServer: unknown }
-      ).initializeServer = vi.fn().mockRejectedValue(new Error('连接失败'));
+      const originalInitializeServer = (serviceManager as unknown as { initializeServer: unknown })
+        .initializeServer;
+      (serviceManager as unknown as { initializeServer: unknown }).initializeServer = vi
+        .fn()
+        .mockRejectedValue(new Error('连接失败'));
 
-      await expect(
-        serviceManager.initializeFromConfig(errorConfig),
-      ).rejects.toThrow(McpServiceError);
+      await expect(serviceManager.initializeFromConfig(errorConfig)).rejects.toThrow(
+        McpServiceError,
+      );
 
       // 恢复原方法
-      (
-        serviceManager as unknown as { initializeServer: unknown }
-      ).initializeServer = originalInitializeServer;
+      (serviceManager as unknown as { initializeServer: unknown }).initializeServer =
+        originalInitializeServer;
     });
   });
 
@@ -204,34 +202,30 @@ describe('McpServiceManager', () => {
 
     it('应该处理注册错误', async () => {
       // 模拟初始化服务器失败
-      const originalInitializeServer = (
-        serviceManager as unknown as { initializeServer: unknown }
-      ).initializeServer;
-      (
-        serviceManager as unknown as { initializeServer: unknown }
-      ).initializeServer = vi.fn().mockRejectedValue(new Error('初始化失败'));
+      const originalInitializeServer = (serviceManager as unknown as { initializeServer: unknown })
+        .initializeServer;
+      (serviceManager as unknown as { initializeServer: unknown }).initializeServer = vi
+        .fn()
+        .mockRejectedValue(new Error('初始化失败'));
 
       const newServerConfig: ServerConfig = {
         command: 'invalid',
         args: [],
       };
 
-      await expect(
-        serviceManager.registerServer('errorServer', newServerConfig),
-      ).rejects.toThrow(McpServiceError);
+      await expect(serviceManager.registerServer('errorServer', newServerConfig)).rejects.toThrow(
+        McpServiceError,
+      );
 
       // 恢复原方法
-      (
-        serviceManager as unknown as { initializeServer: unknown }
-      ).initializeServer = originalInitializeServer;
+      (serviceManager as unknown as { initializeServer: unknown }).initializeServer =
+        originalInitializeServer;
     });
   });
 
   describe('getAllTools', () => {
     it('应该在未初始化时抛出错误', async () => {
-      await expect(serviceManager.getAllTools()).rejects.toThrow(
-        ServiceNotInitializedError,
-      );
+      await expect(serviceManager.getAllTools()).rejects.toThrow(ServiceNotInitializedError);
     });
 
     it('应该返回所有连接服务器的工具', async () => {
@@ -271,9 +265,9 @@ describe('McpServiceManager', () => {
     });
 
     it('应该在服务器不存在时抛出错误', async () => {
-      await expect(
-        serviceManager.getServerTools('nonexistent'),
-      ).rejects.toThrow(ServerNotFoundError);
+      await expect(serviceManager.getServerTools('nonexistent')).rejects.toThrow(
+        ServerNotFoundError,
+      );
     });
 
     it('应该在服务器未连接时返回空数组', async () => {
@@ -322,9 +316,9 @@ describe('McpServiceManager', () => {
     });
 
     it('应该在工具不存在时抛出错误', async () => {
-      await expect(
-        serviceManager.executeToolCall('nonexistent_tool', {}),
-      ).rejects.toThrow(ToolNotFoundError);
+      await expect(serviceManager.executeToolCall('nonexistent_tool', {})).rejects.toThrow(
+        ToolNotFoundError,
+      );
     });
 
     it('应该在指定服务器不存在时抛出错误', async () => {
@@ -341,9 +335,9 @@ describe('McpServiceManager', () => {
         server1.status = ServerStatus.DISCONNECTED;
       }
 
-      await expect(
-        serviceManager.executeToolCall('server1_tool_1', {}, 'server1'),
-      ).rejects.toThrow(McpServiceError);
+      await expect(serviceManager.executeToolCall('server1_tool_1', {}, 'server1')).rejects.toThrow(
+        McpServiceError,
+      );
     });
   });
 
@@ -403,16 +397,10 @@ describe('McpServiceManager', () => {
     });
 
     it('应该检查工具在指定服务器上的可用性', async () => {
-      const available = await serviceManager.isToolAvailable(
-        'server1_tool_1',
-        'server1',
-      );
+      const available = await serviceManager.isToolAvailable('server1_tool_1', 'server1');
       expect(available).toBe(true);
 
-      const notAvailable = await serviceManager.isToolAvailable(
-        'nonexistent_tool',
-        'server1',
-      );
+      const notAvailable = await serviceManager.isToolAvailable('nonexistent_tool', 'server1');
       expect(notAvailable).toBe(false);
     });
 
@@ -420,16 +408,12 @@ describe('McpServiceManager', () => {
       const available = await serviceManager.isToolAvailable('server2_tool_1');
       expect(available).toBe(true);
 
-      const notAvailable =
-        await serviceManager.isToolAvailable('nonexistent_tool');
+      const notAvailable = await serviceManager.isToolAvailable('nonexistent_tool');
       expect(notAvailable).toBe(false);
     });
 
     it('应该在服务器不存在时返回false', async () => {
-      const available = await serviceManager.isToolAvailable(
-        'any_tool',
-        'nonexistent_server',
-      );
+      const available = await serviceManager.isToolAvailable('any_tool', 'nonexistent_server');
       expect(available).toBe(false);
     });
 
@@ -441,10 +425,7 @@ describe('McpServiceManager', () => {
         server1.status = ServerStatus.DISCONNECTED;
       }
 
-      const available = await serviceManager.isToolAvailable(
-        'server1_tool_1',
-        'server1',
-      );
+      const available = await serviceManager.isToolAvailable('server1_tool_1', 'server1');
       expect(available).toBe(false);
     });
   });
@@ -453,9 +434,7 @@ describe('McpServiceManager', () => {
     it('应该在未初始化时跳过关闭', async () => {
       await serviceManager.shutdown();
 
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        'MCP服务管理器未初始化，跳过关闭',
-      );
+      expect(mockLogger.warn).toHaveBeenCalledWith('MCP服务管理器未初始化，跳过关闭');
     });
 
     it('应该成功关闭服务管理器', async () => {
@@ -537,9 +516,7 @@ describe('McpServiceManager', () => {
       expect(error1.message).toBe("工具 'test-tool' 未找到");
 
       const error2 = new ToolNotFoundError('test-tool', 'test-server');
-      expect(error2.message).toBe(
-        "工具 'test-tool' 未找到 在服务器 'test-server'",
-      );
+      expect(error2.message).toBe("工具 'test-tool' 未找到 在服务器 'test-server'");
       expect(error2.context).toEqual({
         toolName: 'test-tool',
         serverId: 'test-server',

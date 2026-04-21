@@ -16,10 +16,7 @@ export type {
   ToolFilter,
 } from '@mcp-core/mcp-hub-share/config';
 // 从 config.ts 选择性导出 (避免与 share 的 ToolFilter 冲突)
-export type {
-  GlobalSettings,
-  McpServerConfig,
-} from './config.js';
+export type { GlobalSettings, McpServerConfig } from './config.js';
 export * from './connection.js';
 export * from './service.js';
 export * from './tool.js';

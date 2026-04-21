@@ -1,24 +1,20 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { McpServiceManager } from '@mcp-core/mcp-hub-core';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { z } from 'zod/v4';
 
 // 读取 package.json
-const pkg = JSON.parse(
-  readFileSync(join(process.cwd(), 'package.json'), 'utf-8'),
-);
+const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf-8'));
 
-import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share';
 import { toMcpServerConfig } from '../types/config-helpers.js';
-import {
-  type McpContentItem,
-  normalizeMcpContent,
-} from '../types/mcp-content.js';
+import { type McpContentItem, normalizeMcpContent } from '../types/mcp-content.js';
 import { getAllConfig } from '../utils/config.js';
 import { logger } from '../utils/logger.js';
 import { convertToZodSchema } from '../utils/zod-schema-converter.js';
 import { McpHubService } from './mcp_hub_service.js';
+
+import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share';
 
 // Create the MCP server instance
 export const mcpServer = new McpServer({
@@ -36,9 +32,7 @@ let coreServiceManager: McpServiceManager | null = null;
  */
 export async function initializeMcpService(): Promise<void> {
   try {
-    logger.info(
-      'Initializing MCP Service with Hub integration and Core package',
-    );
+    logger.info('Initializing MCP Service with Hub integration and Core package');
 
     // Load configurations
     const config = await getAllConfig();
@@ -53,10 +47,7 @@ export async function initializeMcpService(): Promise<void> {
     await coreServiceManager.initializeFromConfig(coreConfig);
 
     // Create and initialize hub service (for backward compatibility)
-    hubService = new McpHubService(
-      config.mcps.servers as never,
-      config.groups as never,
-    );
+    hubService = new McpHubService(config.mcps.servers as never, config.groups as never);
 
     await hubService.initialize();
 
@@ -132,10 +123,7 @@ async function registerHubTools(): Promise<void> {
   mcpServer.tool(
     'list_tools',
     {
-      groupId: z
-        .string()
-        .optional()
-        .describe('Group ID to list tools for (defaults to "default")'),
+      groupId: z.string().optional().describe('Group ID to list tools for (defaults to "default")'),
     },
     async ({ groupId }) => {
       try {
@@ -180,15 +168,11 @@ async function registerHubTools(): Promise<void> {
     'execute_tool',
     {
       toolName: z.string().describe('Name of the tool to execute'),
-      args: z
-        .record(z.string(), z.unknown())
-        .describe('Arguments to pass to the tool'),
+      args: z.record(z.string(), z.unknown()).describe('Arguments to pass to the tool'),
       groupId: z
         .string()
         .optional()
-        .describe(
-          'Group ID context for tool execution (defaults to "default")',
-        ),
+        .describe('Group ID context for tool execution (defaults to "default")'),
     },
     async ({ toolName, args, groupId }) => {
       try {
@@ -210,9 +194,7 @@ async function registerHubTools(): Promise<void> {
         }
 
         // Ensure content has proper typing
-        const typedContent = result.content.map((item) =>
-          normalizeMcpContent(item),
-        );
+        const typedContent = result.content.map((item) => normalizeMcpContent(item));
 
         return {
           content: typedContent,
@@ -302,11 +284,7 @@ async function registerDynamicTools(): Promise<void> {
                 throw new Error('Hub service not initialized');
               }
 
-              const result = await hubService.callTool(
-                tool.name,
-                args,
-                groupId,
-              );
+              const result = await hubService.callTool(tool.name, args, groupId);
 
               if (result.isError) {
                 return {
@@ -320,18 +298,13 @@ async function registerDynamicTools(): Promise<void> {
               }
 
               // Ensure content has proper typing
-              const typedContent = result.content.map((item) =>
-                normalizeMcpContent(item),
-              );
+              const typedContent = result.content.map((item) => normalizeMcpContent(item));
 
               return {
                 content: typedContent,
               } as unknown as { content: McpContentItem[] };
             } catch (error) {
-              logger.error(
-                `Error executing dynamic tool ${toolName}`,
-                error as Error,
-              );
+              logger.error(`Error executing dynamic tool ${toolName}`, error as Error);
               return {
                 content: [
                   {

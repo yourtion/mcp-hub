@@ -1,7 +1,7 @@
-import path from 'node:path';
 import { defineConfig } from '@rsbuild/core';
 import { pluginLess } from '@rsbuild/plugin-less';
 import { pluginVue } from '@rsbuild/plugin-vue';
+import path from 'node:path';
 
 export default defineConfig({
   plugins: [pluginVue(), pluginLess()],
@@ -11,9 +11,7 @@ export default defineConfig({
     },
     // 定义全局常量
     define: {
-      'process.env.NODE_ENV': JSON.stringify(
-        process.env.NODE_ENV || 'development',
-      ),
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     },
   },
   server: {

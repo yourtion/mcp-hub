@@ -3,22 +3,21 @@
  * 整合API到MCP核心功能，提供Web API所需的完整服务
  */
 
+import { ConfigLoadError } from '@mcp-core/mcp-hub-core/api-to-mcp';
 import { promises as fs } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
-import type {
-  ApiConfigManager,
-  ApiToolsConfig,
-} from '@mcp-core/mcp-hub-core/api-to-mcp';
-import { ConfigLoadError } from '@mcp-core/mcp-hub-core/api-to-mcp';
+
+import { logger } from '../utils/logger.js';
+import { ApiToolIntegrationService } from './api_tool_integration_service.js';
+
 import type {
   ApiConfigInfo,
   ApiConfigListResponse,
   ApiToolConfig,
   TestApiConfigResponse,
 } from '../types/web-api.js';
-import { logger } from '../utils/logger.js';
-import { ApiToolIntegrationService } from './api_tool_integration_service.js';
+import type { ApiConfigManager, ApiToolsConfig } from '@mcp-core/mcp-hub-core/api-to-mcp';
 
 /**
  * API配置管理结果
@@ -59,9 +58,7 @@ export class ApiToMcpWebService {
         this.configPath = configPath;
 
         // 导入ApiConfigManager (延迟导入以避免循环依赖)
-        const { ApiConfigManagerImpl } = await import(
-          '@mcp-core/mcp-hub-core/api-to-mcp'
-        );
+        const { ApiConfigManagerImpl } = await import('@mcp-core/mcp-hub-core/api-to-mcp');
 
         this.configManager = new ApiConfigManagerImpl();
 
@@ -105,9 +102,7 @@ export class ApiToMcpWebService {
   /**
    * 创建新的API配置
    */
-  async createConfig(
-    config: ApiToolConfig,
-  ): Promise<ApiConfigManagementResult> {
+  async createConfig(config: ApiToolConfig): Promise<ApiConfigManagementResult> {
     try {
       logger.info('创建新的API配置', { configId: config.id });
 
@@ -158,10 +153,7 @@ export class ApiToMcpWebService {
   /**
    * 更新API配置
    */
-  async updateConfig(
-    configId: string,
-    config: ApiToolConfig,
-  ): Promise<ApiConfigManagementResult> {
+  async updateConfig(configId: string, config: ApiToolConfig): Promise<ApiConfigManagementResult> {
     try {
       logger.info('更新API配置', { configId });
 
@@ -277,10 +269,7 @@ export class ApiToMcpWebService {
       const startTime = Date.now();
 
       // 执行API工具测试
-      const result = await this.apiToolIntegrationService.executeApiTool(
-        configId,
-        parameters,
-      );
+      const result = await this.apiToolIntegrationService.executeApiTool(configId, parameters);
 
       const executionTime = Date.now() - startTime;
 
@@ -317,8 +306,7 @@ export class ApiToMcpWebService {
       logger.info('获取API配置详情', { configId });
 
       // 从API工具集成服务获取工具定义
-      const toolDefinition =
-        this.apiToolIntegrationService.getApiToolDefinition(configId);
+      const toolDefinition = this.apiToolIntegrationService.getApiToolDefinition(configId);
 
       if (!toolDefinition) {
         return null;
@@ -431,11 +419,7 @@ export class ApiToMcpWebService {
   private extractApiUrl(schema: Record<string, unknown>): string {
     // 尝试从schema的description或其他字段中提取URL信息
     // 这是一个简化的实现，实际可能需要更复杂的逻辑
-    return (
-      (schema.description as string | undefined)?.match(
-        /https?:\/\/[^\s]+/,
-      )?.[0] || ''
-    );
+    return (schema.description as string | undefined)?.match(/https?:\/\/[^\s]+/)?.[0] || '';
   }
 
   /**

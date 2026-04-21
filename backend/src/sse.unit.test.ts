@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { sse } from './sse.js';
 
 // Mock依赖
@@ -96,28 +97,22 @@ describe('SSE Router', () => {
       // 首先建立SSE连接以创建transport
       await sse.request('http://localhost/sse');
 
-      const mockRequest = new Request(
-        'http://localhost/messages?sessionId=test-session-id',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: 'test' }),
-        },
-      );
+      const mockRequest = new Request('http://localhost/messages?sessionId=test-session-id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'test' }),
+      });
 
       const response = await sse.request(mockRequest);
       expect(response).toBeDefined();
     });
 
     it('应该在无效sessionId时返回400错误', async () => {
-      const mockRequest = new Request(
-        'http://localhost/messages?sessionId=invalid-session',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: 'test' }),
-        },
-      );
+      const mockRequest = new Request('http://localhost/messages?sessionId=invalid-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'test' }),
+      });
 
       const response = await sse.request(mockRequest);
       expect(response.status).toBe(400);
@@ -151,14 +146,11 @@ describe('SSE Router', () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
 
       // 然后尝试使用sessionId发送消息
-      const mockRequest = new Request(
-        'http://localhost/messages?sessionId=test-session-id',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: 'test' }),
-        },
-      );
+      const mockRequest = new Request('http://localhost/messages?sessionId=test-session-id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'test' }),
+      });
 
       const postResponse = await sse.request(mockRequest);
       // 验证消息处理机制正常工作
@@ -173,14 +165,11 @@ describe('SSE Router', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // 尝试使用已关闭的sessionId发送消息
-      const mockRequest = new Request(
-        'http://localhost/messages?sessionId=test-session-id',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: 'test' }),
-        },
-      );
+      const mockRequest = new Request('http://localhost/messages?sessionId=test-session-id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'test' }),
+      });
 
       const response = await sse.request(mockRequest);
       expect(response.status).toBe(400);

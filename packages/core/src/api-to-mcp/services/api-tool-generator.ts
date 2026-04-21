@@ -3,11 +3,8 @@
  */
 
 import { createLogger } from '../../utils/logger.js';
-import type {
-  ApiToolConfig,
-  JsonSchema,
-  JsonSchemaProperty,
-} from '../types/api-config.js';
+
+import type { ApiToolConfig, JsonSchema, JsonSchemaProperty } from '../types/api-config.js';
 import type {
   McpTool,
   McpToolInputSchema,
@@ -54,9 +51,7 @@ export class ApiToolGenerator {
       logger.error('生成MCP工具定义失败', error as Error, {
         context: { toolId: apiConfig.id },
       });
-      throw new Error(
-        `生成工具 '${apiConfig.id}' 的MCP定义失败: ${(error as Error).message}`,
-      );
+      throw new Error(`生成工具 '${apiConfig.id}' 的MCP定义失败: ${(error as Error).message}`);
     }
   }
 
@@ -69,11 +64,7 @@ export class ApiToolGenerator {
     const errors: ValidationError[] = [];
 
     // 验证工具名称
-    if (
-      !tool.name ||
-      typeof tool.name !== 'string' ||
-      tool.name.trim() === ''
-    ) {
+    if (!tool.name || typeof tool.name !== 'string' || tool.name.trim() === '') {
       errors.push({
         path: 'name',
         message: '工具名称不能为空',
@@ -128,9 +119,7 @@ export class ApiToolGenerator {
         const validation = this.validateGeneratedTool(tool);
 
         if (!validation.valid) {
-          const errorMessages = validation.errors
-            .map((e) => e.message)
-            .join(', ');
+          const errorMessages = validation.errors.map((e) => e.message).join(', ');
           errors.push({
             configId: config.id,
             error: `工具验证失败: ${errorMessages}`,
@@ -223,10 +212,8 @@ export class ApiToolGenerator {
     // 复制数值约束
     if (property.minimum !== undefined) converted.minimum = property.minimum;
     if (property.maximum !== undefined) converted.maximum = property.maximum;
-    if (property.minLength !== undefined)
-      converted.minLength = property.minLength;
-    if (property.maxLength !== undefined)
-      converted.maxLength = property.maxLength;
+    if (property.minLength !== undefined) converted.minLength = property.minLength;
+    if (property.maxLength !== undefined) converted.maxLength = property.maxLength;
     if (property.minItems !== undefined) converted.minItems = property.minItems;
     if (property.maxItems !== undefined) converted.maxItems = property.maxItems;
     if (property.pattern) converted.pattern = property.pattern;
@@ -285,9 +272,7 @@ export class ApiToolGenerator {
    * @param inputSchema MCP输入schema
    * @returns 验证结果
    */
-  private validateInputSchema(
-    inputSchema: McpToolInputSchema,
-  ): ValidationResult {
+  private validateInputSchema(inputSchema: McpToolInputSchema): ValidationResult {
     const errors: ValidationError[] = [];
 
     // 验证schema类型
@@ -301,13 +286,8 @@ export class ApiToolGenerator {
 
     // 验证属性定义
     if (inputSchema.properties) {
-      for (const [propName, propDef] of Object.entries(
-        inputSchema.properties,
-      )) {
-        const propErrors = this.validateProperty(
-          propDef,
-          `inputSchema.properties.${propName}`,
-        );
+      for (const [propName, propDef] of Object.entries(inputSchema.properties)) {
+        const propErrors = this.validateProperty(propDef, `inputSchema.properties.${propName}`);
         errors.push(...propErrors);
       }
     }
@@ -337,21 +317,11 @@ export class ApiToolGenerator {
    * @param path 属性路径
    * @returns 验证错误数组
    */
-  private validateProperty(
-    property: JsonSchemaProperty,
-    path: string,
-  ): ValidationError[] {
+  private validateProperty(property: JsonSchemaProperty, path: string): ValidationError[] {
     const errors: ValidationError[] = [];
 
     // 验证属性类型
-    const validTypes = [
-      'string',
-      'number',
-      'boolean',
-      'object',
-      'array',
-      'null',
-    ];
+    const validTypes = ['string', 'number', 'boolean', 'object', 'array', 'null'];
     if (!validTypes.includes(property.type)) {
       errors.push({
         path,
@@ -375,10 +345,7 @@ export class ApiToolGenerator {
 
     // 验证字符串约束
     if (property.type === 'string') {
-      if (
-        property.minLength !== undefined &&
-        property.maxLength !== undefined
-      ) {
+      if (property.minLength !== undefined && property.maxLength !== undefined) {
         if (property.minLength > property.maxLength) {
           errors.push({
             path,
@@ -403,10 +370,7 @@ export class ApiToolGenerator {
 
       // 递归验证数组项目类型
       if (property.items) {
-        const itemErrors = this.validateProperty(
-          property.items,
-          `${path}.items`,
-        );
+        const itemErrors = this.validateProperty(property.items, `${path}.items`);
         errors.push(...itemErrors);
       }
     }
@@ -414,10 +378,7 @@ export class ApiToolGenerator {
     // 递归验证对象属性
     if (property.type === 'object' && property.properties) {
       for (const [propName, propDef] of Object.entries(property.properties)) {
-        const propErrors = this.validateProperty(
-          propDef,
-          `${path}.properties.${propName}`,
-        );
+        const propErrors = this.validateProperty(propDef, `${path}.properties.${propName}`);
         errors.push(...propErrors);
       }
     }

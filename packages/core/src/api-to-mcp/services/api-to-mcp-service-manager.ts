@@ -4,12 +4,6 @@
  */
 
 import { logger } from '../../utils/logger.js';
-import type { ApiToolConfig } from '../types/api-config.js';
-import type {
-  ApiToolResult,
-  McpTool,
-  ValidationResult,
-} from '../types/api-tool.js';
 import { ParameterValidatorImpl } from '../utils/parameter-validator.js';
 import { ApiConfigManagerImpl, ConfigLoadError } from './api-config-manager.js';
 import { ApiExecutorImpl } from './api-executor.js';
@@ -17,6 +11,9 @@ import { ApiToolGenerator } from './api-tool-generator.js';
 import { ApiToolRegistry } from './api-tool-registry.js';
 import { AuthenticationManager } from './authentication.js';
 import { HttpClient } from './http-client.js';
+
+import type { ApiToolConfig } from '../types/api-config.js';
+import type { ApiToolResult, McpTool, ValidationResult } from '../types/api-tool.js';
 
 /**
  * 服务状态枚举
@@ -79,10 +76,7 @@ export interface ApiToMcpServiceManager {
    * @param toolId 工具ID
    * @param parameters 调用参数
    */
-  executeApiTool(
-    toolId: string,
-    parameters: Record<string, unknown>,
-  ): Promise<ApiToolResult>;
+  executeApiTool(toolId: string, parameters: Record<string, unknown>): Promise<ApiToolResult>;
 
   /**
    * 获取工具定义
@@ -95,10 +89,7 @@ export interface ApiToMcpServiceManager {
    * @param toolId 工具ID
    * @param parameters 参数
    */
-  validateToolParameters(
-    toolId: string,
-    parameters: Record<string, unknown>,
-  ): ValidationResult;
+  validateToolParameters(toolId: string, parameters: Record<string, unknown>): ValidationResult;
 
   /**
    * 获取服务健康状态
@@ -154,10 +145,7 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
 
   async initialize(configPath: string): Promise<void> {
     // 如果当前状态是ERROR，允许重新初始化
-    if (
-      this.status !== ServiceStatus.NOT_INITIALIZED &&
-      this.status !== ServiceStatus.ERROR
-    ) {
+    if (this.status !== ServiceStatus.NOT_INITIALIZED && this.status !== ServiceStatus.ERROR) {
       logger.warn('服务管理器已初始化或正在初始化中', { status: this.status });
       return;
     }
@@ -259,9 +247,7 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
       // 验证参数
       const validation = this.validateToolParameters(toolId, parameters);
       if (!validation.valid) {
-        const errorMessages = validation.errors
-          .map((e) => e.message)
-          .join(', ');
+        const errorMessages = validation.errors.map((e) => e.message).join(', ');
         return {
           isError: true,
           content: [
@@ -274,10 +260,7 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
       }
 
       // 执行API调用
-      const response = await this.apiExecutor.executeApiCall(
-        config,
-        parameters,
-      );
+      const response = await this.apiExecutor.executeApiCall(config, parameters);
 
       logger.debug('API调用响应', {
         context: {
@@ -304,9 +287,7 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
       if (config.response?.jsonata) {
         try {
           // 使用ResponseProcessor处理JSONata表达式
-          const { ResponseProcessorImpl } = await import(
-            './response-processor.js'
-          );
+          const { ResponseProcessorImpl } = await import('./response-processor.js');
           const processor = new ResponseProcessorImpl();
           // 确保响应数据是有效的JSON对象
           let jsonData = response.data;
@@ -318,10 +299,7 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
               jsonData = response.data;
             }
           }
-          resultData = await processor.processWithJsonata(
-            jsonData,
-            config.response.jsonata,
-          );
+          resultData = await processor.processWithJsonata(jsonData, config.response.jsonata);
         } catch (jsonataError) {
           logger.error('JSONata处理失败', jsonataError as Error, {
             context: { toolId },
@@ -374,10 +352,7 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
     return this.toolRegistry.getTool(toolId);
   }
 
-  validateToolParameters(
-    toolId: string,
-    parameters: Record<string, unknown>,
-  ): ValidationResult {
+  validateToolParameters(toolId: string, parameters: Record<string, unknown>): ValidationResult {
     const config = this.toolRegistry.getToolConfig(toolId);
     if (!config) {
       return {

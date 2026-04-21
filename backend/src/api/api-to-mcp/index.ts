@@ -4,7 +4,11 @@
  */
 
 import { Hono } from 'hono';
+
 import { requireAuth } from '../../middleware/simple-auth.js';
+import { errorResponse, successResponse } from '../../utils/api-response.js';
+import { logger } from '../../utils/logger.js';
+
 import type { ApiToMcpWebService } from '../../services/api-to-mcp-web-service.js';
 import type {
   ApiToolConfig,
@@ -12,8 +16,6 @@ import type {
   TestApiConfigRequest,
   TestApiConfigResponse,
 } from '../../types/web-api.js';
-import { errorResponse, successResponse } from '../../utils/api-response.js';
-import { logger } from '../../utils/logger.js';
 
 // 扩展Hono的Context类型以包含API到MCP服务
 declare module 'hono' {
@@ -28,9 +30,7 @@ declare module 'hono' {
  */
 async function reloadHubApiTools(): Promise<void> {
   try {
-    const { getHubServiceSafe } = await import(
-      '../../services/service-registry.js'
-    );
+    const { getHubServiceSafe } = await import('../../services/service-registry.js');
     const hubService = getHubServiceSafe();
     if (!hubService) {
       logger.debug('Hub服务尚未初始化，跳过API工具同步');
@@ -135,10 +135,7 @@ apiToMcpRoutes.post('/configs', requireAuth, async (c) => {
     logger.error('创建API配置失败', error as Error);
 
     // Check if it's a JSON parsing error
-    if (
-      error instanceof SyntaxError &&
-      (error as Error).message?.includes('JSON')
-    ) {
+    if (error instanceof SyntaxError && (error as Error).message?.includes('JSON')) {
       const response = {
         success: false,
         error: {
@@ -290,10 +287,7 @@ apiToMcpRoutes.post('/configs/:id/test', requireAuth, async (c) => {
     const apiToMcpService = c.get('apiToMcpWebService') as ApiToMcpWebService;
 
     // 执行API配置测试
-    const testResponse = await apiToMcpService.testConfig(
-      configId,
-      body.parameters,
-    );
+    const testResponse = await apiToMcpService.testConfig(configId, body.parameters);
 
     return c.json(testResponse);
   } catch (error) {

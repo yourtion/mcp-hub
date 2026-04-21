@@ -4,6 +4,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { app } from '../app.js';
 import {
   cleanupTestConfig,
@@ -168,12 +169,9 @@ describe('稳定的端到端测试', () => {
 
     it('应该能够处理大量数据请求', async () => {
       const largeGroupId = 'a'.repeat(100);
-      const response = await testApp.request(
-        `/api/groups/${encodeURIComponent(largeGroupId)}`,
-        {
-          headers: { Authorization: `Bearer ${authToken}` },
-        },
-      );
+      const response = await testApp.request(`/api/groups/${encodeURIComponent(largeGroupId)}`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
 
       expect([400, 404, 414]).toContain(response.status);
 
@@ -238,9 +236,7 @@ describe('稳定的端到端测试', () => {
       // 内存增长应该在合理范围内
       expect(memoryIncrease).toBeLessThan(50 * 1024 * 1024); // 50MB
 
-      console.log(
-        `✅ 内存使用测试通过 (增长: ${Math.round(memoryIncrease / 1024 / 1024)}MB)`,
-      );
+      console.log(`✅ 内存使用测试通过 (增长: ${Math.round(memoryIncrease / 1024 / 1024)}MB)`);
     });
   });
 
@@ -257,11 +253,7 @@ describe('稳定的端到端测试', () => {
     });
 
     it('应该能够处理连续的错误请求', async () => {
-      const errorRequests = [
-        '/api/nonexistent1',
-        '/api/nonexistent2',
-        '/api/nonexistent3',
-      ];
+      const errorRequests = ['/api/nonexistent1', '/api/nonexistent2', '/api/nonexistent3'];
 
       for (const errorPath of errorRequests) {
         const response = await testApp.request(errorPath);
@@ -281,10 +273,7 @@ describe('稳定的端到端测试', () => {
       const endpoints = ['/api/ping', '/api/groups'];
 
       for (const endpoint of endpoints) {
-        const headers =
-          endpoint === '/api/groups'
-            ? { Authorization: `Bearer ${authToken}` }
-            : {};
+        const headers = endpoint === '/api/groups' ? { Authorization: `Bearer ${authToken}` } : {};
         const response = await testApp.request(endpoint, { headers });
         expect(response.status).toBe(200);
       }
@@ -300,9 +289,7 @@ describe('稳定的端到端测试', () => {
       ];
 
       for (const testCase of testCases) {
-        const headers = testCase.needsAuth
-          ? { Authorization: `Bearer ${authToken}` }
-          : {};
+        const headers = testCase.needsAuth ? { Authorization: `Bearer ${authToken}` } : {};
         const response = await testApp.request(testCase.path, { headers });
         expect(response.status).toBe(testCase.expectedStatus);
       }

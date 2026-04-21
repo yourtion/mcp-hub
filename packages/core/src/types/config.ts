@@ -26,10 +26,7 @@ export type {
  */
 export interface McpServerConfig {
   /** 服务器配置 */
-  servers: Record<
-    string,
-    import('@mcp-core/mcp-hub-share/config').ServerConfig
-  >;
+  servers: Record<string, import('@mcp-core/mcp-hub-share/config').ServerConfig>;
   /** 组配置 */
   groups?: import('@mcp-core/mcp-hub-share/config').GroupConfig;
   /** 全局设置 */

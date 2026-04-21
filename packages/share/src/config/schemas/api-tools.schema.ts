@@ -97,9 +97,7 @@ const JsonSchemaPropertySchema: z.ZodType = z.lazy(() =>
     items: JsonSchemaPropertySchema.optional(),
     properties: z.record(z.string(), JsonSchemaPropertySchema).optional(),
     required: z.array(z.string()).optional(),
-    additionalProperties: z
-      .union([z.boolean(), JsonSchemaPropertySchema])
-      .optional(),
+    additionalProperties: z.union([z.boolean(), JsonSchemaPropertySchema]).optional(),
   }),
 );
 

@@ -8,17 +8,15 @@ import {
   type ErrorResponse,
   type SuccessResponse,
 } from '@mcp-core/mcp-hub-core';
-import type { Context } from 'hono';
+
 import { logger } from './logger.js';
+
+import type { Context } from 'hono';
 
 /**
  * 返回统一成功响应
  */
-export function successResponse<T>(
-  c: Context,
-  data: T,
-  status = 200,
-): Response {
+export function successResponse<T>(c: Context, data: T, status = 200): Response {
   const requestId = c.get('requestId');
   const timestamp = new Date().toISOString();
 
@@ -35,17 +33,9 @@ export function successResponse<T>(
 /**
  * 返回统一错误响应
  */
-export function errorResponse(
-  c: Context,
-  error: Error,
-  status = 500,
-): Response {
+export function errorResponse(c: Context, error: Error, status = 500): Response {
   const requestId = c.get('requestId');
-  const formatted = defaultErrorHandler.formatErrorResponse(
-    error,
-    undefined,
-    requestId,
-  );
+  const formatted = defaultErrorHandler.formatErrorResponse(error, undefined, requestId);
 
   logger.error('API error', error, {
     requestId,

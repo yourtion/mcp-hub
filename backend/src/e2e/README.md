@@ -180,11 +180,13 @@ tsx scripts/run-e2e-tests.ts --bail
 ### 调试技巧
 
 1. **启用详细输出**
+
    ```bash
    npm run test:e2e:verbose
    ```
 
 2. **运行单个测试文件**
+
    ```bash
    npx vitest src/e2e/scenarios/user-scenarios.test.ts
    ```

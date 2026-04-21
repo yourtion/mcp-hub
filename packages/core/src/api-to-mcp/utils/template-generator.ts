@@ -265,8 +265,7 @@ export class TemplateGeneratorImpl implements TemplateGenerator {
             required: ['limit'],
           },
           response: {
-            jsonata:
-              '{ "items": data.items, "total": data.total, "hasMore": data.hasMore }',
+            jsonata: '{ "items": data.items, "total": data.total, "hasMore": data.hasMore }',
             errorPath: 'error.message',
           },
           security: {
@@ -613,14 +612,7 @@ export class TemplateGeneratorImpl implements TemplateGenerator {
               $ref: '#/definitions/CacheConfig',
             },
           },
-          required: [
-            'id',
-            'name',
-            'description',
-            'api',
-            'parameters',
-            'response',
-          ],
+          required: ['id', 'name', 'description', 'api', 'parameters', 'response'],
         },
         // 其他定义...
       },

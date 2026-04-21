@@ -3,14 +3,14 @@
  * 基于统一的 logger 系统，提供 CLI 特有的功能
  */
 
-import * as os from 'node:os';
-import * as path from 'node:path';
 import {
   CliLogger as BaseCliLogger,
   EnvironmentDetector,
   type LoggerConfig,
   LogLevel,
 } from '@mcp-core/mcp-hub-share';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 /**
  * CLI日志配置接口
@@ -31,9 +31,7 @@ export const DEFAULT_CLI_LOGGER_CONFIG: CliLoggerConfig = {
   format: 'text',
   enableColors: true,
   enableTimestamp: true,
-  quiet:
-    EnvironmentDetector.isTestEnvironment() &&
-    !EnvironmentDetector.isDebugMode(),
+  quiet: EnvironmentDetector.isTestEnvironment() && !EnvironmentDetector.isDebugMode(),
   verbose: false,
   logDir: path.join(os.homedir(), '.mcp-hub', 'logs'),
   maxFileSize: 5 * 1024 * 1024, // 5MB
@@ -62,10 +60,7 @@ export class CliLogger extends BaseCliLogger {
     } else if (adjustedConfig.quiet) {
       adjustedConfig.level = LogLevel.WARN;
       // 在测试环境的静默模式下禁用控制台输出
-      if (
-        EnvironmentDetector.isTestEnvironment() &&
-        config.enableConsole !== true
-      ) {
+      if (EnvironmentDetector.isTestEnvironment() && config.enableConsole !== true) {
         adjustedConfig.enableConsole = false;
       }
     }
@@ -101,8 +96,7 @@ export function createCliLoggerFromOptions(
 
   // 设置日志级别
   if (options.logLevel) {
-    const level =
-      LogLevel[options.logLevel.toUpperCase() as keyof typeof LogLevel];
+    const level = LogLevel[options.logLevel.toUpperCase() as keyof typeof LogLevel];
     if (level !== undefined) {
       config.level = level;
     }

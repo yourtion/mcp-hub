@@ -4,14 +4,11 @@
  */
 
 import { createLogger } from '../../utils/logger.js';
-import type { ApiToolConfig, AuthConfig } from '../types/api-config.js';
-import type {
-  ApiResponse,
-  HttpRequestConfig,
-  HttpResponse,
-} from '../types/http-client.js';
 import { HttpRequestBuilderImpl } from '../utils/http-request-builder.js';
 import { ParameterValidatorImpl } from '../utils/parameter-validator.js';
+
+import type { ApiToolConfig, AuthConfig } from '../types/api-config.js';
+import type { ApiResponse, HttpRequestConfig, HttpResponse } from '../types/http-client.js';
 import type { AuthenticationManager } from './authentication.js';
 import type { HttpClient } from './http-client.js';
 
@@ -26,30 +23,21 @@ export interface ApiExecutor {
    * @param config API工具配置
    * @param parameters 调用参数
    */
-  executeApiCall(
-    config: ApiToolConfig,
-    parameters: Record<string, unknown>,
-  ): Promise<ApiResponse>;
+  executeApiCall(config: ApiToolConfig, parameters: Record<string, unknown>): Promise<ApiResponse>;
 
   /**
    * 构建HTTP请求
    * @param config API工具配置
    * @param parameters 调用参数
    */
-  buildHttpRequest(
-    config: ApiToolConfig,
-    parameters: Record<string, unknown>,
-  ): HttpRequestConfig;
+  buildHttpRequest(config: ApiToolConfig, parameters: Record<string, unknown>): HttpRequestConfig;
 
   /**
    * 处理认证
    * @param request HTTP请求配置
    * @param authConfig 认证配置
    */
-  applyAuthentication(
-    request: HttpRequestConfig,
-    authConfig: AuthConfig,
-  ): HttpRequestConfig;
+  applyAuthentication(request: HttpRequestConfig, authConfig: AuthConfig): HttpRequestConfig;
 
   /**
    * 处理超时和重试
@@ -122,10 +110,7 @@ export class ApiExecutorImpl implements ApiExecutor {
 
     try {
       // 1. 验证参数
-      const validationResult = this.parameterValidator.validate(
-        parameters,
-        config.parameters,
-      );
+      const validationResult = this.parameterValidator.validate(parameters, config.parameters);
       if (!validationResult.valid) {
         throw new Error(`参数验证失败: ${validationResult.errors.join(', ')}`);
       }
@@ -135,10 +120,7 @@ export class ApiExecutorImpl implements ApiExecutor {
 
       // 3. 应用认证
       if (config.security?.authentication) {
-        request = this.applyAuthentication(
-          request,
-          config.security.authentication,
-        );
+        request = this.applyAuthentication(request, config.security.authentication);
       }
 
       // 4. 记录请求日志
@@ -159,22 +141,16 @@ export class ApiExecutorImpl implements ApiExecutor {
         raw: response,
         data: response.data,
         success: response.status >= 200 && response.status < 300,
-        error:
-          response.status >= 400
-            ? this.extractErrorMessage(response)
-            : undefined,
+        error: response.status >= 400 ? this.extractErrorMessage(response) : undefined,
       };
 
       const duration = Date.now() - startTime;
-      logger.info(
-        `API调用完成: ${config.id}, 状态: ${response.status}, 耗时: ${duration}ms`,
-      );
+      logger.info(`API调用完成: ${config.id}, 状态: ${response.status}, 耗时: ${duration}ms`);
 
       return apiResponse;
     } catch (error) {
       const duration = Date.now() - startTime;
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
 
       logger.error('API调用失败', undefined, {
         context: {
@@ -197,10 +173,7 @@ export class ApiExecutorImpl implements ApiExecutor {
   /**
    * 构建HTTP请求
    */
-  buildHttpRequest(
-    config: ApiToolConfig,
-    parameters: Record<string, unknown>,
-  ): HttpRequestConfig {
+  buildHttpRequest(config: ApiToolConfig, parameters: Record<string, unknown>): HttpRequestConfig {
     logger.debug(`构建HTTP请求: ${config.id}`);
 
     // 使用HTTP请求构建器处理模板和参数替换
@@ -233,23 +206,16 @@ export class ApiExecutorImpl implements ApiExecutor {
   /**
    * 应用认证
    */
-  applyAuthentication(
-    request: HttpRequestConfig,
-    authConfig: AuthConfig,
-  ): HttpRequestConfig {
+  applyAuthentication(request: HttpRequestConfig, authConfig: AuthConfig): HttpRequestConfig {
     logger.debug(`应用认证: ${authConfig.type}`);
 
     // 解析环境变量
-    const resolvedAuthConfig =
-      this.authManager.resolveEnvironmentVariables(authConfig);
+    const resolvedAuthConfig = this.authManager.resolveEnvironmentVariables(authConfig);
 
     // 验证环境变量
-    const envValidation =
-      this.authManager.validateEnvironmentVariables(resolvedAuthConfig);
+    const envValidation = this.authManager.validateEnvironmentVariables(resolvedAuthConfig);
     if (!envValidation.valid) {
-      throw new Error(
-        `认证配置中的环境变量未定义: ${envValidation.missingVars.join(', ')}`,
-      );
+      throw new Error(`认证配置中的环境变量未定义: ${envValidation.missingVars.join(', ')}`);
     }
 
     // 应用认证
@@ -259,9 +225,7 @@ export class ApiExecutorImpl implements ApiExecutor {
   /**
    * 处理超时和重试
    */
-  async handleTimeoutAndRetry(
-    request: HttpRequestConfig,
-  ): Promise<HttpResponse> {
+  async handleTimeoutAndRetry(request: HttpRequestConfig): Promise<HttpResponse> {
     logger.debug(`执行HTTP请求: ${request.method} ${request.url}`);
 
     try {
@@ -292,18 +256,11 @@ export class ApiExecutorImpl implements ApiExecutor {
   /**
    * 清理敏感的请求头信息
    */
-  private sanitizeHeaders(
-    headers?: Record<string, string> | Headers,
-  ): Record<string, string> {
+  private sanitizeHeaders(headers?: Record<string, string> | Headers): Record<string, string> {
     if (!headers) return {};
 
     const result: Record<string, string> = {};
-    const sensitiveHeaders = [
-      'authorization',
-      'x-api-key',
-      'cookie',
-      'set-cookie',
-    ];
+    const sensitiveHeaders = ['authorization', 'x-api-key', 'cookie', 'set-cookie'];
 
     if (headers instanceof Headers) {
       headers.forEach((value, key) => {
@@ -350,13 +307,7 @@ export class ApiExecutorImpl implements ApiExecutor {
       const data = response.data as Record<string, unknown>;
 
       // 常见的错误字段
-      const errorFields = [
-        'error',
-        'message',
-        'error_description',
-        'detail',
-        'msg',
-      ];
+      const errorFields = ['error', 'message', 'error_description', 'detail', 'msg'];
 
       for (const field of errorFields) {
         if (data[field] && typeof data[field] === 'string') {
@@ -366,10 +317,7 @@ export class ApiExecutorImpl implements ApiExecutor {
     }
 
     // 如果无法提取具体错误信息，返回状态文本
-    return (
-      response.statusText ||
-      (response.status ? `HTTP ${response.status}` : '请求失败')
-    );
+    return response.statusText || (response.status ? `HTTP ${response.status}` : '请求失败');
   }
 }
 

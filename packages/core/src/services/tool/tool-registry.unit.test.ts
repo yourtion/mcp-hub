@@ -3,7 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ToolInfo, ToolResult } from '../../types';
+
 import {
   DuplicateToolError,
   type ToolExecutionContext,
@@ -12,6 +12,8 @@ import {
   ToolRegistryError,
   ToolValidationError,
 } from './tool-registry';
+
+import type { ToolInfo, ToolResult } from '../../types';
 
 // 模拟logger方法
 const mockLogger = {
@@ -109,17 +111,13 @@ describe('ToolRegistry', () => {
       // 尝试再次初始化
       await toolRegistry.initialize();
 
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        '工具注册表已初始化，跳过重复初始化',
-      );
+      expect(mockLogger.warn).toHaveBeenCalledWith('工具注册表已初始化，跳过重复初始化');
     });
 
     it('应该在未初始化时抛出错误', () => {
       const registry = new ToolRegistry();
 
-      expect(() => registry.registerTool('server1', mockTool1)).toThrow(
-        ToolRegistryError,
-      );
+      expect(() => registry.registerTool('server1', mockTool1)).toThrow(ToolRegistryError);
     });
   });
 
@@ -210,23 +208,17 @@ describe('ToolRegistry', () => {
 
     it('应该验证工具信息', () => {
       const invalidTool1 = { name: '', description: '有效描述' } as ToolInfo;
-      expect(() => toolRegistry.registerTool('server1', invalidTool1)).toThrow(
-        ToolValidationError,
-      );
+      expect(() => toolRegistry.registerTool('server1', invalidTool1)).toThrow(ToolValidationError);
 
       const invalidTool2 = { name: '有效名称', description: '' } as ToolInfo;
-      expect(() => toolRegistry.registerTool('server1', invalidTool2)).toThrow(
-        ToolValidationError,
-      );
+      expect(() => toolRegistry.registerTool('server1', invalidTool2)).toThrow(ToolValidationError);
 
       const invalidTool3 = {
         name: '有效名称',
         description: '有效描述',
         parameters: [{ name: '', type: 'string' }],
       } as ToolInfo;
-      expect(() => toolRegistry.registerTool('server1', invalidTool3)).toThrow(
-        ToolValidationError,
-      );
+      expect(() => toolRegistry.registerTool('server1', invalidTool3)).toThrow(ToolValidationError);
     });
   });
 
@@ -275,9 +267,7 @@ describe('ToolRegistry', () => {
         excludeToolNames: ['test_tool_2'],
       });
       expect(excludedTools).toHaveLength(2);
-      expect(
-        excludedTools.find((t) => t.name === 'test_tool_2'),
-      ).toBeUndefined();
+      expect(excludedTools.find((t) => t.name === 'test_tool_2')).toBeUndefined();
     });
 
     it('应该根据名称获取工具', () => {
@@ -303,8 +293,7 @@ describe('ToolRegistry', () => {
       const server2Tools = toolRegistry.getToolsByServer('server2');
       expect(server2Tools).toHaveLength(1);
 
-      const nonExistentServerTools =
-        toolRegistry.getToolsByServer('nonexistent');
+      const nonExistentServerTools = toolRegistry.getToolsByServer('nonexistent');
       expect(nonExistentServerTools).toHaveLength(0);
     });
 
@@ -322,9 +311,7 @@ describe('ToolRegistry', () => {
     it('应该检查工具可用性', () => {
       // 指定服务器
       expect(toolRegistry.isToolAvailable('test_tool_1', 'server1')).toBe(true);
-      expect(toolRegistry.isToolAvailable('test_tool_1', 'server2')).toBe(
-        false,
-      );
+      expect(toolRegistry.isToolAvailable('test_tool_1', 'server2')).toBe(false);
 
       // 不指定服务器
       expect(toolRegistry.isToolAvailable('test_tool_1')).toBe(true);
@@ -389,9 +376,7 @@ describe('ToolRegistry', () => {
         mode: 'invalid',
       });
       expect(result1.isValid).toBe(false);
-      expect(result1.error).toContain(
-        "参数 'mode' 必须是以下值之一: fast, slow, auto",
-      );
+      expect(result1.error).toContain("参数 'mode' 必须是以下值之一: fast, slow, auto");
 
       // 有效的枚举值
       const result2 = toolRegistry.validateToolArgs('test_tool_2', {
@@ -475,10 +460,9 @@ describe('ToolRegistry', () => {
     it('应该处理清空不存在服务器的工具', () => {
       toolRegistry.clearServerTools('nonexistent');
 
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        '尝试清空不存在服务器的工具',
-        { serverId: 'nonexistent' },
-      );
+      expect(mockLogger.warn).toHaveBeenCalledWith('尝试清空不存在服务器的工具', {
+        serverId: 'nonexistent',
+      });
     });
   });
 
@@ -532,10 +516,7 @@ describe('ToolRegistry', () => {
       expect(stats.errorCount).toBe(0);
       expect(stats.averageExecutionTime).toBe(100);
 
-      const history = toolRegistry.getToolExecutionHistory(
-        'test_tool_1',
-        'server1',
-      );
+      const history = toolRegistry.getToolExecutionHistory('test_tool_1', 'server1');
       expect(history).toHaveLength(1);
       expect(history[0]).toMatchObject({
         toolName: 'test_tool_1',
@@ -601,10 +582,7 @@ describe('ToolRegistry', () => {
       });
 
       // 获取特定工具的历史
-      const tool1History = toolRegistry.getToolExecutionHistory(
-        'test_tool_1',
-        'server1',
-      );
+      const tool1History = toolRegistry.getToolExecutionHistory('test_tool_1', 'server1');
       expect(tool1History).toHaveLength(2);
 
       // 获取所有历史（按时间倒序）
@@ -650,9 +628,7 @@ describe('ToolRegistry', () => {
       expect(error1.message).toBe("工具 'test-tool' 未找到");
 
       const error2 = new ToolNotFoundError('test-tool', 'test-server');
-      expect(error2.message).toBe(
-        "工具 'test-tool' 未找到 在服务器 'test-server'",
-      );
+      expect(error2.message).toBe("工具 'test-tool' 未找到 在服务器 'test-server'");
       expect(error2.context).toEqual({
         toolName: 'test-tool',
         serverId: 'test-server',
@@ -674,9 +650,7 @@ describe('ToolRegistry', () => {
       const error = new DuplicateToolError('test-tool', 'test-server');
       expect(error).toBeInstanceOf(ToolRegistryError);
       expect(error.code).toBe('DUPLICATE_TOOL');
-      expect(error.message).toBe(
-        "工具 'test-tool' 在服务器 'test-server' 上已存在",
-      );
+      expect(error.message).toBe("工具 'test-tool' 在服务器 'test-server' 上已存在");
       expect(error.context).toEqual({
         toolName: 'test-tool',
         serverId: 'test-server',

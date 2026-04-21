@@ -26,9 +26,7 @@ interface JsonSchema {
  * 转换 JSON Schema 为 Zod Schema
  * 使用泛型确保类型安全
  */
-export function convertToZodSchema(
-  inputSchema: JsonSchema | unknown,
-): Record<string, z.ZodType> {
+export function convertToZodSchema(inputSchema: JsonSchema | unknown): Record<string, z.ZodType> {
   if (!inputSchema || typeof inputSchema !== 'object') {
     return {};
   }

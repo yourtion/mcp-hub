@@ -3,6 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { ApiToolIntegrationService } from './api_tool_integration_service.js';
 
 // Mock the core module
@@ -115,9 +116,7 @@ describe('ApiToolIntegrationService', () => {
     it('应该处理获取工具列表时的错误', async () => {
       const configPath = '/path/to/config.json';
       mockApiServiceManager.initialize.mockResolvedValue(undefined);
-      mockApiServiceManager.getApiTools.mockRejectedValue(
-        new Error('获取失败'),
-      );
+      mockApiServiceManager.getApiTools.mockRejectedValue(new Error('获取失败'));
 
       await service.initialize(configPath);
       const tools = await service.getApiTools();
@@ -151,18 +150,15 @@ describe('ApiToolIntegrationService', () => {
 
       expect(result.isError).toBe(false);
       expect(result.content[0].text).toBe('执行成功');
-      expect(mockApiServiceManager.executeApiTool).toHaveBeenCalledWith(
-        'test-tool',
-        { param1: 'value' },
-      );
+      expect(mockApiServiceManager.executeApiTool).toHaveBeenCalledWith('test-tool', {
+        param1: 'value',
+      });
     });
 
     it('应该处理工具执行错误', async () => {
       const configPath = '/path/to/config.json';
       mockApiServiceManager.initialize.mockResolvedValue(undefined);
-      mockApiServiceManager.executeApiTool.mockRejectedValue(
-        new Error('执行失败'),
-      );
+      mockApiServiceManager.executeApiTool.mockRejectedValue(new Error('执行失败'));
 
       await service.initialize(configPath);
       const result = await service.executeApiTool('test-tool', {
@@ -194,9 +190,7 @@ describe('ApiToolIntegrationService', () => {
       const result = service.isApiTool('test-tool');
 
       expect(result).toBe(true);
-      expect(mockApiServiceManager.getToolDefinition).toHaveBeenCalledWith(
-        'test-tool',
-      );
+      expect(mockApiServiceManager.getToolDefinition).toHaveBeenCalledWith('test-tool');
     });
 
     it('应该返回false当工具不存在时', async () => {
@@ -271,9 +265,7 @@ describe('ApiToolIntegrationService', () => {
     it('应该处理重新加载配置时的错误', async () => {
       const configPath = '/path/to/config.json';
       mockApiServiceManager.initialize.mockResolvedValue(undefined);
-      mockApiServiceManager.reloadConfig.mockRejectedValue(
-        new Error('重新加载失败'),
-      );
+      mockApiServiceManager.reloadConfig.mockRejectedValue(new Error('重新加载失败'));
 
       await service.initialize(configPath);
 
@@ -294,10 +286,7 @@ describe('ApiToolIntegrationService', () => {
     it('应该返回正确的统计信息', async () => {
       const configPath = '/path/to/config.json';
       mockApiServiceManager.initialize.mockResolvedValue(undefined);
-      mockApiServiceManager.getApiTools.mockResolvedValue([
-        { name: 'tool1' },
-        { name: 'tool2' },
-      ]);
+      mockApiServiceManager.getApiTools.mockResolvedValue([{ name: 'tool1' }, { name: 'tool2' }]);
 
       await service.initialize(configPath);
       const stats = await service.getStats();
@@ -311,9 +300,7 @@ describe('ApiToolIntegrationService', () => {
     it('应该处理获取统计信息时的错误', async () => {
       const configPath = '/path/to/config.json';
       mockApiServiceManager.initialize.mockResolvedValue(undefined);
-      mockApiServiceManager.getApiTools.mockRejectedValue(
-        new Error('获取失败'),
-      );
+      mockApiServiceManager.getApiTools.mockRejectedValue(new Error('获取失败'));
 
       await service.initialize(configPath);
       const stats = await service.getStats();

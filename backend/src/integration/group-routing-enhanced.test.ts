@@ -4,6 +4,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { app } from '../app.js';
 import {
   cleanupTestConfig,
@@ -159,9 +160,7 @@ describe('组路由功能集成测试', () => {
       expect(listData.data.groups.length).toBeGreaterThan(0);
 
       const firstGroup = listData.data.groups[0];
-      const response = await authRequest(
-        `/api/groups/${firstGroup.id}/servers`,
-      );
+      const response = await authRequest(`/api/groups/${firstGroup.id}/servers`);
 
       expect(response.status).toBe(200);
 
@@ -216,9 +215,7 @@ describe('组路由功能集成测试', () => {
     it('应该能够处理并发请求', async () => {
       const concurrentRequests = 5; // 减少并发数量
 
-      const promises = Array.from({ length: concurrentRequests }, () =>
-        authRequest('/api/groups'),
-      );
+      const promises = Array.from({ length: concurrentRequests }, () => authRequest('/api/groups'));
 
       const responses = await Promise.all(promises);
 

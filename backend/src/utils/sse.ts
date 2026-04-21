@@ -1,8 +1,6 @@
+import { type JSONRPCMessage, JSONRPCMessageSchema } from '@modelcontextprotocol/sdk/types.js';
+
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
-import {
-  type JSONRPCMessage,
-  JSONRPCMessageSchema,
-} from '@modelcontextprotocol/sdk/types.js';
 import type { Context } from 'hono';
 import type { SSEStreamingApi } from 'hono/streaming';
 
@@ -62,10 +60,7 @@ export class SSETransport implements Transport {
       }
 
       // Check if the request body is too large
-      const contentLength = Number.parseInt(
-        context.req.header('content-length') || '0',
-        10,
-      );
+      const contentLength = Number.parseInt(context.req.header('content-length') || '0', 10);
 
       if (contentLength > MAXIMUM_MESSAGE_SIZE) {
         throw new Error(`Request body too large: ${contentLength} bytes`);

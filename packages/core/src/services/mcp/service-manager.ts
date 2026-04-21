@@ -4,6 +4,10 @@
  */
 
 import { createLogger } from '@mcp-core/mcp-hub-share';
+
+import { performanceMonitor } from '../../utils/performance-monitor.js';
+import { performanceOptimizer } from '../../utils/performance-optimizer.js';
+
 import type {
   McpServerConfig,
   ServerConfig,
@@ -11,8 +15,6 @@ import type {
   ToolInfo,
   ToolResult,
 } from '../../types/index.js';
-import { performanceMonitor } from '../../utils/performance-monitor.js';
-import { performanceOptimizer } from '../../utils/performance-optimizer.js';
 
 /**
  * MCP服务管理器错误类
@@ -100,11 +102,7 @@ export interface McpServiceManagerInterface {
   /**
    * 执行工具调用
    */
-  executeToolCall(
-    toolName: string,
-    args: unknown,
-    serverId?: string,
-  ): Promise<ToolResult>;
+  executeToolCall(toolName: string, args: unknown, serverId?: string): Promise<ToolResult>;
 
   /**
    * 获取服务状态
@@ -153,11 +151,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
     }
 
     const requestId = `init-${Date.now()}`;
-    performanceMonitor.startRequest(
-      requestId,
-      'initializeFromConfig',
-      'McpServiceManager',
-    );
+    performanceMonitor.startRequest(requestId, 'initializeFromConfig', 'McpServiceManager');
 
     const initStartTime = Date.now();
     this.logger.info('开始初始化MCP服务管理器', {
@@ -184,11 +178,10 @@ export class McpServiceManager implements McpServiceManagerInterface {
       let settledResults: PromiseSettledResult<void>[];
       try {
         // 尝试使用性能优化器进行并行初始化
-        const initResults =
-          await performanceOptimizer.optimizeParallelInitialization(
-            initTasks,
-            serverNames,
-          );
+        const initResults = await performanceOptimizer.optimizeParallelInitialization(
+          initTasks,
+          serverNames,
+        );
         // 将成功结果转换为Promise.allSettled格式
         settledResults = initResults.map(
           (result): PromiseSettledResult<void> => ({
@@ -198,19 +191,12 @@ export class McpServiceManager implements McpServiceManagerInterface {
         );
       } catch (_error) {
         // 如果并行初始化失败，回退到Promise.allSettled
-        settledResults = await Promise.allSettled(
-          initTasks.map((task) => task()),
-        );
+        settledResults = await Promise.allSettled(initTasks.map((task) => task()));
       }
 
       // 检查是否有严重错误（所有服务器都失败）
-      const failures = settledResults.filter(
-        (result) => result.status === 'rejected',
-      );
-      if (
-        failures.length === settledResults.length &&
-        settledResults.length > 0
-      ) {
+      const failures = settledResults.filter((result) => result.status === 'rejected');
+      if (failures.length === settledResults.length && settledResults.length > 0) {
         // 如果所有服务器都失败了，抛出第一个错误
         const firstFailure = failures[0] as PromiseRejectedResult;
         throw firstFailure.reason;
@@ -286,11 +272,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
     }
 
     const requestId = `get-all-tools-${Date.now()}`;
-    performanceMonitor.startRequest(
-      requestId,
-      'getAllTools',
-      'McpServiceManager',
-    );
+    performanceMonitor.startRequest(requestId, 'getAllTools', 'McpServiceManager');
 
     this.logger.debug('获取所有可用工具');
 
@@ -318,11 +300,9 @@ export class McpServiceManager implements McpServiceManagerInterface {
       this.logger.error('获取所有工具失败', error as Error);
       performanceMonitor.endRequest(requestId, false, (error as Error).message);
 
-      throw new McpServiceError(
-        `获取工具失败: ${(error as Error).message}`,
-        'GET_TOOLS_FAILED',
-        { originalError: (error as Error).message },
-      );
+      throw new McpServiceError(`获取工具失败: ${(error as Error).message}`, 'GET_TOOLS_FAILED', {
+        originalError: (error as Error).message,
+      });
     }
   }
 
@@ -345,23 +325,14 @@ export class McpServiceManager implements McpServiceManagerInterface {
     return [...server.tools];
   }
 
-  async executeToolCall(
-    toolName: string,
-    args: unknown,
-    serverId?: string,
-  ): Promise<ToolResult> {
+  async executeToolCall(toolName: string, args: unknown, serverId?: string): Promise<ToolResult> {
     this.ensureInitialized();
 
     const executionId = `exec-${toolName}-${Date.now()}`;
-    performanceMonitor.startRequest(
-      executionId,
-      'executeToolCall',
-      'McpServiceManager',
-      {
-        toolName,
-        serverId,
-      },
-    );
+    performanceMonitor.startRequest(executionId, 'executeToolCall', 'McpServiceManager', {
+      toolName,
+      serverId,
+    });
 
     this.logger.info('开始执行工具调用', {
       executionId,
@@ -373,12 +344,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
     try {
       // 如果指定了服务器ID，直接在该服务器上执行
       if (serverId) {
-        const result = await this.executeToolOnServer(
-          serverId,
-          toolName,
-          args,
-          executionId,
-        );
+        const result = await this.executeToolOnServer(serverId, toolName, args, executionId);
         performanceMonitor.endRequest(executionId, true);
         return result;
       }
@@ -389,12 +355,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
         throw new ToolNotFoundError(toolName);
       }
 
-      const result = await this.executeToolOnServer(
-        targetServerId,
-        toolName,
-        args,
-        executionId,
-      );
+      const result = await this.executeToolOnServer(targetServerId, toolName, args, executionId);
       performanceMonitor.endRequest(executionId, true);
       return result;
     } catch (error) {
@@ -404,11 +365,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
         serverId,
       });
 
-      performanceMonitor.endRequest(
-        executionId,
-        false,
-        (error as Error).message,
-      );
+      performanceMonitor.endRequest(executionId, false, (error as Error).message);
 
       if (error instanceof McpServiceError) {
         throw error;
@@ -488,22 +445,20 @@ export class McpServiceManager implements McpServiceManagerInterface {
 
     try {
       // 关闭所有服务器连接
-      const shutdownPromises = Array.from(this.servers.values()).map(
-        async (server) => {
-          try {
-            if (server.status === ServerStatus.CONNECTED) {
-              // 这里应该调用实际的客户端关闭方法
-              // 由于我们在核心包中，暂时只更新状态
-              server.status = ServerStatus.DISCONNECTED;
-              this.logger.debug('服务器连接已关闭', { serverId: server.id });
-            }
-          } catch (error) {
-            this.logger.error('关闭服务器连接时出错', error as Error, {
-              serverId: server.id,
-            });
+      const shutdownPromises = Array.from(this.servers.values()).map(async (server) => {
+        try {
+          if (server.status === ServerStatus.CONNECTED) {
+            // 这里应该调用实际的客户端关闭方法
+            // 由于我们在核心包中，暂时只更新状态
+            server.status = ServerStatus.DISCONNECTED;
+            this.logger.debug('服务器连接已关闭', { serverId: server.id });
           }
-        },
-      );
+        } catch (error) {
+          this.logger.error('关闭服务器连接时出错', error as Error, {
+            serverId: server.id,
+          });
+        }
+      });
 
       await Promise.allSettled(shutdownPromises);
 
@@ -529,20 +484,15 @@ export class McpServiceManager implements McpServiceManagerInterface {
       });
 
       this.shutdownInProgress = false;
-      throw new McpServiceError(
-        `服务关闭失败: ${(error as Error).message}`,
-        'SHUTDOWN_FAILED',
-        { originalError: (error as Error).message },
-      );
+      throw new McpServiceError(`服务关闭失败: ${(error as Error).message}`, 'SHUTDOWN_FAILED', {
+        originalError: (error as Error).message,
+      });
     }
   }
 
   // 私有辅助方法
 
-  private async initializeServer(
-    serverId: string,
-    config: ServerConfig,
-  ): Promise<void> {
+  private async initializeServer(serverId: string, config: ServerConfig): Promise<void> {
     // 跳过禁用的服务器（仅 stdio 类型支持 disabled）
     if ('disabled' in config && config.disabled === true) {
       this.logger.info('跳过禁用的服务器', { serverId });
@@ -582,9 +532,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
     }
   }
 
-  private async simulateServerConnection(
-    serverConnection: ServerConnection,
-  ): Promise<void> {
+  private async simulateServerConnection(serverConnection: ServerConnection): Promise<void> {
     // 模拟连接延迟
     await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -593,9 +541,7 @@ export class McpServiceManager implements McpServiceManagerInterface {
     this.logger.debug('模拟服务器连接', { serverId: serverConnection.id });
   }
 
-  private async discoverServerTools(
-    serverConnection: ServerConnection,
-  ): Promise<void> {
+  private async discoverServerTools(serverConnection: ServerConnection): Promise<void> {
     const { id: serverId } = serverConnection;
 
     try {

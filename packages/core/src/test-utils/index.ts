@@ -10,10 +10,7 @@ export {
   waitForAsyncOperations,
 } from './cleanup/global-cleanup.js';
 // 并发执行器
-export {
-  ConcurrentExecutor,
-  ConcurrentOperations,
-} from './concurrency/concurrent-executor.js';
+export { ConcurrentExecutor, ConcurrentOperations } from './concurrency/concurrent-executor.js';
 // 数据生成器
 export { TestDataGenerator } from './generators/data-generator.js';
 // Mock 工厂
