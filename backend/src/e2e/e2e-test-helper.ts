@@ -239,7 +239,7 @@ export class E2ETestHelper {
         lastError = error as Error;
 
         if (!retryIf(lastError) || attempt === maxAttempts - 1) {
-          throw lastError;
+          throw lastError ?? new Error('Operation failed');
         }
 
         // 指数退避
@@ -247,7 +247,7 @@ export class E2ETestHelper {
       }
     }
 
-    throw lastError;
+    throw lastError ?? new Error('Operation failed after retries');
   }
 
   /**
@@ -398,7 +398,7 @@ export class E2ETestHelper {
    * 生成随机 ID
    */
   static randomId(prefix: string = 'id'): string {
-    return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   }
 
   /**

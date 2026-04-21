@@ -329,7 +329,9 @@ export class MockMcpClientFactory {
     const client: MockClientMethods = {
       connect: vi.fn().mockImplementation(async () => {
         if (config.delay) {
-          await new Promise((resolve) => setTimeout(resolve, config.delay));
+          await new Promise((resolve) => {
+            setTimeout(resolve, config.delay);
+          });
         }
         if (config.shouldFail) {
           throw new Error('Connection failed');
@@ -338,7 +340,9 @@ export class MockMcpClientFactory {
       close: vi.fn().mockResolvedValue(undefined),
       listTools: vi.fn().mockImplementation(async () => {
         if (config.delay) {
-          await new Promise((resolve) => setTimeout(resolve, config.delay));
+          await new Promise((resolve) => {
+            setTimeout(resolve, config.delay);
+          });
         }
         if (config.shouldFail) {
           throw new Error('List tools failed');
@@ -347,7 +351,9 @@ export class MockMcpClientFactory {
       }),
       callTool: vi.fn().mockImplementation(async () => {
         if (config.delay) {
-          await new Promise((resolve) => setTimeout(resolve, config.delay));
+          await new Promise((resolve) => {
+            setTimeout(resolve, config.delay);
+          });
         }
         if (config.shouldFail) {
           throw new Error('Tool call failed');

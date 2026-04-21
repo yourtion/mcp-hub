@@ -298,7 +298,7 @@ export class ConcurrentExecutor {
    * 计算百分位数
    */
   private static calculatePercentile(values: number[], percentile: number): number {
-    const sorted = [...values].sort((a, b) => a - b);
+    const sorted = [...values].toSorted((a, b) => a - b);
     const index = Math.ceil((percentile / 100) * sorted.length) - 1;
     return sorted[index] || 0;
   }
@@ -337,7 +337,7 @@ export class ConcurrentExecutor {
     await ConcurrentExecutor.execute(operations, { concurrency });
 
     // 按时间戳排序，检查是否有异常的时间顺序
-    const sorted = [...results].sort((a, b) => a.timestamp - b.timestamp);
+    const sorted = [...results].toSorted((a, b) => a.timestamp - b.timestamp);
 
     // 简单的竞态条件检测：如果结果的时间戳顺序与执行顺序不符
     const hasRaceConditions = sorted.some((item, index) => {

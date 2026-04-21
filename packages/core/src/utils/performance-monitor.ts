@@ -416,7 +416,7 @@ export class PerformanceMonitor extends EventEmitter {
 
     // 获取最慢的10个请求
     const topSlowRequests = [...relevantRequests]
-      .sort((a, b) => b.duration - a.duration)
+      .toSorted((a, b) => b.duration - a.duration)
       .slice(0, 10);
 
     return {

@@ -301,7 +301,9 @@ export class ToolManager implements IToolManager {
           attempt,
           delay,
         });
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise((resolve) => {
+          setTimeout(resolve, delay);
+        });
       }
     }
 

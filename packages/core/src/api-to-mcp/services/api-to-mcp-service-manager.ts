@@ -184,7 +184,7 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       logger.error('API转MCP服务管理器初始化失败', error as Error);
-      throw new Error(`初始化失败: ${(error as Error).message}`);
+      throw new Error(`初始化失败: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -212,7 +212,7 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       logger.error('重新加载配置失败', error as Error);
-      throw new Error(`重新加载失败: ${(error as Error).message}`);
+      throw new Error(`重新加载失败: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -450,7 +450,9 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
       await this.shutdown();
 
       // 等待一小段时间确保资源清理完成
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 1000);
+      });
 
       // 重新初始化
       if (this.configPath) {

@@ -54,7 +54,7 @@ export class SSEEventManager {
       throw new Error(`已达到最大SSE连接数限制 (${this.MAX_CLIENTS})`);
     }
 
-    const clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const clientId = `client_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
     // 检查是否接近限制
     if (this.clients.size > this.MAX_CLIENTS * 0.9) {

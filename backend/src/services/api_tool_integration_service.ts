@@ -51,7 +51,7 @@ export class ApiToolIntegrationService {
     } catch (error) {
       logger.error('API工具集成服务初始化失败', error as Error);
       this.initialized = false;
-      throw new Error(`API工具集成服务初始化失败: ${(error as Error).message}`);
+      throw new Error(`API工具集成服务初始化失败: ${(error as Error).message}`, { cause: error });
     }
   }
 

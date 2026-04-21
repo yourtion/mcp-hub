@@ -606,7 +606,7 @@ export class ToolRegistry implements ToolRegistryInterface {
     }
 
     // 按时间排序
-    return allExecutions.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return allExecutions.toSorted((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }
 
   cleanup(): void {

@@ -12,7 +12,7 @@ debugApi.get('/mcp-messages', async (c) => {
     const service = getHubService();
 
     // Get query parameters for filtering
-    const limit = parseInt(c.req.query('limit') || '50');
+    const limit = parseInt(c.req.query('limit') || '50', 10);
     const serverId = c.req.query('serverId');
     const type = (c.req.query('type') as 'request' | 'response' | 'notification') || undefined;
 

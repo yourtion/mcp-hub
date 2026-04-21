@@ -402,8 +402,8 @@ export class SecurityLoggerImpl implements SecurityLogger {
       return this.sensitiveConfig.maskChar.repeat(value.length);
     }
 
-    const keepStart = value.substring(0, this.sensitiveConfig.keepChars);
-    const keepEnd = value.substring(value.length - this.sensitiveConfig.keepChars);
+    const keepStart = value.slice(0, this.sensitiveConfig.keepChars);
+    const keepEnd = value.slice(value.length - this.sensitiveConfig.keepChars);
     const maskLength = value.length - this.sensitiveConfig.keepChars * 2;
 
     return keepStart + this.sensitiveConfig.maskChar.repeat(maskLength) + keepEnd;

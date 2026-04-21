@@ -249,7 +249,7 @@ describe('ConcurrentExecutor', () => {
       const results: string[] = [];
 
       const operation = async () => {
-        const id = Math.random().toString(36).substring(7);
+        const id = Math.random().toString(36).slice(7);
         await new Promise((resolve) => setTimeout(resolve, Math.random() * 10));
         results.push(id);
         return id;

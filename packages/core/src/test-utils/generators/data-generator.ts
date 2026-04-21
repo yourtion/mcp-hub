@@ -148,7 +148,7 @@ export class TestDataGenerator {
    * 生成随机 ID
    */
   static randomId(prefix: string = 'id'): string {
-    return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   }
 
   /**

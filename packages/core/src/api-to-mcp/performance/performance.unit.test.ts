@@ -65,7 +65,7 @@ class PerformanceTestUtils {
     p95: number;
     p99: number;
   } {
-    const sorted = [...values].sort((a, b) => a - b);
+    const sorted = [...values].toSorted((a, b) => a - b);
     const len = sorted.length;
 
     return {

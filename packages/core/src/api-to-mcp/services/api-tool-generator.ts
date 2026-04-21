@@ -51,7 +51,9 @@ export class ApiToolGenerator {
       logger.error('生成MCP工具定义失败', error as Error, {
         context: { toolId: apiConfig.id },
       });
-      throw new Error(`生成工具 '${apiConfig.id}' 的MCP定义失败: ${(error as Error).message}`);
+      throw new Error(`生成工具 '${apiConfig.id}' 的MCP定义失败: ${(error as Error).message}`, {
+        cause: error,
+      });
     }
   }
 

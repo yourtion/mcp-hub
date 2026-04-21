@@ -132,7 +132,7 @@ export class HttpClient {
           clearTimeout(timeoutId);
           // 检查是否是超时错误
           if (error instanceof Error && error.name === 'AbortError') {
-            throw new Error('Network timeout');
+            throw new Error('Network timeout', { cause: error });
           }
           throw error;
         }
@@ -184,7 +184,7 @@ export class HttpClient {
     const _totalDuration = Date.now() - startTime;
     logger.error(`HTTP请求最终失败: ${config.method} ${config.url}`);
 
-    throw lastError;
+    throw lastError ?? new Error('HTTP request failed');
   }
 
   /**
@@ -348,7 +348,9 @@ export class HttpClient {
    * 睡眠指定毫秒数
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
   }
 }
 

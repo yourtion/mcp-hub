@@ -61,7 +61,7 @@ export const defaultCacheKeyStrategy: CacheKeyStrategy = {
     try {
       // 对参数进行排序以确保一致性
       const sortedParams = Object.keys(parameters)
-        .sort()
+        .toSorted()
         .reduce(
           (result, key) => {
             result[key] = parameters[key];
@@ -72,16 +72,14 @@ export const defaultCacheKeyStrategy: CacheKeyStrategy = {
 
       // 创建参数的哈希值
       const paramsStr = JSON.stringify(sortedParams);
-      const paramsHash = crypto
-        .createHash('sha256')
-        .update(paramsStr)
-        .digest('hex')
-        .substring(0, 16);
+      const paramsHash = crypto.createHash('sha256').update(paramsStr).digest('hex').slice(0, 16);
 
       return `${toolId}:${paramsHash}`;
     } catch (error) {
       logger.error('生成缓存键时出错:', error instanceof Error ? error : new Error(String(error)));
-      throw new Error(`无法生成缓存键: ${error instanceof Error ? error.message : '未知错误'}`);
+      throw new Error(`无法生成缓存键: ${error instanceof Error ? error.message : '未知错误'}`, {
+        cause: error,
+      });
     }
   },
   validateKey: (key: string): boolean => {
@@ -108,7 +106,7 @@ export const simpleCacheKeyStrategy: CacheKeyStrategy = {
   name: 'simple',
   generateKey: (toolId: string, parameters: Record<string, unknown>): string => {
     const paramsStr = JSON.stringify(parameters);
-    const hash = crypto.createHash('md5').update(paramsStr).digest('hex').substring(0, 8);
+    const hash = crypto.createHash('md5').update(paramsStr).digest('hex').slice(0, 8);
     return `${toolId}_${hash}`;
   },
   validateKey: (key: string): boolean => {
@@ -119,8 +117,8 @@ export const simpleCacheKeyStrategy: CacheKeyStrategy = {
     const lastUnderscoreIndex = key.lastIndexOf('_');
     if (lastUnderscoreIndex > 0) {
       return {
-        toolId: key.substring(0, lastUnderscoreIndex),
-        hash: key.substring(lastUnderscoreIndex + 1),
+        toolId: key.slice(0, lastUnderscoreIndex),
+        hash: key.slice(lastUnderscoreIndex + 1),
       };
     }
     return null;
@@ -142,7 +140,7 @@ export const hierarchicalCacheKeyStrategy: CacheKeyStrategy = {
 
       // 对参数进行排序
       const sortedParams = Object.keys(cleanParams)
-        .sort()
+        .toSorted()
         .reduce(
           (result, key) => {
             result[key] = cleanParams[key];
@@ -152,11 +150,7 @@ export const hierarchicalCacheKeyStrategy: CacheKeyStrategy = {
         );
 
       const paramsStr = JSON.stringify(sortedParams);
-      const paramsHash = crypto
-        .createHash('sha256')
-        .update(paramsStr)
-        .digest('hex')
-        .substring(0, 12);
+      const paramsHash = crypto.createHash('sha256').update(paramsStr).digest('hex').slice(0, 12);
 
       return `${namespace}:${toolId}:${paramsHash}`;
     } catch (error) {
@@ -166,6 +160,7 @@ export const hierarchicalCacheKeyStrategy: CacheKeyStrategy = {
       );
       throw new Error(
         `无法生成层次化缓存键: ${error instanceof Error ? error.message : '未知错误'}`,
+        { cause: error },
       );
     }
   },

@@ -36,6 +36,7 @@ export function setupTestConfig(enableAuth: boolean = true): string {
   } catch (error) {
     throw new Error(
       `测试配置目录不可写: ${testConfigDir}. 错误: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 
@@ -231,7 +232,9 @@ export async function safeJsonParse(response: Response): Promise<unknown> {
  * 等待指定时间
  */
 export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 /**

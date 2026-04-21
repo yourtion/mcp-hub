@@ -455,7 +455,9 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
 
       // 等待重连延迟
       const delay = this.RECONNECT_DELAY_BASE * 2 ** (connection.reconnectAttempts - 1);
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      await new Promise((resolve) => {
+        setTimeout(resolve, delay);
+      });
 
       // 重新连接
       await this.performConnection(connection);
@@ -567,7 +569,9 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
 
   private async simulateConnection(connection: ServerConnectionInfo): Promise<void> {
     // 模拟连接延迟
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 100);
+    });
 
     // 模拟创建客户端
     connection.client = {

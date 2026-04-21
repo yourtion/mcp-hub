@@ -135,7 +135,7 @@ const serverToolColumns: PrimaryTableCol<TableRowData>[] = [
     colKey: 'description',
     cell: (_h, { row }) => {
       const desc = (row as Record<string, string>).description || '-';
-      const truncated = desc.length > 50 ? `${desc.substring(0, 50)}...` : desc;
+      const truncated = desc.length > 50 ? `${desc.slice(0, 50)}...` : desc;
       return h('span', { style: { color: 'var(--text-secondary)' } }, truncated);
     },
   },

@@ -495,7 +495,7 @@ export class UnifiedErrorHandler implements ErrorHandler {
         lastError = error as Error;
 
         if (!this.shouldRetry(lastError) || attempt === config.maxAttempts) {
-          throw lastError;
+          throw lastError ?? new Error('Operation failed');
         }
 
         // 计算延迟时间（指数退避）
@@ -514,7 +514,7 @@ export class UnifiedErrorHandler implements ErrorHandler {
     }
 
     // 这里lastError一定不为undefined，因为如果没有错误就会在try中return
-    throw lastError!;
+    throw lastError ?? new Error('Operation failed after retries');
   }
 
   async executeWithFallback<T>(
@@ -586,7 +586,9 @@ export class UnifiedErrorHandler implements ErrorHandler {
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
   }
 }
 

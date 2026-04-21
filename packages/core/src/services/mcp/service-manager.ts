@@ -534,7 +534,9 @@ export class McpServiceManager implements McpServiceManagerInterface {
 
   private async simulateServerConnection(serverConnection: ServerConnection): Promise<void> {
     // 模拟连接延迟
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 100);
+    });
 
     // 这里应该实现实际的MCP客户端连接逻辑
     // 暂时只是模拟成功

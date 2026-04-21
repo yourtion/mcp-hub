@@ -229,6 +229,7 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
       logger.error('启动配置文件监听失败:', error as Error);
       throw new Error(
         `启动配置文件监听失败: ${error instanceof Error ? error.message : '未知错误'}`,
+        { cause: error },
       );
     }
   }
@@ -240,7 +241,9 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
 
     try {
       // 添加短暂延迟，避免文件写入过程中读取
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 100);
+      });
 
       const newConfig = await this.loadConfig(this.configPath);
       this.watchCallback(newConfig);

@@ -63,11 +63,11 @@ export class DashboardService {
           calls: stats.calls,
           avgTime: stats.calls > 0 ? stats.totalTime / stats.calls : 0,
         }))
-        .sort((a, b) => b.calls - a.calls)
+        .toSorted((a, b) => b.calls - a.calls)
         .slice(0, 10);
 
       // 获取最近活动（最新50条）
-      const recentActivity = this.activities.slice(-50).reverse(); // 最新的在前
+      const recentActivity = this.activities.slice(-50).toReversed(); // 最新的在前
 
       const stats: DashboardStats = {
         overview: {
@@ -312,7 +312,7 @@ export class DashboardService {
    */
   addActivity(activity: Omit<Activity, 'id' | 'timestamp'>): void {
     const newActivity: Activity = {
-      id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `activity_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
       timestamp: new Date().toISOString(),
       ...activity,
     };
@@ -364,7 +364,7 @@ export class DashboardService {
    */
   addLog(entry: Omit<LogEntry, 'id' | 'timestamp'>): void {
     const newLog: LogEntry = {
-      id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `log_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
       timestamp: new Date().toISOString(),
       ...entry,
     };
@@ -441,7 +441,7 @@ export class DashboardService {
    * 获取最近的活动记录
    */
   getRecentActivities(limit = 50): Activity[] {
-    return this.activities.slice(-limit).reverse(); // 最新的在前
+    return this.activities.slice(-limit).toReversed(); // 最新的在前
   }
 
   /**
@@ -486,7 +486,7 @@ export class DashboardService {
         calls: stats.calls,
         avgTime: stats.calls > 0 ? stats.totalTime / stats.calls : 0,
       }))
-      .sort((a, b) => b.calls - a.calls)
+      .toSorted((a, b) => b.calls - a.calls)
       .slice(0, 10);
 
     return {

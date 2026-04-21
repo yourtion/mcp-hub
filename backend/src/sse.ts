@@ -34,7 +34,7 @@ sse.post('/messages', async (c) => {
   const sessionId = c.req.query('sessionId');
   const transport = transports[sessionId ?? ''];
 
-  if (transport == null) {
+  if (transport === null || transport === undefined) {
     return c.text('No transport found for sessionId', 400);
   }
 

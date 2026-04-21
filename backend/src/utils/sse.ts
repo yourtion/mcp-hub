@@ -33,7 +33,7 @@ export class SSETransport implements Transport {
 
   // start() is automatically called after MCP Server connects to the transport
   async start(): Promise<void> {
-    if (this.stream == null) {
+    if (this.stream === null || this.stream === undefined) {
       throw new Error('Stream not initialized');
     }
 
@@ -48,7 +48,7 @@ export class SSETransport implements Transport {
   }
 
   async handlePostMessage(context: Context): Promise<Response> {
-    if (this.stream?.closed == null) {
+    if (this.stream?.closed === null || this.stream?.closed === undefined) {
       return context.text('SSE connection not established', 500);
     }
 

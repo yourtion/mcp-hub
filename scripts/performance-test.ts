@@ -221,7 +221,7 @@ function generateReport(report: PerformanceReport): void {
     console.log(`${index + 1}. ${status} ${result.test} - ${duration}`);
 
     if (result.error) {
-      console.log(`   错误: ${result.error.substring(0, 100)}...`);
+      console.log(`   错误: ${result.error.slice(0, 100)}...`);
     }
   });
 }

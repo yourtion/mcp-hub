@@ -8,7 +8,9 @@
  */
 export async function waitForAsyncOperations(): Promise<void> {
   for (let i = 0; i < 5; i++) {
-    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => {
+      setImmediate(resolve);
+    });
   }
 }
 
@@ -28,7 +30,9 @@ export async function safeCleanup(
       if (i === retries - 1) {
         console.warn('Cleanup failed (ignoring):', error);
       }
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 50);
+      });
     }
   }
 }
@@ -42,8 +46,8 @@ export function cleanupWithTimeout(
 ): Promise<void> {
   return Promise.race<void>([
     cleanupFn(),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`Cleanup timeout after ${timeout}ms`)), timeout),
-    ),
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`Cleanup timeout after ${timeout}ms`)), timeout);
+    }),
   ]);
 }

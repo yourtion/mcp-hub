@@ -82,14 +82,12 @@ describe('AuthService', () => {
 
       // Mock getAllConfig to return empty system config for this test
       // biome-ignore lint/suspicious/noExplicitAny: mock requires flexible return type
-      (vi.mocked(getAllConfig) as any).mockImplementationOnce(async () =>
-        Promise.resolve({
-          mcps: { servers: {} },
-          groups: {},
-          system: {},
-          apiToolsConfigPath: undefined,
-        }),
-      );
+      (vi.mocked(getAllConfig) as any).mockImplementationOnce(async () => ({
+        mcps: { servers: {} },
+        groups: {},
+        system: {},
+        apiToolsConfigPath: undefined,
+      }));
 
       // JsonStorage 在文件不存在时会创建默认文件，所以初始化应该成功
       await expect(authService.initialize()).resolves.not.toThrow();

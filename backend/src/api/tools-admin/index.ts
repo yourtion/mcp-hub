@@ -49,8 +49,8 @@ export { addExecutionRecord };
 // GET /api/tools/history - 获取工具执行历史记录
 toolsAdminApi.get('/history', async (c) => {
   try {
-    const limit = parseInt(c.req.query('limit') || '50');
-    const offset = parseInt(c.req.query('offset') || '0');
+    const limit = parseInt(c.req.query('limit') || '50', 10);
+    const offset = parseInt(c.req.query('offset') || '0', 10);
     const toolName = c.req.query('toolName');
     const serverId = c.req.query('serverId');
     const groupId = c.req.query('groupId');
@@ -306,7 +306,7 @@ toolsAdminApi.get('/performance', async (c) => {
     const minExecutionTime = executionTimes.length > 0 ? Math.min(...executionTimes) : 0;
     const maxExecutionTime = executionTimes.length > 0 ? Math.max(...executionTimes) : 0;
 
-    const sortedTimes = [...executionTimes].sort((a, b) => a - b);
+    const sortedTimes = [...executionTimes].toSorted((a, b) => a - b);
     const p50 = sortedTimes.length > 0 ? sortedTimes[Math.floor(sortedTimes.length * 0.5)] : 0;
     const p95 = sortedTimes.length > 0 ? sortedTimes[Math.floor(sortedTimes.length * 0.95)] : 0;
     const p99 = sortedTimes.length > 0 ? sortedTimes[Math.floor(sortedTimes.length * 0.99)] : 0;
@@ -423,7 +423,7 @@ toolsAdminApi.get('/performance', async (c) => {
         ]),
       ),
       timeSeries: Array.from(timeSeriesData.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
+        .toSorted(([a], [b]) => a.localeCompare(b))
         .map(([timestamp, data]) => ({
           timestamp,
           executions: data.executions,
@@ -440,8 +440,8 @@ toolsAdminApi.get('/performance', async (c) => {
 
 toolsAdminApi.get('/errors', async (c) => {
   try {
-    const limit = parseInt(c.req.query('limit') || '50');
-    const offset = parseInt(c.req.query('offset') || '0');
+    const limit = parseInt(c.req.query('limit') || '50', 10);
+    const offset = parseInt(c.req.query('offset') || '0', 10);
     const toolName = c.req.query('toolName');
     const serverId = c.req.query('serverId');
     const groupId = c.req.query('groupId');
@@ -486,7 +486,7 @@ toolsAdminApi.get('/errors', async (c) => {
       }
 
       const errorKey =
-        errorMessage.length > 100 ? `${errorMessage.substring(0, 100)}...` : errorMessage;
+        errorMessage.length > 100 ? `${errorMessage.slice(0, 100)}...` : errorMessage;
 
       if (!errorAnalysis.has(errorKey)) {
         errorAnalysis.set(errorKey, {
@@ -521,7 +521,7 @@ toolsAdminApi.get('/errors', async (c) => {
     const paginatedErrors = errorRecords.slice(offset, offset + limit);
 
     const errorSummary = Array.from(errorAnalysis.entries())
-      .sort((a, b) => b[1].count - a[1].count)
+      .toSorted((a, b) => b[1].count - a[1].count)
       .slice(0, 20)
       .map(([errorMessage, analysis]) => ({
         errorMessage,
@@ -622,7 +622,7 @@ toolsAdminApi.get('/stats', async (c) => {
     });
 
     const topTools = Array.from(toolStats.entries())
-      .sort((a, b) => b[1].executions - a[1].executions)
+      .toSorted((a, b) => b[1].executions - a[1].executions)
       .slice(0, 10)
       .map(([toolName, stats]) => ({
         toolName,

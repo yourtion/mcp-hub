@@ -149,7 +149,7 @@ describe('EnvironmentResolverImpl', () => {
       };
 
       const variables = resolver.extractAllEnvironmentVariables(config);
-      expect(variables.sort()).toEqual([
+      expect(variables.toSorted()).toEqual([
         'API_KEY',
         'BASE_URL',
         'DB_HOST',
@@ -167,7 +167,7 @@ describe('EnvironmentResolverImpl', () => {
       };
 
       const variables = resolver.extractAllEnvironmentVariables(config);
-      expect(variables.sort()).toEqual(['API_KEY', 'BASE_URL']);
+      expect(variables.toSorted()).toEqual(['API_KEY', 'BASE_URL']);
     });
 
     it('应该处理空对象', () => {

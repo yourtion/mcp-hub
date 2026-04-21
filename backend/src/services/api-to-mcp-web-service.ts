@@ -68,7 +68,7 @@ export class ApiToMcpWebService {
       }
     } catch (error) {
       logger.error('API到MCP Web服务初始化失败', error as Error);
-      throw new Error(`初始化失败: ${(error as Error).message}`);
+      throw new Error(`初始化失败: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -95,7 +95,7 @@ export class ApiToMcpWebService {
       return { configs };
     } catch (error) {
       logger.error('获取API配置列表失败', error as Error);
-      throw new Error(`获取配置列表失败: ${(error as Error).message}`);
+      throw new Error(`获取配置列表失败: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -327,7 +327,7 @@ export class ApiToMcpWebService {
       return fullConfig;
     } catch (error) {
       logger.error('获取API配置详情失败', error as Error);
-      throw new Error(`获取配置详情失败: ${(error as Error).message}`);
+      throw new Error(`获取配置详情失败: ${(error as Error).message}`, { cause: error });
     }
   }
 

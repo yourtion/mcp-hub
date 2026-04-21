@@ -114,7 +114,7 @@ const columns: PrimaryTableCol<TableRowData>[] = [
     cell: (_h, { row }) => {
       const tool = row as ToolInfo;
       const desc = tool.description || '-';
-      const truncated = desc.length > 60 ? `${desc.substring(0, 60)}...` : desc;
+      const truncated = desc.length > 60 ? `${desc.slice(0, 60)}...` : desc;
       return h('span', { style: { color: 'var(--text-secondary)' } }, truncated);
     },
   },

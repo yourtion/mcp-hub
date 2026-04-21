@@ -206,8 +206,8 @@ dashboardApi.get('/logs', async (c) => {
       category: c.req.query('category'),
       startTime: c.req.query('startTime'),
       endTime: c.req.query('endTime'),
-      limit: c.req.query('limit') ? parseInt(c.req.query('limit') || '100') : undefined,
-      offset: c.req.query('offset') ? parseInt(c.req.query('offset') || '0') : undefined,
+      limit: c.req.query('limit') ? parseInt(c.req.query('limit') || '100', 10) : undefined,
+      offset: c.req.query('offset') ? parseInt(c.req.query('offset') || '0', 10) : undefined,
       search: c.req.query('search'),
     };
 
@@ -235,7 +235,7 @@ dashboardApi.get('/activities', async (c) => {
     logger.debug('获取最近活动请求');
 
     const service = getDashboardService();
-    const limit = c.req.query('limit') ? parseInt(c.req.query('limit') || '50') : 50;
+    const limit = c.req.query('limit') ? parseInt(c.req.query('limit') || '50', 10) : 50;
 
     const activities = service.getRecentActivities(limit);
 
@@ -603,7 +603,7 @@ dashboardApi.get('/memory/trend', async (c) => {
 
     // 获取时间范围参数（默认 1 分钟）
     const durationMs = c.req.query('duration')
-      ? parseInt(c.req.query('duration') || '60000')
+      ? parseInt(c.req.query('duration') || '60000', 10)
       : 60000;
 
     const trend = memoryMonitor.analyzeTrend(durationMs);

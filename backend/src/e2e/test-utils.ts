@@ -37,6 +37,7 @@ export function setupTestConfig(enableAuth: boolean = true): string {
   } catch (error) {
     throw new Error(
       `测试配置目录不可写: ${testConfigDir}. 错误: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 
@@ -252,7 +253,7 @@ export async function retry<T>(
     }
   }
 
-  throw lastError;
+  throw lastError ?? new Error('Retry failed');
 }
 
 /**

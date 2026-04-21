@@ -9,26 +9,34 @@
   "rules": {
     "eqeqeq": "warn",
     "no-console": "off",
-    "no-unused-vars": ["error", { "caughtErrorsIgnorePattern": "^_", "varsIgnorePattern": "^_", "argsIgnorePattern": "^_" }],
+    "no-unused-vars": [
+      "error",
+      { "caughtErrorsIgnorePattern": "^_", "varsIgnorePattern": "^_", "argsIgnorePattern": "^_" }
+    ],
     "no-promise-executor-return": "warn",
     "no-throw-literal": "warn",
-    "no-loop-func": "warn",
-    "no-new": "warn",
+    "no-loop-func": "off",
+    "no-new": "off",
+    "no-shadow": "off",
     "preserve-caught-error": "warn",
     "radix": "warn",
     "typescript/no-explicit-any": "error",
-    "typescript/no-non-null-assertion": "warn",
+    "typescript/no-non-null-assertion": "off",
+    "typescript/no-extraneous-class": "off",
     "import/no-cycle": "off",
+    "import/no-unassigned-import": "off",
+    "import/no-named-as-default-member": "off",
     "unicorn/prefer-string-slice": "warn",
-    "unicorn/no-array-reverse": "warn",
-    "unicorn/no-useless-promise-resolve-reject": "warn"
+    "unicorn/no-array-reverse": "off",
+    "unicorn/no-useless-promise-resolve-reject": "off",
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/prefer-add-event-listener": "off"
   },
   "overrides": [
     {
       "files": ["*.test.ts", "*.spec.ts", "**/e2e/**", "**/test/**"],
       "rules": {
         "typescript/no-explicit-any": "off",
-        "typescript/no-non-null-assertion": "off",
         "no-promise-executor-return": "off"
       }
     }

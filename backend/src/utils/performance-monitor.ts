@@ -128,7 +128,7 @@ export class PerformanceMonitor {
   getSlowRequests(threshold: number = 1000): PerformanceMetric[] {
     return this.metrics
       .filter((m) => m.duration > threshold)
-      .sort((a, b) => b.duration - a.duration);
+      .toSorted((a, b) => b.duration - a.duration);
   }
 
   /**
@@ -146,7 +146,7 @@ export class PerformanceMonitor {
     return this.metrics
       .filter((m) => !m.success)
       .slice(-limit)
-      .reverse();
+      .toReversed();
   }
 }
 

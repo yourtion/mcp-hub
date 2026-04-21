@@ -53,7 +53,7 @@ export class AuthService {
       // 为所有用户生成密码哈希
       await this.generatePasswordHashes();
     } catch (error) {
-      throw new Error(`Failed to load system config: ${error}`);
+      throw new Error(`Failed to load system config: ${error}`, { cause: error });
     }
   }
 
@@ -245,7 +245,7 @@ export class AuthService {
         refreshToken: newRefreshToken,
       };
     } catch (_error) {
-      throw new Error('Invalid refresh token');
+      throw new Error('Invalid refresh token', { cause: _error });
     }
   }
 
@@ -288,7 +288,7 @@ export class AuthService {
 
       return payload;
     } catch (_error) {
-      throw new Error('Invalid or expired token');
+      throw new Error('Invalid or expired token', { cause: _error });
     }
   }
 

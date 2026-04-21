@@ -16,7 +16,9 @@ export * from './performance-optimizer.js';
  * 延迟执行函数
  */
 export function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 /**
@@ -39,7 +41,7 @@ export async function retry<T>(
       lastError = error as Error;
 
       if (attempt === options.maxAttempts) {
-        throw lastError;
+        throw lastError ?? new Error('重试失败');
       }
 
       const delayMs = options.delay * (options.backoff || 1) ** (attempt - 1);
@@ -84,7 +86,7 @@ export function deepMerge<T extends Record<string, unknown>>(target: T, source: 
  * 生成唯一ID
  */
 export function generateId(): string {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
 /**
@@ -113,7 +115,7 @@ export function safeJsonStringify(obj: unknown, space?: number): string {
  * 检查对象是否为空
  */
 export function isEmpty(obj: unknown): boolean {
-  if (obj == null) return true;
+  if (obj === null || obj === undefined) return true;
   if (Array.isArray(obj)) return obj.length === 0;
   if (typeof obj === 'object') return Object.keys(obj).length === 0;
   return false;

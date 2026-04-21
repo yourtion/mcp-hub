@@ -547,7 +547,7 @@ export class ConfigService implements IConfigService {
   async getConfigVersion(): Promise<string> {
     // 基于配置文件的修改时间生成版本号
     const lastUpdated = await this.getLastUpdatedTime();
-    return crypto.createHash('md5').update(lastUpdated).digest('hex').substring(0, 8);
+    return crypto.createHash('md5').update(lastUpdated).digest('hex').slice(0, 8);
   }
 
   private async recordConfigHistory(

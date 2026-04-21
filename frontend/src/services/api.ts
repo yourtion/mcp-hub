@@ -62,7 +62,7 @@ api.interceptors.response.use(
       if (!storedRefreshToken) {
         localStorage.removeItem('auth_token');
         window.location.href = '/login';
-        return Promise.reject(error);
+        throw error;
       }
 
       // 如果已经在刷新中，排队等待
@@ -103,7 +103,7 @@ api.interceptors.response.use(
       }
     }
 
-    return Promise.reject(error);
+    throw error;
   },
 );
 

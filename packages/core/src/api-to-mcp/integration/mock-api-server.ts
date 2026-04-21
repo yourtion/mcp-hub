@@ -200,7 +200,9 @@ export class MockApiServer {
 
     // 模拟延迟
     if (endpoint.delay && endpoint.delay > 0) {
-      await new Promise((resolve) => setTimeout(resolve, endpoint.delay));
+      await new Promise((resolve) => {
+        setTimeout(resolve, endpoint.delay);
+      });
     }
 
     // 设置响应头

@@ -49,7 +49,7 @@ const defaultKeyGenerator: CacheKeyGenerator = (
   try {
     // 对参数进行排序以确保一致性
     const sortedParams = Object.keys(parameters)
-      .sort()
+      .toSorted()
       .reduce(
         (result, key) => {
           result[key] = parameters[key];
@@ -60,12 +60,14 @@ const defaultKeyGenerator: CacheKeyGenerator = (
 
     // 创建参数的哈希值
     const paramsStr = JSON.stringify(sortedParams);
-    const paramsHash = crypto.createHash('sha256').update(paramsStr).digest('hex').substring(0, 16);
+    const paramsHash = crypto.createHash('sha256').update(paramsStr).digest('hex').slice(0, 16);
 
     return `${toolId}:${paramsHash}`;
   } catch (error) {
     logger.error('生成缓存键时出错:', error instanceof Error ? error : new Error(String(error)));
-    throw new Error(`无法生成缓存键: ${error instanceof Error ? error.message : '未知错误'}`);
+    throw new Error(`无法生成缓存键: ${error instanceof Error ? error.message : '未知错误'}`, {
+      cause: error,
+    });
   }
 };
 
