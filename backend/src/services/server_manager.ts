@@ -1,3 +1,4 @@
+import { ConfigError, ConnectionError, ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -115,7 +116,10 @@ export class ServerManager implements IServerManager {
       } else if (config.type === 'streaming') {
         await this.connectStreamingServer(serverConnection);
       } else {
-        throw new Error(`Unsupported server type: ${config.type}`);
+        throw new ConfigError(
+          ErrorCode.INVALID_SERVER_CONFIG,
+          `Unsupported server type: ${config.type}`,
+        );
       }
 
       serverConnection.status = ServerStatus.CONNECTED;
@@ -140,7 +144,10 @@ export class ServerManager implements IServerManager {
     const { config, client } = serverConnection;
 
     if (config.type !== 'stdio' && !('command' in config)) {
-      throw new Error('Invalid server type for stdio connection');
+      throw new ConfigError(
+        ErrorCode.INVALID_SERVER_CONFIG,
+        'Invalid server type for stdio connection',
+      );
     }
 
     // Prepare environment variables
@@ -166,7 +173,10 @@ export class ServerManager implements IServerManager {
     const { config, client } = serverConnection;
 
     if (config.type !== 'sse' || !('url' in config)) {
-      throw new Error('Invalid server config for SSE connection');
+      throw new ConfigError(
+        ErrorCode.INVALID_SERVER_CONFIG,
+        'Invalid server config for SSE connection',
+      );
     }
 
     const headers: Record<string, string> = { ...config.headers };
@@ -181,7 +191,10 @@ export class ServerManager implements IServerManager {
     const { config, client } = serverConnection;
 
     if (config.type !== 'streaming' || !('url' in config)) {
-      throw new Error('Invalid server config for streaming connection');
+      throw new ConfigError(
+        ErrorCode.INVALID_SERVER_CONFIG,
+        'Invalid server config for streaming connection',
+      );
     }
 
     const headers: Record<string, string> = { ...config.headers };
@@ -255,11 +268,14 @@ export class ServerManager implements IServerManager {
   ): Promise<unknown> {
     const server = this.servers.get(serverId);
     if (!server) {
-      throw new Error(`Server ${serverId} not found`);
+      throw new ServiceError(ErrorCode.SERVER_UNAVAILABLE, `Server ${serverId} not found`);
     }
 
     if (server.status !== ServerStatus.CONNECTED) {
-      throw new Error(`Server ${serverId} is not connected (status: ${server.status})`);
+      throw new ConnectionError(
+        ErrorCode.SERVER_DISCONNECTED,
+        `Server ${serverId} is not connected (status: ${server.status})`,
+      );
     }
 
     try {
@@ -320,7 +336,7 @@ export class ServerManager implements IServerManager {
   async getServerTools(serverId: string): Promise<Tool[]> {
     const server = this.servers.get(serverId);
     if (!server) {
-      throw new Error(`Server ${serverId} not found`);
+      throw new ServiceError(ErrorCode.SERVER_UNAVAILABLE, `Server ${serverId} not found`);
     }
 
     if (server.status !== ServerStatus.CONNECTED) {

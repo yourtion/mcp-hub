@@ -1,3 +1,4 @@
+import { ConfigError, ErrorCode } from '@mcp-core/mcp-hub-core';
 import {
   GroupConfigSchema,
   McpConfigSchema,
@@ -95,7 +96,7 @@ export class ConfigService implements IConfigService {
         fileName = 'group.json';
         break;
       default:
-        throw new Error(`不支持的配置类型: ${configType}`);
+        throw new ConfigError(ErrorCode.INVALID_CONFIG_FORMAT, `不支持的配置类型: ${configType}`);
     }
 
     // 保存配置
@@ -434,7 +435,7 @@ export class ConfigService implements IConfigService {
     const backupFile = backupFiles.find((file) => file.includes(backupId));
 
     if (!backupFile) {
-      throw new Error(`备份文件不存在: ${backupId}`);
+      throw new ConfigError(ErrorCode.CONFIG_FILE_NOT_FOUND, `备份文件不存在: ${backupId}`);
     }
 
     const backupFilePath = path.resolve(this.backupDir, backupFile);
@@ -920,7 +921,7 @@ export class ConfigService implements IConfigService {
         oldConfig = currentConfig.groups;
         break;
       default:
-        throw new Error(`不支持的配置类型: ${configType}`);
+        throw new ConfigError(ErrorCode.INVALID_CONFIG_FORMAT, `不支持的配置类型: ${configType}`);
     }
 
     const changes = this.calculateDetailedChanges(oldConfig, config);

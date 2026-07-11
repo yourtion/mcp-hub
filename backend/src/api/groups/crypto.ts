@@ -6,6 +6,7 @@
  * 避免使用公开的弱默认密钥。
  */
 
+import { ConfigError, ErrorCode } from '@mcp-core/mcp-hub-core';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 
 import { logger } from '../../utils/logger.js';
@@ -16,7 +17,10 @@ import { logger } from '../../utils/logger.js';
 function getSystemKey(): string {
   const systemKey = process.env.VALIDATION_KEY_SECRET;
   if (!systemKey || systemKey.length < 32) {
-    throw new Error('VALIDATION_KEY_SECRET 未设置或长度不足 32 字符，请配置环境变量后重试');
+    throw new ConfigError(
+      ErrorCode.INVALID_SERVER_CONFIG,
+      'VALIDATION_KEY_SECRET 未设置或长度不足 32 字符，请配置环境变量后重试',
+    );
   }
   return systemKey;
 }

@@ -3,6 +3,7 @@
  */
 
 import { zValidator } from '@hono/zod-validator';
+import { AuthError, ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 import { Hono } from 'hono';
 import { z } from 'zod/v4';
 
@@ -66,16 +67,16 @@ export function createAuthApi(authService: AuthService) {
       const ip = c.req.header('X-Forwarded-For') || c.req.header('X-Real-IP') || 'unknown';
       logger.warn('用户登录失败', { username, ip, error: errorMessage });
 
-      // 根据错误类型返回不同的错误码
+      // 根据结构化错误类型返回不同的错误码和状态码
       let errorCode = 'AUTH_LOGIN_FAILED';
       let statusCode: 401 | 423 | 500 = 401;
 
-      if (errorMessage.includes('locked')) {
+      if (error instanceof AuthError && error.code === ErrorCode.AUTH_ACCOUNT_LOCKED) {
         errorCode = 'AUTH_ACCOUNT_LOCKED';
-        statusCode = 423; // Locked
-      } else if (errorMessage.includes('Invalid username or password')) {
+        statusCode = 423;
+      } else if (error instanceof AuthError && error.code === ErrorCode.AUTH_INVALID_CREDENTIALS) {
         errorCode = 'AUTH_INVALID_CREDENTIALS';
-      } else if (errorMessage.includes('not initialized')) {
+      } else if (error instanceof ServiceError) {
         errorCode = 'AUTH_SERVICE_ERROR';
         statusCode = 500;
       }
@@ -115,10 +116,10 @@ export function createAuthApi(authService: AuthService) {
 
       logger.warn('Token 刷新失败', { error: errorMessage });
 
-      let errorCode = 'AUTH_REFRESH_FAILED';
-      if (errorMessage.includes('Invalid refresh token')) {
-        errorCode = 'AUTH_INVALID_REFRESH_TOKEN';
-      }
+      const errorCode =
+        error instanceof AuthError && error.code === ErrorCode.AUTH_TOKEN_INVALID
+          ? 'AUTH_INVALID_REFRESH_TOKEN'
+          : 'AUTH_REFRESH_FAILED';
 
       return c.json(
         {
@@ -303,10 +304,12 @@ export function createAuthApi(authService: AuthService) {
       let errorCode = 'AUTH_INVALID_TOKEN';
       const statusCode = 401;
 
-      if (errorMessage.includes('expired')) {
-        errorCode = 'AUTH_TOKEN_EXPIRED';
-      } else if (errorMessage.includes('revoked')) {
-        errorCode = 'AUTH_TOKEN_REVOKED';
+      if (error instanceof AuthError) {
+        if (error.code === ErrorCode.AUTH_TOKEN_EXPIRED) {
+          errorCode = 'AUTH_TOKEN_EXPIRED';
+        } else if (error.code === ErrorCode.AUTH_TOKEN_INVALID) {
+          errorCode = 'AUTH_TOKEN_REVOKED';
+        }
       }
 
       return c.json(
