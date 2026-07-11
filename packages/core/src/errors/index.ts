@@ -169,6 +169,63 @@ export const ERROR_SEVERITY: Record<ErrorCode, ErrorSeverity> = {
 };
 
 /**
+ * ErrorCode → HTTP 状态码映射
+ * 用于让 errorResponse() 根据错误类型自动推导正确的 HTTP 状态码，
+ * 而非一律返回 500。
+ */
+const ERROR_HTTP_STATUS: Record<ErrorCode, number> = {
+  // 配置错误
+  [ErrorCode.INVALID_SERVER_CONFIG]: 500,
+  [ErrorCode.MISSING_GROUP_REFERENCE]: 400,
+  [ErrorCode.SCHEMA_VALIDATION_FAILED]: 400,
+  [ErrorCode.CONFIG_FILE_NOT_FOUND]: 500,
+  [ErrorCode.INVALID_CONFIG_FORMAT]: 500,
+
+  // 连接错误
+  [ErrorCode.SERVER_STARTUP_FAILED]: 503,
+  [ErrorCode.NETWORK_CONNECTIVITY_FAILED]: 502,
+  [ErrorCode.AUTHENTICATION_FAILED]: 401,
+  [ErrorCode.SERVER_UNAVAILABLE]: 503,
+  [ErrorCode.CONNECTION_TIMEOUT]: 504,
+  [ErrorCode.CONNECTION_REFUSED]: 502,
+
+  // 运行时错误
+  [ErrorCode.TOOL_EXECUTION_FAILED]: 500,
+  [ErrorCode.SERVER_DISCONNECTED]: 503,
+  [ErrorCode.INVALID_TOOL_ARGUMENTS]: 400,
+  [ErrorCode.TOOL_NOT_FOUND]: 404,
+  [ErrorCode.GROUP_NOT_FOUND]: 404,
+  [ErrorCode.TOOL_ACCESS_DENIED]: 403,
+  [ErrorCode.SERVICE_UNAVAILABLE]: 503,
+
+  // 验证错误
+  [ErrorCode.INVALID_REQUEST_FORMAT]: 400,
+  [ErrorCode.MISSING_REQUIRED_PARAMETER]: 400,
+  [ErrorCode.PARAMETER_TYPE_MISMATCH]: 400,
+  [ErrorCode.INVALID_PARAMETER_VALUE]: 400,
+
+  // 系统错误
+  [ErrorCode.INTERNAL_SERVER_ERROR]: 500,
+  [ErrorCode.MEMORY_LIMIT_EXCEEDED]: 500,
+  [ErrorCode.TIMEOUT_ERROR]: 504,
+  [ErrorCode.UNKNOWN_ERROR]: 500,
+
+  // 认证错误
+  [ErrorCode.AUTH_INVALID_CREDENTIALS]: 401,
+  [ErrorCode.AUTH_TOKEN_EXPIRED]: 401,
+  [ErrorCode.AUTH_TOKEN_INVALID]: 401,
+  [ErrorCode.AUTH_ACCESS_DENIED]: 403,
+  [ErrorCode.AUTH_ACCOUNT_LOCKED]: 423,
+};
+
+/**
+ * 根据 ErrorCode 获取对应的 HTTP 状态码
+ */
+export function getHttpStatusForError(code: ErrorCode): number {
+  return ERROR_HTTP_STATUS[code] ?? 500;
+}
+
+/**
  * MCP Hub核心错误基类
  */
 export class McpHubCoreError extends Error {

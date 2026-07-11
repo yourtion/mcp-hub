@@ -18,6 +18,7 @@ export {
   ErrorFactory,
   type ErrorResponse,
   ErrorSeverity,
+  getHttpStatusForError,
   McpHubCoreError,
   ServiceError,
   type SuccessResponse,
