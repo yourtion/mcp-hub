@@ -11,6 +11,7 @@ import {
   validateWithSchema,
 } from '@mcp-core/mcp-hub-share/config';
 
+import { logger } from '../utils/logger.js';
 import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share/config';
 
 /**
@@ -64,7 +65,7 @@ export function validateGroupConfig(
 
     // 检查组ID是否与组名匹配
     if (group.id && !group.id.includes(groupName)) {
-      console.warn(`警告：组 "${groupName}" 的ID "${group.id}" 可能不匹配`);
+      logger.warn('组 ID 可能与组名不匹配', { groupName, groupId: group.id });
     }
   }
 

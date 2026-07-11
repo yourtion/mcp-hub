@@ -36,7 +36,7 @@
 
 ```bash
 # 备份配置文件
-cp backend/config/mcp_service.json backend/config/mcp_service.json.backup
+cp backend/config/mcp_server.json backend/config/mcp_server.json.backup
 cp backend/config/system.json backend/config/system.json.backup
 
 # 如果存在组配置
@@ -76,7 +76,7 @@ pnpm build
 
 #### MCP 服务器配置
 
-旧版本的 `mcp_service.json` 格式基本保持兼容，但建议检查以下项：
+旧版本的 `mcp_server.json` 格式基本保持兼容，但建议检查以下项：
 
 **旧格式 (0.x.x)**:
 
@@ -235,7 +235,7 @@ export MCP_HUB_CONFIG_DIR=/app/config
 
 ### 示例 1: 基本配置迁移
 
-**迁移前** (`mcp_service.json`):
+**迁移前** (`mcp_server.json`):
 
 ```json
 {
@@ -250,7 +250,7 @@ export MCP_HUB_CONFIG_DIR=/app/config
 
 **迁移后**:
 
-1. 保持 `mcp_service.json` 不变
+1. 保持 `mcp_server.json` 不变
 2. 创建 `group.json`:
 
 ```json
@@ -289,7 +289,7 @@ export MCP_HUB_CONFIG_DIR=/app/config
 
 **迁移后**:
 
-1. 更新 `mcp_service.json`:
+1. 更新 `mcp_server.json`:
 
 ```json
 {
@@ -358,7 +358,7 @@ pnpm build:core
 
 解决方案:
 # 验证 JSON 格式
-cat backend/config/mcp_service.json | jq .
+cat backend/config/mcp_server.json | jq .
 
 # 使用配置验证工具
 pnpm --filter @mcp-core/mcp-hub-api run validate-config
@@ -397,7 +397,7 @@ curl http://localhost:8181/api/groups
 docker-compose down
 
 # 2. 恢复配置文件
-cp backend/config/mcp_service.json.backup backend/config/mcp_service.json
+cp backend/config/mcp_server.json.backup backend/config/mcp_server.json
 
 # 3. 切换到旧版本分支
 git checkout old-version

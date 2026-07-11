@@ -271,7 +271,7 @@ The frontend uses JWT-based authentication. To configure authentication:
 
 ### MCP Server Configuration
 
-Create a `mcp_service.json` file in the `backend/config/` directory:
+Create a `mcp_server.json` file in the `backend/config/` directory:
 
 ```json
 {
@@ -347,7 +347,7 @@ Configure the CLI server in your MCP client (e.g., Claude Desktop):
   "mcpServers": {
     "mcp-hub": {
       "command": "/path/to/mcp-hub/packages/cli/bin/mcp-hub.js",
-      "args": ["--config", "/path/to/mcp_service.json"]
+      "args": ["--config", "/path/to/mcp_server.json"]
     }
   }
 }

@@ -5,7 +5,6 @@
 
 import { Hono } from 'hono';
 
-import { requireAuth } from '../../middleware/simple-auth.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { logger } from '../../utils/logger.js';
 
@@ -71,7 +70,7 @@ apiToMcpRoutes.use('*', async (c, next) => {
  * 获取API配置列表
  * GET /api/api-to-mcp/configs
  */
-apiToMcpRoutes.get('/configs', requireAuth, async (c) => {
+apiToMcpRoutes.get('/configs', async (c) => {
   try {
     logger.info('获取API配置列表');
 
@@ -92,7 +91,7 @@ apiToMcpRoutes.get('/configs', requireAuth, async (c) => {
  * 创建新的API配置
  * POST /api/api-to-mcp/configs
  */
-apiToMcpRoutes.post('/configs', requireAuth, async (c) => {
+apiToMcpRoutes.post('/configs', async (c) => {
   try {
     const body = (await c.req.json()) as CreateApiConfigRequest;
 
@@ -156,7 +155,7 @@ apiToMcpRoutes.post('/configs', requireAuth, async (c) => {
  * 更新API配置
  * PUT /api/api-to-mcp/configs/:id
  */
-apiToMcpRoutes.put('/configs/:id', requireAuth, async (c) => {
+apiToMcpRoutes.put('/configs/:id', async (c) => {
   try {
     const configId = c.req.param('id');
     const body = (await c.req.json()) as { config: ApiToolConfig };
@@ -230,7 +229,7 @@ apiToMcpRoutes.put('/configs/:id', requireAuth, async (c) => {
  * 删除API配置
  * DELETE /api/api-to-mcp/configs/:id
  */
-apiToMcpRoutes.delete('/configs/:id', requireAuth, async (c) => {
+apiToMcpRoutes.delete('/configs/:id', async (c) => {
   try {
     const configId = c.req.param('id');
 
@@ -274,7 +273,7 @@ apiToMcpRoutes.delete('/configs/:id', requireAuth, async (c) => {
  * 测试API配置
  * POST /api/api-to-mcp/configs/:id/test
  */
-apiToMcpRoutes.post('/configs/:id/test', requireAuth, async (c) => {
+apiToMcpRoutes.post('/configs/:id/test', async (c) => {
   try {
     const configId = c.req.param('id');
     const body = (await c.req.json()) as TestApiConfigRequest;
@@ -307,7 +306,7 @@ apiToMcpRoutes.post('/configs/:id/test', requireAuth, async (c) => {
  * 获取API配置详情
  * GET /api/api-to-mcp/configs/:id
  */
-apiToMcpRoutes.get('/configs/:id', requireAuth, async (c) => {
+apiToMcpRoutes.get('/configs/:id', async (c) => {
   try {
     const configId = c.req.param('id');
 

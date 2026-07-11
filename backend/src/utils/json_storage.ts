@@ -1,6 +1,8 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
+import { logger } from './logger.js';
+
 /**
  * JsonStorage 类用于以 JSON 格式读取和写入数据到文件。
  * 它使用泛型来支持不同类型的数据结构。
@@ -50,7 +52,9 @@ export class JsonStorage<T> {
         }
       }
       // 其他错误，例如现有文件内容无效导致的 JSON 解析错误
-      console.error(`读取文件 ${this.filePath} 时出错:`, error);
+      logger.error('JSON 文件读取失败', error instanceof Error ? error : new Error(String(error)), {
+        filePath: this.filePath,
+      });
       throw error; // 重新抛出错误，不使用默认值覆盖损坏的文件
     }
   }
@@ -66,7 +70,9 @@ export class JsonStorage<T> {
       const jsonData = JSON.stringify(data, null, 2); // 使用 null, 2 进行格式化输出，方便阅读
       await fs.writeFile(this.filePath, jsonData, 'utf-8');
     } catch (error) {
-      console.error(`写入文件 ${this.filePath} 时出错:`, error);
+      logger.error('JSON 文件写入失败', error instanceof Error ? error : new Error(String(error)), {
+        filePath: this.filePath,
+      });
       throw error;
     }
   }

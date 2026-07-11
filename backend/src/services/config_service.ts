@@ -8,6 +8,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { getAllConfig, saveConfig } from '../utils/config.js';
+import { logger } from '../utils/logger.js';
 
 import type {
   ConfigBackup,
@@ -50,7 +51,9 @@ export class ConfigService implements IConfigService {
       await fs.mkdir(this.historyDir, { recursive: true });
       await fs.mkdir(this.backupDir, { recursive: true });
     } catch (error) {
-      console.error('创建配置目录失败:', error);
+      logger.error('创建配置目录失败', error instanceof Error ? error : new Error(String(error)), {
+        dir: this.configDir,
+      });
     }
   }
 
@@ -71,6 +74,7 @@ export class ConfigService implements IConfigService {
     configType: ConfigType,
     config: Record<string, unknown>,
     description?: string,
+    user?: string,
   ): Promise<void> {
     // 获取当前配置用于比较
     const currentConfig = await this.getCurrentConfig();
@@ -101,7 +105,7 @@ export class ConfigService implements IConfigService {
     );
 
     // 记录历史
-    await this.recordConfigHistory(configType, oldConfig, config, description);
+    await this.recordConfigHistory(configType, oldConfig, config, description, user);
   }
 
   async validateConfig(
@@ -349,13 +353,20 @@ export class ConfigService implements IConfigService {
           const entry = JSON.parse(content) as ConfigHistoryEntry;
           history.push(entry);
         } catch (error) {
-          console.error(`读取历史文件失败: ${file}`, error);
+          logger.error(
+            '读取历史文件失败',
+            error instanceof Error ? error : new Error(String(error)),
+            { file },
+          );
         }
       }
 
       return history;
     } catch (error) {
-      console.error('获取配置历史失败:', error);
+      logger.error(
+        '获取配置历史失败',
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return [];
     }
   }
@@ -368,12 +379,15 @@ export class ConfigService implements IConfigService {
         : historyFiles;
       return filteredFiles.length;
     } catch (error) {
-      console.error('获取配置历史总数失败:', error);
+      logger.error(
+        '获取配置历史总数失败',
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return 0;
     }
   }
 
-  async createBackup(description?: string, includeTypes?: ConfigType[]): Promise<string> {
+  async createBackup(description?: string, includeTypes?: ConfigType[], user?: string): Promise<string> {
     const backupId = crypto.randomUUID();
     const timestamp = new Date().toISOString();
     const currentConfig = await this.getCurrentConfig();
@@ -384,7 +398,7 @@ export class ConfigService implements IConfigService {
       description,
       configTypes: includeTypes || ['system', 'mcp', 'groups'],
       size: 0,
-      user: 'admin', // TODO: 从认证上下文获取用户信息
+      user: user ?? 'system',
       configs: {},
     };
 
@@ -433,7 +447,7 @@ export class ConfigService implements IConfigService {
     // 恢复指定类型的配置
     for (const configType of typesToRestore) {
       if (!backup.configs[configType]) {
-        console.warn(`备份中不包含 ${configType} 配置`);
+        logger.warn('备份中不包含指定类型配置', { configType });
         continue;
       }
 
@@ -499,13 +513,20 @@ export class ConfigService implements IConfigService {
             user: backup.user,
           });
         } catch (error) {
-          console.error(`读取备份文件失败: ${file}`, error);
+          logger.error(
+            '读取备份文件失败',
+            error instanceof Error ? error : new Error(String(error)),
+            { file },
+          );
         }
       }
 
       return backups;
     } catch (error) {
-      console.error('获取备份列表失败:', error);
+      logger.error(
+        '获取备份列表失败',
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return [];
     }
   }
@@ -515,7 +536,10 @@ export class ConfigService implements IConfigService {
       const backupFiles = await fs.readdir(this.backupDir);
       return backupFiles.length;
     } catch (error) {
-      console.error('获取备份总数失败:', error);
+      logger.error(
+        '获取备份总数失败',
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return 0;
     }
   }
@@ -539,7 +563,10 @@ export class ConfigService implements IConfigService {
 
       return latestTime.toISOString();
     } catch (error) {
-      console.error('获取最后更新时间失败:', error);
+      logger.error(
+        '获取最后更新时间失败',
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return new Date().toISOString();
     }
   }
@@ -555,6 +582,7 @@ export class ConfigService implements IConfigService {
     oldConfig: unknown,
     newConfig: unknown,
     description?: string,
+    user?: string,
   ): Promise<void> {
     try {
       const historyEntry: ConfigHistoryEntry = {
@@ -563,7 +591,7 @@ export class ConfigService implements IConfigService {
         timestamp: new Date().toISOString(),
         description,
         changes: this.calculateChanges(oldConfig, newConfig),
-        user: 'admin', // TODO: 从认证上下文获取用户信息
+        user: user ?? 'system',
         version: await this.getConfigVersion(),
       };
 
@@ -572,7 +600,10 @@ export class ConfigService implements IConfigService {
 
       await fs.writeFile(historyFilePath, JSON.stringify(historyEntry, null, 2), 'utf-8');
     } catch (error) {
-      console.error('记录配置历史失败:', error);
+      logger.error(
+        '记录配置历史失败',
+        error instanceof Error ? error : new Error(String(error)),
+      );
     }
   }
 

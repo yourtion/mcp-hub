@@ -90,22 +90,22 @@ describe('DefaultConfigGenerator', () => {
   });
 
   describe('initConfigFiles', () => {
-    it('应该创建 mcp_service.json 文件', async () => {
+    it('应该创建 mcp_server.json 文件', async () => {
       const result = await generator.initConfigFiles();
 
       expect(result.createdFiles).toHaveLength(1);
-      expect(result.createdFiles[0]).toContain('mcp_service.json');
+      expect(result.createdFiles[0]).toContain('mcp_server.json');
       expect(result.errors).toHaveLength(0);
 
       // 验证文件存在
-      const serviceConfigPath = join(testDir, 'mcp_service.json');
+      const serviceConfigPath = join(testDir, 'mcp_server.json');
       expect(existsSync(serviceConfigPath)).toBe(true);
     });
 
     it('应该创建包含默认服务器的配置', async () => {
       await generator.initConfigFiles();
 
-      const serviceConfigPath = join(testDir, 'mcp_service.json');
+      const serviceConfigPath = join(testDir, 'mcp_server.json');
       const content = await readFile(serviceConfigPath, 'utf-8');
       const config = JSON.parse(content);
 
@@ -118,7 +118,7 @@ describe('DefaultConfigGenerator', () => {
     it('应该包含全局设置', async () => {
       await generator.initConfigFiles();
 
-      const serviceConfigPath = join(testDir, 'mcp_service.json');
+      const serviceConfigPath = join(testDir, 'mcp_server.json');
       const content = await readFile(serviceConfigPath, 'utf-8');
       const config = JSON.parse(content);
 
@@ -199,13 +199,13 @@ describe('DefaultConfigGenerator', () => {
       const result = await generator.initConfigFiles();
 
       expect(result.createdFiles).toHaveLength(1);
-      expect(existsSync(join(newDir, 'mcp_service.json'))).toBe(true);
+      expect(existsSync(join(newDir, 'mcp_server.json'))).toBe(true);
     });
 
     it('生成的 JSON 应该格式化良好', async () => {
       await generator.initConfigFiles();
 
-      const serviceConfigPath = join(testDir, 'mcp_service.json');
+      const serviceConfigPath = join(testDir, 'mcp_server.json');
       const content = await readFile(serviceConfigPath, 'utf-8');
 
       // 验证 JSON 格式化（包含换行和缩进）
@@ -216,7 +216,7 @@ describe('DefaultConfigGenerator', () => {
     it('应该正确处理服务器配置', async () => {
       await generator.initConfigFiles();
 
-      const serviceConfigPath = join(testDir, 'mcp_service.json');
+      const serviceConfigPath = join(testDir, 'mcp_server.json');
       const content = await readFile(serviceConfigPath, 'utf-8');
       const config = JSON.parse(content);
 
@@ -251,7 +251,7 @@ describe('DefaultConfigGenerator', () => {
 
       await generator.initConfigFiles();
 
-      expect(existsSync(join(customDir, 'mcp_service.json'))).toBe(true);
+      expect(existsSync(join(customDir, 'mcp_server.json'))).toBe(true);
     });
 
     it('应该支持覆盖选项', async () => {

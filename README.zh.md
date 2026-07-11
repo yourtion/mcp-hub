@@ -267,7 +267,7 @@ pnpm build:fe
 
 ### MCP 服务器配置
 
-在 `backend/config/` 目录中创建 `mcp_service.json` 文件：
+在 `backend/config/` 目录中创建 `mcp_server.json` 文件：
 
 ```json
 {
@@ -343,7 +343,7 @@ curl -X POST http://localhost:8181/research/mcp/call_tool \
   "mcpServers": {
     "mcp-hub": {
       "command": "/path/to/mcp-hub/packages/cli/bin/mcp-hub.js",
-      "args": ["--config", "/path/to/mcp_service.json"]
+      "args": ["--config", "/path/to/mcp_server.json"]
     }
   }
 }

@@ -1,8 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logger } from './utils/logger.js';
 import { sse } from './sse.js';
 
 // Mock依赖
+vi.mock('./utils/logger.js', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 vi.mock('hono/streaming', () => ({
   streamSSE: vi.fn().mockImplementation((_c, callback) => {
     const mockStream = {
@@ -56,8 +66,6 @@ vi.mock('./utils/sse.js', () => ({
 describe('SSE Router', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // 清理console.log mock
-    vi.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -73,22 +81,18 @@ describe('SSE Router', () => {
     });
 
     it('应该正确处理SSE连接建立', async () => {
-      const consoleSpy = vi.spyOn(console, 'log');
-
       await sse.request('http://localhost/sse');
 
-      expect(consoleSpy).toHaveBeenCalledWith('SSE connection established');
+      expect(logger.info).toHaveBeenCalledWith('SSE 连接已建立');
     });
 
     it('应该在连接关闭时清理资源', async () => {
-      const consoleSpy = vi.spyOn(console, 'log');
-
       await sse.request('http://localhost/sse');
 
       // 等待异步操作完成（mcpServer.connect 微任务 + onAbort setTimeout）
       await new Promise((resolve) => setTimeout(resolve, 50));
 
-      expect(consoleSpy).toHaveBeenCalledWith('SSE connection closed');
+      expect(logger.info).toHaveBeenCalledWith('SSE 连接已关闭');
     });
   });
 

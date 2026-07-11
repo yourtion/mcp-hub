@@ -1,12 +1,23 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { z } from 'zod/v4';
 
 import { ConfigService } from '../../services/config_service.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 
+import type { AuthContext } from '../../types/auth.js';
+
 // 创建配置服务实例
 const configService = new ConfigService();
+
+/**
+ * 从 Hono 上下文中提取认证用户名
+ */
+function getAuthUser(c: Context): string | undefined {
+  const auth = c.get('auth') as AuthContext | undefined;
+  return auth?.user?.username;
+}
 
 // 配置更新请求验证模式
 const configUpdateSchema = z.object({
@@ -50,7 +61,6 @@ configApi.get('/', async (c) => {
       version: await configService.getConfigVersion(),
     });
   } catch (error) {
-    console.error('获取配置失败:', error);
     return errorResponse(c, error as Error, 500);
   }
 });
@@ -80,11 +90,10 @@ configApi.put('/', zValidator('json', configUpdateSchema), async (c) => {
     }
 
     // 更新配置
-    await configService.updateConfig(configType, config, description);
+    await configService.updateConfig(configType, config, description, getAuthUser(c));
 
     return successResponse(c, { message: '配置更新成功' });
   } catch (error) {
-    console.error('更新配置失败:', error);
     return errorResponse(c, error as Error, 500);
   }
 });
@@ -106,7 +115,6 @@ configApi.post('/validate', zValidator('json', configValidationSchema), async (c
       impact: impactAnalysis,
     });
   } catch (error) {
-    console.error('配置验证失败:', error);
     return errorResponse(c, error as Error, 500);
   }
 });
@@ -129,7 +137,6 @@ configApi.get('/history', async (c) => {
       offset,
     });
   } catch (error) {
-    console.error('获取配置历史失败:', error);
     return errorResponse(c, error as Error, 500);
   }
 });
@@ -141,14 +148,13 @@ configApi.post('/backup', zValidator('json', configBackupSchema), async (c) => {
   try {
     const { description, includeTypes } = c.req.valid('json');
 
-    const backupId = await configService.createBackup(description, includeTypes);
+    const backupId = await configService.createBackup(description, includeTypes, getAuthUser(c));
 
     return successResponse(c, {
       backupId,
       message: '配置备份创建成功',
     });
   } catch (error) {
-    console.error('创建配置备份失败:', error);
     return errorResponse(c, error as Error, 500);
   }
 });
@@ -164,7 +170,6 @@ configApi.post('/restore', zValidator('json', configRestoreSchema), async (c) =>
 
     return successResponse(c, { message: '配置恢复成功' });
   } catch (error) {
-    console.error('恢复配置失败:', error);
     return errorResponse(c, error as Error, 500);
   }
 });
@@ -180,7 +185,6 @@ configApi.post('/test', zValidator('json', configValidationSchema), async (c) =>
 
     return successResponse(c, testResult);
   } catch (error) {
-    console.error('配置测试失败:', error);
     return errorResponse(c, error as Error, 500);
   }
 });
@@ -196,7 +200,6 @@ configApi.post('/preview', zValidator('json', configValidationSchema), async (c)
 
     return successResponse(c, preview);
   } catch (error) {
-    console.error('配置预览失败:', error);
     return errorResponse(c, error as Error, 500);
   }
 });
@@ -218,7 +221,6 @@ configApi.get('/backups', async (c) => {
       offset,
     });
   } catch (error) {
-    console.error('获取备份列表失败:', error);
     return errorResponse(c, error as Error, 500);
   }
 });

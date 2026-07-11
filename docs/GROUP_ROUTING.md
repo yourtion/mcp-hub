@@ -70,7 +70,7 @@ MCP Hub 的组路由功能允许您通过特定的组路径 (`/:group/mcp`) 访�
 
 ### MCP 服务器配置
 
-确保在 `backend/config/mcp_service.json` 中配置了组所需的 MCP 服务器：
+确保在 `backend/config/mcp_server.json` 中配置了组所需的 MCP 服务器：
 
 ```json
 {

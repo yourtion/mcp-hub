@@ -170,7 +170,7 @@ export class DefaultConfigGenerator {
 
   /**
    * 初始化配置文件
-   * 生成 mcp_service.json 和可选的 group.json
+   * 生成 mcp_server.json 和可选的 group.json
    */
   async initConfigFiles(): Promise<ConfigInitResult> {
     const result: ConfigInitResult = {
@@ -183,8 +183,8 @@ export class DefaultConfigGenerator {
       // 确保配置目录存在
       await this.ensureConfigDir(this.options.configDir);
 
-      // 生成 mcp_service.json
-      const serviceConfigPath = join(this.options.configDir, 'mcp_service.json');
+      // 生成 mcp_server.json
+      const serviceConfigPath = join(this.options.configDir, 'mcp_server.json');
       const serviceConfig = this.generateMcpServiceConfig();
       const serviceResult = await this.writeConfigFile(
         serviceConfigPath,

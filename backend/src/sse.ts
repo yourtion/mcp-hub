@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 
 import { mcpServer } from './services/mcp_service.js';
+import { logger } from './utils/logger.js';
 import { SSETransport } from './utils/sse.js';
 
 export const sse = new Hono();
@@ -10,7 +11,7 @@ export const sse = new Hono();
 const transports: Record<string, SSETransport> = {};
 
 sse.get('/sse', (c) => {
-  console.log('SSE connection established');
+  logger.info('SSE 连接已建立');
   return streamSSE(c, async (stream) => {
     const transport = new SSETransport('/messages', stream);
 
@@ -26,7 +27,7 @@ sse.get('/sse', (c) => {
     await mcpServer.connect(transport);
 
     await onAbort;
-    console.log('SSE connection closed');
+    logger.info('SSE 连接已关闭');
   });
 });
 

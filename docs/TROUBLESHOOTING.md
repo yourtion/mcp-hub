@@ -88,7 +88,7 @@ pnpm clean && pnpm build
 **症状**:
 
 ```
-Error: Configuration file not found: mcp_service.json
+Error: Configuration file not found: mcp_server.json
 ```
 
 **解决方案**:
@@ -98,10 +98,10 @@ Error: Configuration file not found: mcp_service.json
 ls -la backend/config/
 
 # 创建默认配置
-cp backend/config/mcp_service.json.example backend/config/mcp_service.json
+cp backend/config/mcp_server.json.example backend/config/mcp_server.json
 
 # 验证配置格式
-cat backend/config/mcp_service.json | jq .
+cat backend/config/mcp_server.json | jq .
 ```
 
 #### 问题：配置格式错误
@@ -116,10 +116,10 @@ Error: Invalid JSON in configuration file
 
 ```bash
 # 验证 JSON 格式
-jsonlint backend/config/mcp_service.json
+jsonlint backend/config/mcp_server.json
 
 # 或使用 jq
-jq . backend/config/mcp_service.json
+jq . backend/config/mcp_server.json
 
 # 检查常见错误：
 # - 缺少逗号
@@ -142,7 +142,7 @@ Error: Failed to connect to MCP server 'filesystem'
 
 ```bash
 # 1. 检查服务器配置
-cat backend/config/mcp_service.json | jq '.servers.filesystem'
+cat backend/config/mcp_server.json | jq '.servers.filesystem'
 
 # 2. 手动测试服务器命令
 npx -y @modelcontextprotocol/server-filesystem /path/to/directory
@@ -318,7 +318,7 @@ Error: Invalid CLI configuration
 mcp-hub --init
 
 # 或手动创建
-cat > mcp_service.json << EOF
+cat > mcp_server.json << EOF
 {
   "servers": {
     "filesystem": {
@@ -331,7 +331,7 @@ cat > mcp_service.json << EOF
 EOF
 
 # 验证配置
-mcp-hub --config mcp_service.json --validate
+mcp-hub --config mcp_server.json --validate
 ```
 
 ### 6. 性能问题
@@ -598,7 +598,7 @@ pnpm --version
 curl http://localhost:8181/api/system/info
 
 # 配置文件（移除敏感信息）
-cat backend/config/mcp_service.json | jq 'del(.servers[].env)'
+cat backend/config/mcp_server.json | jq 'del(.servers[].env)'
 
 # 错误日志
 tail -n 100 logs/mcp-hub.log

@@ -20,7 +20,7 @@ pnpm install @mcp-core/mcp-hub-cli
 ### 基本使用
 
 ```bash
-# 使用默认配置文件 (./mcp_service.json)
+# 使用默认配置文件 (./mcp_server.json)
 mcp-hub
 
 # 指定配置文件路径

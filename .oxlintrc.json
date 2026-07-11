@@ -8,7 +8,7 @@
   },
   "rules": {
     "eqeqeq": "warn",
-    "no-console": "off",
+    "no-console": "error",
     "no-unused-vars": [
       "error",
       { "caughtErrorsIgnorePattern": "^_", "varsIgnorePattern": "^_", "argsIgnorePattern": "^_" }
@@ -37,7 +37,14 @@
       "files": ["*.test.ts", "*.spec.ts", "**/e2e/**", "**/test/**"],
       "rules": {
         "typescript/no-explicit-any": "off",
+        "no-console": "off",
         "no-promise-executor-return": "off"
+      }
+    },
+    {
+      "files": ["packages/*/src/**"],
+      "rules": {
+        "no-console": "off"
       }
     }
   ]

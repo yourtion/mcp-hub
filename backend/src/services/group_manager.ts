@@ -371,6 +371,11 @@ export class GroupManager implements IGroupManager {
   } | null> {
     const group = this.groups.get(groupId);
     if (!group) {
+      logger.warn('Attempted to find tool in non-existent group', {
+        groupId,
+        toolName,
+        availableGroups: Array.from(this.groups.keys()),
+      });
       return null;
     }
 
@@ -405,6 +410,10 @@ export class GroupManager implements IGroupManager {
   getGroupServers(groupId: string): string[] {
     const group = this.groups.get(groupId);
     if (!group) {
+      logger.warn('Attempted to get servers for non-existent group', {
+        groupId,
+        availableGroups: Array.from(this.groups.keys()),
+      });
       return [];
     }
 
@@ -416,6 +425,10 @@ export class GroupManager implements IGroupManager {
   getAvailableGroupServers(groupId: string): string[] {
     const group = this.groups.get(groupId);
     if (!group) {
+      logger.warn('Attempted to get available servers for non-existent group', {
+        groupId,
+        availableGroups: Array.from(this.groups.keys()),
+      });
       return [];
     }
 
@@ -476,6 +489,10 @@ export class GroupManager implements IGroupManager {
   } {
     const group = this.groups.get(groupId);
     if (!group) {
+      logger.warn('Attempted to get stats for non-existent group', {
+        groupId,
+        availableGroups: Array.from(this.groups.keys()),
+      });
       return { totalServers: 0, availableServers: 0, configuredTools: 0 };
     }
 

@@ -36,7 +36,7 @@ npm install -g mcp-core-mcp-hub-cli-1.0.0.tgz
 mcp-hub
 
 # 指定配置文件
-mcp-hub --config /path/to/mcp_service.json
+mcp-hub --config /path/to/mcp_server.json
 
 # 启用调试模式
 mcp-hub --debug
@@ -51,7 +51,7 @@ mcp-hub --log-level debug
 mcp-hub [options]
 
 选项:
-  --config, -c <path>     指定配置文件路径 (默认: ./mcp_service.json)
+  --config, -c <path>     指定配置文件路径 (默认: ./mcp_server.json)
   --log-level, -l <level> 设置日志级别 (debug|info|warn|error, 默认: info)
   --debug, -d             启用调试模式
   --help, -h              显示帮助信息
@@ -62,7 +62,7 @@ mcp-hub [options]
 
 ### 配置文件格式
 
-CLI 使用与 API 服务器相同的 `mcp_service.json` 配置格式：
+CLI 使用与 API 服务器相同的 `mcp_server.json` 配置格式：
 
 ```json
 {
@@ -93,9 +93,9 @@ CLI 使用与 API 服务器相同的 `mcp_service.json` 配置格式：
 CLI 按以下顺序查找配置文件：
 
 1. 命令行指定的路径 (`--config`)
-2. 当前目录的 `mcp_service.json`
-3. 用户主目录的 `.mcp_service.json`
-4. 系统配置目录的 `mcp_service.json`
+2. 当前目录的 `mcp_server.json`
+3. 用户主目录的 `.mcp_server.json`
+4. 系统配置目录的 `mcp_server.json`
 
 ### 环境变量配置
 
@@ -124,7 +124,7 @@ export MCP_HUB_DEBUG=true
   "mcpServers": {
     "mcp-hub": {
       "command": "mcp-hub",
-      "args": ["--config", "/path/to/your/mcp_service.json"]
+      "args": ["--config", "/path/to/your/mcp_server.json"]
     }
   }
 }
@@ -185,7 +185,7 @@ mcp-hub --debug 2>&1 | grep "连接状态"
 #### 1. 配置文件未找到
 
 ```bash
-错误: 配置文件未找到: mcp_service.json
+错误: 配置文件未找到: mcp_server.json
 
 解决方案:
 - 确保配置文件存在于当前目录

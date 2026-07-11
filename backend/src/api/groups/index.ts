@@ -10,6 +10,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { getAllConfig, saveConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
+import { performanceMonitor } from '../../utils/performance-monitor.js';
 
 import type {
   ConfigureGroupToolsRequest,
@@ -373,11 +374,14 @@ groupsApi.get('/:groupId', async (c) => {
             ? Math.round((connectedServers.length / groupServers.length) * 100)
             : 0,
       },
-      performance: {
-        averageResponseTime: 0, // TODO: 实现响应时间统计
-        totalRequests: 0, // TODO: 实现请求统计
-        successRate: 100, // TODO: 实现成功率统计
-      },
+      performance: (() => {
+        const mcpStats = performanceMonitor.getStatsByPathPrefix(`/${groupId}/mcp`);
+        return {
+          averageResponseTime: Math.round(mcpStats.averageResponseTime),
+          totalRequests: mcpStats.totalRequests,
+          successRate: Math.round(mcpStats.successRate),
+        };
+      })(),
       accessControl: {
         requiresValidation: groupConfig.validation?.enabled || false,
         toolAccessRestricted: groupConfig.tools && groupConfig.tools.length > 0,

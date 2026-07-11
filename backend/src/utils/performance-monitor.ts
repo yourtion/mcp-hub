@@ -123,6 +123,45 @@ export class PerformanceMonitor {
   }
 
   /**
+   * 获取按路径前缀过滤的统计
+   * 用于按组或路由前缀聚合性能数据
+   */
+  getStatsByPathPrefix(prefix: string, timeWindow?: number): PerformanceStats {
+    let metricsToAnalyze = this.metrics.filter((m) => m.endpoint.includes(prefix));
+
+    if (timeWindow) {
+      const cutoffTime = Date.now() - timeWindow;
+      metricsToAnalyze = metricsToAnalyze.filter((m) => m.timestamp >= cutoffTime);
+    }
+
+    if (metricsToAnalyze.length === 0) {
+      return {
+        totalRequests: 0,
+        averageResponseTime: 0,
+        minResponseTime: 0,
+        maxResponseTime: 0,
+        successRate: 0,
+        errorRate: 0,
+        requestsPerSecond: 0,
+      };
+    }
+
+    const durations = metricsToAnalyze.map((m) => m.duration);
+    const successCount = metricsToAnalyze.filter((m) => m.success).length;
+    const totalRequests = metricsToAnalyze.length;
+
+    return {
+      totalRequests,
+      averageResponseTime: durations.reduce((sum, d) => sum + d, 0) / durations.length,
+      minResponseTime: Math.min(...durations),
+      maxResponseTime: Math.max(...durations),
+      successRate: (successCount / totalRequests) * 100,
+      errorRate: ((totalRequests - successCount) / totalRequests) * 100,
+      requestsPerSecond: 0,
+    };
+  }
+
+  /**
    * 获取慢请求列表
    */
   getSlowRequests(threshold: number = 1000): PerformanceMetric[] {

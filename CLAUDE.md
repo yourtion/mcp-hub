@@ -126,7 +126,7 @@ The project implements the Model Context Protocol in multiple ways:
 
 Configuration is handled through multiple layers:
 
-1. **MCP Service Configuration** (`mcp_service.json`) - Defines MCP servers
+1. **MCP Service Configuration** (`mcp_server.json`) - Defines MCP servers
 2. **Group Configuration** (`group.json`) - Defines server groups and access rules
 3. **System Configuration** - General system settings
 4. **Environment Variables** - Override any configuration value

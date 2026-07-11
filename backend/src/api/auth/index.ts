@@ -7,6 +7,7 @@ import { Hono } from 'hono';
 import { z } from 'zod/v4';
 
 import { successResponse } from '../../utils/api-response.js';
+import { logger } from '../../utils/logger.js';
 
 import type { AuthService } from '../../services/auth.js';
 
@@ -50,7 +51,7 @@ export function createAuthApi(authService: AuthService) {
       const result = await authService.login(username, password, ip, userAgent);
 
       // 记录成功登录日志
-      console.log(`[AUTH] 用户登录成功: ${username} (${ip})`);
+      logger.info('用户登录成功', { username, ip, userAgent });
 
       return successResponse(c, {
         user: result.user,
@@ -63,7 +64,7 @@ export function createAuthApi(authService: AuthService) {
       // 记录失败登录日志
       const { username } = c.req.valid('json');
       const ip = c.req.header('X-Forwarded-For') || c.req.header('X-Real-IP') || 'unknown';
-      console.warn(`[AUTH] 用户登录失败: ${username} (${ip}) - ${errorMessage}`);
+      logger.warn('用户登录失败', { username, ip, error: errorMessage });
 
       // 根据错误类型返回不同的错误码
       let errorCode = 'AUTH_LOGIN_FAILED';
@@ -103,7 +104,7 @@ export function createAuthApi(authService: AuthService) {
 
       const result = await authService.refreshAccessToken(refreshToken);
 
-      console.log('[AUTH] Token刷新成功');
+      logger.info('Token 刷新成功');
 
       return successResponse(c, {
         accessToken: result.accessToken,
@@ -112,7 +113,7 @@ export function createAuthApi(authService: AuthService) {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Token刷新失败';
 
-      console.warn(`[AUTH] Token刷新失败: ${errorMessage}`);
+      logger.warn('Token 刷新失败', { error: errorMessage });
 
       let errorCode = 'AUTH_REFRESH_FAILED';
       if (errorMessage.includes('Invalid refresh token')) {
@@ -191,13 +192,13 @@ export function createAuthApi(authService: AuthService) {
       // 执行登出
       await authService.logout(accessToken);
 
-      console.log('[AUTH] 用户登出成功');
+      logger.info('用户登出成功');
 
       return successResponse(c, { message: '登出成功' });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '登出失败';
 
-      console.warn(`[AUTH] 用户登出失败: ${errorMessage}`);
+      logger.warn('用户登出失败', { error: errorMessage });
 
       return c.json(
         {

@@ -417,17 +417,29 @@ export class ApiToMcpWebService {
    * 从工具schema中提取API URL
    */
   private extractApiUrl(schema: Record<string, unknown>): string {
-    // 尝试从schema的description或其他字段中提取URL信息
-    // 这是一个简化的实现，实际可能需要更复杂的逻辑
-    return (schema.description as string | undefined)?.match(/https?:\/\/[^\s]+/)?.[0] || '';
+    const url = (schema.description as string | undefined)?.match(/https?:\/\/[^\s]+/)?.[0];
+    if (!url) {
+      logger.warn('No API URL found in schema, returning empty string', {
+        hasDescription: !!schema.description,
+      });
+    }
+    return url || '';
   }
 
   /**
    * 从工具schema中提取HTTP方法
    */
-  private extractHttpMethod(_schema: Record<string, unknown>): string {
-    // 尝试从schema中提取HTTP方法信息
-    // 这是一个简化的实现，实际可能需要更复杂的逻辑
+  private extractHttpMethod(schema: Record<string, unknown>): string {
+    const properties = schema.properties as Record<string, Record<string, unknown>> | undefined;
+    const method =
+      properties?.method?.default ||
+      (Array.isArray(properties?.method?.enum) ? properties.method.enum[0] : undefined);
+
+    if (method && typeof method === 'string') {
+      return method.toUpperCase();
+    }
+
+    logger.debug('No HTTP method found in schema, defaulting to GET');
     return 'GET';
   }
 

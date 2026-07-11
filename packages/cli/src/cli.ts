@@ -34,7 +34,7 @@ interface CliOptions {
  */
 function parseArgs(args: string[]): CliOptions {
   const options: CliOptions = {
-    configPath: './mcp_service.json',
+    configPath: './mcp_server.json',
     verbose: false,
     help: false,
     version: false,
@@ -106,7 +106,7 @@ function parseArgs(args: string[]): CliOptions {
         break;
       default:
         // 如果不是选项，则作为配置文件路径
-        if (!arg.startsWith('-') && options.configPath === './mcp_service.json') {
+        if (!arg.startsWith('-') && options.configPath === './mcp_server.json') {
           options.configPath = arg;
         }
         break;
@@ -130,7 +130,7 @@ MCP Hub CLI - 聚合多个MCP服务的命令行界面
   -h, --help              显示帮助信息
   -v, --verbose           启用详细日志输出
   --version               显示版本信息
-  -c, --config <path>     指定配置文件路径 (默认: ./mcp_service.json)
+  -c, --config <path>     指定配置文件路径 (默认: ./mcp_server.json)
   --generate-config       生成配置文件模板
   --template <type>       指定配置模板类型 (basic, advanced, development, production)
   --validate              验证配置文件
@@ -187,7 +187,7 @@ async function generateConfig(templateType: ConfigTemplateType): Promise<void> {
   const template = configManager.getConfigTemplateWithComments(templateType);
 
   console.log(`# MCP Hub CLI 配置文件模板 (${templateType})`);
-  console.log('# 将以下内容保存为 mcp_service.json');
+  console.log('# 将以下内容保存为 mcp_server.json');
   console.log('');
   console.log(template);
 }

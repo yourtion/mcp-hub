@@ -166,6 +166,7 @@ export interface IConfigService {
     configType: ConfigType,
     config: Record<string, unknown>,
     description?: string,
+    user?: string,
   ): Promise<void>;
 
   // 验证配置
@@ -191,7 +192,7 @@ export interface IConfigService {
   getConfigHistoryCount(configType?: ConfigType): Promise<number>;
 
   // 创建备份
-  createBackup(description?: string, includeTypes?: ConfigType[]): Promise<string>;
+  createBackup(description?: string, includeTypes?: ConfigType[], user?: string): Promise<string>;
 
   // 从备份恢复
   restoreFromBackup(backupId: string, configTypes?: ConfigType[]): Promise<void>;
