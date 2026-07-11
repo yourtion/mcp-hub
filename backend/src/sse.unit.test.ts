@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from './utils/logger.js';
 import { sse } from './sse.js';
+import { logger } from './utils/logger.js';
 
 // Mock依赖
 vi.mock('./utils/logger.js', () => ({

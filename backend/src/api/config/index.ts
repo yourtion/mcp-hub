@@ -1,12 +1,12 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import type { Context } from 'hono';
 import { z } from 'zod/v4';
 
 import { ConfigService } from '../../services/config_service.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 
 import type { AuthContext } from '../../types/auth.js';
+import type { Context } from 'hono';
 
 // 创建配置服务实例
 const configService = new ConfigService();

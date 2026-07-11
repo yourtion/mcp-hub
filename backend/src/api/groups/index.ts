@@ -3,10 +3,14 @@
  * 提供组列表、组详情、组健康检查等API
  */
 
-import { McpServiceManager, type ToolInfo } from '@mcp-core/mcp-hub-core';
+import { type ToolInfo } from '@mcp-core/mcp-hub-core';
 import { Hono } from 'hono';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 
+import {
+  getCoreServiceManager,
+  reloadCoreServiceManager,
+} from '../../services/service-registry.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { getAllConfig, saveConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
@@ -18,7 +22,6 @@ import type {
   GroupAvailableToolsResponse,
   GroupConfig,
   GroupValidationConfig,
-  ServerConfig,
   SetGroupValidationKeyRequest,
   UpdateGroupRequest,
 } from '@mcp-core/mcp-hub-share';
@@ -62,35 +65,6 @@ export interface GroupConfigItem {
 
 export const groupsApi = new Hono();
 
-// 全局核心服务管理器实例
-let coreServiceManager: McpServiceManager | null = null;
-
-/**
- * 确保核心服务管理器已初始化
- */
-async function ensureCoreServiceInitialized(): Promise<void> {
-  if (coreServiceManager) {
-    return;
-  }
-
-  try {
-    logger.info('初始化组管理API的核心服务管理器');
-    const config = await getAllConfig();
-
-    coreServiceManager = new McpServiceManager();
-    const coreConfig = {
-      servers: config.mcps.servers as Record<string, ServerConfig>,
-      groups: config.groups as Record<string, GroupConfigItem>,
-    };
-    await coreServiceManager.initializeFromConfig(coreConfig);
-
-    logger.info('组管理API核心服务管理器初始化成功');
-  } catch (error) {
-    logger.error('组管理API核心服务管理器初始化失败', error as Error);
-    throw error;
-  }
-}
-
 /**
  * 获取所有组列表
  */
@@ -101,11 +75,7 @@ groupsApi.get('/', async (c) => {
     const config = await getAllConfig();
     const groups = config.groups;
 
-    await ensureCoreServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const serverConnections = coreServiceManager.getServerConnections();
 
@@ -292,11 +262,7 @@ groupsApi.get('/:groupId', async (c) => {
       );
     }
 
-    await ensureCoreServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const serverConnections = coreServiceManager.getServerConnections();
     const groupServers = groupConfig.servers || [];
@@ -430,11 +396,7 @@ groupsApi.get('/:groupId/health', async (c) => {
       );
     }
 
-    await ensureCoreServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const serverConnections = coreServiceManager.getServerConnections();
     const groupServers = groupConfig.servers || [];
@@ -537,11 +499,7 @@ groupsApi.get('/:groupId/tools', async (c) => {
       );
     }
 
-    await ensureCoreServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const groupServers = groupConfig.servers || [];
     const allTools = await coreServiceManager.getAllTools();
@@ -630,11 +588,7 @@ groupsApi.get('/:groupId/servers', async (c) => {
       );
     }
 
-    await ensureCoreServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const serverConnections = coreServiceManager.getServerConnections();
     const groupServers = groupConfig.servers || [];
@@ -1138,16 +1092,12 @@ groupsApi.post('/', async (c) => {
     await saveConfig('group.json', updatedGroups as GroupConfig);
 
     // 重新初始化核心服务管理器以应用新配置
-    if (coreServiceManager) {
-      try {
-        await coreServiceManager.shutdown();
-        coreServiceManager = null;
-        await ensureCoreServiceInitialized();
-      } catch (error) {
-        logger.warn('重新初始化核心服务管理器失败', {
-          error: (error as Error).message,
-        });
-      }
+    try {
+      await reloadCoreServiceManager();
+    } catch (error) {
+      logger.warn('重新初始化核心服务管理器失败', {
+        error: (error as Error).message,
+      });
     }
 
     logger.info('组创建成功', {
@@ -1280,16 +1230,12 @@ groupsApi.put('/:groupId', async (c) => {
     await saveConfig('group.json', updatedGroups as GroupConfig);
 
     // 重新初始化核心服务管理器以应用新配置
-    if (coreServiceManager) {
-      try {
-        await coreServiceManager.shutdown();
-        coreServiceManager = null;
-        await ensureCoreServiceInitialized();
-      } catch (error) {
-        logger.warn('重新初始化核心服务管理器失败', {
-          error: (error as Error).message,
-        });
-      }
+    try {
+      await reloadCoreServiceManager();
+    } catch (error) {
+      logger.warn('重新初始化核心服务管理器失败', {
+        error: (error as Error).message,
+      });
     }
 
     logger.info('组更新成功', {
@@ -1396,16 +1342,12 @@ groupsApi.delete('/:groupId', async (c) => {
     await saveConfig('group.json', updatedGroups as GroupConfig);
 
     // 重新初始化核心服务管理器以应用新配置
-    if (coreServiceManager) {
-      try {
-        await coreServiceManager.shutdown();
-        coreServiceManager = null;
-        await ensureCoreServiceInitialized();
-      } catch (error) {
-        logger.warn('重新初始化核心服务管理器失败', {
-          error: (error as Error).message,
-        });
-      }
+    try {
+      await reloadCoreServiceManager();
+    } catch (error) {
+      logger.warn('重新初始化核心服务管理器失败', {
+        error: (error as Error).message,
+      });
     }
 
     logger.info('组删除成功', {
@@ -1518,34 +1460,30 @@ groupsApi.post('/:groupId/tools', async (c) => {
     }
 
     // 验证工具是否在组的服务器中可用
-    await ensureCoreServiceInitialized();
-    if (coreServiceManager) {
-      try {
-        const allTools = await coreServiceManager.getAllTools();
-        const groupServers = existingGroup.servers || [];
-        const availableTools = allTools.filter((tool) =>
-          groupServers.includes(tool.serverId || ''),
-        );
-        const availableToolNames = availableTools.map((tool) => tool.name);
+    try {
+      const coreServiceManager = await getCoreServiceManager();
+      const allTools = await coreServiceManager.getAllTools();
+      const groupServers = existingGroup.servers || [];
+      const availableTools = allTools.filter((tool) => groupServers.includes(tool.serverId || ''));
+      const availableToolNames = availableTools.map((tool) => tool.name);
 
-        const unavailableTools = body.tools.filter(
-          (toolName) => !availableToolNames.includes(toolName),
-        );
+      const unavailableTools = body.tools.filter(
+        (toolName) => !availableToolNames.includes(toolName),
+      );
 
-        if (unavailableTools.length > 0) {
-          logger.warn('配置的工具在组中不可用', {
-            groupId,
-            unavailableTools,
-            availableTools: availableToolNames,
-          });
-          // 不阻止配置，但记录警告
-        }
-      } catch (error) {
-        logger.warn('验证工具可用性时出错', {
+      if (unavailableTools.length > 0) {
+        logger.warn('配置的工具在组中不可用', {
           groupId,
-          error: (error as Error).message,
+          unavailableTools,
+          availableTools: availableToolNames,
         });
+        // 不阻止配置，但记录警告
       }
+    } catch (error) {
+      logger.warn('验证工具可用性时出错', {
+        groupId,
+        error: (error as Error).message,
+      });
     }
 
     // 更新组的工具过滤配置
@@ -1563,16 +1501,12 @@ groupsApi.post('/:groupId/tools', async (c) => {
     await saveConfig('group.json', updatedGroups as GroupConfig);
 
     // 重新初始化核心服务管理器以应用新配置
-    if (coreServiceManager) {
-      try {
-        await coreServiceManager.shutdown();
-        coreServiceManager = null;
-        await ensureCoreServiceInitialized();
-      } catch (error) {
-        logger.warn('重新初始化核心服务管理器失败', {
-          error: (error as Error).message,
-        });
-      }
+    try {
+      await reloadCoreServiceManager();
+    } catch (error) {
+      logger.warn('重新初始化核心服务管理器失败', {
+        error: (error as Error).message,
+      });
     }
 
     logger.info('组工具过滤配置成功', {
@@ -1650,11 +1584,7 @@ groupsApi.get('/:groupId/available-tools', async (c) => {
       );
     }
 
-    await ensureCoreServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const groupServers = groupConfig.servers || [];
     const allTools = await coreServiceManager.getAllTools();
@@ -1799,11 +1729,7 @@ groupsApi.post('/:groupId/validate-tool-access', async (c) => {
       );
     }
 
-    await ensureCoreServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     // 检查工具是否在组中可用
     const groupServers = groupConfig.servers || [];
@@ -2369,9 +2295,10 @@ export async function shutdownGroupsApi(): Promise<void> {
   try {
     logger.info('关闭组管理API服务');
 
-    if (coreServiceManager) {
-      await coreServiceManager.shutdown();
-      coreServiceManager = null;
+    const { shutdownCoreServiceManager } = await import('../../services/service-registry.js');
+    const manager = await shutdownCoreServiceManager();
+    if (manager) {
+      await manager.shutdown();
     }
 
     logger.info('组管理API服务关闭完成');

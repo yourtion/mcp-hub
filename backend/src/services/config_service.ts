@@ -363,10 +363,7 @@ export class ConfigService implements IConfigService {
 
       return history;
     } catch (error) {
-      logger.error(
-        '获取配置历史失败',
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.error('获取配置历史失败', error instanceof Error ? error : new Error(String(error)));
       return [];
     }
   }
@@ -387,7 +384,11 @@ export class ConfigService implements IConfigService {
     }
   }
 
-  async createBackup(description?: string, includeTypes?: ConfigType[], user?: string): Promise<string> {
+  async createBackup(
+    description?: string,
+    includeTypes?: ConfigType[],
+    user?: string,
+  ): Promise<string> {
     const backupId = crypto.randomUUID();
     const timestamp = new Date().toISOString();
     const currentConfig = await this.getCurrentConfig();
@@ -523,10 +524,7 @@ export class ConfigService implements IConfigService {
 
       return backups;
     } catch (error) {
-      logger.error(
-        '获取备份列表失败',
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.error('获取备份列表失败', error instanceof Error ? error : new Error(String(error)));
       return [];
     }
   }
@@ -536,10 +534,7 @@ export class ConfigService implements IConfigService {
       const backupFiles = await fs.readdir(this.backupDir);
       return backupFiles.length;
     } catch (error) {
-      logger.error(
-        '获取备份总数失败',
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.error('获取备份总数失败', error instanceof Error ? error : new Error(String(error)));
       return 0;
     }
   }
@@ -600,10 +595,7 @@ export class ConfigService implements IConfigService {
 
       await fs.writeFile(historyFilePath, JSON.stringify(historyEntry, null, 2), 'utf-8');
     } catch (error) {
-      logger.error(
-        '记录配置历史失败',
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.error('记录配置历史失败', error instanceof Error ? error : new Error(String(error)));
     }
   }
 

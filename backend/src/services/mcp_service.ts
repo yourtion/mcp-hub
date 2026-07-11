@@ -1,4 +1,3 @@
-import { McpServiceManager } from '@mcp-core/mcp-hub-core';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -7,14 +6,12 @@ import { z } from 'zod/v4';
 // 读取 package.json
 const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf-8'));
 
-import { toMcpServerConfig } from '../types/config-helpers.js';
 import { type McpContentItem, normalizeMcpContent } from '../types/mcp-content.js';
 import { getAllConfig } from '../utils/config.js';
 import { logger } from '../utils/logger.js';
 import { convertToZodSchema } from '../utils/zod-schema-converter.js';
 import { McpHubService } from './mcp_hub_service.js';
-
-import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share';
+import { initCoreServiceManager, shutdownCoreServiceManager } from './service-registry.js';
 
 // Create the MCP server instance
 export const mcpServer = new McpServer({
@@ -24,8 +21,6 @@ export const mcpServer = new McpServer({
 
 // Global hub service instance
 let hubService: McpHubService | null = null;
-// Global core service manager instance
-let coreServiceManager: McpServiceManager | null = null;
 
 /**
  * Initialize the MCP Hub Service and register dynamic tools
@@ -34,19 +29,11 @@ export async function initializeMcpService(): Promise<void> {
   try {
     logger.info('Initializing MCP Service with Hub integration and Core package');
 
-    // Load configurations
-    const config = await getAllConfig();
-
-    // Create and initialize core service manager
-    coreServiceManager = new McpServiceManager();
-    // 转换配置格式以匹配核心包期望的格式
-    const coreConfig = toMcpServerConfig({
-      mcps: config.mcps as unknown as McpConfig,
-      groups: config.groups as unknown as GroupConfig,
-    });
-    await coreServiceManager.initializeFromConfig(coreConfig);
+    // Initialize core service manager via registry
+    await initCoreServiceManager();
 
     // Create and initialize hub service (for backward compatibility)
+    const config = await getAllConfig();
     hubService = new McpHubService(config.mcps.servers as never, config.groups as never);
 
     await hubService.initialize();
@@ -345,10 +332,10 @@ export async function shutdownMcpService(): Promise<void> {
       hubService = null;
     }
 
-    if (coreServiceManager) {
+    const manager = await shutdownCoreServiceManager();
+    if (manager) {
       logger.info('Shutting down Core Service Manager');
-      await coreServiceManager.shutdown();
-      coreServiceManager = null;
+      await manager.shutdown();
     }
 
     logger.info('MCP Service shutdown completed');
