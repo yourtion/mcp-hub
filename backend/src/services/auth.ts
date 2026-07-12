@@ -156,7 +156,7 @@ export class AuthService {
     );
     const hash = userKey ? this.passwordHashMap.get(userKey) : undefined;
     if (!hash) {
-      throw new AuthError(ErrorCode.AUTHENTICATION_FAILED, 'Password hash not found');
+      throw new ServiceError(ErrorCode.INTERNAL_SERVER_ERROR, 'Password hash not found');
     }
     const isValidPassword = await bcrypt.compare(password, hash);
     if (!isValidPassword) {
@@ -291,8 +291,13 @@ export class AuthService {
       }
 
       return payload;
-    } catch (_error) {
-      throw new AuthError(ErrorCode.AUTH_TOKEN_EXPIRED, 'Invalid or expired token');
+    } catch (error) {
+      // 区分 JWT 错误类型
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new AuthError(ErrorCode.AUTH_TOKEN_EXPIRED, 'Token has expired');
+      }
+      // JsonWebTokenError（签名无效、格式错误等）→ INVALID
+      throw new AuthError(ErrorCode.AUTH_TOKEN_INVALID, 'Invalid token');
     }
   }
 

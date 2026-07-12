@@ -14,6 +14,7 @@ import {
 import { logger } from './logger.js';
 
 import type { Context } from 'hono';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 
 /**
  * 返回统一成功响应
@@ -56,5 +57,5 @@ export function errorResponse(c: Context, error: Error, status?: number): Respon
   const httpStatus =
     status ?? (error instanceof McpHubCoreError ? getHttpStatusForError(error.code) : 500);
 
-  return c.json(body, httpStatus as 500);
+  return c.json(body, httpStatus as ContentfulStatusCode);
 }

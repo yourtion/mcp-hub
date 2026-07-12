@@ -308,7 +308,7 @@ export function createAuthApi(authService: AuthService) {
         if (error.code === ErrorCode.AUTH_TOKEN_EXPIRED) {
           errorCode = 'AUTH_TOKEN_EXPIRED';
         } else if (error.code === ErrorCode.AUTH_TOKEN_INVALID) {
-          errorCode = 'AUTH_TOKEN_REVOKED';
+          errorCode = 'AUTH_TOKEN_INVALID';
         }
       }
 

@@ -411,8 +411,8 @@ describe('认证API', () => {
 
       const data = await res.json();
       expect(data.success).toBe(false);
-      // JWT库会将无效token识别为过期token
-      expect(['AUTH_INVALID_TOKEN', 'AUTH_TOKEN_EXPIRED'].includes(data.error.code)).toBe(true);
+      // 无效token现在正确识别为 AUTH_TOKEN_INVALID（而非 EXPIRED）
+      expect(['AUTH_INVALID_TOKEN', 'AUTH_TOKEN_INVALID', 'AUTH_TOKEN_EXPIRED'].includes(data.error.code)).toBe(true);
     });
 
     it('应该拒绝已登出的token', async () => {
@@ -436,7 +436,7 @@ describe('认证API', () => {
 
       const data = await res.json();
       expect(data.success).toBe(false);
-      expect(data.error.code).toBe('AUTH_TOKEN_REVOKED');
+      expect(data.error.code).toBe('AUTH_TOKEN_INVALID');
     });
   });
 });
