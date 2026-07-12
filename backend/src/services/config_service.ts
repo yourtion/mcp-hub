@@ -222,6 +222,8 @@ export class ConfigService implements IConfigService {
     errors: ConfigValidationError[],
     _warnings: ConfigValidationWarning[],
   ): Promise<void> {
+    // NOTE: 类型断言是安全的——此函数在 validateConfig 中被调用，
+    // 调用前已由 Zod schema 校验过结构。这里只是用强类型做自定义校验。
     const mcpConfig = config as unknown as McpConfig;
 
     // 验证服务器配置
@@ -658,6 +660,7 @@ export class ConfigService implements IConfigService {
     config: Record<string, unknown>,
     tests: ConfigTest[],
   ): Promise<void> {
+    // NOTE: 类型断言是安全的——此函数在 testConfig 中被调用，用于测试已校验的配置。
     const systemConfig = config as unknown as SystemConfig;
 
     // 测试端口可用性
@@ -752,6 +755,8 @@ export class ConfigService implements IConfigService {
   }
 
   private async testMcpConfig(config: Record<string, unknown>, tests: ConfigTest[]): Promise<void> {
+    // NOTE: 类型断言是安全的——此函数在 validateConfig 中被调用，
+    // 调用前已由 Zod schema 校验过结构。这里只是用强类型做自定义校验。
     const mcpConfig = config as unknown as McpConfig;
 
     // 测试服务器配置

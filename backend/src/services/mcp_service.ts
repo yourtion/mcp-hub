@@ -7,7 +7,7 @@ import { z } from 'zod/v4';
 // 读取 package.json
 const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf-8'));
 
-import { type McpContentItem, normalizeMcpContent } from '../types/mcp-content.js';
+import { createTextContent, normalizeMcpContent } from '../types/mcp-content.js';
 import { getAllConfig } from '../utils/config.js';
 import { logger } from '../utils/logger.js';
 import { convertToZodSchema } from '../utils/zod-schema-converter.js';
@@ -35,7 +35,7 @@ export async function initializeMcpService(): Promise<void> {
 
     // Create and initialize hub service (for backward compatibility)
     const config = await getAllConfig();
-    hubService = new McpHubService(config.mcps.servers as never, config.groups as never);
+    hubService = new McpHubService(config.mcps.servers, config.groups);
 
     await hubService.initialize();
 
@@ -173,12 +173,11 @@ async function registerHubTools(): Promise<void> {
         if (result.isError) {
           return {
             content: [
-              {
-                type: 'text' as const,
-                text: `Tool execution failed: ${JSON.stringify(result.content, null, 2)}`,
-              },
+              createTextContent(
+                `Tool execution failed: ${JSON.stringify(result.content, null, 2)}`,
+              ),
             ],
-          } as unknown as { content: McpContentItem[] };
+          };
         }
 
         // Ensure content has proper typing
@@ -186,17 +185,14 @@ async function registerHubTools(): Promise<void> {
 
         return {
           content: typedContent,
-        } as unknown as { content: McpContentItem[] };
+        };
       } catch (error) {
         logger.error('Error executing tool', error as Error);
         return {
           content: [
-            {
-              type: 'text' as const,
-              text: `Error executing tool '${toolName}': ${(error as Error).message}`,
-            },
+            createTextContent(`Error executing tool '${toolName}': ${(error as Error).message}`),
           ],
-        } as unknown as { content: McpContentItem[] };
+        };
       }
     },
   );
@@ -280,12 +276,11 @@ async function registerDynamicTools(): Promise<void> {
               if (result.isError) {
                 return {
                   content: [
-                    {
-                      type: 'text' as const,
-                      text: `Tool execution failed: ${JSON.stringify(result.content, null, 2)}`,
-                    },
+                    createTextContent(
+                      `Tool execution failed: ${JSON.stringify(result.content, null, 2)}`,
+                    ),
                   ],
-                } as unknown as { content: McpContentItem[] };
+                };
               }
 
               // Ensure content has proper typing
@@ -293,17 +288,12 @@ async function registerDynamicTools(): Promise<void> {
 
               return {
                 content: typedContent,
-              } as unknown as { content: McpContentItem[] };
+              };
             } catch (error) {
               logger.error(`Error executing dynamic tool ${toolName}`, error as Error);
               return {
-                content: [
-                  {
-                    type: 'text' as const,
-                    text: `Error executing tool: ${(error as Error).message}`,
-                  },
-                ],
-              } as unknown as { content: McpContentItem[] };
+                content: [createTextContent(`Error executing tool: ${(error as Error).message}`)],
+              };
             }
           });
         }

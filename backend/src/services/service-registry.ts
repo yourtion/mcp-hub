@@ -1,11 +1,11 @@
 import { ErrorCode, McpServiceManager, ServiceError } from '@mcp-core/mcp-hub-core';
 
 import { toMcpServerConfig } from '../types/config-helpers.js';
-import { getAllConfig } from '../utils/config.js';
+import { asMutable, getAllConfig } from '../utils/config.js';
 import { logger } from '../utils/logger.js';
 
 import type { McpHubService } from './mcp_hub_service.js';
-import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
+import type { DeepReadonly, GroupConfig, McpConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 
 /**
  * 全局服务注册表
@@ -97,8 +97,8 @@ export async function initCoreServiceManager(): Promise<McpServiceManager> {
   const config = await getAllConfig();
   coreServiceManager = new McpServiceManager();
   const coreConfig = toMcpServerConfig({
-    mcps: config.mcps as never,
-    groups: config.groups as never,
+    mcps: asMutable<McpConfig>(config.mcps as DeepReadonly<McpConfig>),
+    groups: asMutable<GroupConfig>(config.groups as DeepReadonly<GroupConfig>),
   });
   await coreServiceManager.initializeFromConfig(coreConfig);
 
