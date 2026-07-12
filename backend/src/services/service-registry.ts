@@ -1,4 +1,4 @@
-import { McpServiceManager } from '@mcp-core/mcp-hub-core';
+import { ErrorCode, McpServiceManager, ServiceError } from '@mcp-core/mcp-hub-core';
 
 import { toMcpServerConfig } from '../types/config-helpers.js';
 import { getAllConfig } from '../utils/config.js';
@@ -22,7 +22,10 @@ let hubService: McpHubService | null = null;
  */
 export function setHubService(service: McpHubService): void {
   if (hubService) {
-    throw new Error('HubService already registered. Call shutdownHubService() first.');
+    throw new ServiceError(
+      ErrorCode.SERVICE_UNAVAILABLE,
+      'HubService already registered. Call shutdownHubService() first.',
+    );
   }
   hubService = service;
 }
@@ -33,7 +36,10 @@ export function setHubService(service: McpHubService): void {
  */
 export function getHubService(): McpHubService {
   if (!hubService) {
-    throw new Error('HubService not initialized. Service must be initialized at startup.');
+    throw new ServiceError(
+      ErrorCode.SERVICE_UNAVAILABLE,
+      'HubService not initialized. Service must be initialized at startup.',
+    );
   }
   return hubService;
 }

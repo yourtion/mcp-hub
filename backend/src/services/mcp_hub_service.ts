@@ -847,7 +847,10 @@ export class McpHubService implements IMcpHubService {
 
   private ensureInitialized(): void {
     if (!this.isInitialized) {
-      throw new Error('McpHubService must be initialized before use');
+      throw new ServiceError(
+        ErrorCode.SERVICE_UNAVAILABLE,
+        'McpHubService must be initialized before use',
+      );
     }
   }
 

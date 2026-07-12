@@ -1,3 +1,4 @@
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -64,7 +65,7 @@ async function registerHubTools(): Promise<void> {
     async ({ groupId }) => {
       try {
         if (!hubService) {
-          throw new Error('Hub service not initialized');
+          throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Hub service not initialized');
         }
 
         const status = hubService.getServiceStatus();
@@ -115,7 +116,7 @@ async function registerHubTools(): Promise<void> {
     async ({ groupId }) => {
       try {
         if (!hubService) {
-          throw new Error('Hub service not initialized');
+          throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Hub service not initialized');
         }
 
         const tools = await hubService.listTools(groupId);
@@ -164,7 +165,7 @@ async function registerHubTools(): Promise<void> {
     async ({ toolName, args, groupId }) => {
       try {
         if (!hubService) {
-          throw new Error('Hub service not initialized');
+          throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Hub service not initialized');
         }
 
         const result = await hubService.callTool(toolName, args, groupId);
@@ -204,7 +205,7 @@ async function registerHubTools(): Promise<void> {
   mcpServer.tool('hub_diagnostics', {}, async () => {
     try {
       if (!hubService) {
-        throw new Error('Hub service not initialized');
+        throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Hub service not initialized');
       }
 
       const diagnostics = await hubService.getServiceDiagnostics();
@@ -239,7 +240,7 @@ async function registerHubTools(): Promise<void> {
 async function registerDynamicTools(): Promise<void> {
   try {
     if (!hubService) {
-      throw new Error('Hub service not initialized');
+      throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Hub service not initialized');
     }
 
     // Get all groups and their tools
@@ -268,7 +269,10 @@ async function registerDynamicTools(): Promise<void> {
           mcpServer.tool(toolName, zodSchema, async (args) => {
             try {
               if (!hubService) {
-                throw new Error('Hub service not initialized');
+                throw new ServiceError(
+                  ErrorCode.SERVICE_UNAVAILABLE,
+                  'Hub service not initialized',
+                );
               }
 
               const result = await hubService.callTool(tool.name, args, groupId);

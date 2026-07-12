@@ -1,3 +1,4 @@
+import { ConnectionError, ErrorCode, ServiceError, ValidationError } from '@mcp-core/mcp-hub-core';
 import { type JSONRPCMessage, JSONRPCMessageSchema } from '@modelcontextprotocol/sdk/types.js';
 
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
@@ -34,11 +35,11 @@ export class SSETransport implements Transport {
   // start() is automatically called after MCP Server connects to the transport
   async start(): Promise<void> {
     if (this.stream === null || this.stream === undefined) {
-      throw new Error('Stream not initialized');
+      throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Stream not initialized');
     }
 
     if (this.stream.closed) {
-      throw new Error('SSE transport already closed!');
+      throw new ConnectionError(ErrorCode.SERVER_DISCONNECTED, 'SSE transport already closed!');
     }
 
     await this.stream.writeSSE({
@@ -56,14 +57,20 @@ export class SSETransport implements Transport {
       const contentType = context.req.header('content-type') || '';
 
       if (!contentType.includes('application/json')) {
-        throw new Error(`Unsupported content-type: ${contentType}`);
+        throw new ValidationError(
+          ErrorCode.INVALID_REQUEST_FORMAT,
+          `Unsupported content-type: ${contentType}`,
+        );
       }
 
       // Check if the request body is too large
       const contentLength = Number.parseInt(context.req.header('content-length') || '0', 10);
 
       if (contentLength > MAXIMUM_MESSAGE_SIZE) {
-        throw new Error(`Request body too large: ${contentLength} bytes`);
+        throw new ValidationError(
+          ErrorCode.INVALID_PARAMETER_VALUE,
+          `Request body too large: ${contentLength} bytes`,
+        );
       }
 
       // Clone the request before reading the body to avoid stream issues
@@ -102,7 +109,7 @@ export class SSETransport implements Transport {
 
   async send(message: JSONRPCMessage): Promise<void> {
     if (this.stream?.closed) {
-      throw new Error('Not connected');
+      throw new ConnectionError(ErrorCode.SERVER_DISCONNECTED, 'Not connected');
     }
 
     await this.stream.writeSSE({

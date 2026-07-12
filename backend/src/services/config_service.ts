@@ -130,7 +130,7 @@ export class ConfigService implements IConfigService {
           schema = groupConfigSchema;
           break;
         default:
-          throw new Error(`不支持的配置类型: ${configType}`);
+          throw new ConfigError(ErrorCode.INVALID_CONFIG_FORMAT, `不支持的配置类型: ${configType}`);
       }
 
       // 使用 Zod 验证配置

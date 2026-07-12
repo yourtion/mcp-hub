@@ -1,3 +1,5 @@
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+
 import { logger } from '../utils/logger.js';
 import { validateToolArgsWithSchema } from './tool-arg-validator.js';
 import { transformToolResult } from './tool-result-transform.js';
@@ -610,7 +612,7 @@ export class ToolManager implements IToolManager {
       // Get the group and its servers
       const group = this.groupManager.getGroup(groupId);
       if (!group) {
-        throw new Error(`Group ${groupId} not found`);
+        throw new ServiceError(ErrorCode.GROUP_NOT_FOUND, `Group ${groupId} not found`);
       }
 
       const toolsByServer = new Map<string, Tool[]>();

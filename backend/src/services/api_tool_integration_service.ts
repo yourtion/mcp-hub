@@ -3,6 +3,7 @@
  * 负责将API转MCP工具集成到现有的MCP Hub中
  */
 
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 import {
   type ApiToMcpServiceManager,
   ApiToMcpServiceManagerImpl,
@@ -51,7 +52,11 @@ export class ApiToolIntegrationService {
     } catch (error) {
       logger.error('API工具集成服务初始化失败', error as Error);
       this.initialized = false;
-      throw new Error(`API工具集成服务初始化失败: ${(error as Error).message}`, { cause: error });
+      throw new ServiceError(
+        ErrorCode.SERVICE_UNAVAILABLE,
+        `API工具集成服务初始化失败: ${(error as Error).message}`,
+        error,
+      );
     }
   }
 

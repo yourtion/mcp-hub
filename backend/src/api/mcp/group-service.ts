@@ -3,6 +3,7 @@
  * 使用核心包功能为特定组提供MCP服务
  */
 
+import { ConfigError, ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -126,7 +127,10 @@ export class GroupMcpService {
    */
   getMcpServer(): McpServer {
     if (!this.isInitialized) {
-      throw new Error(`组 '${this.groupId}' 的MCP服务未初始化`);
+      throw new ServiceError(
+        ErrorCode.SERVICE_UNAVAILABLE,
+        `组 '${this.groupId}' 的MCP服务未初始化`,
+      );
     }
     return this.mcpServer;
   }
@@ -201,7 +205,7 @@ export class GroupMcpService {
       const config = await getAllConfig();
       this.groupConfig = config.groups[this.groupId] as Group;
       if (!this.groupConfig) {
-        throw new Error(`组 '${this.groupId}' 的配置未找到`);
+        throw new ConfigError(ErrorCode.CONFIG_FILE_NOT_FOUND, `组 '${this.groupId}' 的配置未找到`);
       }
 
       logger.debug('组配置加载成功', {

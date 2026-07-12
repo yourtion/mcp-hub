@@ -6,7 +6,7 @@
  * 避免使用公开的弱默认密钥。
  */
 
-import { ConfigError, ErrorCode } from '@mcp-core/mcp-hub-core';
+import { ConfigError, ErrorCode, McpHubCoreError } from '@mcp-core/mcp-hub-core';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 
 import { logger } from '../../utils/logger.js';
@@ -44,7 +44,7 @@ export function encryptValidationKey(key: string): string {
     return `${iv.toString('hex')}:${encrypted}`;
   } catch (error) {
     logger.error('加密验证密钥失败', error as Error);
-    throw new Error('密钥加密失败', { cause: error });
+    throw new McpHubCoreError(ErrorCode.INTERNAL_SERVER_ERROR, '密钥加密失败', error);
   }
 }
 
@@ -68,7 +68,7 @@ export function decryptValidationKey(encryptedKey: string): string {
     return decrypted;
   } catch (error) {
     logger.error('解密验证密钥失败', error as Error);
-    throw new Error('密钥解密失败', { cause: error });
+    throw new McpHubCoreError(ErrorCode.INTERNAL_SERVER_ERROR, '密钥解密失败', error);
   }
 }
 

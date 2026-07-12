@@ -1,3 +1,5 @@
+import { ErrorCode, ValidationError } from '@mcp-core/mcp-hub-core';
+
 import { logger } from '../utils/logger.js';
 
 import type {
@@ -49,7 +51,10 @@ export class GroupManager implements IGroupManager {
     try {
       // 检查组数量限制
       if (!this.groups.has(groupName) && this.groups.size >= this.MAX_GROUPS) {
-        throw new Error(`已达到最大组数量限制 (${this.MAX_GROUPS})`);
+        throw new ValidationError(
+          ErrorCode.INVALID_PARAMETER_VALUE,
+          `已达到最大组数量限制 (${this.MAX_GROUPS})`,
+        );
       }
 
       // Validate group configuration structure
@@ -186,7 +191,10 @@ export class GroupManager implements IGroupManager {
     }
 
     if (errors.length > 0) {
-      throw new Error(`Group ${groupName} validation failed: ${errors.join(', ')}`);
+      throw new ValidationError(
+        ErrorCode.SCHEMA_VALIDATION_FAILED,
+        `Group ${groupName} validation failed: ${errors.join(', ')}`,
+      );
     }
   }
 
