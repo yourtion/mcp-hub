@@ -25,11 +25,7 @@ describe('key-policy', () => {
     });
 
     it('强随机密钥绝不应被评为 weak', () => {
-      const knownStrong = [
-        'Xk9$mP2!vQ7#nL4@wR8',
-        'Zx9!Qp3#Mk7$vB5nYc2D',
-        'aB3$dE6&gH9*kJ2@mN5',
-      ];
+      const knownStrong = ['Xk9$mP2!vQ7#nL4@wR8', 'Zx9!Qp3#Mk7$vB5nYc2D', 'aB3$dE6&gH9*kJ2@mN5'];
       for (const strong of knownStrong) {
         const result = assessKeyComplexity(strong);
         expect(result, `"${strong}" should not be weak`).not.toBe('weak');

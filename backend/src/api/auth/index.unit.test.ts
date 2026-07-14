@@ -412,7 +412,11 @@ describe('认证API', () => {
       const data = await res.json();
       expect(data.success).toBe(false);
       // 无效token现在正确识别为 AUTH_TOKEN_INVALID（而非 EXPIRED）
-      expect(['AUTH_INVALID_TOKEN', 'AUTH_TOKEN_INVALID', 'AUTH_TOKEN_EXPIRED'].includes(data.error.code)).toBe(true);
+      expect(
+        ['AUTH_INVALID_TOKEN', 'AUTH_TOKEN_INVALID', 'AUTH_TOKEN_EXPIRED'].includes(
+          data.error.code,
+        ),
+      ).toBe(true);
     });
 
     it('应该拒绝已登出的token', async () => {
