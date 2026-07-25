@@ -108,3 +108,83 @@ export async function createGroupMcpHandler(
   groupHandlers.set(groupId, handler);
   return handler;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 缓存失效钩子
+//
+// 配置变更（组 servers/tools、服务器列表、API 工具）后调用，使下次请求惰性重建
+// GroupMcpService + handler，避免客户端看到过期工具列表。
+//
+// 失效会优雅释放旧实例：
+//   - handler.close()  —— 中止在飞的 modern exchanges / 关闭 bus
+//   - service.shutdown() —— 调 mcpServer.close() 释放旧 server
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * 失效指定组的 service + handler 缓存（先优雅关闭再删除）。
+ *
+ * 用于"已知受影响 group"的精确失效（如 PUT/DELETE 单个组、配置工具过滤）。
+ * 失效后下次请求会通过 ensureGroupMcpService + createGroupMcpHandler 惰性重建。
+ *
+ * 不存在的 group 不会报错（幂等）。
+ */
+export async function invalidateGroupMcpService(groupId: string): Promise<void> {
+  const handler = groupHandlers.get(groupId);
+  if (handler) {
+    try {
+      await handler.close();
+    } catch (error) {
+      logger.error('关闭组MCP handler 失败（失效流程）', error as Error, { groupId });
+    }
+    groupHandlers.delete(groupId);
+  }
+
+  const service = groupServices.get(groupId);
+  if (service) {
+    try {
+      await service.shutdown();
+    } catch (error) {
+      logger.error('关闭组MCP service 失败（失效流程）', error as Error, { groupId });
+    }
+    groupServices.delete(groupId);
+  }
+}
+
+/**
+ * 失效所有 group 的 service + handler 缓存（先优雅关闭再删除）。
+ *
+ * 用于"无法精确判断受影响 group"的场景（如全局 coreServiceManager 重建，
+ * 因为所有 GroupMcpService 都持有旧的 coreServiceManager 引用，必须全部重建）。
+ */
+export async function invalidateAllGroupMcpServices(): Promise<void> {
+  // 先关闭所有 handler
+  const handlerEntries = Array.from(groupHandlers.entries());
+  await Promise.allSettled(
+    handlerEntries.map(async ([groupId, handler]) => {
+      try {
+        await handler.close();
+      } catch (error) {
+        logger.error('关闭组MCP handler 失败（失效全部）', error as Error, { groupId });
+      }
+    }),
+  );
+  groupHandlers.clear();
+
+  // 再关闭所有 service
+  const serviceEntries = Array.from(groupServices.entries());
+  await Promise.allSettled(
+    serviceEntries.map(async ([groupId, service]) => {
+      try {
+        await service.shutdown();
+      } catch (error) {
+        logger.error('关闭组MCP service 失败（失效全部）', error as Error, { groupId });
+      }
+    }),
+  );
+  groupServices.clear();
+
+  logger.info('所有组MCP缓存已失效', {
+    handlerCount: handlerEntries.length,
+    serviceCount: serviceEntries.length,
+  });
+}

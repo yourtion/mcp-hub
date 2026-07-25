@@ -120,6 +120,9 @@ export async function getCoreServiceManager(): Promise<McpServiceManager> {
 /**
  * 重载 McpServiceManager（先关闭旧实例，再从最新配置重建）
  * 用于组/服务器配置变更后热重载
+ *
+ * 副作用：旧 manager 关闭后，所有 GroupMcpService（按 group 缓存）持有的就是过期引用，
+ * 因此这里同时失效全部 group MCP 缓存（service + handler），保证下次请求惰性重建。
  */
 export async function reloadCoreServiceManager(): Promise<McpServiceManager> {
   if (coreServiceManager) {
@@ -129,6 +132,17 @@ export async function reloadCoreServiceManager(): Promise<McpServiceManager> {
       logger.warn('关闭旧 McpServiceManager 失败', { error: (error as Error).message });
     }
     coreServiceManager = null;
+
+    // 旧 manager 已关闭，使所有 group MCP 缓存失效（优雅关闭 handler + service）
+    // 动态导入避免与 mcp-handler-factory → service-registry 的循环依赖
+    const { invalidateAllGroupMcpServices } = await import('../api/mcp/mcp-handler-factory.js');
+    try {
+      await invalidateAllGroupMcpServices();
+    } catch (error) {
+      logger.warn('失效 group MCP 缓存失败（继续重建）', {
+        error: (error as Error).message,
+      });
+    }
   }
 
   return initCoreServiceManager();
