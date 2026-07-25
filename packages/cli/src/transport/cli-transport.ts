@@ -4,9 +4,8 @@
  */
 
 import { createCliLogger } from '@mcp-core/mcp-hub-share';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-
-import type { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
+import type { JSONRPCMessage } from "@modelcontextprotocol/server";
+import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
 
 /**
  * CLI传输层类

@@ -5,8 +5,9 @@
 
 import { McpServiceManager } from '@mcp-core/mcp-hub-core';
 import { createCliLogger } from '@mcp-core/mcp-hub-share';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
+import { McpServer } from "@modelcontextprotocol/server";
+import type { CompatibilityCallToolResult } from "@modelcontextprotocol/server";
 import { z } from 'zod/v4';
 
 import { McpProtocolHandler } from '../protocol/mcp-protocol-handler.js';
@@ -47,7 +48,7 @@ export class CliMcpServer {
    * 创建工具处理器
    */
   private createToolHandler(toolName: string) {
-    return async ({ args }: { args?: Record<string, unknown> }) => {
+    return async ({ args }: { args?: Record<string, unknown> }): Promise<CompatibilityCallToolResult> => {
       try {
         if (!this.protocolHandler) {
           throw new Error('协议处理器未初始化');
@@ -238,16 +239,17 @@ export class CliMcpServer {
       // 为每个工具注册处理器
       for (const toolInfo of toolInfos) {
         const toolHandler = this.createToolHandler(toolInfo.name);
-        (this.server as unknown as McpServerRegisterTool).registerTool(
+        // TODO(Task 11): v2 结果类型适配——handler 返回需带 resultType 字段
+        this.server!.registerTool(
           toolInfo.name,
           {
             description: toolInfo.description || `来自服务器 ${toolInfo.serverId} 的工具`,
-            inputSchema: {
+            inputSchema: z.object({
               // 使用通用的输入模式，允许任意参数
               args: z.record(z.string(), z.unknown()).optional(),
-            },
+            }),
           },
-          toolHandler,
+          toolHandler as never,
         );
       }
 

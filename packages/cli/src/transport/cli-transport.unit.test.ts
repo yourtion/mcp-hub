@@ -5,8 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CliTransport } from './cli-transport';
-
-import type { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
+import type { JSONRPCMessage } from "@modelcontextprotocol/server";
 
 // Mock MCP SDK
 const mockTransport = {
@@ -18,7 +17,7 @@ const mockTransport = {
   onclose: undefined as (() => void) | undefined,
 };
 
-vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
+vi.mock('@modelcontextprotocol/server/stdio', () => ({
   StdioServerTransport: vi.fn(function (this: Record<string, unknown>) {
     Object.assign(this, mockTransport);
   }),

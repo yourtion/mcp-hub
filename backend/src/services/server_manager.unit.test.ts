@@ -1,4 +1,4 @@
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { Client } from "@modelcontextprotocol/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ServerStatus } from '../types/mcp-hub.js';
@@ -10,20 +10,20 @@ import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 // 使用一个工厂函数来创建 mock Client，支持 vitest 4.x 的 new 调用
 let _mockClientInstance: Record<string, ReturnType<typeof vi.fn>> | null = null;
 
-vi.mock('@modelcontextprotocol/sdk/client/index.js', () => {
+vi.mock('@modelcontextprotocol/client', () => {
   return {
     Client: vi.fn(function (this: Record<string, unknown>) {
       Object.assign(this, _mockClientInstance);
     }),
   };
 });
-vi.mock('@modelcontextprotocol/sdk/client/stdio.js', () => ({
+vi.mock('@modelcontextprotocol/client/stdio', () => ({
   StdioClientTransport: vi.fn(function (this: Record<string, unknown>) {}),
 }));
-vi.mock('@modelcontextprotocol/sdk/client/sse.js', () => ({
+vi.mock('@modelcontextprotocol/client', () => ({
   SSEClientTransport: vi.fn(function (this: Record<string, unknown>) {}),
 }));
-vi.mock('@modelcontextprotocol/sdk/client/streamableHttp.js', () => ({
+vi.mock('@modelcontextprotocol/client', () => ({
   StreamableHTTPClientTransport: vi.fn(function (this: Record<string, unknown>) {}),
 }));
 vi.mock('../utils/logger.js');

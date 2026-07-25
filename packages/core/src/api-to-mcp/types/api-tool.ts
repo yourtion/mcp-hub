@@ -3,7 +3,7 @@
  */
 
 import type { JsonSchemaProperty } from './api-config.js';
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { Tool } from "@modelcontextprotocol/server";
 
 /**
  * MCP工具输入参数schema
@@ -18,8 +18,11 @@ export interface McpToolInputSchema {
 
 /**
  * MCP工具定义
+ *
+ * v2 SDK 的 Tool.inputSchema 用严格 JSON Schema 类型，这里 Omit 后用项目
+ * 自定义的 McpToolInputSchema 覆盖，保持与 api-to-mcp 子系统的窄类型兼容。
  */
-export interface McpTool extends Tool {
+export interface McpTool extends Omit<Tool, 'inputSchema'> {
   /** 工具唯一标识 */
   name: string;
   /** 工具描述 */

@@ -1,9 +1,6 @@
 import { ConfigError, ConnectionError, ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import { Client, SSEClientTransport, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { ServerStatus } from '../types/mcp-hub.js';
 import { logger } from '../utils/logger.js';
 

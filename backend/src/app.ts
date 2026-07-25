@@ -12,13 +12,11 @@ import { performanceApi } from './api/performance/index.js';
 import { serversApi } from './api/servers/index.js';
 import { toolsAdminApi } from './api/tools-admin/index.js';
 import { toolsApi } from './api/tools/index.js';
-import { mcp } from './legacy/index.js';
 import { createAuthMiddleware } from './middleware/auth.js';
 import { requestIdMiddleware } from './middleware/request-id.js';
 import { secureHeadersMiddleware } from './middleware/security.js';
 import { ApiToMcpWebService } from './services/api-to-mcp-web-service.js';
 import { AuthService } from './services/auth.js';
-import { sse } from './sse.js';
 import { logger } from './utils/logger.js';
 import { createPerformanceMiddleware } from './utils/performance-monitor.js';
 
@@ -76,8 +74,6 @@ app.use('/api/config/*', authMiddleware);
 app.use('/api/dashboard/*', authMiddleware);
 app.use('/api/api-to-mcp/*', authMiddleware);
 
-app.route('/', mcp);
-app.route('/', sse);
 // 具体的 API 路由放在通配符路由之前，避免被拦截
 app.route('/api', hubApi);
 app.route('/api/auth', createAuthApi(authService));

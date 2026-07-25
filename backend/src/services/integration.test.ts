@@ -8,14 +8,14 @@ import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 // Mock external dependencies
 let _mockClientInstance: Record<string, ReturnType<typeof vi.fn>> | null = null;
 
-vi.mock('@modelcontextprotocol/sdk/client/index.js', () => {
+vi.mock('@modelcontextprotocol/client', () => {
   return {
     Client: vi.fn(function (this: unknown) {
       return _mockClientInstance;
     }),
   };
 });
-vi.mock('@modelcontextprotocol/sdk/client/stdio.js');
+vi.mock('@modelcontextprotocol/client/stdio');
 vi.mock('../utils/logger.js');
 
 describe('MCP Hub Service Integration Tests', () => {

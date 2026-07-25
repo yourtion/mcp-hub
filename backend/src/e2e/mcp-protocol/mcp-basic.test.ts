@@ -12,9 +12,7 @@ import {
   ensureTestServerRunning,
   validateMcpConnection,
 } from './mcp-test-config.js';
-
-import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import type { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import type { Client, SSEClientTransport } from "@modelcontextprotocol/client";
 
 describe('基础MCP协议端到端测试', () => {
   let restoreConsole: () => void;

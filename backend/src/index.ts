@@ -5,7 +5,6 @@ import { shutdownHubApi } from './api/hub.js';
 import { shutdownGroupMcpRouter } from './api/mcp/group-router.js';
 import { shutdownServersApi } from './api/servers/index.js';
 import { app } from './app.js';
-import { shutdownMcpService } from './legacy/index.js';
 import {
   createHubService,
   getHubServiceSafe,
@@ -172,12 +171,6 @@ async function cleanupResources() {
   cleanupPromises.push(
     shutdownDashboardServices().catch((error) => {
       logger.error('仪表板服务关闭失败', error);
-    }),
-  );
-
-  cleanupPromises.push(
-    shutdownMcpService().catch((error) => {
-      logger.error('MCP 服务关闭失败', error);
     }),
   );
 

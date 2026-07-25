@@ -2,9 +2,7 @@
  * MCP Hub聚合功能端到端测试
  * 测试Hub作为MCP服务聚合器的核心功能
  */
-
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { Client, SSEClientTransport } from "@modelcontextprotocol/client";
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { app } from '../../app.js';

@@ -2,8 +2,7 @@
  * 组特定MCP路由处理器
  * 处理 /:group/mcp 路由，提供基于组的MCP服务访问
  */
-
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { NodeStreamableHTTPServerTransport } from "@modelcontextprotocol/node";
 import { toFetchResponse, toReqRes } from 'fetch-to-node';
 import { Hono } from 'hono';
 
@@ -112,7 +111,7 @@ async function groupValidationMiddleware(c: Context, next: () => Promise<void>) 
  */
 groupMcpRouter.post('/:group/mcp', groupValidationMiddleware, async (c) => {
   const { req, res } = toReqRes(c.req.raw);
-  const groupId = c.req.param('group');
+  const groupId = c.req.param("group")!;
 
   try {
     logger.info('处理组特定MCP请求', { groupId });
@@ -121,7 +120,7 @@ groupMcpRouter.post('/:group/mcp', groupValidationMiddleware, async (c) => {
     const groupService = await getGroupMcpService(groupId);
 
     // 创建传输层
-    const transport = new StreamableHTTPServerTransport({
+    const transport = new NodeStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
     });
 
@@ -172,7 +171,7 @@ groupMcpRouter.post('/:group/mcp', groupValidationMiddleware, async (c) => {
  * 获取组状态信息
  */
 groupMcpRouter.get('/:group/status', groupValidationMiddleware, async (c) => {
-  const groupId = c.req.param('group');
+  const groupId = c.req.param("group")!;
 
   try {
     logger.debug('获取组状态信息', { groupId });
@@ -203,7 +202,7 @@ groupMcpRouter.get('/:group/status', groupValidationMiddleware, async (c) => {
  * 获取组可用工具列表
  */
 groupMcpRouter.get('/:group/tools', groupValidationMiddleware, async (c) => {
-  const groupId = c.req.param('group');
+  const groupId = c.req.param("group")!;
 
   try {
     logger.debug('获取组工具列表', { groupId });

@@ -65,7 +65,7 @@
   },
   "dependencies": {
     "@mcp-core/mcp-hub-share": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@modelcontextprotocol/server": "2.0.0-beta.5",
     "axios": "^1.6.7",
     "jsonata": "^2.0.3",
     "zod": "^4.3.6"

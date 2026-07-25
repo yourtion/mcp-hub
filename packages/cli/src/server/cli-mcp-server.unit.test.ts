@@ -62,13 +62,13 @@ const mockMcpServer = {
 };
 
 // Mock MCP SDK
-vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => ({
+vi.mock('@modelcontextprotocol/server', () => ({
   McpServer: vi.fn(function (this: Record<string, unknown>) {
     Object.assign(this, mockMcpServer);
   }),
 }));
 
-vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
+vi.mock('@modelcontextprotocol/server/stdio', () => ({
   StdioServerTransport: vi.fn(function (this: Record<string, unknown>) {
     Object.assign(this, mockTransport);
   }),

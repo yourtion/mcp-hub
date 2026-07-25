@@ -2,10 +2,7 @@
  * MCP协议测试配置
  * 统一管理MCP协议测试的配置和工具函数
  */
-
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-
+import { Client, SSEClientTransport } from "@modelcontextprotocol/client";
 import { checkServerHealth, startTestServer, waitForServer } from '../test-server.js';
 
 export interface McpTestConfig {

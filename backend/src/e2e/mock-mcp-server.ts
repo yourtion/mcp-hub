@@ -2,8 +2,7 @@
  * 增强 Mock MCP 服务器
  * 支持多模拟 MCP 服务器、延迟响应、错误注入、请求监控
  */
-
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { Tool } from "@modelcontextprotocol/server";
 
 export interface MockServerConfig {
   /** 服务器 ID */
