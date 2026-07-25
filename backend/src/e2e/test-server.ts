@@ -27,7 +27,11 @@ export class TestServer {
           fetch: app.fetch,
           port: this.port,
         });
-        (this.server as { unref?: () => void } | null)?.unref?.();
+        // 注意：不对 listener 调用 unref()。
+        // unref 会让进程在「只剩 server 句柄」时退出，但在 vitest worker 内，
+        // 第一个流式响应（如 MCP StreamableHTTP 的 SSE/POST 流）处理完后，
+        // 事件循环短暂只剩 listener，触发进程退出 → 后续请求全部 "fetch failed"。
+        // vitest 会在 teardownTimeout 后强制回收 worker，无需 unref 也能退出。
 
         // 等待服务器启动
         const startupTimer = setTimeout(() => {

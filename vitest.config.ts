@@ -24,6 +24,7 @@ export default defineConfig({
       './packages/core/vitest.config.ts',
       './packages/cli/vitest.config.ts',
       './backend/vitest.config.ts',
+      './backend/vitest.e2e.config.ts',
       './frontend/vitest.config.ts',
     ],
   },

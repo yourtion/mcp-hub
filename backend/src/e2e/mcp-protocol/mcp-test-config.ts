@@ -1,36 +1,55 @@
 /**
  * MCP协议测试配置
  * 统一管理MCP协议测试的配置和工具函数
+ *
+ * v2（协议 2026-07-28）：客户端改用 StreamableHTTPClientTransport，
+ * 连接 `/:group/mcp` 端点（无状态，createMcpHandler + legacy:reject）。
+ * 出站版本协商 `{ mode: 'auto' }`：探测到 modern server 时走 2026-07-28，
+ * 否则回退到 legacy initialize——保证客户端对服务端的兼容性。
  */
-import { Client, SSEClientTransport } from "@modelcontextprotocol/client";
-import { checkServerHealth, startTestServer, waitForServer } from '../test-server.js';
+import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
+
+import { checkServerHealth } from '../test-server.js';
 
 export interface McpTestConfig {
+  /** 测试服务器监听端口（TestServer 默认 3000） */
   serverPort: number;
+  /** 测试服务器基址 */
   baseUrl: string;
-  sseEndpoint: string;
+  /** 组 ID，对应 `/:group/mcp` 端点 */
+  group: string;
+  /** MCP 端点（相对 baseUrl），总是 `/<group>/mcp` */
+  mcpEndpoint: string;
   timeout: number;
   retries: number;
 }
 
+/**
+ * 默认测试配置：连 `default` 组的 `/default/mcp`。
+ * `setupTestConfig()` 写入的 group.json 里包含 `default` 组。
+ */
 export const defaultMcpTestConfig: McpTestConfig = {
   serverPort: 3000,
-  baseUrl: 'http://localhost:6001',
-  sseEndpoint: '/sse',
+  baseUrl: 'http://localhost:3000',
+  group: 'default',
+  mcpEndpoint: '/default/mcp',
   timeout: 30000,
   retries: 3,
 };
 
 /**
  * 创建MCP测试客户端
+ *
+ * 用 StreamableHTTPClientTransport 连接 `/:group/mcp`。
+ * `versionNegotiation: { mode: 'auto' }` 让 SDK 自动探测服务端协议版本。
  */
 export async function createMcpTestClient(
   clientName: string,
   config: McpTestConfig = defaultMcpTestConfig,
-): Promise<{ client: Client; transport: SSEClientTransport }> {
-  const sseUrl = `${config.baseUrl}${config.sseEndpoint}`;
+): Promise<{ client: Client; transport: StreamableHTTPClientTransport }> {
+  const mcpUrl = `${config.baseUrl}${config.mcpEndpoint}`;
 
-  const transport = new SSEClientTransport(new URL(sseUrl));
+  const transport = new StreamableHTTPClientTransport(new URL(mcpUrl));
   const client = new Client(
     {
       name: clientName,
@@ -40,6 +59,8 @@ export async function createMcpTestClient(
       capabilities: {
         tools: {},
       },
+      // 出站兼容：探测到 modern (2026-07-28) 则走 discover，否则回退 legacy initialize
+      versionNegotiation: { mode: 'auto' },
     },
   );
 
@@ -52,7 +73,7 @@ export async function createMcpTestClient(
  */
 export async function closeMcpClient(
   client: Client | null,
-  transport: SSEClientTransport | null,
+  transport: StreamableHTTPClientTransport | null,
 ): Promise<void> {
   if (client) {
     try {
@@ -72,27 +93,29 @@ export async function closeMcpClient(
 }
 
 /**
- * 确保测试服务器运行
+ * 确保测试服务器运行 + 测试配置已写入。
+ *
+ * 配置写入与服务器启动由 api-e2e 项目的全局 setup
+ * （backend/vitest.e2e.setup.ts）在 worker 启动时一次性完成，
+ * 所有协议测试文件复用同一个运行中的服务器实例，避免文件间因
+ * cleanupTestConfig/resetConfigInstances 互相踩踏。
+ *
+ * 此处仅做健康检查：若全局 setup 未能起服务，返回 false 让测试自我跳过。
  */
 export async function ensureTestServerRunning(
   config: McpTestConfig = defaultMcpTestConfig,
 ): Promise<boolean> {
-  // 首先检查服务器是否已经运行
-  if (await checkServerHealth(config.baseUrl)) {
-    return true;
-  }
+  return checkServerHealth(config.baseUrl);
+}
 
-  // 尝试启动测试服务器
-  try {
-    await startTestServer(config.serverPort);
-
-    // 等待服务器就绪
-    const isReady = await waitForServer(config.baseUrl, 10, 1000);
-    return isReady;
-  } catch (error) {
-    console.error('无法启动测试服务器:', error);
-    return false;
-  }
+/**
+ * 清理钩子（空操作）。
+ *
+ * 配置生命周期由全局 setup 管理；单测文件在 afterAll 调用此函数是安全的空操作，
+ * 仅为保持调用对称。真正的清理在 worker 退出时由进程回收完成。
+ */
+export function cleanupMcpTestConfig(): void {
+  // no-op：配置由全局 setup 管理
 }
 
 /**
@@ -116,15 +139,19 @@ export function withMcpServer(testFn: () => Promise<void>) {
 export async function createResilientMcpClient(
   clientName: string,
   config: McpTestConfig = defaultMcpTestConfig,
-): Promise<{ client: Client; transport: SSEClientTransport } | null> {
+): Promise<{ client: Client; transport: StreamableHTTPClientTransport } | null> {
   for (let attempt = 1; attempt <= config.retries; attempt++) {
     try {
       return await createMcpTestClient(clientName, config);
     } catch (error) {
-      console.warn(`MCP客户端连接尝试 ${attempt}/${config.retries} 失败:`, error);
+      console.warn(
+        `MCP客户端连接尝试 ${attempt}/${config.retries} 失败:`,
+        error,
+      );
 
+      // 连接失败时先关掉残留 transport，再重试
       if (attempt < config.retries) {
-        await new Promise((resolve) => setTimeout(resolve, 10 * attempt));
+        await new Promise((resolve) => setTimeout(resolve, 50 * attempt));
       }
     }
   }
