@@ -33,7 +33,7 @@
 
 | # | 子项目 | spec 状态 | 实现进度 | 详细 spec |
 |---|---|---|---|---|
-| **P1** | 传输层升级到 2026-07-28 无状态 | ✅ 完成 | 🚧 **进行中**（分支 `feat/p1-transport-upgrade-2026-07-28`） | `2026-07-25-p1-transport-upgrade-design.md` |
+| **P1** | 传输层升级到 2026-07-28 无状态 | ✅ 完成 | ✅ **实现完成**（分支 `feat/p1-transport-upgrade-2026-07-28`，待合并） | `2026-07-25-p1-transport-upgrade-design.md` |
 | P2 | 入站 OAuth 2.1（Protected Resource） | ⏳ 待 brainstorming | ⬜ 未开始 | — |
 | P3 | 出站 OAuth（AuthenticationStrategy） | ⏳ 待 brainstorming | ⬜ 未开始 | — |
 | P4 | `ttlMs`/`cacheScope` 缓存语义 | ⏳ 待 brainstorming | ⬜ 未开始 | — |
