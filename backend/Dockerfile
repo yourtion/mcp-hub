@@ -1,6 +1,6 @@
 # MCP Hub API 服务器 Docker 镜像
 
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 # 安装 pnpm
 RUN npm install -g pnpm
@@ -30,7 +30,7 @@ RUN pnpm build:core
 RUN pnpm build:api
 
 # 生产阶段
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # 安装 pnpm
 RUN npm install -g pnpm
