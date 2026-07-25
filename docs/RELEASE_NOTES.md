@@ -1,5 +1,21 @@
 # MCP Hub Release Notes
 
+## Unreleased — MCP 2026-07-28 协议升级（P1 传输层）
+
+### ⚠️ Breaking Changes
+
+- **协议升级到 MCP 2026-07-28**：入站方向（Hub 对 MCP 客户端）激进升级，仅支持新协议。旧的 2025-era `initialize` 握手被拒绝（`legacy: 'reject'`），客户端需使用支持 2026-07-28 的 MCP SDK。
+- **移除 `/sse` MCP 端点**：MCP 级 SSE 传输已在 2026-07-28 标记为 Deprecated 并移除。请改用 `/:group/mcp` 的 Streamable HTTP 端点。（Dashboard 业务 SSE 不受影响。）
+- **移除 legacy `/mcp` 全局端点**：该端点此前已标记 deprecated（Sunset 2026-10-01），现一并移除。请使用 `/:group/mcp` 组路由。
+- **Node.js 最低版本要求提升到 20**：MCP SDK v2 要求 Node 20+。Docker 基础镜像已升级到 `node:20-alpine`。
+- **SDK 升级到 `@modelcontextprotocol/*` v2**：`@modelcontextprotocol/sdk` 单包拆分为 `core`/`server`/`client`/`node`/`hono` 等独立包。
+
+### 新增
+
+- 采用 `createMcpHandler` 实现无状态传输（`server/discover`、`Mcp-Method`/`Mcp-Name` 头校验、无 `Mcp-Session-Id`）。
+- McpServer 按 group 缓存，配置变更时（`reloadCoreServiceManager`）主动失效重建。
+- 出站方向（Hub 连外部 MCP server）保留兼容：`versionNegotiation: { mode: 'auto' }`，仍支持连接老式 SSE server（Hub 充当协议转换层）。
+
 ## Version 1.0.0 - Web UI Release
 
 发布日期: 2024-01-15

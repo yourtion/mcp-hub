@@ -42,7 +42,7 @@ MCP Hub follows a modular monorepo architecture with the following packages:
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - pnpm package manager
 
 ### Install Dependencies

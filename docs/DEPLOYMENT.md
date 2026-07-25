@@ -64,7 +64,7 @@
 
 ### 软件要求
 
-- **Node.js**: 18.x 或更高版本
+- **Node.js**: 20.x 或更高版本
 - **pnpm**: 8.x 或更高版本
 - **操作系统**: Linux (Ubuntu 20.04+, CentOS 8+) 或 macOS
 - **反向代理**: Nginx 1.18+ 或 Apache 2.4+
@@ -89,7 +89,7 @@
 sudo apt update && sudo apt upgrade -y
 
 # 安装 Node.js
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 
 # 安装 pnpm
