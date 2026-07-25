@@ -27,6 +27,11 @@ const groupServices: Map<string, GroupMcpService> = new Map();
 // 按 groupId 缓存的 McpHttpHandler：handler 设计为构造一次复用
 // （其 fetch 每请求内部 per-request serving），避免每请求重建 handler 与 bus。
 const groupHandlers: Map<string, McpHttpHandler> = new Map();
+// in-flight Promise 缓存：防止并发请求对同一 group 重复初始化。
+// 当请求 A 正在创建 service/handler 时，请求 B 会拿到同一个 Promise 等待，
+// 而不是各自走 check-then-act 创建第二个实例。
+const serviceInflight: Map<string, Promise<GroupMcpService>> = new Map();
+const handlerInflight: Map<string, Promise<McpHttpHandler>> = new Map();
 
 /**
  * 暴露 groupServices 缓存，供 group-router 复用与统一关闭。
@@ -55,13 +60,28 @@ export async function ensureGroupMcpService(
     return existing;
   }
 
-  logger.info('为组创建MCP服务实例', { groupId });
-  const coreServiceManager = await getCoreServiceManager();
-  const groupService = new GroupMcpService(groupId, coreServiceManager);
-  await groupService.initialize();
+  // 命中正在进行的初始化则等待同一个 Promise，避免并发重复创建
+  const inflight = serviceInflight.get(groupId);
+  if (inflight) {
+    return inflight;
+  }
 
-  groupServices.set(groupId, groupService);
-  return groupService;
+  const promise = (async () => {
+    logger.info('为组创建MCP服务实例', { groupId });
+    const coreServiceManager = await getCoreServiceManager();
+    const groupService = new GroupMcpService(groupId, coreServiceManager);
+    await groupService.initialize();
+
+    groupServices.set(groupId, groupService);
+    return groupService;
+  })();
+
+  serviceInflight.set(groupId, promise);
+  try {
+    return await promise;
+  } finally {
+    serviceInflight.delete(groupId);
+  }
 }
 
 /**
@@ -82,31 +102,47 @@ export async function createGroupMcpHandler(
     return cached;
   }
 
-  // 确保 service 已初始化并放入缓存（factory 闭包从缓存中取）
-  await ensureGroupMcpService(groupId);
+  // 命中正在进行的创建则等待，避免并发重复构造 handler
+  const inflight = handlerInflight.get(groupId);
+  if (inflight) {
+    return inflight;
+  }
 
-  const handler = createMcpHandler(
-    // McpServerFactory：按请求返回该组对应的 McpServer
-    () => {
-      const groupService = groupServices.get(groupId);
-      if (!groupService) {
-        // 不应发生：上面 ensureGroupMcpService 已放入缓存
-        throw new Error(`组 '${groupId}' 的 MCP 服务未初始化`);
-      }
-      // 复用缓存中已注册工具的 McpServer 实例
-      return groupService.getMcpServer();
-    },
-    {
-      // 入站激进升级：拒绝 2025-era（legacy）流量，仅服务 2026-07-28
-      legacy: 'reject',
-      onerror: (error) => {
-        logger.error('组MCP handler 错误', error, { groupId });
+  const promise = (async () => {
+    // 确保 service 已初始化并放入缓存（factory 闭包从缓存中取）
+    await ensureGroupMcpService(groupId);
+
+    const handler = createMcpHandler(
+      // McpServerFactory：按请求返回该组对应的 McpServer
+      () => {
+        const groupService = groupServices.get(groupId);
+        if (!groupService) {
+          // 不应发生：上面 ensureGroupMcpService 已放入缓存。
+          // 极端情况下（创建与失效并发），抛错由上层 catch 返回 500。
+          throw new Error(`组 '${groupId}' 的 MCP 服务未初始化`);
+        }
+        // 复用缓存中已注册工具的 McpServer 实例
+        return groupService.getMcpServer();
       },
-    },
-  );
+      {
+        // 入站激进升级：拒绝 2025-era（legacy）流量，仅服务 2026-07-28
+        legacy: 'reject',
+        onerror: (error) => {
+          logger.error('组MCP handler 错误', error, { groupId });
+        },
+      },
+    );
 
-  groupHandlers.set(groupId, handler);
-  return handler;
+    groupHandlers.set(groupId, handler);
+    return handler;
+  })();
+
+  handlerInflight.set(groupId, promise);
+  try {
+    return await promise;
+  } finally {
+    handlerInflight.delete(groupId);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -129,6 +165,10 @@ export async function createGroupMcpHandler(
  * 不存在的 group 不会报错（幂等）。
  */
 export async function invalidateGroupMcpService(groupId: string): Promise<void> {
+  // 清除 in-flight 标记，让失效后的下次请求能重新初始化
+  serviceInflight.delete(groupId);
+  handlerInflight.delete(groupId);
+
   const handler = groupHandlers.get(groupId);
   if (handler) {
     try {
@@ -157,6 +197,10 @@ export async function invalidateGroupMcpService(groupId: string): Promise<void> 
  * 因为所有 GroupMcpService 都持有旧的 coreServiceManager 引用，必须全部重建）。
  */
 export async function invalidateAllGroupMcpServices(): Promise<void> {
+  // 清除所有 in-flight 标记
+  serviceInflight.clear();
+  handlerInflight.clear();
+
   // 先关闭所有 handler
   const handlerEntries = Array.from(groupHandlers.entries());
   await Promise.allSettled(
