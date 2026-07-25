@@ -1,41 +1,35 @@
 /**
  * 组特定MCP路由处理器
  * 处理 /:group/mcp 路由，提供基于组的MCP服务访问
+ *
+ * v2（协议 2026-07-28）：POST /:group/mcp 使用 @modelcontextprotocol/server
+ * 的 createMcpHandler（无状态、legacy:reject），handler.fetch 桥接 Hono 的
+ * c.req.raw。groupServices 缓存与 handler 缓存由 mcp-handler-factory 统一管理。
  */
-import { NodeStreamableHTTPServerTransport } from "@modelcontextprotocol/node";
-import { toFetchResponse, toReqRes } from 'fetch-to-node';
 import { Hono } from 'hono';
 
-import { getCoreServiceManager } from '../../services/service-registry.js';
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
+import {
+  createGroupMcpHandler,
+  ensureGroupMcpService,
+  getGroupHandlersCache,
+  getGroupServicesCache,
+} from './mcp-handler-factory.js';
 import { GroupMcpService } from './group-service.js';
 
 import type { Context } from 'hono';
 
 export const groupMcpRouter = new Hono();
 
-const groupServices: Map<string, GroupMcpService> = new Map();
+// 复用 mcp-handler-factory 中模块级单例缓存（保持原导出名不变）
+const groupServices = getGroupServicesCache();
 
 /**
  * 获取或创建组特定的MCP服务
  */
 async function getGroupMcpService(groupId: string): Promise<GroupMcpService> {
-  const coreServiceManager = await getCoreServiceManager();
-
-  // 检查是否已存在该组的服务实例
-  let groupService = groupServices.get(groupId);
-  if (groupService) {
-    return groupService;
-  }
-
-  // 创建新的组服务实例
-  logger.info('为组创建MCP服务实例', { groupId });
-  groupService = new GroupMcpService(groupId, coreServiceManager);
-  await groupService.initialize();
-
-  groupServices.set(groupId, groupService);
-  return groupService;
+  return ensureGroupMcpService(groupId);
 }
 
 /**
@@ -108,42 +102,25 @@ async function groupValidationMiddleware(c: Context, next: () => Promise<void>) 
 
 /**
  * 处理组特定的MCP请求
+ *
+ * 使用 createMcpHandler 构造的无状态 handler（legacy: 'reject'）：
+ *   handler.fetch(c.req.raw) 直接返回 Web-standard Response。
+ * 直接透传 c.req.raw，由 handler 内部 clone+读取请求体，避免在 Hono 中
+ * 预先消耗请求流。
  */
 groupMcpRouter.post('/:group/mcp', groupValidationMiddleware, async (c) => {
-  const { req, res } = toReqRes(c.req.raw);
   const groupId = c.req.param("group")!;
 
   try {
     logger.info('处理组特定MCP请求', { groupId });
 
-    // 获取组特定的MCP服务
-    const groupService = await getGroupMcpService(groupId);
+    // 获取（或惰性创建）绑定到该组的 MCP handler
+    const handler = await createGroupMcpHandler(groupId);
 
-    // 创建传输层
-    const transport = new NodeStreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
-    });
+    // Web-standard 桥接：handler.fetch 接受 Request，返回 Response
+    const response = await handler.fetch(c.req.raw);
 
-    // 添加错误处理
-    transport.onerror = (error) => {
-      logger.error('组MCP传输层错误', error, { groupId });
-    };
-
-    // 连接到组服务的MCP服务器
-    const mcpServer = groupService.getMcpServer();
-    await mcpServer.connect(transport);
-
-    // 处理请求
-    await transport.handleRequest(req, res, await c.req.json());
-
-    // 清理连接
-    res.on('close', () => {
-      logger.debug('组MCP请求连接关闭', { groupId });
-      transport.close();
-      mcpServer.close();
-    });
-
-    return toFetchResponse(res);
+    return response;
   } catch (error) {
     logger.error('组MCP端点错误', error as Error, { groupId });
     return c.json(
@@ -237,7 +214,19 @@ export async function shutdownGroupMcpRouter(): Promise<void> {
   try {
     logger.info('关闭组MCP路由服务');
 
-    // 关闭所有组服务实例
+    // 先关闭所有 MCP handler（中止在飞的 modern exchanges）
+    const groupHandlers = getGroupHandlersCache();
+    const handlerClosePromises = Array.from(groupHandlers.values()).map(async (handler) => {
+      try {
+        await handler.close();
+      } catch (error) {
+        logger.error('关闭组MCP handler 时出错', error as Error);
+      }
+    });
+    await Promise.allSettled(handlerClosePromises);
+    groupHandlers.clear();
+
+    // 再关闭所有组服务实例
     const shutdownPromises = Array.from(groupServices.values()).map(async (service) => {
       try {
         await service.shutdown();

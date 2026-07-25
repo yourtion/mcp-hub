@@ -50,6 +50,9 @@ importers:
       '@modelcontextprotocol/core':
         specifier: 2.0.0-beta.5
         version: 2.0.0-beta.5
+      '@modelcontextprotocol/hono':
+        specifier: 2.0.0-beta.5
+        version: 2.0.0-beta.5(@modelcontextprotocol/server@2.0.0-beta.5)(hono@4.12.32)
       '@modelcontextprotocol/node':
         specifier: 2.0.0-beta.5
         version: 2.0.0-beta.5(@modelcontextprotocol/server@2.0.0-beta.5)(hono@4.12.32)
@@ -725,6 +728,13 @@ packages:
   '@modelcontextprotocol/core@2.0.0-beta.5':
     resolution: {integrity: sha512-HKbY9XTbsDy1Y6r2I55TGE3JEapM0vg96e1MUmBIF9LGjos5gjhcIrTz1yvBPLg2aFKHjwhUAQfRdrCEnPxNew==}
     engines: {node: '>=20'}
+
+  '@modelcontextprotocol/hono@2.0.0-beta.5':
+    resolution: {integrity: sha512-jhdUv9RT8HQUuatblAMaed/tP9KuAFozsf87OUxsvviEaQervh5dtTj9w7iCVHlsDLID6hF0Eh1Insy5WT7P9Q==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@modelcontextprotocol/server': ^2.0.0-beta.5
+      hono: ^4.11.4
 
   '@modelcontextprotocol/node@2.0.0-beta.5':
     resolution: {integrity: sha512-flrOzx5qFLBM9I8IYRGfYUY02erFmxOvYQ9sEE6iSj/ZZpRYKorXWscM/qrfW9rwlcGLyymHhnP2AaDbMB1lIA==}
@@ -3278,6 +3288,11 @@ snapshots:
   '@modelcontextprotocol/core@2.0.0-beta.5':
     dependencies:
       zod: 4.3.6
+
+  '@modelcontextprotocol/hono@2.0.0-beta.5(@modelcontextprotocol/server@2.0.0-beta.5)(hono@4.12.32)':
+    dependencies:
+      '@modelcontextprotocol/server': 2.0.0-beta.5
+      hono: 4.12.32
 
   '@modelcontextprotocol/node@2.0.0-beta.5(@modelcontextprotocol/server@2.0.0-beta.5)(hono@4.12.32)':
     dependencies:
