@@ -15,16 +15,12 @@ vi.mock('@modelcontextprotocol/client', () => {
     Client: vi.fn(function (this: Record<string, unknown>) {
       Object.assign(this, _mockClientInstance);
     }),
+    SSEClientTransport: vi.fn(function (this: Record<string, unknown>) {}),
+    StreamableHTTPClientTransport: vi.fn(function (this: Record<string, unknown>) {}),
   };
 });
 vi.mock('@modelcontextprotocol/client/stdio', () => ({
   StdioClientTransport: vi.fn(function (this: Record<string, unknown>) {}),
-}));
-vi.mock('@modelcontextprotocol/client', () => ({
-  SSEClientTransport: vi.fn(function (this: Record<string, unknown>) {}),
-}));
-vi.mock('@modelcontextprotocol/client', () => ({
-  StreamableHTTPClientTransport: vi.fn(function (this: Record<string, unknown>) {}),
 }));
 vi.mock('../utils/logger.js');
 
