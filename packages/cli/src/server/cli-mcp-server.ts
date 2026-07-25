@@ -1,13 +1,14 @@
 /**
  * CLI MCP服务器实现
- * 使用核心包的McpServiceManager和MCP SDK的StdioServerTransport
+ * 使用核心包的McpServiceManager和MCP SDK 的 serveStdio 入口
  */
 
 import { McpServiceManager } from '@mcp-core/mcp-hub-core';
 import { createCliLogger } from '@mcp-core/mcp-hub-share';
-import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
 import { McpServer } from "@modelcontextprotocol/server";
-import type { CompatibilityCallToolResult } from "@modelcontextprotocol/server";
+import type { CallToolResult } from "@modelcontextprotocol/server";
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
+import type { StdioServerHandle } from "@modelcontextprotocol/server/stdio";
 import { z } from 'zod/v4';
 
 import { McpProtocolHandler } from '../protocol/mcp-protocol-handler.js';
@@ -15,28 +16,16 @@ import { McpProtocolHandler } from '../protocol/mcp-protocol-handler.js';
 import type { CliConfig } from '../types';
 
 /**
- * McpServer 注册工具的接口
- * 由于 SDK 使用 zod v3 而项目使用 zod v4，定义兼容的接口来避免类型不匹配。
- * 返回类型使用 Record<string, unknown> 以兼容 SDK 内部的 zod v3 output 类型。
- */
-interface McpServerRegisterTool {
-  registerTool: (
-    name: string,
-    config: {
-      description?: string;
-      inputSchema?: Record<string, z.ZodTypeAny>;
-    },
-    handler: (params: { args?: Record<string, unknown> }) => Promise<Record<string, unknown>>,
-  ) => unknown;
-}
-
-/**
  * CLI MCP服务器类
  * 聚合多个MCP服务并通过stdio提供统一的MCP接口
+ *
+ * 使用 MCP SDK v2 的 `serveStdio` 入口管理传输层：它负责 era 决策、传输层
+ * 生命周期和消息分发，并以 `legacy: 'reject'` 拒绝 2025-era 旧协议，强制使用
+ * 2026-07-28 现代协议。
  */
 export class CliMcpServer {
   private server: McpServer | null = null;
-  private transport: StdioServerTransport | null = null;
+  private stdioHandle: StdioServerHandle | null = null;
   private coreService: McpServiceManager | null = null;
   private protocolHandler: McpProtocolHandler | null = null;
   private config: CliConfig | null = null;
@@ -46,9 +35,13 @@ export class CliMcpServer {
 
   /**
    * 创建工具处理器
+   *
+   * 返回 `CallToolResult`（MCP SDK v2 的 handler 结果形态）。`resultType` 是
+   * wire-only 字段，由 SDK 的 codec 层在出站时统一添加，handler 不需要也不应该
+   * 手动设置——这与迁移指南“Server-side authoring is era-independent”一致。
    */
   private createToolHandler(toolName: string) {
-    return async ({ args }: { args?: Record<string, unknown> }): Promise<CompatibilityCallToolResult> => {
+    return async (args: Record<string, unknown> | undefined): Promise<CallToolResult> => {
       try {
         if (!this.protocolHandler) {
           throw new Error('协议处理器未初始化');
@@ -123,8 +116,7 @@ export class CliMcpServer {
       // 延迟注册工具到启动时
       // await this.registerTools();
 
-      // 创建stdio传输层
-      this.transport = new StdioServerTransport();
+      // serveStdio 在启动时负责创建并管理 StdioServerTransport，这里无需预创建。
 
       this.isInitialized = true;
       this.logger.info('CLI MCP服务器初始化完成');
@@ -137,6 +129,10 @@ export class CliMcpServer {
 
   /**
    * 启动MCP服务器
+   *
+   * 通过 `serveStdio` 把 stdio 传输层交给 SDK 管理：工厂返回的工具已注册的
+   * `McpServer` 实例，SDK 在每次连接建立时调用工厂、启动传输层并完成 era
+   * 协商。`legacy: 'reject'` 强制使用 2026-07-28 现代协议。
    */
   async start(): Promise<void> {
     if (!this.isInitialized) {
@@ -151,15 +147,21 @@ export class CliMcpServer {
     this.logger.info('启动CLI MCP服务器');
 
     try {
-      if (!this.server || !this.transport) {
-        throw new Error('服务器或传输层未初始化');
+      if (!this.server) {
+        throw new Error('服务器未初始化');
       }
 
       // 在启动时注册工具（延迟到真正需要时）
       await this.registerTools();
 
-      // 连接服务器和传输层（McpServer会自动启动传输层）
-      await this.server.connect(this.transport);
+      // serveStdio 接管传输层：传入返回当前 server 的工厂，并拒绝旧协议。
+      const serverRef = this.server;
+      this.stdioHandle = serveStdio(() => serverRef, {
+        legacy: 'reject',
+        onerror: (error) => {
+          this.logger.error('serveStdio 传输层错误', error);
+        },
+      });
 
       this.isStarted = true;
       this.logger.info('CLI MCP服务器启动成功，等待客户端连接...');
@@ -204,8 +206,11 @@ export class CliMcpServer {
    */
   private async performShutdown(): Promise<void> {
     try {
-      // 关闭MCP服务器（会自动关闭传输层）
-      if (this.server) {
+      // serveStdio 的 handle 负责 teardown：关闭 pinned 实例与底层传输层。
+      if (this.stdioHandle) {
+        await this.stdioHandle.close();
+      } else if (this.server) {
+        // 兜底：未走 serveStdio 路径（理论上不会发生）时直接关闭 server。
         await this.server.close();
       }
 
@@ -239,7 +244,6 @@ export class CliMcpServer {
       // 为每个工具注册处理器
       for (const toolInfo of toolInfos) {
         const toolHandler = this.createToolHandler(toolInfo.name);
-        // TODO(Task 11): v2 结果类型适配——handler 返回需带 resultType 字段
         this.server!.registerTool(
           toolInfo.name,
           {
@@ -249,7 +253,7 @@ export class CliMcpServer {
               args: z.record(z.string(), z.unknown()).optional(),
             }),
           },
-          toolHandler as never,
+          toolHandler,
         );
       }
 
@@ -265,12 +269,8 @@ export class CliMcpServer {
    */
   private async cleanup(): Promise<void> {
     try {
-      // 1. 显式清理 transport 引用
-      if (this.transport) {
-        // StdioServerTransport 可能没有 close() 方法
-        // 但我们可以确保置空引用
-        this.transport = null;
-      }
+      // 1. 显式清理 stdioHandle 引用
+      this.stdioHandle = null;
 
       // 2. 清理 protocol handler 引用
       // （McpProtocolHandler 没有 cleanup 方法，只需置空引用）

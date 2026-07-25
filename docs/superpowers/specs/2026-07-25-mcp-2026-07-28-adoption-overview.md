@@ -29,16 +29,20 @@
 
 ## 子项目全景
 
-| # | 子项目 | 状态 | 详细 spec |
-|---|---|---|---|
-| **P1** | 传输层升级到 2026-07-28 无状态 | ✅ spec 完成 | `2026-07-25-p1-transport-upgrade-design.md` |
-| P2 | 入站 OAuth 2.1（Protected Resource） | ⏳ 待 brainstorming | — |
-| P3 | 出站 OAuth（AuthenticationStrategy） | ⏳ 待 brainstorming | — |
-| P4 | `ttlMs`/`cacheScope` 缓存语义 | ⏳ 待 brainstorming | — |
-| P5 | `subscriptions/listen` + MRTR | ⏳ 推迟（观望客户端生态） | — |
-| P6 | OTel trace context + 弃用项清理 | ⏳ 待 brainstorming | — |
+> 状态分两个维度：**spec 状态**（设计文档是否产出）与**实现进度**（代码是否在动）。两者独立——spec 完成不等于实现完成。
+
+| # | 子项目 | spec 状态 | 实现进度 | 详细 spec |
+|---|---|---|---|---|
+| **P1** | 传输层升级到 2026-07-28 无状态 | ✅ 完成 | 🚧 **进行中**（分支 `feat/p1-transport-upgrade-2026-07-28`） | `2026-07-25-p1-transport-upgrade-design.md` |
+| P2 | 入站 OAuth 2.1（Protected Resource） | ⏳ 待 brainstorming | ⬜ 未开始 | — |
+| P3 | 出站 OAuth（AuthenticationStrategy） | ⏳ 待 brainstorming | ⬜ 未开始 | — |
+| P4 | `ttlMs`/`cacheScope` 缓存语义 | ⏳ 待 brainstorming | ⬜ 未开始 | — |
+| P5 | `subscriptions/listen` + MRTR | ⏳ 推迟（观望客户端生态） | ⬜ 未开始 | — |
+| P6 | OTel trace context + 弃用项清理 | ⏳ 待 brainstorming | ⬜ 未开始 | — |
 
 **推荐主线顺序**：P1 → P4 → P2 → P3 → P6 → P5
+
+> **2026-07-25 协议特性审查结论**：对照 2026-07-28 完整特性集，P1-P6 覆盖了协议主干（传输无状态化、Authorization、缓存语义、可观测性、弃用清理）。有 2 个新特性经评估**显式不纳入本轮范围**（见 [§未采纳/待评估协议特性](#未采纳待评估协议特性)）：MCP Apps（server-rendered UI）与 `x-mcp-header`/`Mcp-Param-` 透传（需确认 SDK 是否自动处理）。其余特性层面的覆盖补充已并入对应子项目（P3/P4/P6）。
 
 ### 依赖关系
 
@@ -118,6 +122,15 @@ P3（出站 OAuth）──── 无依赖，可独立做
 
 让 Hub 作为**客户端**调用外部 OAuth 保护的 REST API（如 GitHub API、Google API）时，自动获取/刷新 token。把当前 `AuthenticationStrategy` 里 `type: 'oauth'` 的**抛错占位**改成真实实现。
 
+### 范围边界（P3）
+
+P3 聚焦 `api-to-mcp` 子系统（Hub 把外部 REST API 封装成 MCP 工具）。有一个相邻但**不属于 P3** 的问题需明确边界，避免范围蔓延：
+
+| 问题 | 是否属 P3 | 说明 |
+|---|---|---|
+| `api-to-mcp` 调外部 REST API 的 OAuth | ✅ 是 | P3 核心，改 `AuthenticationStrategy` |
+| Hub 连外部 **MCP server** 时的出站认证（`server_manager.ts`） | ❌ 否，登记为独立待办 | 现状：`server_manager.ts:179,199` 只透传静态 `headers`（来自 `config.headers`），无 token 获取/刷新。这是另一套连接机制（MCP client transport），与 REST API 的 `AuthenticationStrategy` 不同代码路径。**未归属任何子项目**，待 brainstorming 立项。见 [跨子项目共享待办](#跨子项目共享待办) |
+
 ### 设计大纲
 
 1. **扩展 `AuthConfig` 类型**（`packages/core/src/api-to-mcp/types/api-config.ts:56-62`）：
@@ -155,7 +168,7 @@ P3（出站 OAuth）──── 无依赖，可独立做
 
 - **状态**: 待 brainstorming
 - **复杂度**: 中
-- **依赖**: 弱依赖 P1（结果是 MCP 响应字段，需 P1 的新 SDK）
+- **依赖**: 弱依赖 P1（落点：P1 升级到 SDK v2 后，`registerResource`/`ServerOptions.cacheHints` 等 cache 相关 API 才可用；传输层本身不阻塞 P4）
 - **价值**: ⭐⭐⭐ 网关天然差异化
 
 ### 范围
@@ -184,7 +197,12 @@ P4 **不是替换**已有缓存，而是**新增协议层缓存提示**，并探
    - Hub 聚合多个 server，`tools/list` 的 `ttlMs` 可取**所有上游 server 工具列表的最小稳定性**。
    - 配置驱动的 `cacheScope`（public/private）。
 
-3. **与现有 `CacheManager` 协同**：
+3. **`tools/list` 确定性排序**（2026-07-28 新增 SHOULD）：
+   - 协议要求 server 以**确定性顺序**返回 tools，使客户端能稳定缓存 `tools/list` 结果、提升 LLM prompt cache 命中率。
+   - 现状：项目零实现（grep `sort.*tool` 无命中）。
+   - P4 范围内需给 `tools/list` 加稳定排序键（如按 `name` 字典序，或配置指定的稳定顺序）；**与 `ttlMs` 强相关**——只有顺序稳定，客户端缓存才有意义。
+
+4. **与现有 `CacheManager` 协同**：
    - 工具调用结果缓存的剩余 ttl 可作为协议层 `ttlMs` 的输入。
 
 ### 关键决策点（待 brainstorming）
@@ -213,6 +231,19 @@ P4 **不是替换**已有缓存，而是**新增协议层缓存提示**，并探
 - 主流 MCP 客户端（Claude Desktop 等）对这两项的支持还在早期。
 - 网关先于客户端实现，价值无法兑现。
 - 建议等客户端生态跟进后再启动。
+
+### 复查触发条件（P5）
+
+满足以下任一条件即重新评估是否启动 P5：
+
+| 触发条件 | 说明 |
+|---|---|
+| **客户端跟进** | Claude Desktop / Cursor 等主流客户端的 changelog 出现对 `subscriptions/listen` 或 MRTR（`InputRequiredResult`）的支持声明 |
+| **日期复查** | 距上次评估满 1 个季度（下次复查：2026-10-25） |
+| **上游 server 需求** | Hub 接入的外部 MCP server 普遍开始声明 `listChanged` 或发起 server-side 请求，网关不转发会成为功能缺口 |
+| **协议 GA 推动** | 2026-07-28 协议从 RC 转正式，客户端实现率明显提升 |
+
+复查时关注：各客户端版本对两项能力的支持矩阵、SDK v2 GA 后 `subscriptions` 总线 API 是否稳定。
 
 ### 范围（未来启动时）
 
@@ -252,6 +283,7 @@ P4 **不是替换**已有缓存，而是**新增协议层缓存提示**，并探
 
 2. **弃用项清理**（2026-07-28 Deprecation）：
    - **Roots/Sampling/Logging**：项目当前零实现（已验证 grep 无命中），**直接不采用**，无需清理。
+   - **Tasks wire vocabulary**（`Task`/`TaskStatus`/`CreateTaskResult`/`tasks/list` 等，2026-07-28 标 `@deprecated`）：项目当前零实现（已验证 grep `tasks/capability`/`CreateTaskResult`/`TaskStatus` 等均无命中），**直接不采用**，无需清理。
    - **HTTP+SSE 传输**：P1 已处理（删除 `/sse` 端点）。
    - **`includeContext` 的 `thisServer`/`allServers`**：检查是否使用，未用则忽略。
    - **DCR（RFC7591）**：P2 入站 OAuth 时优先用 Client ID Metadata Documents，不采用 DCR。
@@ -274,18 +306,62 @@ P4 **不是替换**已有缓存，而是**新增协议层缓存提示**，并探
 
 ## 跟踪机制
 
-- 每个子项目完成后，回本 spec 更新"状态"列和"详细 spec"链接。
+- 每个子项目完成后，回本 spec 更新"实现进度"列和"详细 spec"链接。
 - 主线顺序（P1 → P4 → P2 → P3 → P6 → P5）是推荐，可根据实际情况调整。
-- P5 推迟期间，定期检查客户端生态对 `subscriptions/listen`/MRTR 的支持进度。
+- P5 推迟期间，按 [P5 复查触发条件](#p5-推迟理由) 定期检查客户端生态对 `subscriptions/listen`/MRTR 的支持进度。
+
+## 实现进度跟踪
+
+> 本节是跨子项目的进度锚点，**只记录可客观验证的状态**（grep 命中数、测试结果、已合并的 commit），不记主观判断。每个子项目启动时更新对应行。
+
+### P1 DoD 锚点（来自 `2026-07-25-p1-transport-upgrade-design.md` §6）
+
+| DoD 项 | 验证命令 | 最近核实 | 状态 |
+|---|---|---|---|
+| v1 包完全移除 | `grep -rn '@modelcontextprotocol/sdk' . --exclude-dir=node_modules` | 2026-07-25 | 🟡 残留 1 处（`backend/src/types/mcp-content.ts:8` 注释引用，非 import） |
+| codemod 标记零命中 | `grep -rn '@mcp-codemod-error' . --exclude-dir=node_modules` | 2026-07-25 | ✅ 0 命中（命中的 7 处均在 docs，非代码） |
+| typecheck 通过 | `pnpm typecheck` | 待 P1 收尾时跑 | ⬜ 待核实 |
+| 测试全绿 | `pnpm test` | 待 P1 收尾时跑 | ⬜ 待核实 |
+| 4 个新增 e2e 用例 | 见 P1 spec §5.3 | — | ⬜ 待核实 |
+| Node 18 失败 / Node 20 正常 | engines 已设 `>=20` | 2026-07-25 | 🟡 engines 已改，运行时验证待核实 |
+
+### 各子项目实现进度
+
+| 子项目 | 分支 | 关键 commit | 进度 |
+|---|---|---|---|
+| P1 | `feat/p1-transport-upgrade-2026-07-28` | `438f93a` 用 createMcpHandler 重写 group-router | 🚧 核心改造已提交，DoD 待全量验证 |
+| P2-P6 | — | — | ⬜ 未开始 |
+
+## 跨子项目共享待办
+
+> 以下事项被多个子项目反复引用，为避免重复认领或遗漏，集中在此登记归属。每项标明"归谁、何时做、现状"。移交给归属子项目后，对应子项目 spec 需 mirror 一份。
+
+| 事项 | 归属 | 何时做 | 现状 | 涉及子项目 |
+|---|---|---|---|---|
+| `RedisCacheManager`（当前 no-op，`cache-manager.ts:338-377`） | P6（候选）或独立基建 | P3/P4 多实例前必须实现 | 🔴 no-op 占位 | P3（token 存储）、P4（缓存共享）、P6（候选归属） |
+| `simple-auth.ts` 假认证（任何非空 token 放行） | P2 | P2 入站 OAuth 时一并修复 | 🔴 安全债 | P2、P6（弃用清理顺带） |
+| `message-audit-service.ts` 用户归因硬编码 `'admin'` | P2 | P2 token 校验落地后修复 | 🔴 安全债 | P2、P6 |
+| `console.*` 绕过统一 Logger（25+ 处） | P6 | P6 日志统一 | 🟡 审计报告已列，分支正在修 | P6 |
+| 出站连 MCP server 的 token 获取/刷新（当前只透传静态 `headers`，`server_manager.ts:179,199`） | 🔴 **未归属**（独立待办） | 待定——需 brainstorming 立项；与 P3 不同代码路径（见 [P3 范围边界](#范围-2)） | 🟡 范围已明确排除 P3 | P3（边界外）、潜在新子项目 |
+
+## 未采纳/待评估协议特性
+
+> 对照 2026-07-28 完整特性集，以下特性经评估**显式不纳入本轮迭代范围**。记录决策理由，避免后续重复评估；状态变化时回这里更新。
+
+| 特性 | 协议状态 | 决策 | 理由 | 复查条件 |
+|---|---|---|---|---|
+| **MCP Apps**（server-rendered UI，通过 `extensions` capability 协商） | 2026-07-28 新增扩展机制 | 🚫 不纳入本轮 | Hub 定位是协议网关/聚合层，不渲染 UI；Apps 属于 server 端能力，非网关职责 | 若未来 Hub 需托管 server-rendered UI，或客户端生态普遍支持后重新评估 |
+| **`x-mcp-header` / `Mcp-Param-` 透传**（SEP-2243，工具参数→自定义 HTTP header） | 2026-07-28 新增 | ⏸ 待确认 | 需核实 `@modelcontextprotocol/hono` 的 `createMcpHandler` 是否已自动处理 header 校验与透传；若自动处理则无需额外工作 | P1 收尾时验证 SDK 行为，结论回填此处 |
 
 ## 风险与缓解（全局）
 
 | 风险 | 缓解 |
 |---|---|
-| SDK v2 还在 beta，可能有 breaking change | 跟踪 GA；版本用 codemod 输出而非手钉 |
-| 子项目间隐性依赖未识别 | 每个子项目 brainstorming 时复查与本 spec 的依赖声明 |
+| SDK v2 还在 beta，可能有 breaking change | 跟踪 GA；版本用 codemod 输出而非手钉。**复查节点**：每次启动新子项目前查 `@modelcontextprotocol/sdk` releases；GA 发布后在 changeset 里把 `2.0.0-beta.5` 升正式版（当前锁版本，下次复查默认 2026-08-25） |
+| 子项目间隐性依赖未识别 | 每个子项目 brainstorming 时复查与本 spec 的依赖声明 + [跨子项目共享待办](#跨子项目共享待办) 表 |
 | 激进升级导致与主流客户端不兼容 | P1 验证 Claude Desktop 等对新协议的支持情况；必要时回退某项决策 |
-| 范围蔓延（子项目越做越大） | 每个子项目独立 spec，严格按 spec 范围控制 |
+| 范围蔓延（子项目越做越大） | 每个子项目独立 spec，严格按 spec 范围控制；相邻问题归入 [跨子项目共享待办](#跨子项目共享待办) 而非塞进当前子项目 |
+| 出站保留 SSE 连接成为长期维护负担 | **退出条件**：当 Hub 接入的外部 MCP server 普遍只支持 Streamable HTTP（可统计配置中 SSE 型 server 占比），且主流 SDK 客户端弃用 `SSEClientTransport` 时，移除出站 SSE 支持。未达条件前保留 |
 
 ## 参考资料
 

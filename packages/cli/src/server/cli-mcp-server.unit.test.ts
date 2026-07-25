@@ -47,11 +47,11 @@ vi.mock('@mcp-core/mcp-hub-core', () => ({
   }),
 }));
 
-// 创建 mock transport 实例
-const mockTransport = {
-  start: vi.fn().mockResolvedValue(undefined),
+// 创建 mock stdio handle 实例（serveStdio 的返回值）。
+// 用 vi.hoisted 提前初始化，因为 vi.mock 工厂会被提升到文件顶部执行。
+const mockStdioHandle = vi.hoisted(() => ({
   close: vi.fn().mockResolvedValue(undefined),
-};
+}));
 
 // 创建 mock MCP server 实例
 const mockMcpServer = {
@@ -69,9 +69,8 @@ vi.mock('@modelcontextprotocol/server', () => ({
 }));
 
 vi.mock('@modelcontextprotocol/server/stdio', () => ({
-  StdioServerTransport: vi.fn(function (this: Record<string, unknown>) {
-    Object.assign(this, mockTransport);
-  }),
+  // serveStdio: 工厂在连接建立时被调用，测试中不需要真实启动 stdio。
+  serveStdio: vi.fn().mockReturnValue(mockStdioHandle),
 }));
 
 // 导入要测试的类

@@ -11,7 +11,7 @@ import { McpProtocolHandler } from '../protocol/mcp-protocol-handler.js';
 import { CliMcpServer } from '../server/cli-mcp-server.js';
 
 import type { CliConfig } from '../types/index.js';
-import type { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
+import type { StdioServerHandle } from "@modelcontextprotocol/server/stdio";
 import type { McpServer } from "@modelcontextprotocol/server";
 
 // Mock外部依赖
@@ -251,15 +251,13 @@ describe('CLI与核心包交互集成测试', () => {
         connect: vi.fn().mockResolvedValue(undefined),
         close: vi.fn().mockResolvedValue(undefined),
       };
-      const mockTransport = { close: vi.fn() };
+      const mockStdioHandle: StdioServerHandle = { close: vi.fn().mockResolvedValue(undefined) };
 
       const { McpServer } = await import('@modelcontextprotocol/server');
-      const { StdioServerTransport } = await import('@modelcontextprotocol/server/stdio');
+      const { serveStdio } = await import('@modelcontextprotocol/server/stdio');
 
       vi.mocked(McpServer).mockImplementation(() => mockServer as unknown as McpServer);
-      vi.mocked(StdioServerTransport).mockImplementation(
-        () => mockTransport as unknown as StdioServerTransport,
-      );
+      vi.mocked(serveStdio).mockReturnValue(mockStdioHandle);
 
       vi.spyOn(coreService, 'initializeFromConfig').mockResolvedValue();
       vi.spyOn(coreService, 'getAllTools').mockResolvedValue([]);
@@ -276,15 +274,13 @@ describe('CLI与核心包交互集成测试', () => {
         connect: vi.fn().mockResolvedValue(undefined),
         close: vi.fn().mockResolvedValue(undefined),
       };
-      const mockTransport = { close: vi.fn() };
+      const mockStdioHandle: StdioServerHandle = { close: vi.fn().mockResolvedValue(undefined) };
 
       const { McpServer } = await import('@modelcontextprotocol/server');
-      const { StdioServerTransport } = await import('@modelcontextprotocol/server/stdio');
+      const { serveStdio } = await import('@modelcontextprotocol/server/stdio');
 
       vi.mocked(McpServer).mockImplementation(() => mockServer as unknown as McpServer);
-      vi.mocked(StdioServerTransport).mockImplementation(
-        () => mockTransport as unknown as StdioServerTransport,
-      );
+      vi.mocked(serveStdio).mockReturnValue(mockStdioHandle);
 
       vi.spyOn(coreService, 'initializeFromConfig').mockResolvedValue();
       vi.spyOn(coreService, 'getAllTools').mockResolvedValue([]);
@@ -314,15 +310,13 @@ describe('CLI与核心包交互集成测试', () => {
         connect: vi.fn().mockResolvedValue(undefined),
         close: vi.fn().mockResolvedValue(undefined),
       };
-      const mockTransport = { close: vi.fn() };
+      const mockStdioHandle: StdioServerHandle = { close: vi.fn().mockResolvedValue(undefined) };
 
       const { McpServer } = await import('@modelcontextprotocol/server');
-      const { StdioServerTransport } = await import('@modelcontextprotocol/server/stdio');
+      const { serveStdio } = await import('@modelcontextprotocol/server/stdio');
 
       vi.mocked(McpServer).mockImplementation(() => mockServer as unknown as McpServer);
-      vi.mocked(StdioServerTransport).mockImplementation(
-        () => mockTransport as unknown as StdioServerTransport,
-      );
+      vi.mocked(serveStdio).mockReturnValue(mockStdioHandle);
 
       vi.spyOn(coreService, 'initializeFromConfig').mockResolvedValue();
       vi.spyOn(coreService, 'getAllTools').mockResolvedValue([

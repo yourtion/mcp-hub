@@ -8,5 +8,4 @@ export * from './config/config-template';
 export * from './config/config-validator';
 export * from './protocol/mcp-protocol-handler';
 export * from './server/cli-mcp-server';
-export * from './transport/cli-transport';
 export * from './types';
