@@ -3,6 +3,14 @@
  *
  * 从 tool_manager.ts 提取的纯函数，负责将 MCP server 返回的各种结果格式
  * 统一转换为 ToolResult。
+ *
+ * v2 兼容性说明：本模块仅处理"工具已成功调用并返回"的结果对象（含 v2 仍保留的
+ * isError 字段）。v2 中未知工具的 -32602 rejection 不会走到这里——它在
+ * server_manager.executeToolOnServer 的 catch 中被吸收并 throw，最终由
+ * tool_manager.createErrorResult 转成带 isError:true 的 ToolResult。
+ *
+ * 本模块构造的 ToolResult 是 Hub 内部类型，不需要也不应该设置 resultType
+ * （v2 的 wire-only 字段，由 codec 层在出站时统一打）。
  */
 
 import { logger } from '../utils/logger.js';

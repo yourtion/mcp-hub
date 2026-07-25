@@ -336,6 +336,9 @@ export class ToolManager implements IToolManager {
     return retryablePatterns.some((pattern) => pattern.test(error.message));
   }
 
+  // 统一的错误结果构造。MCP SDK v2 的未知工具 rejection (-32602) 在
+  // executeToolWithRetry 的 catch 中变成 lastError，最终经此方法转成
+  // isError:true 的 ToolResult —— 与 v1 的"isError 路径"行为一致。
   private createErrorResult(message: string): ToolResult {
     return {
       content: [{ type: 'text', text: message }],

@@ -291,6 +291,10 @@ export class ServerManager implements IServerManager {
       }
 
       const startTime = Date.now();
+      // MCP SDK v2 行为变化：未知工具不再返回 isError:true 的 CallToolResult，
+      // 而是抛 JSON-RPC -32602 (InvalidParams)。下方的 try/catch 将其捕获并在
+      // messageTracker 中记为 isError，再 throw 给上游 executeToolWithRetry，
+      // 后者转成 createErrorResult(isError:true)。因此本路径已兼容 v2。
       const response = await server.client.callTool({
         name: toolName,
         arguments: args,

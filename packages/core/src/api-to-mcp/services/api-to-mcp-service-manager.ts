@@ -221,6 +221,13 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
     return this.toolRegistry.getAllTools();
   }
 
+  /**
+   * 执行 API 工具调用。
+   *
+   * v2 兼容性：API 工具不经 MCP SDK 传输，本方法对"工具不存在/参数无效/执行失败"
+   * 一律返回 isError:true 的 ApiToolResult（与 v1 行为一致），不会抛错。
+   * 不设置 resultType（wire-only，由调用侧 codec 打）。
+   */
   async executeApiTool(
     toolId: string,
     parameters: Record<string, unknown>,

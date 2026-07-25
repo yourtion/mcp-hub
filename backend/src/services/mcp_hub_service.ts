@@ -389,9 +389,13 @@ export class McpHubService implements IMcpHubService {
       await this.validateToolExecution(toolName, targetGroupId, executionId);
 
       const startTime = Date.now();
+      // executeTool 在内部已用 try/catch 吸收 v2 的未知工具 -32602 rejection，
+      // 统一返回带 isError 的 ToolResult，不会在此处抛错。
       const result = await this.toolManager.executeTool(targetGroupId, toolName, args);
       const duration = Date.now() - startTime;
 
+      // 此处读取 isError 仅判断工具内部执行失败（v2 下仍保留 isError 语义），
+      // 与 v2 的"未知工具抛 -32602"路径无关——后者已在 executeTool 内部被吸收。
       const status = result.isError ? 'failed' : 'completed';
       logger.logToolExecution(toolName, targetGroupId, status, {
         executionId,

@@ -283,6 +283,8 @@ toolsApi.post('/:toolName/execute', async (c) => {
     });
 
     const startTime = Date.now();
+    // v2 兼容性：callTool 内部已吸收未知工具的 -32602 rejection；
+    // 此处 result.isError 仅反映"工具内部执行失败"（v2 仍保留的 isError 语义）。
     const result = await service.callTool(toolName, args, groupId);
     const executionTime = Date.now() - startTime;
 

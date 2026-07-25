@@ -39,6 +39,10 @@ export class CliMcpServer {
    * 返回 `CallToolResult`（MCP SDK v2 的 handler 结果形态）。`resultType` 是
    * wire-only 字段，由 SDK 的 codec 层在出站时统一添加，handler 不需要也不应该
    * 手动设置——这与迁移指南“Server-side authoring is era-independent”一致。
+   *
+   * v2 兼容性：handler 内部 try/catch 兜底，任何 throw（含底层未知工具的
+   * -32602 rejection，经 protocolHandler 转译后仍可能抛）都被转成带
+   * isError:true 的 CallToolResult，不会泄漏到 SDK 传输层。
    */
   private createToolHandler(toolName: string) {
     return async (args: Record<string, unknown> | undefined): Promise<CallToolResult> => {
@@ -55,7 +59,7 @@ export class CliMcpServer {
           return this.protocolHandler.handleProtocolError(error);
         }
 
-        // 降级错误处理
+        // 降级错误处理：保守地返回 isError:true，不向 SDK 抛出
         return {
           content: [
             {

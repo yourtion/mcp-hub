@@ -90,6 +90,9 @@ export class ApiToolIntegrationService {
    * @param toolName 工具名称
    * @param args 调用参数
    * @returns 工具执行结果
+   *
+   * 注意：此方法从不抛错——所有失败（含 v2 未知工具场景，虽然 API 工具不走
+   * MCP SDK 路径）都转成 isError:true 的 ToolResult，便于上层统一处理。
    */
   async executeApiTool(toolName: string, args: Record<string, unknown>): Promise<ToolResult> {
     if (!this.initialized) {
