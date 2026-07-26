@@ -1,8 +1,14 @@
 # MCP Hub Release Notes
 
-## Unreleased — MCP 2026-07-28 协议升级（P1 传输层）
+## Unreleased — MCP 2026-07-28 协议升级（P1 传输层 + P4 缓存语义）
 
-### ⚠️ Breaking Changes
+### 新增（P4：协议层缓存语义）
+
+- **`tools/list` 协议层 cacheHint**：Hub 在 `tools/list` 响应上下发 `ttlMs: 60000`（1 分钟）与 `cacheScope: 'public'`，提示 MCP 客户端（如 Claude Desktop）缓存工具列表、提升 LLM prompt cache 命中率。默认值可在组配置 `cacheHints.toolsListTtlMs` / `cacheHints.toolsListCacheScope` 按组覆盖。
+- **`tools/list` 确定性排序**：工具按"先 serverId 后 toolName"字典序稳定返回（2026-07-28 协议 SHOULD），保证客户端缓存稳定有效。
+- **新增 4 个 Hub 元数据 resources**：`group://{groupId}/status`（组运行时状态）、`group://{groupId}/servers`（组服务器列表与连接状态）、`hub://config`（全局配置概要）、`hub://version`（版本信息），每个 resource 带独立的 `ttlMs`/`cacheScope` cacheHint，客户端可通过 `resources/list` / `resources/read` 预读取。
+
+### ⚠️ Breaking Changes（P1 传输层）
 
 - **协议升级到 MCP 2026-07-28**：入站方向（Hub 对 MCP 客户端）激进升级，仅支持新协议。旧的 2025-era `initialize` 握手被拒绝（`legacy: 'reject'`），客户端需使用支持 2026-07-28 的 MCP SDK。
 - **移除 `/sse` MCP 端点**：MCP 级 SSE 传输已在 2026-07-28 标记为 Deprecated 并移除。请改用 `/:group/mcp` 的 Streamable HTTP 端点。（Dashboard 业务 SSE 不受影响。）
