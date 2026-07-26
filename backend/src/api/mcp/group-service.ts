@@ -235,8 +235,8 @@ export class GroupMcpService {
     try {
       logger.info('关闭组MCP服务', { groupId: this.groupId });
 
-      // 关闭MCP服务器连接
-      this.mcpServer.close();
+      // 关闭MCP服务器连接（防御性：未初始化时 mcpServer 可能为 undefined）
+      this.mcpServer?.close();
 
       this.isInitialized = false;
       this.availableTools = [];
@@ -443,12 +443,27 @@ export class GroupMcpService {
         cacheHint: { ttlMs: 5_000, cacheScope: 'private' },
       },
       async (_uri: URL) => {
-        const status = await this.getStatus();
-        return {
-          contents: [
-            { uri: statusUri, mimeType: 'application/json', text: JSON.stringify(status, null, 2) },
-          ],
-        };
+        try {
+          const status = await this.getStatus();
+          return {
+            contents: [
+              { uri: statusUri, mimeType: 'application/json', text: JSON.stringify(status, null, 2) },
+            ],
+          };
+        } catch (error) {
+          logger.error('读取 group://status resource 失败', error as Error, {
+            groupId: this.groupId,
+          });
+          return {
+            contents: [
+              {
+                uri: statusUri,
+                mimeType: 'application/json',
+                text: JSON.stringify({ error: (error as Error).message, groupId: this.groupId }),
+              },
+            ],
+          };
+        }
       },
     );
 
@@ -462,16 +477,31 @@ export class GroupMcpService {
         cacheHint: { ttlMs: 5_000, cacheScope: 'private' },
       },
       async (_uri: URL) => {
-        const payload = await this.getGroupServersStatus();
-        return {
-          contents: [
-            {
-              uri: serversUri,
-              mimeType: 'application/json',
-              text: JSON.stringify(payload, null, 2),
-            },
-          ],
-        };
+        try {
+          const payload = await this.getGroupServersStatus();
+          return {
+            contents: [
+              {
+                uri: serversUri,
+                mimeType: 'application/json',
+                text: JSON.stringify(payload, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          logger.error('读取 group://servers resource 失败', error as Error, {
+            groupId: this.groupId,
+          });
+          return {
+            contents: [
+              {
+                uri: serversUri,
+                mimeType: 'application/json',
+                text: JSON.stringify({ error: (error as Error).message, groupId: this.groupId }),
+              },
+            ],
+          };
+        }
       },
     );
 
@@ -484,21 +514,34 @@ export class GroupMcpService {
         cacheHint: { ttlMs: 300_000, cacheScope: 'public' },
       },
       async (_uri: URL) => {
-        const config = await getAllConfig();
-        const payload = {
-          version: pkg.version,
-          groups: Object.keys(config.groups ?? {}),
-          serverCount: Object.keys(config.mcps?.servers ?? {}).length,
-        };
-        return {
-          contents: [
-            {
-              uri: 'hub://config',
-              mimeType: 'application/json',
-              text: JSON.stringify(payload, null, 2),
-            },
-          ],
-        };
+        try {
+          const config = await getAllConfig();
+          const payload = {
+            version: pkg.version,
+            groups: Object.keys(config.groups ?? {}),
+            serverCount: Object.keys(config.mcps?.servers ?? {}).length,
+          };
+          return {
+            contents: [
+              {
+                uri: 'hub://config',
+                mimeType: 'application/json',
+                text: JSON.stringify(payload, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          logger.error('读取 hub://config resource 失败', error as Error);
+          return {
+            contents: [
+              {
+                uri: 'hub://config',
+                mimeType: 'application/json',
+                text: JSON.stringify({ error: (error as Error).message, scope: 'global' }),
+              },
+            ],
+          };
+        }
       },
     );
 
@@ -510,15 +553,30 @@ export class GroupMcpService {
         mimeType: 'application/json',
         cacheHint: { ttlMs: 86_400_000, cacheScope: 'public' },
       },
-      async (_uri: URL) => ({
-        contents: [
-          {
-            uri: 'hub://version',
-            mimeType: 'application/json',
-            text: JSON.stringify({ name: pkg.name, version: pkg.version }, null, 2),
-          },
-        ],
-      }),
+      async (_uri: URL) => {
+        try {
+          return {
+            contents: [
+              {
+                uri: 'hub://version',
+                mimeType: 'application/json',
+                text: JSON.stringify({ name: pkg.name, version: pkg.version }, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          logger.error('读取 hub://version resource 失败', error as Error);
+          return {
+            contents: [
+              {
+                uri: 'hub://version',
+                mimeType: 'application/json',
+                text: JSON.stringify({ error: (error as Error).message, scope: 'global' }),
+              },
+            ],
+          };
+        }
+      },
     );
 
     logger.debug('组 resources 注册完成', { groupId: this.groupId, count: 4 });
