@@ -154,6 +154,7 @@ Testing conventions:
 - 任务完成后需要执行 `pnpm test` 取保测试全部通过，确保新代码不破坏原有逻辑
 - 同时对新开发的代码编写相应的测试，保证代码的正确性
 - 再执行 `pnpm check`和`pnpm build`保证代码质量，执行后需要再运行 `pnpm test` 保证测试通过
+- **提交/合并前必须跑 `pnpm check:ci`（CI 实际门禁，readonly）**：它跑 `oxlint` + `oxfmt --check`，与 `pnpm check`（含 `--fix`，会改写文件）不同。`pnpm check` 修完后仍要再用 `pnpm check:ci` 复验，确保没有遗漏的格式/lint 问题进入主干
 - 代码中不要使用 `any`类型！！！通过泛型或`Record`确保类型正确
 - 任务或者需求完成后，需要检查是否需要更新 README 或者其他相关的文档，确保文档的信息有效，并于代码同步
 
