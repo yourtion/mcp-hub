@@ -352,12 +352,20 @@ export class GroupMcpService {
       // 应用组工具过滤规则
       const filteredTools = this.applyToolFilter(groupTools as GroupToolInfo[]);
 
+      // 确定性排序（先 serverId 后 toolName 字典序），保证 tools/list 顺序稳定，
+      // 使客户端能稳定缓存 tools/list 结果、提升 LLM prompt cache 命中率。
+      const sortedTools = [...filteredTools].sort((a, b) => {
+        const byServer = (a.serverId ?? '').localeCompare(b.serverId ?? '');
+        if (byServer !== 0) return byServer;
+        return (a.name ?? '').localeCompare(b.name ?? '');
+      });
+
       // 注册每个工具
-      for (const tool of filteredTools) {
+      for (const tool of sortedTools) {
         await this.registerDynamicTool(tool);
       }
 
-      this.availableTools = filteredTools.map((tool) => ({
+      this.availableTools = sortedTools.map((tool) => ({
         name: tool.name,
         description: tool.description,
         serverId: tool.serverId,

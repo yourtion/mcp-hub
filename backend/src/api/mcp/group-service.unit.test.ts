@@ -190,3 +190,44 @@ describe('GroupMcpService - 构造时序', () => {
     });
   });
 });
+
+describe('GroupMcpService - tools/list 确定性排序', () => {
+  beforeEach(() => {
+    // 重置默认配置
+    getAllConfigMock.mockReset();
+    getAllConfigMock.mockResolvedValue({
+      groups: {
+        testgroup: {
+          id: 'testgroup',
+          name: 'T',
+          servers: ['zServer', 'aServer'],
+          tools: [],
+        },
+      },
+      servers: {},
+    });
+  });
+
+  it('工具按 先 serverId 后 toolName 排序', async () => {
+    // 模拟乱序工具：zServer/a、aServer/b、aServer/a
+    const cm = makeCoreManagerMock();
+    (cm.getAllTools as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 'a', serverId: 'zServer', inputSchema: { type: 'object', properties: {} } },
+      { name: 'b', serverId: 'aServer', inputSchema: { type: 'object', properties: {} } },
+      { name: 'a', serverId: 'aServer', inputSchema: { type: 'object', properties: {} } },
+    ]);
+
+    const svc = new GroupMcpService('testgroup', cm);
+    await svc.initialize();
+
+    // 注册顺序由 getMcpServer().registerTool 调用顺序决定
+    const registerToolCalls = (svc.getMcpServer() as unknown as {
+      registerTool: ReturnType<typeof vi.fn>;
+    }).registerTool.mock.calls;
+
+    // 排除 group_status / list_group_tools 两个管理工具（前两个），后面是动态工具
+    const dynamicNames = registerToolCalls.slice(2).map((c: unknown[]) => c[0] as string);
+    // 注册名 = ${serverId}_${toolName}
+    expect(dynamicNames).toEqual(['aServer_a', 'aServer_b', 'zServer_a']);
+  });
+});
