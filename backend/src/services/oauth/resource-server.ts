@@ -9,9 +9,10 @@
  *  - oauth 配置（internal/external）→ OAuth 校验（validationKey 禁用）
  *  - oauth 配置（both）→ OAuth 优先，失败回退 validationKey（若组启用）
  */
-import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+import { ErrorCode } from '@mcp-core/mcp-hub-core';
 
 import { logger } from '../../utils/logger.js';
+import { createIntrospectToken } from './introspection.js';
 import { createTokenValidator } from './token-validator.js';
 import { verifyValidationKey } from './validation-key.js';
 
@@ -84,7 +85,15 @@ export function createResourceServer(deps: ResourceServerDeps): ResourceServer {
       }
 
       const validatorFactory =
-        deps.createTokenValidator ?? ((c: OAuthConfig) => createTokenValidator(c));
+        deps.createTokenValidator ??
+        ((c: OAuthConfig) => {
+          // external/both 模式注入生产 introspectToken（对接外部 IdP 的 opaque token 回退）
+          const introspectToken =
+            c.external && (c.mode === 'external' || c.mode === 'both')
+              ? createIntrospectToken(c)
+              : undefined;
+          return createTokenValidator(c, introspectToken ? { introspectToken } : {});
+        });
       const validator = validatorFactory(oauth);
       const result = await validator.validate(token, REQUIRED_SCOPE);
 
@@ -162,6 +171,3 @@ function mapValidationFailure(r: { ok: false; reason: string }): AuthOutcome {
       return { ok: false, reason: 'invalid_token', errorCode: ErrorCode.OAUTH_INVALID_TOKEN };
   }
 }
-
-// 保留 ServiceError 引用避免 unused（实际错误由中间件抛出）
-export type { ServiceError };

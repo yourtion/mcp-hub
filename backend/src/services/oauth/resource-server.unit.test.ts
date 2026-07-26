@@ -93,6 +93,63 @@ describe('resource-server 编排', () => {
     expect(outcome.ok).toBe(true);
     if (outcome.ok) expect(outcome.context.method).toBe('oauth');
   });
+
+  it('mode=both + OAuth 失败 + 组启用 validation + key 正确 → 回退 validationKey 放行', async () => {
+    // 覆盖 spec §6 真值表"both + validation 开 → OAuth 优先失败回退 validationKey"分支
+    const rs = createResourceServer({
+      getConfig: async () => ({
+        oauth: {
+          mode: 'both',
+          resource: 'https://hub.example.com',
+          scopes: ['mcp:tools'],
+          internal: { tokenTtlSeconds: 3600, clients: [] },
+          external: {
+            issuer: 'https://idp.example.com',
+            clientId: 'c',
+            clientSecret: 's',
+            audience: 'https://hub.example.com',
+          },
+        },
+        groups: { g1: { validation: { enabled: true, validationKey: 'enc-key' } } },
+      }),
+      // OAuth 路径返回 invalid（模拟 JWT 验签失败）
+      createTokenValidator: () => ({
+        validate: vi.fn().mockResolvedValue({ ok: false, reason: 'invalid' }),
+      }),
+      // validationKey 路径返回 true
+      verifyValidationKey: vi.fn().mockReturnValue(true),
+    });
+    const outcome = await rs.authenticate('g1', 'Bearer correctkey');
+    expect(outcome.ok).toBe(true);
+    if (outcome.ok) expect(outcome.context.method).toBe('validationKey');
+  });
+
+  it('mode=both + OAuth 失败 + validationKey 也失败 → 返回 OAuth 失败', async () => {
+    const rs = createResourceServer({
+      getConfig: async () => ({
+        oauth: {
+          mode: 'both',
+          resource: 'https://hub.example.com',
+          scopes: ['mcp:tools'],
+          internal: { tokenTtlSeconds: 3600, clients: [] },
+          external: {
+            issuer: 'https://idp.example.com',
+            clientId: 'c',
+            clientSecret: 's',
+            audience: 'https://hub.example.com',
+          },
+        },
+        groups: { g1: { validation: { enabled: true, validationKey: 'enc-key' } } },
+      }),
+      createTokenValidator: () => ({
+        validate: vi.fn().mockResolvedValue({ ok: false, reason: 'expired' }),
+      }),
+      verifyValidationKey: vi.fn().mockReturnValue(false),
+    });
+    const outcome = await rs.authenticate('g1', 'Bearer wrongkey');
+    expect(outcome.ok).toBe(false);
+    if (!outcome.ok) expect(outcome.reason).toBe('expired');
+  });
 });
 
 // 辅助：从失败 outcome 取可读标识（errorCode 的枚举名标签，如 OAUTH_MISSING_TOKEN；缺省时回退到 reason）

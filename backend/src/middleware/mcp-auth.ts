@@ -67,9 +67,11 @@ export function createMcpAuthMiddleware(deps: McpAuthMiddlewareDeps) {
     }
 
     // 失败：按 errorCode 映射 HTTP status + WWW-Authenticate
-    // 用请求 origin 拼 resource_metadata 完整 URL（不硬编码 host）
-    const origin = new URL(c.req.url).origin;
-    const resourceMetadataUrl = `${origin}${deps.resourceMetadataUrlPath}`;
+    // 用 Host 头 + OAUTH_PUBLIC_SCHEME 拼 resource_metadata 完整 URL（与 well-known.ts 一致，
+    // 避免反代后 new URL(c.req.url).origin 指向内部地址导致客户端拉不到 metadata）
+    const host = c.req.header('host') ?? 'localhost';
+    const scheme = process.env.OAUTH_PUBLIC_SCHEME ?? 'https';
+    const resourceMetadataUrl = `${scheme}://${host}${deps.resourceMetadataUrlPath}`;
     const www = buildChallengeHeader(outcome.errorCode, resourceMetadataUrl);
     const status = httpStatusFor(outcome.errorCode);
     // 用 c.header()/c.status() + c.body(null, status, headers) 三参形式（类型更稳）。

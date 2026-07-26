@@ -1,4 +1,3 @@
-import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 /**
  * Token 校验编排
  *
@@ -31,6 +30,8 @@ export interface TokenValidator {
 }
 
 const INTROSPECTION_CACHE_TTL_MS = 60_000;
+/** introspection 缓存条目上限（防长生命周期进程内存无限增长） */
+const INTROSPECTION_CACHE_MAX_ENTRIES = 1000;
 
 export function createTokenValidator(
   config: OAuthConfig,
@@ -62,7 +63,7 @@ export function createTokenValidator(
         // internal 模式遇到 opaque 直接 invalid
         return { ok: false, reason: 'invalid' };
       }
-      return introspect(token, config, deps, introspectionCache, requiredScope);
+      return introspect(token, config, deps, introspectionCache);
     },
   };
 }
@@ -203,36 +204,45 @@ async function introspect(
   config: OAuthConfig,
   deps: TokenValidatorDeps,
   cache: Map<string, { result: IntrospectionResult; at: number }>,
-  requiredScope: string,
 ): Promise<TokenValidationResult> {
   if (!deps.introspectToken) {
-    throw new ServiceError(
-      ErrorCode.OAUTH_CONFIG_ERROR,
-      'external 模式未注入 introspectToken 实现',
-    );
+    // fail-closed：未注入 introspectToken 实现时返回 inactive（不抛 500）
+    logger.warn('external 模式 introspectToken 未注入，token 视为 inactive（fail-closed）');
+    return { ok: false, reason: 'inactive' };
   }
-  // 缓存
+  // 缓存命中
   const cached = cache.get(token);
   if (cached && Date.now() - cached.at < INTROSPECTION_CACHE_TTL_MS) {
-    return mapIntrospection(cached.result, requiredScope, 'introspection');
+    return mapIntrospection(cached.result, config, REQUIRED_SCOPE_DEFAULT);
   }
   const result = await deps.introspectToken(token);
+  // LRU 上界：超出时清最早的条目
+  if (cache.size >= INTROSPECTION_CACHE_MAX_ENTRIES) {
+    const firstKey = cache.keys().next().value;
+    if (firstKey !== undefined) cache.delete(firstKey);
+  }
   cache.set(token, { result, at: Date.now() });
-  return mapIntrospection(result, requiredScope, 'introspection');
+  return mapIntrospection(result, config, REQUIRED_SCOPE_DEFAULT);
 }
+
+/** introspection 路径的默认必需 scope（与 resource-server REQUIRED_SCOPE 一致） */
+const REQUIRED_SCOPE_DEFAULT = 'mcp:tools';
 
 function mapIntrospection(
   r: IntrospectionResult,
+  config: OAuthConfig,
   requiredScope: string,
-  method: 'introspection',
 ): TokenValidationResult {
   if (!r.active) return { ok: false, reason: 'inactive' };
+  // audience 校验（RFC8707）：introspection 返回的 aud 必须含本 resource 的 audience
+  const expectedAudience = config.external?.audience ?? config.resource;
   const aud = Array.isArray(r.aud) ? r.aud : [r.aud];
-  // audience 校验由调用方配置决定，这里宽松：只要有任意 aud 命中即放行（严格校验在 resource-server）
-  void aud; // 当前宽松策略下未直接使用，保留以便后续严格化
+  if (!aud.includes(expectedAudience)) {
+    return { ok: false, reason: 'audience' };
+  }
   const scopes = String(r.scope ?? '').split(' ');
   if (!scopes.includes(requiredScope)) {
     return { ok: false, reason: 'scope' };
   }
-  return { ok: true, claims: r, method };
+  return { ok: true, claims: r, method: 'introspection' };
 }
