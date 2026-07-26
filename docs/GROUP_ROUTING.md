@@ -58,15 +58,15 @@ MCP Hub 的组路由功能允许您通过特定的组路径 (`/:group/mcp`) 访�
 
 ### 配置字段说明
 
-| 字段            | 类型     | 必需 | 说明                                     |
-| --------------- | -------- | ---- | ---------------------------------------- |
-| `name`          | string   | 是   | 组的显示名称                             |
-| `description`   | string   | 否   | 组的描述信息                             |
-| `servers`       | string[] | 是   | 该组使用的 MCP 服务器列表                |
-| `allowedTools`  | string[] | 否   | 允许的工具列表，`["*"]` 表示允许所有工具 |
-| `validationKey` | string   | 否   | 组的验证密钥                             |
-| `enabled`       | boolean  | 否   | 是否启用该组（默认 true）                |
-| `requireAuth`   | boolean  | 否   | 是否需要身份验证（默认 false）           |
+| 字段            | 类型     | 必需 | 说明                                                                                                                                                       |
+| --------------- | -------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`          | string   | 是   | 组的显示名称                                                                                                                                               |
+| `description`   | string   | 否   | 组的描述信息                                                                                                                                               |
+| `servers`       | string[] | 是   | 该组使用的 MCP 服务器列表                                                                                                                                  |
+| `allowedTools`  | string[] | 否   | 允许的工具列表，`["*"]` 表示允许所有工具                                                                                                                   |
+| `validationKey` | string   | 否   | 组的验证密钥                                                                                                                                               |
+| `enabled`       | boolean  | 否   | 是否启用该组（默认 true）                                                                                                                                  |
+| `requireAuth`   | boolean  | 否   | 是否需要身份验证（默认 false）                                                                                                                             |
 | `cacheHints`    | object   | 否   | 协议层 cacheHint 组级覆盖（P4）。可选字段：`toolsListTtlMs`（number，默认 60000ms）、`toolsListCacheScope`（`'public'` \| `'private'`，默认 `'public'`）。 |
 
 ### MCP 服务器配置
