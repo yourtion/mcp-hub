@@ -37,6 +37,19 @@ interface JsonSchemaProperty {
 // 读取 package.json
 const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf-8'));
 
+/**
+ * 协议层 cacheHint 默认值：tools/list 结果缓存 1 分钟，
+ * cacheScope=public（工具列表跨用户一致）。
+ * 见 spec §1.2。
+ *
+ * P2 复查钩子：当 P2 入站 OAuth 落地、且 Hub 实现按用户权限过滤工具时，
+ * cacheScope 必须改 private，否则会泄露工具元数据给未授权用户（见 spec §3.1）。
+ */
+const DEFAULT_GROUP_CACHE_HINTS = {
+  ttlMs: 60_000,
+  cacheScope: 'public' as const,
+};
+
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 
@@ -69,20 +82,20 @@ export interface GroupToolInfo {
  * 组特定MCP服务包装器
  */
 export class GroupMcpService {
-  private mcpServer: McpServer;
+  private mcpServer!: McpServer;
   private isInitialized = false;
   private groupConfig: Group | null = null;
   private availableTools: GroupToolInfo[] = [];
+  /** 解析后的组级 cacheHints（initialize 内 buildMcpServer 时由 resolveCacheHints 覆盖） */
+  private groupCacheHints: { ttlMs: number; cacheScope: 'public' | 'private' } = {
+    ...DEFAULT_GROUP_CACHE_HINTS,
+  };
 
   constructor(
     private groupId: string,
     private coreServiceManager: McpServiceManagerInterface,
   ) {
-    // 创建组特定的MCP服务器实例
-    this.mcpServer = new McpServer({
-      name: `${pkg.name}-group-${groupId}`,
-      version: pkg.version,
-    });
+    // McpServer 构造延迟到 initialize()，以便读取组配置里的 cacheHints
   }
 
   /**
@@ -102,11 +115,17 @@ export class GroupMcpService {
       // 加载组配置
       await this.loadGroupConfig();
 
+      // 读配置后构造 McpServer（应用组级 cacheHints）
+      this.buildMcpServer();
+
       // 注册组管理工具
       await this.registerGroupManagementTools();
 
       // 注册组特定的动态工具
       await this.registerGroupDynamicTools();
+
+      // 注册 Hub 元数据 resources（协议层 cacheHint 在 resources/read 的落点）
+      await this.registerGroupResources();
 
       this.isInitialized = true;
       logger.info('组MCP服务初始化完成', {
@@ -119,6 +138,41 @@ export class GroupMcpService {
       });
       throw error;
     }
+  }
+
+  /**
+   * 构造 McpServer 并应用组级 cacheHints。
+   * 必须在 loadGroupConfig() 之后调用，以便读取组配置里的 cacheHints 覆盖。
+   */
+  private buildMcpServer(): void {
+    this.groupCacheHints = this.resolveCacheHints(this.groupConfig);
+    this.mcpServer = new McpServer(
+      { name: `${pkg.name}-group-${this.groupId}`, version: pkg.version },
+      {
+        cacheHints: {
+          'tools/list': {
+            ttlMs: this.groupCacheHints.ttlMs,
+            cacheScope: this.groupCacheHints.cacheScope,
+          },
+        },
+      },
+    );
+  }
+
+  /**
+   * 解析组级 cacheHints，应用默认值。
+   * 默认：ttlMs=60_000（1 分钟），cacheScope='public'（工具列表跨用户一致）。
+   * 组级覆盖缺失的字段回落到默认值。
+   */
+  private resolveCacheHints(groupConfig: Group | null): {
+    ttlMs: number;
+    cacheScope: 'public' | 'private';
+  } {
+    const overrides = groupConfig?.cacheHints;
+    return {
+      ttlMs: overrides?.toolsListTtlMs ?? DEFAULT_GROUP_CACHE_HINTS.ttlMs,
+      cacheScope: overrides?.toolsListCacheScope ?? DEFAULT_GROUP_CACHE_HINTS.cacheScope,
+    };
   }
 
   /**
@@ -181,8 +235,8 @@ export class GroupMcpService {
     try {
       logger.info('关闭组MCP服务', { groupId: this.groupId });
 
-      // 关闭MCP服务器连接
-      this.mcpServer.close();
+      // 关闭MCP服务器连接（防御性：未初始化时 mcpServer 可能为 undefined）
+      this.mcpServer?.close();
 
       this.isInitialized = false;
       this.availableTools = [];
@@ -304,12 +358,20 @@ export class GroupMcpService {
       // 应用组工具过滤规则
       const filteredTools = this.applyToolFilter(groupTools as GroupToolInfo[]);
 
+      // 确定性排序（先 serverId 后 toolName 字典序），保证 tools/list 顺序稳定，
+      // 使客户端能稳定缓存 tools/list 结果、提升 LLM prompt cache 命中率。
+      const sortedTools = [...filteredTools].toSorted((a, b) => {
+        const byServer = (a.serverId ?? '').localeCompare(b.serverId ?? '');
+        if (byServer !== 0) return byServer;
+        return (a.name ?? '').localeCompare(b.name ?? '');
+      });
+
       // 注册每个工具
-      for (const tool of filteredTools) {
+      for (const tool of sortedTools) {
         await this.registerDynamicTool(tool);
       }
 
-      this.availableTools = filteredTools.map((tool) => ({
+      this.availableTools = sortedTools.map((tool) => ({
         name: tool.name,
         description: tool.description,
         serverId: tool.serverId,
@@ -327,6 +389,197 @@ export class GroupMcpService {
       });
       // 不抛出错误，允许服务继续运行
     }
+  }
+
+  /**
+   * 获取组的服务器列表与连接状态。
+   *
+   * group://servers resource 的内容源：仅返回本组配置的服务器，
+   * 不透传所有上游 server，从而保证 group 隔离边界。
+   * 连接状态从 coreServiceManager.getServerConnections() 读取，
+   * 缺失条目按 disconnected 处理。
+   */
+  private async getGroupServersStatus(): Promise<{
+    groupId: string;
+    servers: Array<{ id: string; status: string }>;
+    timestamp: string;
+  }> {
+    const groupServers = this.groupConfig?.servers ?? [];
+    const serverConnections = this.coreServiceManager.getServerConnections();
+    return {
+      groupId: this.groupId,
+      servers: groupServers.map((id) => ({
+        id,
+        status: serverConnections.get(id)?.status ?? 'disconnected',
+      })),
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * 注册 Hub 自身元数据 resources（协议层 cacheHint 在 resources/read 的落点）。
+   *
+   * 注册 4 个 resource：
+   *   - group://{groupId}/status  —— 组运行时状态（短 ttl, private；状态频繁变化，且每用户隔离）
+   *   - group://{groupId}/servers —— 服务器列表与连接状态（同上，private 短 ttl）
+   *   - hub://config              —— 全局配置概要（长 ttl, public；跨用户/跨组一致）
+   *   - hub://version             —— 版本信息（极长 ttl, public；进程生命周期内不变）
+   *
+   * cacheScope 取值理由：private 短 ttl 用于运行时状态（含连接状态、初始化进度，
+   * 因 group 而异、随时间漂移）；public 长 ttl 用于全局静态信息（配置/版本）。
+   *
+   * 注意：SDK readCallback 签名为 (uri: URL, ctx: ServerContext) => ...；
+   * 本实现用闭包内的 uri 字符串构造响应，不读取入参，故 callback 显式声明
+   * `_uri: URL` 以匹配 SDK 签名（下划线前缀表示有意未使用）。
+   */
+  private async registerGroupResources(): Promise<void> {
+    const statusUri = `group://${this.groupId}/status`;
+    this.mcpServer.registerResource(
+      'group_status_resource',
+      statusUri,
+      {
+        description: `组 '${this.groupId}' 的运行时状态`,
+        mimeType: 'application/json',
+        cacheHint: { ttlMs: 5_000, cacheScope: 'private' },
+      },
+      async (_uri: URL) => {
+        try {
+          const status = await this.getStatus();
+          return {
+            contents: [
+              { uri: statusUri, mimeType: 'application/json', text: JSON.stringify(status, null, 2) },
+            ],
+          };
+        } catch (error) {
+          logger.error('读取 group://status resource 失败', error as Error, {
+            groupId: this.groupId,
+          });
+          return {
+            contents: [
+              {
+                uri: statusUri,
+                mimeType: 'application/json',
+                text: JSON.stringify({ error: (error as Error).message, groupId: this.groupId }),
+              },
+            ],
+          };
+        }
+      },
+    );
+
+    const serversUri = `group://${this.groupId}/servers`;
+    this.mcpServer.registerResource(
+      'group_servers',
+      serversUri,
+      {
+        description: `组 '${this.groupId}' 的服务器列表与连接状态`,
+        mimeType: 'application/json',
+        cacheHint: { ttlMs: 5_000, cacheScope: 'private' },
+      },
+      async (_uri: URL) => {
+        try {
+          const payload = await this.getGroupServersStatus();
+          return {
+            contents: [
+              {
+                uri: serversUri,
+                mimeType: 'application/json',
+                text: JSON.stringify(payload, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          logger.error('读取 group://servers resource 失败', error as Error, {
+            groupId: this.groupId,
+          });
+          return {
+            contents: [
+              {
+                uri: serversUri,
+                mimeType: 'application/json',
+                text: JSON.stringify({ error: (error as Error).message, groupId: this.groupId }),
+              },
+            ],
+          };
+        }
+      },
+    );
+
+    this.mcpServer.registerResource(
+      'hub_config',
+      'hub://config',
+      {
+        description: 'Hub 全局配置概要',
+        mimeType: 'application/json',
+        cacheHint: { ttlMs: 300_000, cacheScope: 'public' },
+      },
+      async (_uri: URL) => {
+        try {
+          const config = await getAllConfig();
+          const payload = {
+            version: pkg.version,
+            groups: Object.keys(config.groups ?? {}),
+            serverCount: Object.keys(config.mcps?.servers ?? {}).length,
+          };
+          return {
+            contents: [
+              {
+                uri: 'hub://config',
+                mimeType: 'application/json',
+                text: JSON.stringify(payload, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          logger.error('读取 hub://config resource 失败', error as Error);
+          return {
+            contents: [
+              {
+                uri: 'hub://config',
+                mimeType: 'application/json',
+                text: JSON.stringify({ error: (error as Error).message, scope: 'global' }),
+              },
+            ],
+          };
+        }
+      },
+    );
+
+    this.mcpServer.registerResource(
+      'hub_version',
+      'hub://version',
+      {
+        description: 'Hub 版本信息',
+        mimeType: 'application/json',
+        cacheHint: { ttlMs: 86_400_000, cacheScope: 'public' },
+      },
+      async (_uri: URL) => {
+        try {
+          return {
+            contents: [
+              {
+                uri: 'hub://version',
+                mimeType: 'application/json',
+                text: JSON.stringify({ name: pkg.name, version: pkg.version }, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          logger.error('读取 hub://version resource 失败', error as Error);
+          return {
+            contents: [
+              {
+                uri: 'hub://version',
+                mimeType: 'application/json',
+                text: JSON.stringify({ error: (error as Error).message, scope: 'global' }),
+              },
+            ],
+          };
+        }
+      },
+    );
+
+    logger.debug('组 resources 注册完成', { groupId: this.groupId, count: 4 });
   }
 
   /**
