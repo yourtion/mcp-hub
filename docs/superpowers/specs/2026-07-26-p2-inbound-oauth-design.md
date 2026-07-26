@@ -462,13 +462,53 @@ P2 完成的判据：
 
 ## 实现修正（实现时发现的 spec 偏差）
 
-> 实现过程中如发现 spec 描述与实际不符，在此记录，避免读者按 spec 抄错。
+> 实现过程中发现 spec 描述与实际不符之处，在此记录，避免读者按 spec 抄错。
 
-（待实现时填充）
+1. **`pnpm typecheck` 脚本不存在**：§10 DoD 与多处提到 `pnpm typecheck`，但仓库根 `package.json` 无此脚本。实际用 `cd backend && pnpm exec tsc --noEmit`（或 `pnpm --filter <pkg> exec tsc --noEmit`）替代。
+
+2. **构建顺序约束**：backend typecheck/test 前必须先 `pnpm --filter @mcp-core/mcp-hub-share build && pnpm --filter @mcp-core/mcp-hub-core build`。workspace symlink 解析 share/core 的 dist，若 dist 未同步（如 Task 1 新增错误码后未重建 core），会报"oauth does not exist"或"OAUTH\_\* 不存在"。
+
+3. **`getAllConfig()` 返回结构**：§3/§5 假设 oauth 在顶层（`cfg.oauth`），实际 `getAllConfig()` 返回 `{ mcps, groups, system: { oauth, ... } }`——oauth 在 `cfg.system.oauth`。`group-router.ts` 的 `resourceServerGetConfig` 做了结构映射（`system.oauth` 提到顶层）。
+
+4. **jose v6 API 偏差**（多处）：
+   - `createRemoteJWKSet` 返回的 resolver 第一个参数是 `JWSHeaderParameters` 对象（含 `kid`/`alg`），不是 kid 字符串；且需 `alg` 字段（`getKtyFromAlg` 依赖），所以 `jwksCache.getKey` 内部调用时传 `{ kid, alg: 'RS256' }`。
+   - jose v6 不再导出 `KeyLike` 类型，改用 `CryptoKey | Uint8Array`。
+   - `createRemoteJWKSet` 校验 `res.status === 200`（不是 `res.ok`），测试 mock 需返回 `{ status: 200 }` 而非 `{ ok: true }`。
+   - 版本：`jose ^6.2.4`。
+
+5. **`crypto-keys.ts` PEM 加载方案**：§4 示例用 `importPKCS8` + `exportSPKIFromPKCS8`，实际 Node.js 的 `createPublicKey({type:'pkcs8'})` 不接受私钥 PEM。改用 `createPrivateKey(pem)` → `createPublicKey(privateKeyObj)` 派生公钥 → `exportJWK`。私钥直接以 KeyObject 传给 jose `SignJWT.sign()`，不转 Uint8Array。
+
+6. **`token-validator.ts` introspection 回退收紧**：§5 流程描述"JWT 验签失败/opaque → introspection 回退"，实际收紧为：仅 `reason='invalid'`（signature/格式失败）才回退；`expired`/`audience`/`scope` 是针对已验签 JWT 的确定结论，introspection 同一 token 结论相同，不回退。
+
+7. **`token-validator.ts` internal 模式验签**：§5 流程未明确 internal 模式如何验签。实现拆成 `verifyJwtWithJwks`（external/both 主路径）+ `verifyJwtWithInternalKeys`（internal 主路径、both 回退路径），后者用 `getInternalPublicKeySet` + `importJWK` 本地验签。
+
+8. **`internal-as.ts` 错误捕获**：§2.4 暗示用 `instanceof AuthError` 捕获，实际 `issueClientCredentialsToken` 抛 `ServiceError`（不是 `AuthError` 子类）。`token.ts` 改用 `McpHubCoreError` 基类 + `err.code` 精确映射 OAuth error。`invalid_client` 状态码用 401（RFC6749 §5.2），不是 brief 早期草稿的 400。
+
+9. **`mcp-auth.ts` origin 推导**：§7 示例 `resourceMetadataUrl` 用完整 URL，实际改为 `resourceMetadataUrlPath`（相对路径），中间件内用 `new URL(c.req.url).origin + path` 拼完整 URL，避免硬编码 host。
+
+10. **`error_description` ASCII 限制**：HTTP 头是 ByteString，`buildInsufficientScopeHeader` 的 `error_description` 须为 ASCII。中间件层传英文 `'insufficient scope'`。`buildInsufficientScopeHeader` 本身对非 ASCII 未做百分号编码（已知 minor，当前调用方用 ASCII 规避）。
+
+11. **Hono `ContentfulStatusCode`**：`c.json()`/`c.body()` 的 status 参数需字面量联合（如 `400 | 401 | 403 | 503`），不接受 `number`。
+
+12. **e2e conditional skip 扩展**：§9 的 e2e skip 条件 `status === 404/503` 不够——open 模式下 MCP 裸 POST 会被协议层以 400 拒绝（到不了 auth 中间件），实际 skip 集合扩展为含 400/404/503。
 
 ## 审查 follow-up（代码审查发现，留待后续）
 
-（待实现时填充）
+1. **PEM 加载路径无单测覆盖**（Task 4）：`crypto-keys.ts` 的 PEM 加载分支（`OAUTH_INTERNAL_PRIVATE_KEY` 已配置）只有 3 个测试覆盖"未配置→生成"主路径。配置了 PEM 的路径（`createPrivateKey` → `createPublicKey` → `exportJWK`）已就位但 CI 未验证。建议在补 oauth fixture 时用一个真实生成的 PKCS8 PEM 验证。
+
+2. **`crypto-keys.ts` 首调用理论竞态**（Task 4）：`loadOrCreateSigningKey()` 非原子检查-设置，并发调用可能生成两份密钥。实际启动期单调用，无现实影响。如需严格幂等可改 cache promise 模式。
+
+3. **`system.schema` 测试未断言默认值**（Task 2）：happy path 仅断言 `parse()` 不抛错，未验证 `scopes`/`tokenTtlSeconds`/`clients` 默认值生效。
+
+4. **`as-metadata.ts` `buildInsufficientScopeHeader` 无专门单测**（Task 7）：测试只覆盖 `buildWwwAuthenticateHeader`。
+
+5. **`resource-server.ts` both 模式回退分支无单测**（Task 10）：`oauth.mode === 'both'` + OAuth 失败 → validationKey 回退的分支代码已实现（resource-server.ts 约第 92-95 行）但 6 个用例未覆盖。
+
+6. **e2e 在 open 模式下 conditional skip**（Task 14-16）：5 个 oauth/validation e2e 在当前测试环境（未配 oauth/validation）全部 conditional skip。补 oauth/validation fixture 后自动激活。这是 plan 允许的 MVP 取舍。
+
+7. **`jwks-cache.ts` 头部注释与代码不一致**（Task 5）：注释说 `>` 但代码用 `>=`（cosmetic）。
+
+8. **`internal-as.ts` 空 scope 语义**（Task 6）：请求 `scope` 缺省时授予 client 全部配置 scope（RFC6749 §3.3 允许），但 spec §2.4 未明确此语义。
 
 ## 参考资料
 
