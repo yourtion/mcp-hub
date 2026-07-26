@@ -284,6 +284,20 @@ P1 完成的判据：
 | 出站方向保留 SSE 连接增加维护负担 | 这是网关产品定位的必要代价；后续外部 server 生态升级后可再评估移除 |
 | McpServer 缓存失效逻辑与配置变更事件耦合 | 复用现有 `sse_event_manager` 事件机制；新增专门测试覆盖失效路径 |
 
+## 实现修正（实现时发现的 spec 偏差）
+
+实现过程中发现 spec 的几处描述与 SDK v2 实际不符，已在代码中采用正确做法，此处记录避免读者按 spec 抄错：
+
+1. **`createMcpHandler` 的 import 路径**：§3 示例写 `from '@modelcontextprotocol/hono'`，实际从 `@modelcontextprotocol/server` 导出。`@modelcontextprotocol/hono` 是高层 wrapper（`createMcpHonoApp` + DNS rebinding 防护），本次未使用。
+2. **`serveStdio` 的 import 路径**：§3/Task 8 写 `from '@modelcontextprotocol/node'`，实际从 `@modelcontextprotocol/server/stdio` 导出。
+3. **`resultType` 字段**：§4.1 暗示 handler 返回需带 `resultType`，实际它是 wire-only 字段，由 codec 层出站时打，handler 不需要也不应该设。
+
+## 审查 follow-up（代码审查发现，留待后续）
+
+- **I1 McpServer factory 契约**：SDK 要求 factory 每次返回 fresh instance，当前实现复用同一实例（`mcp-handler-factory.ts` 已加 NOTE 注释）。待 SDK GA 后重构为 `buildServer(groupId)` 模式。
+- **I2 缓存失效粒度**：当前任何单组变更都使所有组缓存失效（因 `reloadCoreServiceManager` 重建整个 manager）。性能毛刺，待后续增量更新优化。
+- **协议转换 e2e**：`protocol-compliance.test.ts` 用例 3 skip，缺 mock legacy server 基础设施，待补 `child_process.spawn` 拉起 mock server 的工具。
+
 ## 参考资料
 
 - [MCP 2026-07-28 Release Candidate](https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate/)

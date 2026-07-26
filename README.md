@@ -324,16 +324,30 @@ Configure groups in `backend/config/group.json`:
 Access tools through group-specific endpoints:
 
 ```bash
-# List tools for development group
-curl http://localhost:8181/development/mcp/list_tools
+# List tools for development group（MCP 2026-07-28 JSON-RPC）
+curl -X POST http://localhost:8181/development/mcp \
+  -H "Content-Type: application/json" \
+  -H "Mcp-Method: tools/list" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/list",
+    "params": {}
+  }'
 
 # Call a tool in the research group
-curl -X POST http://localhost:8181/research/mcp/call_tool \
+curl -X POST http://localhost:8181/research/mcp \
   -H "Content-Type: application/json" \
+  -H "Mcp-Method: tools/call" \
   -d '{
-    "name": "search",
-    "arguments": {
-      "query": "MCP protocol documentation"
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "search",
+      "arguments": {
+        "query": "MCP protocol documentation"
+      }
     }
   }'
 ```

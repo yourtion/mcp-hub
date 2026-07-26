@@ -114,6 +114,16 @@ export async function createGroupMcpHandler(
 
     const handler = createMcpHandler(
       // McpServerFactory：按请求返回该组对应的 McpServer
+      //
+      // NOTE（代码审查 I1，偏离 SDK 契约）：
+      // SDK 文档要求 factory 每次返回 fresh McpServer 实例（modern 路径下 SDK 会
+      // 对返回的 server 做 installModernOnlyHandlers / setNegotiatedProtocolVersion
+      // / seedClientIdentityFromEnvelope 等有状态操作）。当前实现复用同一
+      // GroupMcpService 的 McpServer——这在当前 beta 版本能工作（上述操作在同版本
+      // 下幂等，handler 不读 clientInfo），但偏离了契约。
+      // Follow-up：把 GroupMcpService 的工具注册逻辑抽成 buildServer(groupId)，
+      // factory 每次返回新实例。代价可接受（getAllTools 是内存读，不连外部 server）。
+      // 待 SDK GA 后重新评估，见总体 spec P1 follow-up。
       () => {
         const groupService = groupServices.get(groupId);
         if (!groupService) {

@@ -232,8 +232,8 @@ describe('MCP 协议合规（2026-07-28 / v2）', () => {
         expect(tools2.tools.length).toBeGreaterThan(0);
 
         // 同一 default 组的工具集应一致（聚合逻辑无状态、可重现）
-        const names1 = tools1.tools.map((t) => t.name).sort();
-        const names2 = tools2.tools.map((t) => t.name).sort();
+        const names1 = tools1.tools.map((t) => t.name).toSorted();
+        const names2 = tools2.tools.map((t) => t.name).toSorted();
         expect(names1).toEqual(names2);
 
         console.log(

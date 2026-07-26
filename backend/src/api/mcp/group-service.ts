@@ -4,13 +4,13 @@
  */
 
 import { ConfigError, ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
-import { McpServer } from "@modelcontextprotocol/server";
-import type { CallToolResult } from "@modelcontextprotocol/server";
+import { McpServer } from '@modelcontextprotocol/server';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod/v4';
 
 import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
+import type { CallToolResult } from '@modelcontextprotocol/server';
 // JSON Schema types
 interface JsonSchema {
   type: string;
@@ -224,61 +224,61 @@ export class GroupMcpService {
   private async registerGroupManagementTools(): Promise<void> {
     // 组状态工具
     this.mcpServer.registerTool('group_status', { inputSchema: z.object({}) }, async () => {
-                try {
-                  const status = await this.getStatus();
-                  return {
-                    content: [
-                      {
-                        type: 'text',
-                        text: `组 '${this.groupId}' 状态:\n${JSON.stringify(status, null, 2)}`,
-                      },
-                    ],
-                  };
-                } catch (error) {
-                  logger.error('获取组状态工具执行失败', error as Error, {
-                    groupId: this.groupId,
-                  });
-                  return {
-                    content: [
-                      {
-                        type: 'text',
-                        text: `获取组状态失败: ${(error as Error).message}`,
-                      },
-                    ],
-                  };
-                }
-              });
+      try {
+        const status = await this.getStatus();
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `组 '${this.groupId}' 状态:\n${JSON.stringify(status, null, 2)}`,
+            },
+          ],
+        };
+      } catch (error) {
+        logger.error('获取组状态工具执行失败', error as Error, {
+          groupId: this.groupId,
+        });
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `获取组状态失败: ${(error as Error).message}`,
+            },
+          ],
+        };
+      }
+    });
 
     // 组工具列表工具
     this.mcpServer.registerTool('list_group_tools', { inputSchema: z.object({}) }, async () => {
-                try {
-                  const tools = await this.getAvailableTools();
-                  const toolList = tools
-                    .map((tool) => `- ${tool.name} (来自 ${tool.serverId}): ${tool.description || '无描述'}`)
-                    .join('\n');
+      try {
+        const tools = await this.getAvailableTools();
+        const toolList = tools
+          .map((tool) => `- ${tool.name} (来自 ${tool.serverId}): ${tool.description || '无描述'}`)
+          .join('\n');
 
-                  return {
-                    content: [
-                      {
-                        type: 'text',
-                        text: `组 '${this.groupId}' 可用工具 (${tools.length} 个):\n${toolList}`,
-                      },
-                    ],
-                  };
-                } catch (error) {
-                  logger.error('列出组工具失败', error as Error, {
-                    groupId: this.groupId,
-                  });
-                  return {
-                    content: [
-                      {
-                        type: 'text',
-                        text: `列出组工具失败: ${(error as Error).message}`,
-                      },
-                    ],
-                  };
-                }
-              });
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `组 '${this.groupId}' 可用工具 (${tools.length} 个):\n${toolList}`,
+            },
+          ],
+        };
+      } catch (error) {
+        logger.error('列出组工具失败', error as Error, {
+          groupId: this.groupId,
+        });
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `列出组工具失败: ${(error as Error).message}`,
+            },
+          ],
+        };
+      }
+    });
 
     logger.debug('组管理工具注册完成', { groupId: this.groupId });
   }
@@ -362,10 +362,7 @@ export class GroupMcpService {
 
       // 注册工具
       // v2: registerTool(name, { inputSchema }, handler)，zodSchema 是 raw shape 需用 z.object() 包装
-      this.mcpServer.registerTool(
-        toolName,
-        { inputSchema: z.object(zodSchema) },
-        async (args) => {
+      this.mcpServer.registerTool(toolName, { inputSchema: z.object(zodSchema) }, async (args) => {
         try {
           logger.debug('执行组动态工具', {
             groupId: this.groupId,

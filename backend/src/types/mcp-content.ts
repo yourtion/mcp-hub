@@ -5,7 +5,7 @@
 
 /**
  * MCP 工具执行结果内容项类型
- * 根据 @modelcontextprotocol/sdk 规范定义
+ * 根据 @modelcontextprotocol/server 规范定义
  */
 export type McpContentItem = TextContent | ImageContent | ResourceContent;
 

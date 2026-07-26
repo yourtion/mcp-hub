@@ -81,6 +81,10 @@ export class ServerManager implements IServerManager {
         },
         {
           capabilities: {},
+          // 出站保留兼容：探测到 modern server（2026-07-28）走 server/discover，
+          // 否则回退到 legacy initialize。SDK 默认是 'legacy'（只发旧握手），
+          // 必须显式设 'auto' 才能连上纯 modern server。
+          versionNegotiation: { mode: 'auto' },
         },
       ),
       status: ServerStatus.CONNECTING,
