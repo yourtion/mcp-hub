@@ -2,6 +2,8 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { SignJWT, generateKeyPair, exportJWK } from 'jose';
 
 import { createTokenValidator } from './token-validator.js';
+import { _resetForTesting as resetCryptoKeys, loadOrCreateSigningKey } from './crypto-keys.js';
+import { issueClientCredentialsToken } from './internal-as.js';
 
 import type { OAuthConfig } from './types.js';
 
@@ -143,5 +145,118 @@ describe('token-validator', () => {
     const result = await validator.validate('malformed-jwt', 'mcp:tools');
     expect(result.ok).toBe(false);
     expect(introspectMock).not.toHaveBeenCalled();
+  });
+
+  // ------------------------------------------------------------------
+  // internal 模式本地验签（load-bearing 修复覆盖）
+  //
+  // 此前 verifyJwt 在 !ext 分支直接返回 invalid，导致 internal 模式签发的
+  // 合法 token 被错误拒绝。修复后用 getInternalPublicKeySet + importJWK 本地验签。
+  // ------------------------------------------------------------------
+  describe('internal 模式本地验签（load-bearing 修复）', () => {
+    const internalResource = 'https://hub.example.com';
+    const internalIssuer = 'https://hub.example.com';
+
+    const internalCfg: OAuthConfig = {
+      mode: 'internal',
+      resource: internalResource,
+      scopes: ['mcp:tools', 'mcp:resources'],
+      internal: {
+        issuer: internalIssuer,
+        tokenTtlSeconds: 3600,
+        clients: [
+          { clientId: 'c1', clientSecret: 's3cret', scopes: ['mcp:tools'] },
+        ],
+      },
+    };
+
+    beforeEach(() => {
+      // crypto-keys 模块级缓存会影响其它测试，每个 case 前重置
+      resetCryptoKeys();
+    });
+
+    it('内置 AS 签发的 token 能本地验签通过（iss/aud/scope 正确）', async () => {
+      // 用内置 AS 签发（内部会调用 loadOrCreateSigningKey 初始化公钥）
+      const { accessToken } = await issueClientCredentialsToken(
+        { clientId: 'c1', clientSecret: 's3cret', scope: 'mcp:tools', resource: internalResource },
+        internalCfg,
+      );
+      const validator = createTokenValidator(internalCfg);
+      const result = await validator.validate(accessToken, 'mcp:tools');
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.method).toBe('jwt');
+        expect((result.claims as { sub?: string }).sub).toBe('c1');
+      }
+    });
+
+    it('aud 与 resource 不匹配 → audience 拒绝', async () => {
+      // 手动签一个 aud 错的 token（用内置密钥）
+      const { privateKey, kid } = await loadOrCreateSigningKey();
+      const token = await new SignJWT({ scope: 'mcp:tools', client_id: 'c1' })
+        .setProtectedHeader({ alg: 'RS256', kid })
+        .setIssuedAt()
+        .setIssuer(internalIssuer)
+        .setSubject('c1')
+        .setAudience('https://other.example.com') // 错的 resource
+        .setExpirationTime('1h')
+        .sign(privateKey);
+      const validator = createTokenValidator(internalCfg);
+      const result = await validator.validate(token, 'mcp:tools');
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.reason).toBe('audience');
+    });
+
+    it('scope 不足 → scope 拒绝', async () => {
+      const { privateKey, kid } = await loadOrCreateSigningKey();
+      const token = await new SignJWT({ scope: 'mcp:resources', client_id: 'c1' })
+        .setProtectedHeader({ alg: 'RS256', kid })
+        .setIssuedAt()
+        .setIssuer(internalIssuer)
+        .setSubject('c1')
+        .setAudience(internalResource)
+        .setExpirationTime('1h')
+        .sign(privateKey);
+      const validator = createTokenValidator(internalCfg);
+      const result = await validator.validate(token, 'mcp:tools');
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.reason).toBe('scope');
+    });
+
+    it('过期 token → expired 拒绝', async () => {
+      const { privateKey, kid } = await loadOrCreateSigningKey();
+      const token = await new SignJWT({ scope: 'mcp:tools', client_id: 'c1' })
+        .setProtectedHeader({ alg: 'RS256', kid })
+        .setIssuedAt()
+        .setIssuer(internalIssuer)
+        .setSubject('c1')
+        .setAudience(internalResource)
+        .setExpirationTime('0s')
+        .sign(privateKey);
+      await new Promise((r) => setTimeout(r, 50));
+      const validator = createTokenValidator(internalCfg);
+      const result = await validator.validate(token, 'mcp:tools');
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.reason).toBe('expired');
+    });
+
+    it('用未知 kid 签发的 token → invalid 拒绝', async () => {
+      // 用一把完全不同的密钥签发（kid 不在内置公钥集里）
+      const foreignKp = await generateKeyPair('RS256');
+      const token = await new SignJWT({ scope: 'mcp:tools', client_id: 'c1' })
+        .setProtectedHeader({ alg: 'RS256', kid: 'unknown-kid' })
+        .setIssuedAt()
+        .setIssuer(internalIssuer)
+        .setSubject('c1')
+        .setAudience(internalResource)
+        .setExpirationTime('1h')
+        .sign(foreignKp.privateKey);
+      // 先确保内置密钥已初始化（否则公钥集为空，会走另一条 invalid 分支）
+      await loadOrCreateSigningKey();
+      const validator = createTokenValidator(internalCfg);
+      const result = await validator.validate(token, 'mcp:tools');
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.reason).toBe('invalid');
+    });
   });
 });

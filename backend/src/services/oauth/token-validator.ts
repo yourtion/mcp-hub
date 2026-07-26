@@ -8,15 +8,17 @@
  *
  * 校验失败的具体 reason 供中间件映射到正确的 ErrorCode / HTTP 状态。
  */
-import { jwtVerify, errors as joseErrors } from 'jose';
+import { jwtVerify, importJWK, errors as joseErrors } from 'jose';
 
 import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 import { logger } from '../../utils/logger.js';
 
 import { createJwksCache } from './jwks-cache.js';
+import { getInternalPublicKeySet } from './crypto-keys.js';
 
 import type { OAuthConfig, TokenValidationResult, IntrospectionResult } from './types.js';
 import type { JwksCache } from './jwks-cache.js';
+import type { JWK } from 'jose';
 
 export interface TokenValidatorDeps {
   /** introspection 回退实现（外部 IdP 场景）；mode=internal 时不会被调用 */
@@ -70,34 +72,128 @@ async function verifyJwt(
   requiredScope: string,
 ): Promise<TokenValidationResult> {
   const ext = config.external;
-  if (!ext) {
-    // internal 模式的 JWT 验签走内置 AS 的公钥（通过 JWKS 端点自取，或直接用 crypto-keys）
-    // MVP：internal 模式的 token 由 internal-as 签发，校验在 resource-server 层直接用内置公钥
-    return { ok: false, reason: 'invalid' };
+
+  // external / both 模式（配置了 external）：优先走 JWKS URI 验签
+  if (ext) {
+    const result = await verifyJwtWithJwks(token, ext, jwksCache, requiredScope);
+    // 通过，或确定结论（expired/audience/scope）→ 直接返回
+    if (result.ok || result.reason !== 'invalid') return result;
+    // both 模式且 JWKS 验签失败（reason='invalid'）→ 回退内置公钥
+    // （token 可能由内置 AS 签发，JWKS 是外部 IdP 的，验签自然失败）
+    if (config.mode === 'both') {
+      return verifyJwtWithInternalKeys(token, config, requiredScope);
+    }
+    return result;
   }
+
+  // 纯 internal 模式：用内置 AS 公钥本地验签（load-bearing 修复）
+  // 此前直接返回 { ok: false, reason: 'invalid' }，导致 internal 模式签发的合法
+  // token 被错误拒绝（Task 15 e2e 会因此失败）。
+  return verifyJwtWithInternalKeys(token, config, requiredScope);
+}
+
+/**
+ * 用外部 IdP 的 JWKS URI 验签（external / both 模式的主路径）。
+ */
+async function verifyJwtWithJwks(
+  token: string,
+  ext: NonNullable<OAuthConfig['external']>,
+  jwksCache: JwksCache,
+  requiredScope: string,
+): Promise<TokenValidationResult> {
   const jwksUri = ext.jwksUri ?? `${ext.issuer}/jwks`;
   try {
-    const { payload } = await jwtVerify(token, (header: { kid?: string }) => jwksCache.getKey(header.kid, jwksUri), {
-      algorithms: ['RS256'],
-      issuer: ext.issuer,
-      audience: ext.audience,
-    });
-    // scope 校验
-    const tokenScopes = String(payload.scope ?? '').split(' ');
-    if (!tokenScopes.includes(requiredScope)) {
-      return { ok: false, reason: 'scope' };
-    }
-    return { ok: true, claims: payload as unknown as IntrospectionResult, method: 'jwt' };
+    const { payload } = await jwtVerify(
+      token,
+      (header: { kid?: string }) => jwksCache.getKey(header.kid, jwksUri),
+      {
+        algorithms: ['RS256'],
+        issuer: ext.issuer,
+        audience: ext.audience,
+      },
+    );
+    return checkScope(payload, requiredScope);
   } catch (err) {
-    if (err instanceof joseErrors.JWTExpired) return { ok: false, reason: 'expired' };
-    if (err instanceof joseErrors.JWTClaimValidationFailed) {
-      // 区分 audience vs 其它
-      if (/aud/i.test(err.message)) return { ok: false, reason: 'audience' };
-      return { ok: false, reason: 'invalid' };
-    }
-    logger.debug('JWT 验签失败', { error: (err as Error).message });
+    return mapJoseError(err);
+  }
+}
+
+/**
+ * 用内置 AS 的公钥集本地验签（internal 模式主路径，both 模式回退路径）。
+ *
+ * 公钥集来自 crypto-keys.getInternalPublicKeySet()（与 internal-as 签发时同一密钥）。
+ * iss 校验用 config.internal.issuer ?? config.resource；
+ * aud 校验用 config.resource（RFC8707 resource 标识，与 internal-as.setAudience 一致）。
+ */
+async function verifyJwtWithInternalKeys(
+  token: string,
+  config: OAuthConfig,
+  requiredScope: string,
+): Promise<TokenValidationResult> {
+  const keys = getInternalPublicKeySet();
+  if (keys.length === 0) {
+    // 公钥集未初始化（理论上签发端已调用 loadOrCreateSigningKey，此处防御）
+    logger.warn('internal 模式验签：内置公钥集为空（密钥未加载）');
     return { ok: false, reason: 'invalid' };
   }
+
+  // 解析 header 取 kid，按 kid 匹配公钥；无 kid 时尝试第一个
+  let kid: string | undefined;
+  try {
+    const headerB64 = token.split('.')[0];
+    const headerJson = Buffer.from(headerB64, 'base64url').toString('utf8');
+    kid = JSON.parse(headerJson).kid;
+  } catch {
+    return { ok: false, reason: 'invalid' };
+  }
+
+  const matched = kid ? keys.find((k) => k.kid === kid) : keys[0];
+  if (!matched) {
+    logger.debug('internal 模式验签：kid 不匹配', { kid });
+    return { ok: false, reason: 'invalid' };
+  }
+
+  let key: CryptoKey | Uint8Array;
+  try {
+    key = await importJWK(matched as JWK, 'RS256');
+  } catch (err) {
+    logger.debug('internal 模式验签：importJWK 失败', { error: (err as Error).message });
+    return { ok: false, reason: 'invalid' };
+  }
+
+  const issuer = config.internal?.issuer ?? config.resource;
+  try {
+    const { payload } = await jwtVerify(token, key, {
+      algorithms: ['RS256'],
+      issuer,
+      audience: config.resource,
+    });
+    return checkScope(payload, requiredScope);
+  } catch (err) {
+    return mapJoseError(err);
+  }
+}
+
+function checkScope(
+  payload: Record<string, unknown>,
+  requiredScope: string,
+): TokenValidationResult {
+  const tokenScopes = String(payload.scope ?? '').split(' ');
+  if (!tokenScopes.includes(requiredScope)) {
+    return { ok: false, reason: 'scope' };
+  }
+  return { ok: true, claims: payload as unknown as IntrospectionResult, method: 'jwt' };
+}
+
+function mapJoseError(err: unknown): TokenValidationResult {
+  if (err instanceof joseErrors.JWTExpired) return { ok: false, reason: 'expired' };
+  if (err instanceof joseErrors.JWTClaimValidationFailed) {
+    // 区分 audience vs 其它
+    if (/aud/i.test(err.message)) return { ok: false, reason: 'audience' };
+    return { ok: false, reason: 'invalid' };
+  }
+  logger.debug('JWT 验签失败', { error: (err as Error).message });
+  return { ok: false, reason: 'invalid' };
 }
 
 async function introspect(
