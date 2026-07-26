@@ -36,6 +36,13 @@ export const GroupSchema = z.object({
   tools: z.array(z.string()),
   toolFilter: ToolFilterSchema.optional(),
   validation: GroupValidationSchema.optional(),
+  // P4: 协议层 cacheHint 组级覆盖（默认 ttlMs=60000, cacheScope='public'）
+  cacheHints: z
+    .object({
+      toolsListTtlMs: z.number().int().nonnegative().optional(),
+      toolsListCacheScope: z.enum(['public', 'private']).optional(),
+    })
+    .optional(),
 });
 
 /**
