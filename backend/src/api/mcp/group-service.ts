@@ -37,6 +37,16 @@ interface JsonSchemaProperty {
 // 读取 package.json
 const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf-8'));
 
+/**
+ * 协议层 cacheHint 默认值：tools/list 结果缓存 1 分钟，
+ * cacheScope=public（工具列表跨用户一致）。
+ * 见 spec §1.2。
+ */
+const DEFAULT_GROUP_CACHE_HINTS = {
+  ttlMs: 60_000,
+  cacheScope: 'public' as const,
+};
+
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 
@@ -73,17 +83,16 @@ export class GroupMcpService {
   private isInitialized = false;
   private groupConfig: Group | null = null;
   private availableTools: GroupToolInfo[] = [];
-  /** P4: 解析后的组级 cacheHints（initialize 内 buildMcpServer 时由 resolveCacheHints 覆盖） */
+  /** 解析后的组级 cacheHints（initialize 内 buildMcpServer 时由 resolveCacheHints 覆盖） */
   private groupCacheHints: { ttlMs: number; cacheScope: 'public' | 'private' } = {
-    ttlMs: 60_000,
-    cacheScope: 'public',
+    ...DEFAULT_GROUP_CACHE_HINTS,
   };
 
   constructor(
     private groupId: string,
     private coreServiceManager: McpServiceManagerInterface,
   ) {
-    // P4: McpServer 构造延迟到 initialize()，以便读取组配置里的 cacheHints
+    // McpServer 构造延迟到 initialize()，以便读取组配置里的 cacheHints
   }
 
   /**
@@ -103,7 +112,7 @@ export class GroupMcpService {
       // 加载组配置
       await this.loadGroupConfig();
 
-      // P4: 读配置后构造 McpServer（应用组级 cacheHints）
+      // 读配置后构造 McpServer（应用组级 cacheHints）
       this.buildMcpServer();
 
       // 注册组管理工具
@@ -126,7 +135,7 @@ export class GroupMcpService {
   }
 
   /**
-   * 构造 McpServer 并应用组级 cacheHints (P4)。
+   * 构造 McpServer 并应用组级 cacheHints。
    * 必须在 loadGroupConfig() 之后调用，以便读取组配置里的 cacheHints 覆盖。
    */
   private buildMcpServer(): void {
@@ -145,7 +154,7 @@ export class GroupMcpService {
   }
 
   /**
-   * 解析组级 cacheHints，应用默认值 (P4)。
+   * 解析组级 cacheHints，应用默认值。
    * 默认：ttlMs=60_000（1 分钟），cacheScope='public'（工具列表跨用户一致）。
    * 组级覆盖缺失的字段回落到默认值。
    */
@@ -155,8 +164,8 @@ export class GroupMcpService {
   } {
     const overrides = groupConfig?.cacheHints;
     return {
-      ttlMs: overrides?.toolsListTtlMs ?? 60_000,
-      cacheScope: overrides?.toolsListCacheScope ?? 'public',
+      ttlMs: overrides?.toolsListTtlMs ?? DEFAULT_GROUP_CACHE_HINTS.ttlMs,
+      cacheScope: overrides?.toolsListCacheScope ?? DEFAULT_GROUP_CACHE_HINTS.cacheScope,
     };
   }
 

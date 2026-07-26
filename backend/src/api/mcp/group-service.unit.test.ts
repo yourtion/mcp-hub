@@ -1,5 +1,5 @@
 /**
- * GroupMcpService 构造时序单测 (P4)
+ * GroupMcpService 构造时序单测
  *
  * 验证：
  * - 构造函数不再创建 McpServer（延迟到 initialize()，以便读取组配置里的 cacheHints）
@@ -41,6 +41,7 @@ vi.mock('../../utils/logger.js', () => ({
 
 import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
 
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 import { GroupMcpService } from './group-service.js';
 
 function makeCoreManagerMock(): McpServiceManagerInterface {
@@ -69,7 +70,7 @@ vi.mock('../../utils/config.js', () => ({
   getAllConfig: (...args: unknown[]) => getAllConfigMock(...args),
 }));
 
-describe('GroupMcpService - 构造时序 (P4)', () => {
+describe('GroupMcpService - 构造时序', () => {
   beforeEach(() => {
     constructorCalls.length = 0;
     getAllConfigMock.mockReset();
@@ -99,9 +100,15 @@ describe('GroupMcpService - 构造时序 (P4)', () => {
     expect(() => svc.getMcpServer()).not.toThrow();
   });
 
-  it('getMcpServer() 在 initialize 前抛 ServiceError', () => {
+  it('getMcpServer() 在 initialize 前抛 ServiceError (SERVICE_UNAVAILABLE)', () => {
     const svc = new GroupMcpService('testgroup', makeCoreManagerMock());
-    expect(() => svc.getMcpServer()).toThrow();
+    try {
+      svc.getMcpServer();
+      fail('getMcpServer 应在 initialize 前抛错');
+    } catch (e) {
+      expect(e).toBeInstanceOf(ServiceError);
+      expect((e as ServiceError).code).toBe(ErrorCode.SERVICE_UNAVAILABLE);
+    }
   });
 
   it('cacheHints 默认值（ttlMs=60000, cacheScope=public）被传入 McpServer', async () => {
@@ -147,6 +154,37 @@ describe('GroupMcpService - 构造时序 (P4)', () => {
         'tools/list': {
           ttlMs: 5_000,
           cacheScope: 'private',
+        },
+      },
+    });
+  });
+
+  it('单字段覆盖：仅设 toolsListTtlMs 时，cacheScope 回落默认 public', async () => {
+    getAllConfigMock.mockResolvedValue({
+      groups: {
+        testgroup: {
+          id: 'testgroup',
+          name: 'Test Group',
+          servers: ['srv1'],
+          tools: [],
+          cacheHints: {
+            toolsListTtlMs: 5_000,
+          },
+        },
+      },
+      servers: {},
+    });
+
+    const svc = new GroupMcpService('testgroup', makeCoreManagerMock());
+    await svc.initialize();
+
+    expect(constructorCalls).toHaveLength(1);
+    const { options } = constructorCalls[0]!;
+    expect(options).toMatchObject({
+      cacheHints: {
+        'tools/list': {
+          ttlMs: 5_000,
+          cacheScope: 'public',
         },
       },
     });
