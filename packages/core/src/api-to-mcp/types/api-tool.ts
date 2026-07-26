@@ -3,7 +3,7 @@
  */
 
 import type { JsonSchemaProperty } from './api-config.js';
-import type { Tool } from "@modelcontextprotocol/server";
+import type { Tool } from '@modelcontextprotocol/server';
 
 /**
  * MCP工具输入参数schema

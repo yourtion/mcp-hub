@@ -15,25 +15,30 @@
 ## 文件结构总览
 
 **新增：**
+
 - `backend/src/api/mcp/mcp-handler-factory.ts` — 封装"按组构建 McpServer + createMcpHandler"逻辑
 
 **重写（核心）：**
+
 - `backend/src/api/mcp/group-router.ts` — 从手写 transport 降级为挂载 handler
 - `backend/src/api/mcp/group-service.ts` — `.tool()` → `.registerTool()`，McpServer 实例化方式调整
 - `packages/cli/src/transport/cli-transport.ts` — `StdioServerTransport` → `serveStdio()`
 
 **改造（import + API 更新）：**
+
 - `backend/src/services/server_manager.ts` — client import 路径 + 保留 SSEClientTransport
 - `backend/src/app.ts` — 移除 mcp/sse 路由挂载
 - `backend/src/legacy/*` — 删除
 - 所有 `vi.mock('@modelcontextprotocol/sdk/...')` 的测试
 
 **删除：**
+
 - `backend/src/sse.ts` / `backend/src/sse.unit.test.ts` / `backend/src/utils/sse.ts`
 - `backend/src/legacy/mcp-legacy.ts` + 连带清理
 - `backend/src/services/mcp_service.ts`（若仅 legacy 使用）
 
 **配置：**
+
 - 各 `package.json`（依赖 + engines）
 - `Dockerfile` / CI workflow（Node 版本）
 
@@ -42,6 +47,7 @@
 ## Task 1: 创建工作分支与环境准备
 
 **Files:**
+
 - 无文件改动，仅环境准备
 
 - [ ] **Step 1: 确认当前分支状态干净**
@@ -74,6 +80,7 @@ Expected: 全部通过。记录通过数作为回归对照。
 ## Task 2: 升级 Node 运行时要求
 
 **Files:**
+
 - Modify: 根 `package.json`
 - Modify: `packages/*/package.json`（若有 engines 字段）
 - Modify: `.github/workflows/ci.yml`
@@ -114,6 +121,7 @@ git commit -m "chore: 升级 Node 运行时要求 18 → 20（SDK v2 前置）"
 ## Task 3: 运行 SDK v1→v2 codemod
 
 **Files:**
+
 - Modify: 所有 import `@modelcontextprotocol/sdk` 的 `.ts` 文件
 - Modify: 各 `package.json`（codemod 会改根 manifest，workspace member 需手动按输出调整）
 
@@ -132,10 +140,12 @@ codemod 运行结束会打印 manifest summary，说明每个 workspace member �
 - [ ] **Step 3: 按输出调整各 workspace member 的 package.json**
 
 codemod 只改根 manifest，workspace member（`packages/core`、`packages/cli`、`backend`）需手动按输出调整：
+
 - 移除 `@modelcontextprotocol/sdk`
 - 添加 member 实际 import 用到的 v2 包
 
 预期变更（基于 spec §2）：
+
 - `packages/core`：移除 `sdk`，加 `@modelcontextprotocol/client`
 - `packages/cli`：移除 `sdk`，加 `@modelcontextprotocol/server` + `@modelcontextprotocol/node`
 - `backend`：移除 `sdk`，加 `@modelcontextprotocol/server` + `@modelcontextprotocol/hono` + `@modelcontextprotocol/client` + `@modelcontextprotocol/core`
@@ -165,6 +175,7 @@ codemod 产出 + 手动修复标记点后一起提交（Task 4 末尾）。
 ## Task 4: 处理 codemod 标记点 + typecheck 修复
 
 **Files:**
+
 - 取决于 Task 3 Step 5 的 grep 结果
 
 - [ ] **Step 1: 运行 typecheck，收集所有类型错误**
@@ -191,6 +202,7 @@ pnpm typecheck
 - [ ] **Step 3: 修复剩余 typecheck 错误**
 
 处理 Step 1 收集的、非 codemod 标记的类型错误。常见：
+
 - `ErrorCode` → `ProtocolErrorCode`（codemod 应已改名，但混用 `instanceof` 守卫需手动）
 - `RequestHandlerExtra` → `ServerContext`，`extra` → `ctx`
 - `.tool()` → `.registerTool()` 的参数形状变化
@@ -200,11 +212,13 @@ pnpm typecheck
 ```bash
 grep -rn '@mcp-codemod-error' . --include="*.ts"
 ```
+
 Expected: **零命中**。
 
 ```bash
 pnpm typecheck
 ```
+
 Expected: **零错误**。
 
 - [ ] **Step 5: 提交**
@@ -219,6 +233,7 @@ git commit -m "refactor: SDK v1→v2 codemod 迁移 + 手动修复标记点"
 ## Task 5: 重写 group-router 和 group-service（核心）
 
 **Files:**
+
 - Create: `backend/src/api/mcp/mcp-handler-factory.ts`
 - Modify: `backend/src/api/mcp/group-router.ts`（几乎重写）
 - Modify: `backend/src/api/mcp/group-service.ts`（`.registerTool` 适配，缓存逻辑调整）
@@ -235,7 +250,10 @@ import { createGroupMcpHandler } from './mcp-handler-factory.js';
 
 describe('createGroupMcpHandler', () => {
   it('调用 buildServer 时传入从路由参数解析的 groupId', async () => {
-    const buildServer = vi.fn((_groupId: string) => new McpServer({ name: 'test', version: '1.0.0' }, { capabilities: { tools: {} } }));
+    const buildServer = vi.fn(
+      (_groupId: string) =>
+        new McpServer({ name: 'test', version: '1.0.0' }, { capabilities: { tools: {} } }),
+    );
     const handler = createGroupMcpHandler(buildServer);
 
     // 模拟带 :group 参数的 Hono 请求
@@ -272,9 +290,7 @@ import { Hono } from 'hono';
  * @param buildServer 根据 groupId 构建已注册工具的 McpServer 的工厂函数
  * @returns 可挂载到 Hono 的路由（处理 /:group/mcp）
  */
-export function createGroupMcpHandler(
-  buildServer: (groupId: string) => McpServer,
-): Hono {
+export function createGroupMcpHandler(buildServer: (groupId: string) => McpServer): Hono {
   return createMcpHandler(
     (c) => {
       const groupId = c.req.param('group');
@@ -293,6 +309,7 @@ Expected: PASS
 - [ ] **Step 5: 重写 group-router.ts**
 
 重写 `backend/src/api/mcp/group-router.ts`。核心变化：
+
 - 移除 `StreamableHTTPServerTransport`、`fetch-to-node` import
 - 用 `createGroupMcpHandler` 替换手写 transport 处理
 - 保留组验证中间件、`/status`、`/tools` 端点
@@ -358,8 +375,8 @@ groupMcpRouter.route(
 );
 
 // 保留 /status 和 /tools 端点（原有实现不变）
-groupMcpRouter.get('/:group/status', groupValidationMiddleware, /* ... */);
-groupMcpRouter.get('/:group/tools', groupValidationMiddleware, /* ... */);
+groupMcpRouter.get('/:group/status', groupValidationMiddleware /* ... */);
+groupMcpRouter.get('/:group/tools', groupValidationMiddleware /* ... */);
 
 export async function shutdownGroupMcpRouter(): Promise<void> {
   // （保持原有实现）
@@ -371,6 +388,7 @@ export async function shutdownGroupMcpRouter(): Promise<void> {
 - [ ] **Step 6: 适配 group-service.ts 的工具注册 API**
 
 `backend/src/api/mcp/group-service.ts` 中 `.tool()` 已被 codemod 改成 `.registerTool()`。检查并确认：
+
 - `this.mcpServer.registerTool('group_status', { inputSchema: z.object({}) }, async (args, ctx) => {...})` 形态正确
 - 所有 `.tool()` 调用点都已转换
 - `McpServer` 构造参数符合 v2（`new McpServer({ name, version }, { capabilities: { tools: {} } })`）
@@ -392,6 +410,7 @@ git commit -m "refactor: 用 createMcpHandler 重写 group-router/group-service�
 ## Task 6: 删除 MCP 级 SSE 端点
 
 **Files:**
+
 - Delete: `backend/src/sse.ts`
 - Delete: `backend/src/sse.unit.test.ts`
 - Delete: `backend/src/utils/sse.ts`
@@ -407,6 +426,7 @@ git rm backend/src/sse.ts backend/src/sse.unit.test.ts backend/src/utils/sse.ts
 - [ ] **Step 2: 移除 app.ts 的 sse 挂载**
 
 在 `backend/src/app.ts` 中：
+
 - 删除 `import { sse } from './sse.js';`（原 L21）
 - 删除 `app.route('/', sse);`（原 L80）
 
@@ -437,6 +457,7 @@ git commit -m "refactor: 删除 MCP 级 SSE 端点（2026-07-28 Deprecated）
 ## Task 7: 删除 legacy /mcp 端点
 
 **Files:**
+
 - Delete: `backend/src/legacy/mcp-legacy.ts`
 - Modify: `backend/src/legacy/index.ts`（移除 re-export）
 - Modify: `backend/src/app.ts`（移除 mcp 挂载）
@@ -458,14 +479,17 @@ git rm backend/src/services/mcp_service.ts
 - [ ] **Step 3: 清理 legacy/index.ts 的 re-export**
 
 在 `backend/src/legacy/index.ts` 中移除：
+
 ```typescript
 export { mcp, shutdownMcpService } from './mcp-legacy.js';
 ```
+
 若 `legacy/index.ts` 删空了所有内容，整个文件删除。
 
 - [ ] **Step 4: 移除 app.ts 的 mcp 挂载**
 
 在 `backend/src/app.ts` 中：
+
 - 删除 `import { mcp } from './legacy/index.js';`（原 L15）
 - 删除 `app.route('/', mcp);`（原 L79）
 
@@ -486,6 +510,7 @@ git commit -m "refactor: 删除 legacy /mcp 端点（已 deprecated，激进升�
 ## Task 8: 适配 CLI transport（serveStdio）
 
 **Files:**
+
 - Modify: `packages/cli/src/transport/cli-transport.ts`
 - Modify: CLI 启动入口（找到 `server.connect(new StdioServerTransport())` 的地方）
 
@@ -513,6 +538,7 @@ serveStdio(() => buildServer(), { legacy: 'reject' });
 ```
 
 `CliTransport` 类的职责需重新评估：v2 的 `serveStdio` 封装了传输管理，`CliTransport` 原有的 `initialize`/`start`/`sendMessage`/事件处理器可能不再需要。实现时判断：
+
 - 若 `serveStdio` 完全覆盖 CLI 需求，`CliTransport` 可大幅简化或删除。
 - 若 CLI 有额外需求（如消息计数、自定义日志），保留薄封装。
 
@@ -533,12 +559,14 @@ git commit -m "refactor: CLI transport 改用 serveStdio（无状态）"
 ## Task 9: 验证 server_manager 出站兼容性
 
 **Files:**
+
 - Modify: `backend/src/services/server_manager.ts`（确认 import + 版本协商）
 
 - [ ] **Step 1: 确认 client import 已被 codemod 正确改写**
 
 Run: `grep -n "from '@modelcontextprotocol" backend/src/services/server_manager.ts`
 Expected:
+
 - `Client` 来自 `@modelcontextprotocol/client`
 - `SSEClientTransport`、`StdioClientTransport`、`StreamableHTTPClientTransport` 来自 `@modelcontextprotocol/client` 的子路径
 
@@ -577,6 +605,7 @@ git commit -m "refactor: server_manager 出站 client 升级（auto 版本协商
 ## Task 10: McpServer 缓存失效钩子
 
 **Files:**
+
 - Modify: `backend/src/api/mcp/group-router.ts`（暴露缓存失效函数）
 - Modify: `backend/src/services/mcp_hub_service.ts` 或配置变更事件源头（接失效钩子）
 - Test: `backend/src/api/mcp/group-router.unit.test.ts`（新增缓存失效测试）
@@ -667,6 +696,7 @@ git commit -m "feat: McpServer 缓存失效钩子（配置变更时主动清除�
 ## Task 11: isError 检查点逐个验证
 
 **Files:**
+
 - 检查并可能修改 spec §4.1 列出的所有 `isError` 检查点
 
 - [ ] **Step 1: 生成完整的 isError 检查点清单**
@@ -678,20 +708,21 @@ Run: `grep -rn "isError" backend/src packages --include="*.ts" | grep -v node_mo
 - [ ] **Step 2: 逐个验证每个点**
 
 对清单中每一行，判断：
+
 - **类别 A（工具执行结果记录）**：v2 后工具执行失败仍返回 `isError:true`，这些点**无需改**。但调用工具的地方需加 try/catch 处理 unknown-tool 的 rejection（`-32602`）。
 - **类别 B（Zod 的 `result.error.issues`）**：与 MCP 无关，不改。
 
 逐个标注处置（在代码注释或单独文档记录），不留模糊。已知检查点（按 spec §4.1）：
 
-| 文件 | 行 | 处置（实现时填） |
-|---|---|---|
-| `types/mcp-hub.ts:90` | 类型定义 | ☐ 已验证无需改 |
-| `api/tools/index.ts:289,300,318,325` | 执行结果记录 | ☐ 验证 + 调用处加 try/catch |
-| `api/tools-admin/index.ts:22,87,201,297-298,342,373,450,582-583,615` | 历史统计 | ☐ 验证 |
-| `api/debug/index.ts:99` | 调试检查 | ☐ 验证 |
-| `services/api_tool_integration_service.ts:97,114,120` | API 工具集成 | ☐ 验证 |
-| `services/server_manager.ts:249,328` | server 管理 | ☐ 验证 + 调用处加 try/catch |
-| `services/tool-result-transform.ts:62,73,77` | 结果转换 | ☐ 验证 |
+| 文件                                                                 | 行           | 处置（实现时填）            |
+| -------------------------------------------------------------------- | ------------ | --------------------------- |
+| `types/mcp-hub.ts:90`                                                | 类型定义     | ☐ 已验证无需改              |
+| `api/tools/index.ts:289,300,318,325`                                 | 执行结果记录 | ☐ 验证 + 调用处加 try/catch |
+| `api/tools-admin/index.ts:22,87,201,297-298,342,373,450,582-583,615` | 历史统计     | ☐ 验证                      |
+| `api/debug/index.ts:99`                                              | 调试检查     | ☐ 验证                      |
+| `services/api_tool_integration_service.ts:97,114,120`                | API 工具集成 | ☐ 验证                      |
+| `services/server_manager.ts:249,328`                                 | server 管理  | ☐ 验证 + 调用处加 try/catch |
+| `services/tool-result-transform.ts:62,73,77`                         | 结果转换     | ☐ 验证                      |
 
 - [ ] **Step 3: 对需要的点加 try/catch**
 
@@ -725,6 +756,7 @@ git commit -m "refactor: isError 检查点适配 v2（unknown-tool 改为抛错�
 ## Task 12: 改写 e2e 协议测试
 
 **Files:**
+
 - Modify: `backend/src/e2e/mcp-protocol/mcp-test-config.ts`
 - Modify: `backend/src/e2e/mcp-protocol/mcp-basic.test.ts`
 - Modify: `backend/src/e2e/mcp-protocol/hub-aggregation.test.ts`
@@ -755,6 +787,7 @@ export function createTestClient(url: URL) {
 - [ ] **Step 2: 改写 mcp-basic.test.ts**
 
 更新断言验证新协议特性：
+
 - `server/discover` 返回正确能力声明（替代原 initialize 握手断言）
 - 不带 `Mcp-Method` 头的请求被拒
 - 无 `Mcp-Session-Id` 依赖
@@ -784,6 +817,7 @@ git commit -m "test: e2e 协议测试改用 StreamableHTTPClientTransport"
 ## Task 13: 新增协议合规 e2e 用例
 
 **Files:**
+
 - Create: `backend/src/e2e/mcp-protocol/protocol-compliance.test.ts`
 - Possibly Modify: `backend/src/e2e/mock-mcp-server.ts`（支持 SSE mock）
 
@@ -864,6 +898,7 @@ git commit -m "test: 新增协议合规/激进升级/协议转换/无状态性 e
 ## Task 14: 文档更新
 
 **Files:**
+
 - Modify: `README.md`（Node 版本、协议版本）
 - Modify: `docs/DEPLOYMENT.md`（Node 20 要求）
 - Modify: `docs/RELEASE_NOTES.md`（breaking change 说明）
@@ -880,6 +915,7 @@ git commit -m "test: 新增协议合规/激进升级/协议转换/无状态性 e
 - [ ] **Step 3: 更新 RELEASE_NOTES.md**
 
 新增版本条目，标注 breaking change：
+
 - 移除 `/sse` MCP 端点（迁移到 `/:group/mcp` Streamable HTTP）
 - 移除 legacy `/mcp` 端点
 - 协议升级到 2026-07-28，不再支持 2025-era 客户端握手
@@ -926,6 +962,7 @@ Expected: engines 检查失败或警告（确认 `>=20` 生效）。验证后切
 - [ ] **Step 6: 手动冒烟测试**
 
 启动服务，用一个 MCP 客户端（或测试脚本）连接 `/:group/mcp`：
+
 - 验证 `server/discover` 正常
 - 验证工具列表返回
 - 验证工具调用成功

@@ -15,17 +15,17 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { app } from '../../app.js';
 import {
-  closeMcpClient,
-  createMcpTestClient,
-  defaultMcpTestConfig,
-  ensureTestServerRunning,
-} from './mcp-test-config.js';
-import {
   cleanupTestEnvironment,
   safeJsonParse,
   setupTestEnvironment,
   sleep,
 } from '../test-utils.js';
+import {
+  closeMcpClient,
+  createMcpTestClient,
+  defaultMcpTestConfig,
+  ensureTestServerRunning,
+} from './mcp-test-config.js';
 
 describe('MCP 协议合规（2026-07-28 / v2）', () => {
   let restoreConsole: () => void;
@@ -210,14 +210,8 @@ describe('MCP 协议合规（2026-07-28 / v2）', () => {
       }
 
       // 用两个独立客户端连接（各自独立 discover + listTools），互不知道对方
-      const conn1 = await createMcpTestClient(
-        'stateless-client-a',
-        defaultMcpTestConfig,
-      );
-      const conn2 = await createMcpTestClient(
-        'stateless-client-b',
-        defaultMcpTestConfig,
-      );
+      const conn1 = await createMcpTestClient('stateless-client-a', defaultMcpTestConfig);
+      const conn2 = await createMcpTestClient('stateless-client-b', defaultMcpTestConfig);
 
       try {
         const [tools1, tools2] = await Promise.all([
@@ -236,9 +230,7 @@ describe('MCP 协议合规（2026-07-28 / v2）', () => {
         const names2 = tools2.tools.map((t) => t.name).toSorted();
         expect(names1).toEqual(names2);
 
-        console.log(
-          `✅ 无状态验证通过：两次独立请求都拿到 ${names1.length} 个工具`,
-        );
+        console.log(`✅ 无状态验证通过：两次独立请求都拿到 ${names1.length} 个工具`);
       } finally {
         await closeMcpClient(conn1.client, conn1.transport);
         await closeMcpClient(conn2.client, conn2.transport);
@@ -265,10 +257,7 @@ describe('MCP 协议合规（2026-07-28 / v2）', () => {
       }) as typeof fetch;
 
       try {
-        const connection = await createMcpTestClient(
-          'stateless-no-session',
-          defaultMcpTestConfig,
-        );
+        const connection = await createMcpTestClient('stateless-no-session', defaultMcpTestConfig);
         const { client, transport } = connection;
         try {
           await client.listTools();

@@ -16,11 +16,12 @@
  * 实例以避免重复初始化与工具注册。
  */
 import { createMcpHandler } from '@modelcontextprotocol/server';
-import type { McpHttpHandler } from '@modelcontextprotocol/server';
 
 import { getCoreServiceManager } from '../../services/service-registry.js';
 import { logger } from '../../utils/logger.js';
 import { GroupMcpService } from './group-service.js';
+
+import type { McpHttpHandler } from '@modelcontextprotocol/server';
 
 // groupServices 缓存与 group-router 共享（同一模块内单例），统一关闭。
 const groupServices: Map<string, GroupMcpService> = new Map();
@@ -52,9 +53,7 @@ export function getGroupHandlersCache(): Map<string, McpHttpHandler> {
  *
  * 保留原 group-router 的缓存语义：按 groupId 惰性创建、复用、统一关闭。
  */
-export async function ensureGroupMcpService(
-  groupId: string,
-): Promise<GroupMcpService> {
+export async function ensureGroupMcpService(groupId: string): Promise<GroupMcpService> {
   const existing = groupServices.get(groupId);
   if (existing) {
     return existing;
@@ -93,9 +92,7 @@ export async function ensureGroupMcpService(
  * 注意：此 handler 不再做组存在性校验——校验由上层 group-router 的
  * groupValidationMiddleware 负责，调用方需在通过校验后再构造 handler。
  */
-export async function createGroupMcpHandler(
-  groupId: string,
-): Promise<McpHttpHandler> {
+export async function createGroupMcpHandler(groupId: string): Promise<McpHttpHandler> {
   // 命中缓存则直接复用，避免每请求重建 handler/bus
   const cached = groupHandlers.get(groupId);
   if (cached) {

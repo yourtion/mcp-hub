@@ -144,10 +144,7 @@ export async function createResilientMcpClient(
     try {
       return await createMcpTestClient(clientName, config);
     } catch (error) {
-      console.warn(
-        `MCP客户端连接尝试 ${attempt}/${config.retries} 失败:`,
-        error,
-      );
+      console.warn(`MCP客户端连接尝试 ${attempt}/${config.retries} 失败:`, error);
 
       // 连接失败时先关掉残留 transport，再重试
       if (attempt < config.retries) {

@@ -6,7 +6,7 @@
 import { createCliLogger } from '@mcp-core/mcp-hub-share';
 
 import type { McpServiceManager, ToolResult } from '@mcp-core/mcp-hub-core';
-import type { CallToolResult } from "@modelcontextprotocol/server";
+import type { CallToolResult } from '@modelcontextprotocol/server';
 
 /**
  * MCP协议错误代码

@@ -11,8 +11,8 @@ import { McpProtocolHandler } from '../protocol/mcp-protocol-handler.js';
 import { CliMcpServer } from '../server/cli-mcp-server.js';
 
 import type { CliConfig } from '../types/index.js';
-import type { StdioServerHandle } from "@modelcontextprotocol/server/stdio";
-import type { McpServer } from "@modelcontextprotocol/server";
+import type { McpServer } from '@modelcontextprotocol/server';
+import type { StdioServerHandle } from '@modelcontextprotocol/server/stdio';
 
 // Mock外部依赖
 vi.mock('@modelcontextprotocol/server');

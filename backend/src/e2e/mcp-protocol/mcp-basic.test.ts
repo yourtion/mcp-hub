@@ -13,6 +13,7 @@ import {
   cleanupMcpTestConfig,
   validateMcpConnection,
 } from './mcp-test-config.js';
+
 import type { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 
 describe('基础MCP协议端到端测试', () => {
@@ -96,19 +97,19 @@ describe('基础MCP协议端到端测试', () => {
 
         console.log(`✅ 工具列表获取成功，共 ${toolsResult.tools.length} 个工具`);
 
-      // 验证工具的基本结构
-      if (toolsResult.tools.length > 0) {
-        const tool = toolsResult.tools[0];
-        expect(tool).toHaveProperty('name');
-        expect(tool).toHaveProperty('inputSchema');
-        // description 在 MCP 规范里是 SHOULD 而非 MUST（如内置 group_status 工具就没有），
-        // 因此只校验类型不强制存在。
-        if (tool.description !== undefined) {
-          expect(typeof tool.description).toBe('string');
-        }
+        // 验证工具的基本结构
+        if (toolsResult.tools.length > 0) {
+          const tool = toolsResult.tools[0];
+          expect(tool).toHaveProperty('name');
+          expect(tool).toHaveProperty('inputSchema');
+          // description 在 MCP 规范里是 SHOULD 而非 MUST（如内置 group_status 工具就没有），
+          // 因此只校验类型不强制存在。
+          if (tool.description !== undefined) {
+            expect(typeof tool.description).toBe('string');
+          }
 
-        console.log(`✅ 工具结构验证通过，示例工具: ${tool.name}`);
-      }
+          console.log(`✅ 工具结构验证通过，示例工具: ${tool.name}`);
+        }
       } finally {
         await closeMcpClient(client, transport);
       }

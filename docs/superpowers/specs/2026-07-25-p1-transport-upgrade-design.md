@@ -15,14 +15,14 @@
 
 "全量跟进协议最新进展"被分解为 6 个相对独立、各自独立 spec 的子项目：
 
-| # | 子项目 | 复杂度 | 依赖 | 优先级 |
-|---|---|---|---|---|
-| **P1** | 传输层升级到 2026-07-28 无状态 | 中高 | 无 | ⭐⭐⭐ **本 spec** |
-| P2 | 入站 OAuth 2.1（Protected Resource） | 高 | 弱依赖 P1 | ⭐⭐⭐ |
-| P3 | 出站 OAuth（AuthenticationStrategy） | 中 | 无 | ⭐⭐ |
-| P4 | `ttlMs`/`cacheScope` 缓存语义 | 中 | 弱依赖 P1 | ⭐⭐⭐ |
-| P5 | `subscriptions/listen` + MRTR | 中高 | 依赖 P1 | ⭐ |
-| P6 | OTel trace context + 弃用项清理 | 低 | 无 | ⭐ |
+| #      | 子项目                               | 复杂度 | 依赖      | 优先级             |
+| ------ | ------------------------------------ | ------ | --------- | ------------------ |
+| **P1** | 传输层升级到 2026-07-28 无状态       | 中高   | 无        | ⭐⭐⭐ **本 spec** |
+| P2     | 入站 OAuth 2.1（Protected Resource） | 高     | 弱依赖 P1 | ⭐⭐⭐             |
+| P3     | 出站 OAuth（AuthenticationStrategy） | 中     | 无        | ⭐⭐               |
+| P4     | `ttlMs`/`cacheScope` 缓存语义        | 中     | 弱依赖 P1 | ⭐⭐⭐             |
+| P5     | `subscriptions/listen` + MRTR        | 中高   | 依赖 P1   | ⭐                 |
+| P6     | OTel trace context + 弃用项清理      | 低     | 无        | ⭐                 |
 
 **推荐主线顺序**：P1 → P4 → P2 → P3 → P6 → P5
 
@@ -48,14 +48,14 @@ P5 建议推迟，因为客户端侧（Claude Desktop 等）对 `subscriptions/l
 
 ### 关键决策（已在 brainstorming 中确认）
 
-| 决策 | 选择 | 理由 |
-|---|---|---|
-| 兼容性策略 | 激进升级，入站只支持 2026-07-28 | 项目还在 0.0.1，趁早切干净比双轨维护省事 |
-| MCP 级 SSE | 直接删除 | 2026-07-28 已重分类为 Deprecated；激进升级下不保留 |
-| legacy `/mcp` 端点 | 直接删除 | 已有 deprecation 标记（Sunset 2026-10-01），与激进升级一致 |
-| 出站方向 | `{ mode: 'auto' }` 保留兼容 | 外部 server 生态参差不齐，网关价值在于能连各种 server |
-| 出站 SSE 连接 | 保留 | Hub 充当协议转换层（老 SSE server → 新 Streamable HTTP 客户端） |
-| McpServer 生命周期 | 按 group 缓存 + 失效钩子 | 复用现有配置变更事件机制，兼顾性能与一致性 |
+| 决策               | 选择                            | 理由                                                            |
+| ------------------ | ------------------------------- | --------------------------------------------------------------- |
+| 兼容性策略         | 激进升级，入站只支持 2026-07-28 | 项目还在 0.0.1，趁早切干净比双轨维护省事                        |
+| MCP 级 SSE         | 直接删除                        | 2026-07-28 已重分类为 Deprecated；激进升级下不保留              |
+| legacy `/mcp` 端点 | 直接删除                        | 已有 deprecation 标记（Sunset 2026-10-01），与激进升级一致      |
+| 出站方向           | `{ mode: 'auto' }` 保留兼容     | 外部 server 生态参差不齐，网关价值在于能连各种 server           |
+| 出站 SSE 连接      | 保留                            | Hub 充当协议转换层（老 SSE server → 新 Streamable HTTP 客户端） |
+| McpServer 生命周期 | 按 group 缓存 + 失效钩子        | 复用现有配置变更事件机制，兼顾性能与一致性                      |
 
 ## 设计
 
@@ -94,19 +94,21 @@ packages/cli/src/transport/
 
 **依赖变更（按 workspace 成员）**：
 
-| 包 | 移除 | 新增 |
-|---|---|---|
-| `packages/core` | `@modelcontextprotocol/sdk@^1.0.4` | `@modelcontextprotocol/client` |
-| `packages/cli` | `@modelcontextprotocol/sdk@^1.0.4` | `@modelcontextprotocol/server` + `@modelcontextprotocol/node`（`serveStdio`） |
-| `backend` | `@modelcontextprotocol/sdk@^1.16.0` | `@modelcontextprotocol/server` + `@modelcontextprotocol/hono` + `@modelcontextprotocol/client` + `@modelcontextprotocol/core` |
-| `backend` | `fetch-to-node` | （移除，`createMcpHandler` 内部已处理 Hono↔Node 转换） |
+| 包              | 移除                                | 新增                                                                                                                          |
+| --------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `packages/core` | `@modelcontextprotocol/sdk@^1.0.4`  | `@modelcontextprotocol/client`                                                                                                |
+| `packages/cli`  | `@modelcontextprotocol/sdk@^1.0.4`  | `@modelcontextprotocol/server` + `@modelcontextprotocol/node`（`serveStdio`）                                                 |
+| `backend`       | `@modelcontextprotocol/sdk@^1.16.0` | `@modelcontextprotocol/server` + `@modelcontextprotocol/hono` + `@modelcontextprotocol/client` + `@modelcontextprotocol/core` |
+| `backend`       | `fetch-to-node`                     | （移除，`createMcpHandler` 内部已处理 Hono↔Node 转换）                                                                        |
 
 **运行时**：
+
 - Node 18 → **Node 20+**（v2 硬性要求）。
 - 影响：`package.json` 的 `engines`、CI `node-version`、Dockerfile 基础镜像、README/DEPLOYMENT 文档。
 - ESM 不变（v2 同时出 ESM + CJS，项目本来就是 ESM）。
 
 **版本钉法**：
+
 - 不手钉，**跑 codemod 后采纳其打印的 manifest summary**（codemod 根据实际 import 计算每个 member 需要的包）。
 - 当前用 `2.0.0-beta.5`。**待 2.0.0 GA 后**，在 changeset 里升正式版。
 - **TODO**：跟踪 2.0.0 GA 发布时间，发布前升正式版。
@@ -116,14 +118,17 @@ packages/cli/src/transport/
 ### §3 Transport 层重写（核心）
 
 **当前形态**（`backend/src/api/mcp/group-router.ts:124`）：
+
 ```typescript
 const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
 await mcpServer.connect(transport);
-await transport.handleRequest(req, res, body);  // req/res 来自 fetch-to-node 转换
+await transport.handleRequest(req, res, body); // req/res 来自 fetch-to-node 转换
 ```
+
 手写 transport + 手动 session 管理 + fetch-to-node 桥接，每请求 new transport。
 
 **目标形态**：
+
 ```typescript
 // backend/src/api/mcp/mcp-handler-factory.ts (新增)
 import { McpServer } from '@modelcontextprotocol/server';
@@ -135,12 +140,13 @@ export function createGroupMcpHandler(buildServer: (groupId: string) => McpServe
       const groupId = c.req.param('group');
       return buildServer(groupId);
     },
-    { legacy: 'reject' }  // 激进升级：拒绝 2025-era 握手
+    { legacy: 'reject' }, // 激进升级：拒绝 2025-era 握手
   );
 }
 ```
 
 **`createMcpHandler` 自动处理**（不再手写）：
+
 - `server/discover` RPC
 - `Mcp-Method` / `Mcp-Name` 头校验（头/体不一致 → 拒绝）
 - `_meta` 里 `protocolVersion` / `clientCapabilities` / `serverInfo` 读写
@@ -149,6 +155,7 @@ export function createGroupMcpHandler(buildServer: (groupId: string) => McpServe
 - `resultType` 字段 stamp
 
 **`group-router.ts` 改造后**：
+
 ```typescript
 import { Hono } from 'hono';
 import { createGroupMcpHandler } from './mcp-handler-factory.js';
@@ -157,14 +164,17 @@ import { buildGroupServer } from './group-service.js';
 export const groupMcpRoutes = new Hono();
 groupMcpRoutes.route('/:group/mcp', createGroupMcpHandler(buildGroupServer));
 ```
+
 职责收敛为：路由声明 + 把 groupId 传给 handler factory。
 
 **McpServer 生命周期（方案 C：按 group 缓存 + 失效钩子）**：
+
 - 用 `Map<groupId, McpServer>` 缓存配好工具的 server 实例。
 - 在组/工具配置变更时（复用现有 `sse_event_manager` 监听的配置变更事件）主动清除对应 group 的缓存。
 - handler factory 从缓存取，未命中则从 `ToolRegistry` 构建并缓存。
 
 **`server_manager.ts`（client 侧）改造**：
+
 - import 从 `@modelcontextprotocol/sdk/client/*` 改 `@modelcontextprotocol/client`。
 - `StreamableHTTPClientTransport`、`StdioClientTransport` import 路径更新。
 - **保留 `SSEClientTransport`**：Hub 仍能连老式 SSE MCP server，充当协议转换层（老 SSE server → 新 Streamable HTTP 客户端）。
@@ -175,20 +185,21 @@ groupMcpRoutes.route('/:group/mcp', createGroupMcpHandler(buildGroupServer));
 **4.1 未知工具/资源错误码变化**
 
 v2 行为：
+
 - 未知工具调用 → JSON-RPC `-32602`（InvalidParams），**抛错而非返回 `isError:true`**。
 - 未知资源 → `-32002`（ResourceNotFound）。
 
 **所有 `isError` 检查点逐个过一遍**（不依赖"大部分不用改"的判断）。已知检查点清单：
 
-| 文件 | 行 | 用途 | 处置 |
-|---|---|---|---|
-| `types/mcp-hub.ts` | 90 | 类型定义 `isError?: boolean` | 保留（工具内部失败仍返回此字段） |
-| `api/tools/index.ts` | 289, 300, 318, 325 | 工具执行结果记录 | 验证：工具执行失败仍返回 `isError:true`，无需改；但调用处加 try/catch 处理 unknown-tool rejection |
-| `api/tools-admin/index.ts` | 22, 87, 201, 297-298, 342, 373, 450, 582-583, 615 | 执行历史统计 | 验证：读取的是历史记录字段，不受新错误码影响 |
-| `api/debug/index.ts` | 99 | 调试工具检查 `isError` | 验证 |
-| `services/api_tool_integration_service.ts` | 97, 114, 120 | API 工具集成结果 | 验证 |
-| `services/server_manager.ts` | 249, 328 | server 管理结果 | 验证 |
-| `services/tool-result-transform.ts` | 62, 73, 77 | 工具结果转换 | 验证 |
+| 文件                                       | 行                                                | 用途                         | 处置                                                                                              |
+| ------------------------------------------ | ------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| `types/mcp-hub.ts`                         | 90                                                | 类型定义 `isError?: boolean` | 保留（工具内部失败仍返回此字段）                                                                  |
+| `api/tools/index.ts`                       | 289, 300, 318, 325                                | 工具执行结果记录             | 验证：工具执行失败仍返回 `isError:true`，无需改；但调用处加 try/catch 处理 unknown-tool rejection |
+| `api/tools-admin/index.ts`                 | 22, 87, 201, 297-298, 342, 373, 450, 582-583, 615 | 执行历史统计                 | 验证：读取的是历史记录字段，不受新错误码影响                                                      |
+| `api/debug/index.ts`                       | 99                                                | 调试工具检查 `isError`       | 验证                                                                                              |
+| `services/api_tool_integration_service.ts` | 97, 114, 120                                      | API 工具集成结果             | 验证                                                                                              |
+| `services/server_manager.ts`               | 249, 328                                          | server 管理结果              | 验证                                                                                              |
+| `services/tool-result-transform.ts`        | 62, 73, 77                                        | 工具结果转换                 | 验证                                                                                              |
 
 每个点的处置在实现时显式标注"已验证无需改"或"需改成 try/catch"，不留模糊。
 
@@ -196,10 +207,10 @@ v2 行为：
 
 当前分支已建立结构化错误体系（`McpHubCoreError` + `ErrorCode` 枚举）。v2 的错误变化对接：
 
-| v2 变化 | 处理 |
-|---|---|
-| `ErrorCode` → `ProtocolErrorCode` | codemod 自动改名；本地成员移到 `SdkErrorCode` |
-| `StreamableHTTPError` → `SdkHttpError` | codemod 改名，构造参数变了需 review |
+| v2 变化                                                             | 处理                                                       |
+| ------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `ErrorCode` → `ProtocolErrorCode`                                   | codemod 自动改名；本地成员移到 `SdkErrorCode`              |
+| `StreamableHTTPError` → `SdkHttpError`                              | codemod 改名，构造参数变了需 review                        |
 | 新增 `ResourceNotFound`（`-32002`）、`HeaderMismatch`（`-32020`）等 | 在 `packages/core/src/errors/` 的 `ErrorCode` 枚举里补映射 |
 
 **边界策略**：MCP SDK 抛的 `ProtocolError`/`SdkError` 在边界处捕获，转成 Hub 的 `McpHubCoreError`，**不泄漏 SDK 错误类型到上层**。
@@ -219,14 +230,15 @@ v2 行为：
 
 **5.1 单元测试**
 
-| 类别 | 处置 |
-|---|---|
-| `sse.unit.test.ts` | **删除**（对应删除的 `backend/src/sse.ts`） |
-| `vi.mock('@modelcontextprotocol/sdk/...')` 的 7 个文件 | **codemod 改写 mock 路径**，跑完验证 |
-| 所有 `isError` 相关测试 | **逐个过一遍**，断言行为是否符合 v2 新语义 |
-| `mcp-handler-factory.ts` | **新增单测**：验证 `legacy: 'reject'` 生效、按 groupId 构建 server、缓存命中/失效 |
+| 类别                                                   | 处置                                                                              |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `sse.unit.test.ts`                                     | **删除**（对应删除的 `backend/src/sse.ts`）                                       |
+| `vi.mock('@modelcontextprotocol/sdk/...')` 的 7 个文件 | **codemod 改写 mock 路径**，跑完验证                                              |
+| 所有 `isError` 相关测试                                | **逐个过一遍**，断言行为是否符合 v2 新语义                                        |
+| `mcp-handler-factory.ts`                               | **新增单测**：验证 `legacy: 'reject'` 生效、按 groupId 构建 server、缓存命中/失效 |
 
 受影响的 `vi.mock` 文件清单：
+
 - `backend/src/mcp.unit.test.ts`
 - `backend/src/services/server_manager.unit.test.ts`
 - `backend/src/services/integration.test.ts`
@@ -244,14 +256,15 @@ v2 行为：
 
 `backend/src/e2e/mcp-protocol/` 的 3 个 e2e 是协议合规核心保障。测试客户端**统一换成 `StreamableHTTPClientTransport`**（不再用 `SSEClientTransport` 作为测试驱动）。
 
-| 文件 | 处置 |
-|---|---|
-| `mcp-test-config.ts` | 改写：测试客户端换成 `StreamableHTTPClientTransport` |
-| `mcp-basic.test.ts` | 改写：验证 `server/discover`、无 `initialize` 握手、`Mcp-Method`/`Mcp-Name` 头 |
-| `hub-aggregation.test.ts` | 改写：用新 client 验证聚合仍工作 |
-| `mcp-http-api.test.ts` | 改写 |
+| 文件                      | 处置                                                                           |
+| ------------------------- | ------------------------------------------------------------------------------ |
+| `mcp-test-config.ts`      | 改写：测试客户端换成 `StreamableHTTPClientTransport`                           |
+| `mcp-basic.test.ts`       | 改写：验证 `server/discover`、无 `initialize` 握手、`Mcp-Method`/`Mcp-Name` 头 |
+| `hub-aggregation.test.ts` | 改写：用新 client 验证聚合仍工作                                               |
+| `mcp-http-api.test.ts`    | 改写                                                                           |
 
 **新增 e2e 用例**：
+
 1. **协议合规**：`server/discover` 返回正确能力声明；不带 `Mcp-Method` 头的请求被拒。
 2. **激进升级生效**：发送 2025-era `initialize` 请求 → 被拒（`legacy: 'reject'`）。
 3. **协议转换**：Hub 用 `StreamableHTTPClientTransport` 暴露，背后连一个老式 SSE mock server，验证桥接（对应 §3 出站保留 SSE 连接能力）。
@@ -276,13 +289,13 @@ P1 完成的判据：
 
 ## 风险与缓解
 
-| 风险 | 缓解 |
-|---|---|
-| codemod 不能处理的边界情况多 | 逐个处理 `@mcp-codemod-error` 标记；迁移指南列出所有需人工处理的类别 |
-| 2.0.0 还在 beta，可能有 breaking change | 跟踪 GA 发布；版本钉法用 codemod 输出而非手钉，便于升级 |
+| 风险                                          | 缓解                                                                         |
+| --------------------------------------------- | ---------------------------------------------------------------------------- |
+| codemod 不能处理的边界情况多                  | 逐个处理 `@mcp-codemod-error` 标记；迁移指南列出所有需人工处理的类别         |
+| 2.0.0 还在 beta，可能有 breaking change       | 跟踪 GA 发布；版本钉法用 codemod 输出而非手钉，便于升级                      |
 | 删除 `/sse` 和 legacy `/mcp` 端点影响现有用户 | 项目 0.0.1，用户量有限；在 RELEASE_NOTES 明确标注 breaking change 和迁移路径 |
-| 出站方向保留 SSE 连接增加维护负担 | 这是网关产品定位的必要代价；后续外部 server 生态升级后可再评估移除 |
-| McpServer 缓存失效逻辑与配置变更事件耦合 | 复用现有 `sse_event_manager` 事件机制；新增专门测试覆盖失效路径 |
+| 出站方向保留 SSE 连接增加维护负担             | 这是网关产品定位的必要代价；后续外部 server 生态升级后可再评估移除           |
+| McpServer 缓存失效逻辑与配置变更事件耦合      | 复用现有 `sse_event_manager` 事件机制；新增专门测试覆盖失效路径              |
 
 ## 实现修正（实现时发现的 spec 偏差）
 

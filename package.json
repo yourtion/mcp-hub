@@ -5,9 +5,6 @@
   "keywords": [],
   "license": "ISC",
   "author": "",
-  "engines": {
-    "node": ">=20"
-  },
   "main": "index.js",
   "scripts": {
     "dev:fe": "pnpm --filter @mcp-core/mcp-hub-web dev",
@@ -53,6 +50,9 @@
     "oxlint": "1.61.0",
     "tsx": "^4.7.1",
     "vitest": "^4.1.4"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "packageManager": "pnpm@10.6.4"
 }

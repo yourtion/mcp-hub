@@ -38,20 +38,21 @@ registerResource(
 
 ## 文件结构
 
-| 文件 | 操作 | 责任 |
-|---|---|---|
-| `packages/share/src/config/schemas/group.schema.ts` | Modify | `GroupSchema` 加 `cacheHints?` 字段（配置入口） |
-| `backend/src/api/mcp/group-service.ts` | Modify | McpServer 构造时序调整 + cacheHints + 排序 + registerGroupResources + getGroupServersStatus |
-| `backend/src/api/mcp/group-service.unit.test.ts` | Create | 单元测试：resolveCacheHints、排序、resource 注册、构造时序 |
-| `backend/src/e2e/mcp-protocol/cache-semantics.test.ts` | Create | e2e：tools/list cacheHint、排序确定性、resources/list+read |
-| `docs/superpowers/specs/2026-07-26-p4-cache-semantics-design.md` | 已存在 | 实现时核实项回填（如 registerResource 签名） |
-| `docs/superpowers/specs/2026-07-25-mcp-2026-07-28-adoption-overview.md` | Modify（最后） | P4 完成后回写状态 |
+| 文件                                                                    | 操作           | 责任                                                                                        |
+| ----------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------- |
+| `packages/share/src/config/schemas/group.schema.ts`                     | Modify         | `GroupSchema` 加 `cacheHints?` 字段（配置入口）                                             |
+| `backend/src/api/mcp/group-service.ts`                                  | Modify         | McpServer 构造时序调整 + cacheHints + 排序 + registerGroupResources + getGroupServersStatus |
+| `backend/src/api/mcp/group-service.unit.test.ts`                        | Create         | 单元测试：resolveCacheHints、排序、resource 注册、构造时序                                  |
+| `backend/src/e2e/mcp-protocol/cache-semantics.test.ts`                  | Create         | e2e：tools/list cacheHint、排序确定性、resources/list+read                                  |
+| `docs/superpowers/specs/2026-07-26-p4-cache-semantics-design.md`        | 已存在         | 实现时核实项回填（如 registerResource 签名）                                                |
+| `docs/superpowers/specs/2026-07-25-mcp-2026-07-28-adoption-overview.md` | Modify（最后） | P4 完成后回写状态                                                                           |
 
 ---
 
 ## Task 1: Group 配置加 cacheHints 字段
 
 **Files:**
+
 - Modify: `packages/share/src/config/schemas/group.schema.ts:29-39`
 
 - [ ] **Step 1: 写 schema 失败测试**
@@ -93,7 +94,10 @@ describe('GroupSchema - cacheHints (P4)', () => {
 
   it('toolsListTtlMs 拒绝负数', () => {
     const result = GroupSchema.safeParse({
-      id: 'g1', name: 'G1', servers: ['s1'], tools: [],
+      id: 'g1',
+      name: 'G1',
+      servers: ['s1'],
+      tools: [],
       cacheHints: { toolsListTtlMs: -100 },
     });
     expect(result.success).toBe(false);
@@ -101,7 +105,10 @@ describe('GroupSchema - cacheHints (P4)', () => {
 
   it('toolsListCacheScope 拒绝非法枚举值', () => {
     const result = GroupSchema.safeParse({
-      id: 'g1', name: 'G1', servers: ['s1'], tools: [],
+      id: 'g1',
+      name: 'G1',
+      servers: ['s1'],
+      tools: [],
       cacheHints: { toolsListCacheScope: 'shared' },
     });
     expect(result.success).toBe(false);
@@ -156,6 +163,7 @@ git commit -m "feat(share): GroupSchema 加 cacheHints 可选字段（P4 协议�
 ## Task 2: GroupMcpService McpServer 构造时序调整 + resolveCacheHints
 
 **Files:**
+
 - Modify: `backend/src/api/mcp/group-service.ts:71-135`
 - Test: `backend/src/api/mcp/group-service.unit.test.ts`（新建）
 
@@ -344,6 +352,7 @@ git commit -m "refactor(group-service): McpServer 构造延迟到 initialize 并
 ## Task 3: resolveCacheHints 配置覆盖测试
 
 **Files:**
+
 - Test: `backend/src/api/mcp/group-service.unit.test.ts`（追加）
 
 **目的**：单独验证默认值与组级覆盖。Task 2 的 mock 用了固定 config，这里改 mock 让不同组带不同 cacheHints 配置。
@@ -476,6 +485,7 @@ git commit -m "test(group-service): resolveCacheHints 默认值与组级覆盖�
 ## Task 4: tools/list 确定性排序
 
 **Files:**
+
 - Modify: `backend/src/api/mcp/group-service.ts:289-330`（`registerGroupDynamicTools`）
 - Test: `backend/src/api/mcp/group-service.unit.test.ts`（追加）
 
@@ -510,9 +520,7 @@ describe('GroupMcpService - tools/list 确定性排序 (P4)', () => {
     ).registerTool.mock.calls;
 
     // 排除 group_status / list_group_tools 两个管理工具（前两个），后面是动态工具
-    const dynamicNames = registerToolCalls
-      .slice(2)
-      .map((c: unknown[]) => c[0] as string);
+    const dynamicNames = registerToolCalls.slice(2).map((c: unknown[]) => c[0] as string);
     // 注册名 = ${serverId}_${toolName}
     expect(dynamicNames).toEqual(['aServer_a', 'aServer_b', 'zServer_a']);
   });
@@ -579,6 +587,7 @@ git commit -m "feat(group-service): tools/list 确定性排序（先 serverId �
 ## Task 5: 新增 getGroupServersStatus + registerGroupResources
 
 **Files:**
+
 - Modify: `backend/src/api/mcp/group-service.ts`
 - Test: `backend/src/api/mcp/group-service.unit.test.ts`（追加）
 
@@ -658,9 +667,12 @@ describe('GroupMcpService - registerGroupResources (P4)', () => {
     const registerResourceCalls = (
       McpServerMock.mock.results[0].value as { registerResource: ReturnType<typeof vi.fn> }
     ).registerResource.mock.calls;
-    const serversCall = registerResourceCalls.find(
-      (c: unknown[]) => c[0] === 'group_servers',
-    ) as [string, string, unknown, (uri: URL) => Promise<unknown>];
+    const serversCall = registerResourceCalls.find((c: unknown[]) => c[0] === 'group_servers') as [
+      string,
+      string,
+      unknown,
+      (uri: URL) => Promise<unknown>,
+    ];
     const result = (await serversCall[3](new URL('group://testgroup/servers'))) as {
       contents: { text: string }[];
     };
@@ -850,6 +862,7 @@ git commit -m "feat(group-service): 注册 4 个 Hub 元数据 resources（带�
 ## Task 6: e2e 测试 — tools/list cacheHint + 排序
 
 **Files:**
+
 - Create: `backend/src/e2e/mcp-protocol/cache-semantics.test.ts`
 
 **背景**：e2e 连 `/:group/mcp` 端点（`mcp-test-config.ts` 的 `createResilientMcpClient`）。`listTools()` 返回的 `ListToolsResult` 在 wire 层带 `ttlMs`/`cacheScope`，但 TS 类型可能不显式声明——用 `(result as { ttlMs?: number })` 读取。
@@ -898,7 +911,11 @@ describe('P4 缓存语义 e2e', () => {
     if (!conn) return;
     const { client, transport } = conn;
     try {
-      const result = (await client.listTools()) as { ttlMs?: number; cacheScope?: string; tools: { name: string }[] };
+      const result = (await client.listTools()) as {
+        ttlMs?: number;
+        cacheScope?: string;
+        tools: { name: string }[];
+      };
       // Hub 默认配置：ttlMs=60000, cacheScope=public（SDK 默认 private，Hub 显式覆盖为 public）
       expect(result.ttlMs).toBe(60_000);
       expect(result.cacheScope).toBe('public');
@@ -947,6 +964,7 @@ git commit -m "test(e2e): tools/list cacheHint 与确定性排序验证 (P4)"
 ## Task 7: e2e 测试 — resources/list + resources/read
 
 **Files:**
+
 - Modify: `backend/src/e2e/mcp-protocol/cache-semantics.test.ts`（追加）
 
 - [ ] **Step 1: 追加 resources e2e 测试**
@@ -1040,6 +1058,7 @@ git commit -m "test(e2e): resources/list 与 resources/read 验证 (P4)"
 ## Task 8: 全量验证 + 文档更新
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-07-25-mcp-2026-07-28-adoption-overview.md`
 
 - [ ] **Step 1: 全量 typecheck + 测试**
@@ -1053,6 +1072,7 @@ Expected: 全绿（含新单元测试与 e2e）
 - [ ] **Step 2: 修复任何回归**
 
 如果有现有测试因 McpServer 构造时序调整或排序变化而失败，逐个修复。常见风险点：
+
 - `group-routing-enhanced.test.ts` 或其他依赖 `GroupMcpService` 的测试，可能假设构造函数即创建 McpServer
 - e2e 的 `hub-aggregation.test.ts` 如果断言了工具顺序，需更新为排序后的顺序
 
@@ -1086,6 +1106,7 @@ git commit -m "docs: P4 实现完成，回写总体 spec 状态"
 ## Self-Review
 
 **Spec 覆盖检查**：
+
 - ✅ §1.1 McpServer 构造时序 → Task 2
 - ✅ §1.2 resolveCacheHints 配置解析 → Task 2（实现）+ Task 3（测试）
 - ✅ §1.3 Group 类型 cacheHints 字段 → Task 1
@@ -1104,6 +1125,7 @@ git commit -m "docs: P4 实现完成，回写总体 spec 状态"
 **Placeholder 扫描**：无 TBD/TODO；每个步骤含完整代码或命令。
 
 **类型一致性检查**：
+
 - `resolveCacheHints` 返回 `{ ttlMs: number; cacheScope: 'public' | 'private' }` —— Task 2 定义，Task 3 测试一致
 - `getGroupServersStatus` 返回 `{ groupId, servers: Array<{id, status}>, timestamp }` —— Task 5 定义与测试一致
 - resource name：`group_status_resource`（避开现有工具 `group_status`）—— Task 5 实现与测试一致（测试用 name 查找时注意：测试里找 `group_status`，但实现用 `group_status_resource`，需对齐）
@@ -1111,6 +1133,7 @@ git commit -m "docs: P4 实现完成，回写总体 spec 状态"
 **发现的对齐问题（已修正）**：Task 5 status resource 的 name 在实现与测试里都用 `group_status_resource`（避开现有工具 `group_status` 的命名空间）。`group_servers`/`hub_config`/`hub_version` 三个 name 不与现有工具冲突，保持简短。
 
 **风险提示**：
+
 1. `registerResource` 的 callback 参数是 `URL` 类型，但测试 mock 没用这个参数（直接调 callback）。实现时 callback 签名是 `(uri: URL) => ...`，但 body 里不读 uri（用闭包的 statusUri 字符串），类型上需接收 URL 参数。
 2. e2e 读 `result.ttlMs` 若失败，回退读 `_meta` 或 transport 拦截（Task 6 Step 2 备注）。
 3. SDK resource name 与 tool name 若共享命名空间会冲突，Task 5 已用 `group_status_resource` 规避。

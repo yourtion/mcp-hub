@@ -5,15 +5,15 @@
 
 import { McpServiceManager } from '@mcp-core/mcp-hub-core';
 import { createCliLogger } from '@mcp-core/mcp-hub-share';
-import { McpServer } from "@modelcontextprotocol/server";
-import type { CallToolResult } from "@modelcontextprotocol/server";
-import { serveStdio } from "@modelcontextprotocol/server/stdio";
-import type { StdioServerHandle } from "@modelcontextprotocol/server/stdio";
+import { McpServer } from '@modelcontextprotocol/server';
+import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import { z } from 'zod/v4';
 
 import { McpProtocolHandler } from '../protocol/mcp-protocol-handler.js';
 
 import type { CliConfig } from '../types';
+import type { CallToolResult } from '@modelcontextprotocol/server';
+import type { StdioServerHandle } from '@modelcontextprotocol/server/stdio';
 
 /**
  * CLI MCP服务器类

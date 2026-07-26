@@ -1,5 +1,5 @@
 import type { ServerConfig } from '@mcp-core/mcp-hub-share';
-import type { Client } from "@modelcontextprotocol/client";
+import type { Client } from '@modelcontextprotocol/client';
 
 // Server Management Types
 export enum ServerStatus {

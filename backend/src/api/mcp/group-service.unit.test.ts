@@ -13,14 +13,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // 用普通 function 表达式以便可作为构造函数（new）调用
 const constructorCalls: Array<{ serverInfo: unknown; options: unknown }> = [];
 vi.mock('@modelcontextprotocol/server', () => ({
-  McpServer: vi.fn(
-    function (this: unknown, serverInfo: unknown, options?: unknown) {
-      constructorCalls.push({ serverInfo, options });
-      this.registerTool = vi.fn();
-      this.registerResource = vi.fn();
-      this.close = vi.fn();
-    },
-  ),
+  McpServer: vi.fn(function (this: unknown, serverInfo: unknown, options?: unknown) {
+    constructorCalls.push({ serverInfo, options });
+    this.registerTool = vi.fn();
+    this.registerResource = vi.fn();
+    this.close = vi.fn();
+  }),
 }));
 
 // getCoreServiceManager 不应在 group-service 路径中触发
@@ -39,10 +37,11 @@ vi.mock('../../utils/logger.js', () => ({
   },
 }));
 
-import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
-
 import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+
 import { GroupMcpService } from './group-service.js';
+
+import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
 
 function makeCoreManagerMock(): McpServiceManagerInterface {
   return {
@@ -234,9 +233,11 @@ describe('GroupMcpService - tools/list 确定性排序', () => {
     await svc.initialize();
 
     // 注册顺序由 getMcpServer().registerTool 调用顺序决定
-    const registerToolCalls = (svc.getMcpServer() as unknown as {
-      registerTool: ReturnType<typeof vi.fn>;
-    }).registerTool.mock.calls;
+    const registerToolCalls = (
+      svc.getMcpServer() as unknown as {
+        registerTool: ReturnType<typeof vi.fn>;
+      }
+    ).registerTool.mock.calls;
 
     // 排除 group_status / list_group_tools 两个管理工具（前两个），后面是动态工具
     const dynamicNames = registerToolCalls.slice(2).map((c: unknown[]) => c[0] as string);
@@ -281,9 +282,11 @@ describe('GroupMcpService - registerGroupResources', () => {
     const svc = new GroupMcpService('testgroup', cm);
     await svc.initialize();
 
-    const registerResourceCalls = (svc.getMcpServer() as unknown as {
-      registerResource: ReturnType<typeof vi.fn>;
-    }).registerResource.mock.calls;
+    const registerResourceCalls = (
+      svc.getMcpServer() as unknown as {
+        registerResource: ReturnType<typeof vi.fn>;
+      }
+    ).registerResource.mock.calls;
 
     // 4 个 resource
     expect(registerResourceCalls).toHaveLength(4);
@@ -339,9 +342,11 @@ describe('GroupMcpService - registerGroupResources', () => {
     const svc = new GroupMcpService('testgroup', cm);
     await svc.initialize();
 
-    const registerResourceCalls = (svc.getMcpServer() as unknown as {
-      registerResource: ReturnType<typeof vi.fn>;
-    }).registerResource.mock.calls;
+    const registerResourceCalls = (
+      svc.getMcpServer() as unknown as {
+        registerResource: ReturnType<typeof vi.fn>;
+      }
+    ).registerResource.mock.calls;
 
     // 找到 group_servers 的注册项（第 4 个参数是 callback）
     const serversEntry = registerResourceCalls.find(
@@ -378,9 +383,11 @@ describe('GroupMcpService - registerGroupResources', () => {
     const svc = new GroupMcpService('testgroup', cm);
     await svc.initialize();
 
-    const registerResourceCalls = (svc.getMcpServer() as unknown as {
-      registerResource: ReturnType<typeof vi.fn>;
-    }).registerResource.mock.calls;
+    const registerResourceCalls = (
+      svc.getMcpServer() as unknown as {
+        registerResource: ReturnType<typeof vi.fn>;
+      }
+    ).registerResource.mock.calls;
 
     const configEntry = registerResourceCalls.find(
       (c: unknown[]) => c[0] === 'hub_config',

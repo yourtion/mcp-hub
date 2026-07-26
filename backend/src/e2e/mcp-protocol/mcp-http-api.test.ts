@@ -92,7 +92,11 @@ describe('MCP HTTP API端到端测试', () => {
           jsonrpc: '2.0',
           id: 1,
           method: 'initialize',
-          params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'x', version: '1' } },
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'x', version: '1' },
+          },
         }),
       });
 

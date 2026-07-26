@@ -43,20 +43,20 @@ MCP Hub 是一个 MCP 服务器聚合网关（monorepo：share / core / cli / ba
 
 ### 1.2 问题分级矩阵
 
-| 级别 | 问题 | 影响范围 | 工作量估算 |
-|------|------|----------|------------|
-| **P0** | `groups/index.ts` 2378 行，加密/密钥策略/校验/路由混合，含硬编码弱密钥 | 安全 + 可维护性 | 2-3 天 |
-| **P0** | 错误体系三轨并存，73 处裸 `Error` 导致分类信息全丢失 | 全局可观测性 | 3-5 天 |
-| **P0** | `McpServiceManager` 4 处模块级 `new`，请求路径内重建实例 | 性能 + 一致性 | 1-2 天 |
-| **P0** | 25+ 处 `console.error/log` 绕过统一 logger | 可观测性 | 1 天 |
-| **P1** | `simple-auth.ts` JWT 完全未实现，任何 Bearer token 放行 | 安全 | 1-2 天 |
-| **P1** | `RedisCacheManager` 纯占位，接入 Redis 后缓存为 no-op | 性能 | 2-3 天 |
-| **P1** | 统计数据硬编码占位（`successRate: 100`） | 数据可信度 | 2-3 天 |
-| **P1** | share ↔ core 配置类型双轨，71 处 `as unknown as` 断言 | 类型安全 | 3-5 天 |
-| **P1** | 硬编码 `'admin'` 用户名（审计日志失真） | 审计合规 | 0.5 天 |
-| **P2** | 本地领先 origin 10 commit 未推送 | 发布流程 | 即时 |
-| **P2** | CI pnpm 9 vs packageManager 10.6.4 不一致 | CI 可靠性 | 即时 |
-| **P2** | `config/` 根目录占位空文件、`temp-test/` 空目录 | 仓库卫生 | 即时 |
+| 级别   | 问题                                                                   | 影响范围        | 工作量估算 |
+| ------ | ---------------------------------------------------------------------- | --------------- | ---------- |
+| **P0** | `groups/index.ts` 2378 行，加密/密钥策略/校验/路由混合，含硬编码弱密钥 | 安全 + 可维护性 | 2-3 天     |
+| **P0** | 错误体系三轨并存，73 处裸 `Error` 导致分类信息全丢失                   | 全局可观测性    | 3-5 天     |
+| **P0** | `McpServiceManager` 4 处模块级 `new`，请求路径内重建实例               | 性能 + 一致性   | 1-2 天     |
+| **P0** | 25+ 处 `console.error/log` 绕过统一 logger                             | 可观测性        | 1 天       |
+| **P1** | `simple-auth.ts` JWT 完全未实现，任何 Bearer token 放行                | 安全            | 1-2 天     |
+| **P1** | `RedisCacheManager` 纯占位，接入 Redis 后缓存为 no-op                  | 性能            | 2-3 天     |
+| **P1** | 统计数据硬编码占位（`successRate: 100`）                               | 数据可信度      | 2-3 天     |
+| **P1** | share ↔ core 配置类型双轨，71 处 `as unknown as` 断言                  | 类型安全        | 3-5 天     |
+| **P1** | 硬编码 `'admin'` 用户名（审计日志失真）                                | 审计合规        | 0.5 天     |
+| **P2** | 本地领先 origin 10 commit 未推送                                       | 发布流程        | 即时       |
+| **P2** | CI pnpm 9 vs packageManager 10.6.4 不一致                              | CI 可靠性       | 即时       |
+| **P2** | `config/` 根目录占位空文件、`temp-test/` 空目录                        | 仓库卫生        | 即时       |
 
 ---
 
@@ -66,18 +66,18 @@ MCP Hub 是一个 MCP 服务器聚合网关（monorepo：share / core / cli / ba
 
 这一个文件混合了 **5 类完全不同的关注点**，共承载 17 个 HTTP 端点 + 8 个辅助函数：
 
-| 关注点 | 行号范围 | 函数/端点 |
-|--------|----------|-----------|
-| HTTP 路由（17 个端点） | L96–2363 | `GET /` `GET /:groupId` `POST /` `PUT /:groupId` `DELETE /:groupId` 等 |
-| **AES-256-CBC 加密** | L702–745 | `encryptValidationKey` `decryptValidationKey` |
-| **密钥安全策略** | L750–860 | `generateValidationKey` `assessKeyComplexity` `calculateEntropy` `generateSecurityRecommendations` |
-| 校验逻辑 | L863–982 | `validateKeyFormat` `validateGroupData` `validateGroupId` `estimateToolComplexity` |
-| 模块级单例管理 | L65–90 | `coreServiceManager` 惰性初始化 |
+| 关注点                 | 行号范围 | 函数/端点                                                                                          |
+| ---------------------- | -------- | -------------------------------------------------------------------------------------------------- |
+| HTTP 路由（17 个端点） | L96–2363 | `GET /` `GET /:groupId` `POST /` `PUT /:groupId` `DELETE /:groupId` 等                             |
+| **AES-256-CBC 加密**   | L702–745 | `encryptValidationKey` `decryptValidationKey`                                                      |
+| **密钥安全策略**       | L750–860 | `generateValidationKey` `assessKeyComplexity` `calculateEntropy` `generateSecurityRecommendations` |
+| 校验逻辑               | L863–982 | `validateKeyFormat` `validateGroupData` `validateGroupId` `estimateToolComplexity`                 |
+| 模块级单例管理         | L65–90   | `coreServiceManager` 惰性初始化                                                                    |
 
 **安全红旗**：加密密钥有硬编码默认值（`groups/index.ts:705`）：
 
 ```typescript
-process.env.VALIDATION_KEY_SECRET || 'mcp-hub-default-secret-key'
+process.env.VALIDATION_KEY_SECRET || 'mcp-hub-default-secret-key';
 ```
 
 如果部署时未设置环境变量，所有组的校验密钥都用同一个公开的弱密钥加密——这在安全审查中是一票否决项。
@@ -102,17 +102,20 @@ backend/src/api/groups/
 这是当前最显著的架构裂缝。项目同时存在三套互不贯通的错误处理方式：
 
 **轨道 A — core 包结构化错误**（`packages/core/src/errors/index.ts`，673 行）：
+
 - `McpHubCoreError` 基类 + 6 个子类
 - `ErrorCode` 枚举（数字编码，分 5 段 1000–6999）
 - `ErrorCategory` / `ErrorSeverity` / 中文消息映射
 - `UnifiedErrorHandler.formatErrorResponse()` 统一格式化
 
 **轨道 B — backend service 错误**（`mcp_hub_service.ts:14–52`）：
+
 - 独立的 `McpHubError` + 4 个子类
 - 用字符串 `code`（`'TOOL_NOT_FOUND'`、`'GROUP_NOT_FOUND'`）
 - 与轨道 A 的数字 `ErrorCode`（如 `3004`）完全无关
 
 **轨道 C — 裸 `Error`**（API 层主流）：
+
 - 全项目生产代码 **73 处** `throw new Error(...)`
 - `errorResponse()` 统一调用 `formatErrorResponse()`，但传入的几乎都是裸 `Error`
 
@@ -120,16 +123,16 @@ backend/src/api/groups/
 
 裸 `Error` 分布热点：
 
-| 文件 | 数量 |
-|------|------|
-| `services/auth.ts` | 16 |
-| `services/api-to-mcp-web-service.ts` | 12 |
-| `api/groups/index.ts` | 9 |
-| `services/server_manager.ts` | 7 |
-| `services/mcp_service.ts` | 6 |
-| `utils/sse.ts` | 5 |
-| `services/config_service.ts` | 4 |
-| 其余 | 14 |
+| 文件                                 | 数量 |
+| ------------------------------------ | ---- |
+| `services/auth.ts`                   | 16   |
+| `services/api-to-mcp-web-service.ts` | 12   |
+| `api/groups/index.ts`                | 9    |
+| `services/server_manager.ts`         | 7    |
+| `services/mcp_service.ts`            | 6    |
+| `utils/sse.ts`                       | 5    |
+| `services/config_service.ts`         | 4    |
+| 其余                                 | 14   |
 
 **建议**：
 
@@ -143,12 +146,12 @@ backend/src/api/groups/
 
 `service-registry.ts` 注释（第 9 行）明确声明"禁止在请求路径中创建新的服务实例"。但 `McpServiceManager` 实际被 **4 个模块各自独立 `new`**：
 
-| 模块 | 声明行 | 实例化行 | 是否在请求路径 |
-|------|--------|----------|----------------|
-| `api/groups/index.ts` | L65 | L79 | **是**（每个组管理路由先 await `ensureCoreServiceInitialized`） |
-| `api/mcp/group-router.ts` | L43 | L58 | **是**（同上模式） |
-| `services/mcp_service.ts` | L28 | L41 | 否（启动期） |
-| `legacy/mcp-legacy.ts` | L40 | L57 | 否（legacy 路径） |
+| 模块                      | 声明行 | 实例化行 | 是否在请求路径                                                  |
+| ------------------------- | ------ | -------- | --------------------------------------------------------------- |
+| `api/groups/index.ts`     | L65    | L79      | **是**（每个组管理路由先 await `ensureCoreServiceInitialized`） |
+| `api/mcp/group-router.ts` | L43    | L58      | **是**（同上模式）                                              |
+| `services/mcp_service.ts` | L28    | L41      | 否（启动期）                                                    |
+| `legacy/mcp-legacy.ts`    | L40    | L57      | 否（legacy 路径）                                               |
 
 每个模块维护自己的模块级 `let coreServiceManager`，没有共享单例。
 
@@ -164,14 +167,14 @@ backend/src/api/groups/
 
 项目已有完整的统一 Logger（`packages/share/src`），但 25+ 处生产代码直接使用 `console.error/log`，绕过了日志的级别控制、结构化格式和 requestId 关联：
 
-| 模块 | `console.*` 数量 | 说明 |
-|------|-------------------|------|
-| `api/config/index.ts` | **9** | 整个 config API 的错误处理全用 `console.error` |
-| `services/config_service.ts` | **9** | service 层也大量绕过 |
-| `api/auth/index.ts` | 3 | 认证日志（含 IP）走 `console.log` |
-| `utils/json_storage.ts` | 2 | 文件 I/O 异常直接打到 stderr |
-| `utils/sse.ts` | 2 | SSE 连接生命周期日志 |
-| `test-app.ts` | 1 | — |
+| 模块                         | `console.*` 数量 | 说明                                           |
+| ---------------------------- | ---------------- | ---------------------------------------------- |
+| `api/config/index.ts`        | **9**            | 整个 config API 的错误处理全用 `console.error` |
+| `services/config_service.ts` | **9**            | service 层也大量绕过                           |
+| `api/auth/index.ts`          | 3                | 认证日志（含 IP）走 `console.log`              |
+| `utils/json_storage.ts`      | 2                | 文件 I/O 异常直接打到 stderr                   |
+| `utils/sse.ts`               | 2                | SSE 连接生命周期日志                           |
+| `test-app.ts`                | 1                | —                                              |
 
 **后果**：生产环境的日志聚合（ELK / Loki / CloudWatch）无法统一收集这些日志，结构化查询失效，日志级别无法动态调整，requestId 链路追踪断裂。
 
@@ -205,11 +208,11 @@ async function requireAuth(...) {
 
 ```typescript
 // L338 构造函数
-logger.warn('RedisCacheManager 是一个占位符实现，需要实际的Redis客户端')
+logger.warn('RedisCacheManager 是一个占位符实现，需要实际的Redis客户端');
 
 // L341-350 get()
 // TODO: 实现Redis GET操作
-this.stats.misses++;  // 始终 miss
+this.stats.misses++; // 始终 miss
 return null;
 
 // L352-359 set()
@@ -250,6 +253,7 @@ user: 'admin', // TODO: 从认证上下文获取用户信息
 `packages/share` 和 `packages/core` 各自定义了一套配置类型（`McpConfig`、`GroupConfig`、`SystemConfig`），结构相似但不兼容，导致后端需要大量 `as unknown as` 双重断言桥接：
 
 典型位置（共 71 处）：
+
 - `services/mcp_service.ts:44,45,193,201,211` — `config.mcps as unknown as McpConfig`
 - `services/config_service.ts:220,637,731` — `config as unknown as McpConfig/SystemConfig`
 
@@ -263,14 +267,14 @@ commit `20bbf0e`（"消除 backend 配置双轨"）已部分处理，但 71 处�
 
 ### 1.9 P2：仓库卫生与工具链
 
-| 问题 | 位置 | 建议 |
-|------|------|------|
-| 本地领先 origin **10 commit 未推送** | git | 确认后推送 |
-| 16 个文件工作区改动未提交 | git status | 当前改动是 api-to-mcp 测试增强（+2700 行测试），确认后提交 |
-| CI 用 pnpm 9，`packageManager` 指定 10.6.4 | `.github/workflows/ci.yml` | 统一版本，避免 CI 与本地行为差异 |
-| `config/` 根目录 3 个占位空文件（3–20 字节） | `config/group.json` 等 | 删除或填充真实示例 |
-| `temp-test/` 空目录 | 仓库根 | 删除 |
-| `.prettierrc` 残留（已改用 oxfmt） | 仓库根 | 删除 |
+| 问题                                         | 位置                       | 建议                                                       |
+| -------------------------------------------- | -------------------------- | ---------------------------------------------------------- |
+| 本地领先 origin **10 commit 未推送**         | git                        | 确认后推送                                                 |
+| 16 个文件工作区改动未提交                    | git status                 | 当前改动是 api-to-mcp 测试增强（+2700 行测试），确认后提交 |
+| CI 用 pnpm 9，`packageManager` 指定 10.6.4   | `.github/workflows/ci.yml` | 统一版本，避免 CI 与本地行为差异                           |
+| `config/` 根目录 3 个占位空文件（3–20 字节） | `config/group.json` 等     | 删除或填充真实示例                                         |
+| `temp-test/` 空目录                          | 仓库根                     | 删除                                                       |
+| `.prettierrc` 残留（已改用 oxfmt）           | 仓库根                     | 删除                                                       |
 
 ---
 
@@ -295,14 +299,14 @@ commit `20bbf0e`（"消除 backend 配置双轨"）已部分处理，但 71 处�
 
 截至 2026 年 7 月，MCP 网关/聚合赛道已有大量活跃竞品：
 
-| 项目 | Stars | 定位 | 技术栈 |
-|------|-------|------|--------|
-| **IBM/mcp-context-forge** | ~4.1k | AI Gateway + registry + proxy，联邦 MCP/A2A/REST/gRPC | Python |
-| **metatool-ai/metamcp** | ~2.5k | Aggregator + Orchestrator + Middleware，一键 Docker | TypeScript |
-| **samanhappy/mcphub** | ~2.2k | 统一管理 + 动态编排 + 按组路由（**同名**） | TypeScript |
-| **StacklokLabs/toolhive** | ~1.9k | 企业级 MCP 平台，per-server 隔离容器 + K8s operator | Go |
-| **supercorp-ai/supergateway** | ~2.7k | stdio↔SSE/WS/StreamableHTTP transport 适配 | Node |
-| **1mcp-app/agent** | ~470 | 统一 MCP runtime，聚合 + 渐进式工具发现 | TypeScript |
+| 项目                          | Stars | 定位                                                  | 技术栈     |
+| ----------------------------- | ----- | ----------------------------------------------------- | ---------- |
+| **IBM/mcp-context-forge**     | ~4.1k | AI Gateway + registry + proxy，联邦 MCP/A2A/REST/gRPC | Python     |
+| **metatool-ai/metamcp**       | ~2.5k | Aggregator + Orchestrator + Middleware，一键 Docker   | TypeScript |
+| **samanhappy/mcphub**         | ~2.2k | 统一管理 + 动态编排 + 按组路由（**同名**）            | TypeScript |
+| **StacklokLabs/toolhive**     | ~1.9k | 企业级 MCP 平台，per-server 隔离容器 + K8s operator   | Go         |
+| **supercorp-ai/supergateway** | ~2.7k | stdio↔SSE/WS/StreamableHTTP transport 适配            | Node       |
+| **1mcp-app/agent**            | ~470  | 统一 MCP runtime，聚合 + 渐进式工具发现               | TypeScript |
 
 竞品共性能力（已成事实标准）：**聚合 + 按命名空间/组路由 + OAuth + Docker + 可观测性（OTel）+ transport 互转**。ContextForge 和 MCPHub（竞品）已支持向量语义搜索做工具发现、工具结果压缩等 token 优化特性。
 
@@ -322,6 +326,7 @@ commit `20bbf0e`（"消除 backend 配置双轨"）已部分处理，但 71 处�
 - Database Mode（PostgreSQL）、Docker 一键部署
 
 项目名 "MCP Hub" / "MCPHub" 存在**命名冲突和功能重叠**。继续使用这个名字将面临：
+
 - **SEO/发现性**：搜索"mcphub"会优先指向竞品（有域名 + 更高 stars）
 - **品牌混淆**：用户无法区分两个项目
 - **法律风险**：取决于商标注册情况（需法律顾问确认）
@@ -356,22 +361,26 @@ MCP 协议即将发布的 `2026-07-28-RC` 版本包含**重大破坏性变更**�
 在红海市场中，本项目可能的差异化方向（按可行性排序）：
 
 **机会 A：抢先实现 2026-07-28 无状态网关**
+
 - 时间窗口型机会，多数竞品需要大改
 - 无状态 + `ttlMs`/`cacheScope` 缓存 = 天然适配共享网关/CDN
 - 需要紧跟协议演进，技术投入大但壁垒高
 
 **机会 B：深度集成官方 Registry**
+
 - 官方 registry（[modelcontextprotocol/registry](https://github.com/modelcontextprotocol/registry)，~7k stars）已进入 API freeze
 - 标准化的 `server.json` 格式可作为上游数据源
 - 把「官方 registry 数据 + 私有内部 server + 运行时网关」组合——这是 MetaMCP/MCPHub（竞品）目前都没做好的点
 - 定位为 **subregistry + 运行时网关**，而非自管配置
 
 **机会 C：轻量自托管开发者工具**
+
 - 比 MetaMCP 更轻、比 ToolHive 更易上手、比 MCPHub（竞品）更紧跟新协议
 - 面向开发者/中小团队，而非大企业（企业赛道 ContextForge + ToolHive 已占）
 - 强调零配置启动 + 渐进式增强
 
 **应避免的方向**：
+
 - ❌ 自建 MCP server registry（官方已定格局）
 - ❌ 自造 transport 适配（[supergateway](https://github.com/supercorp-ai/supergateway) 已覆盖）
 - ❌ 完整企业 IAM（接 Keycloak/Entra/OIDC 即可）
@@ -381,28 +390,30 @@ MCP 协议即将发布的 `2026-07-28-RC` 版本包含**重大破坏性变更**�
 
 基于代码中的占位实现，以下是建议的功能迭代优先级：
 
-| 优先级 | 功能 | 当前状态 | 建议 |
-|--------|------|----------|------|
-| **必须** | JWT 认证 | `simple-auth.ts` 占位，任意 token 放行 | 对接 MCP 协议的 OAuth 2.1（`2025-11-25` 已标准化） |
-| **必须** | 统计数据 | 硬编码 `0` / `100` | 实现请求计时 + 计数中间件，或明确移除字段而非返回假数据 |
-| **必须** | 审计日志用户归因 | 硬编码 `'admin'` | 从认证上下文注入真实用户 |
-| **推荐** | Redis 缓存 | 占位 no-op | 接入真实 Redis 或移除 Redis 选项，避免误导 |
-| **推荐** | 协议升级 2026-07-28 | 基于旧版 | 评估无状态化改造路径，这是最大技术机会 |
-| **推荐** | OTel 可观测性 | 无 | 协议新版本原生支持 `_meta` 传播 trace context |
-| **可选** | 向量语义工具发现 | 无 | 竞品已有，跟进或明确放弃 |
-| **可选** | 官方 Registry 集成 | 无 | 差异化机会 B |
+| 优先级   | 功能                | 当前状态                               | 建议                                                    |
+| -------- | ------------------- | -------------------------------------- | ------------------------------------------------------- |
+| **必须** | JWT 认证            | `simple-auth.ts` 占位，任意 token 放行 | 对接 MCP 协议的 OAuth 2.1（`2025-11-25` 已标准化）      |
+| **必须** | 统计数据            | 硬编码 `0` / `100`                     | 实现请求计时 + 计数中间件，或明确移除字段而非返回假数据 |
+| **必须** | 审计日志用户归因    | 硬编码 `'admin'`                       | 从认证上下文注入真实用户                                |
+| **推荐** | Redis 缓存          | 占位 no-op                             | 接入真实 Redis 或移除 Redis 选项，避免误导              |
+| **推荐** | 协议升级 2026-07-28 | 基于旧版                               | 评估无状态化改造路径，这是最大技术机会                  |
+| **推荐** | OTel 可观测性       | 无                                     | 协议新版本原生支持 `_meta` 传播 trace context           |
+| **可选** | 向量语义工具发现    | 无                                     | 竞品已有，跟进或明确放弃                                |
+| **可选** | 官方 Registry 集成  | 无                                     | 差异化机会 B                                            |
 
 ---
 
 ## 第三部分：优先级行动清单
 
 ### 即时（< 1 天）
+
 - [ ] 推送本地 10 个 commit 到 origin
 - [ ] 提交工作区 16 个文件的改动（api-to-mcp 测试增强）
 - [ ] 统一 CI 与 packageManager 的 pnpm 版本
 - [ ] 清理 `temp-test/`、`config/` 占位空文件、`.prettierrc` 残留
 
 ### 短期（1-2 周）
+
 - [ ] **P0**：`groups/index.ts` 拆分为 5 个文件，移除硬编码弱密钥
 - [ ] **P0**：全局替换 `console.error/log` → `logger`，添加 oxlint `no-console` 规则
 - [ ] **P0**：`McpServiceManager` 收敛到 `service-registry`
@@ -410,12 +421,14 @@ MCP 协议即将发布的 `2026-07-28-RC` 版本包含**重大破坏性变更**�
 - [ ] **P1**：修复硬编码 `'admin'` 用户名
 
 ### 中期（2-4 周）
+
 - [ ] **P0**：统一错误体系，废弃 `McpHubError`，分批替换裸 `Error`，添加 `ErrorCode → httpStatus` 映射
 - [ ] **P1**：实现统计数据（请求计时 + 计数），移除硬编码占位
 - [ ] **P1**：消除配置类型双轨，移除 71 处 `as unknown as` 断言
 - [ ] **产品决策**：评估命名冲突，决定是否改名
 
 ### 长期（1-3 个月）
+
 - [ ] **P1**：Redis 缓存实现或移除
 - [ ] **协议升级**：评估 MCP `2026-07-28-RC` 无状态化改造路径
 - [ ] **差异化**：选择并启动一个差异化方向（协议抢先 / Registry 集成 / 轻量定位）
@@ -435,10 +448,12 @@ MCP 协议即将发布的 `2026-07-28-RC` 版本包含**重大破坏性变更**�
 ### 关键来源
 
 **协议**：
+
 - [MCP Specification 2025-11-25](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2025-11-25/changelog.mdx)
 - [MCP Draft (2026-07-28-RC) Changelog](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/draft/changelog.mdx)
 
 **竞品**：
+
 - [IBM/mcp-context-forge](https://github.com/IBM/mcp-context-forge)
 - [metatool-ai/metamcp](https://github.com/metatool-ai/metamcp)
 - [samanhappy/mcphub](https://github.com/samanhappy/mcphub)（同名竞品）
@@ -446,6 +461,7 @@ MCP 协议即将发布的 `2026-07-28-RC` 版本包含**重大破坏性变更**�
 - [supercorp-ai/supergateway](https://github.com/supercorp-ai/supergateway)
 
 **Registry**：
+
 - [modelcontextprotocol/registry](https://github.com/modelcontextprotocol/registry)
 - [Registry 生态愿景](https://github.com/modelcontextprotocol/registry/blob/main/docs/design/ecosystem-vision.md)
 - [server.json 格式](https://github.com/modelcontextprotocol/registry/blob/main/docs/reference/server-json/generic-server-json.md)

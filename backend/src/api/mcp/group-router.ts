@@ -10,13 +10,13 @@ import { Hono } from 'hono';
 
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
+import { GroupMcpService } from './group-service.js';
 import {
   createGroupMcpHandler,
   ensureGroupMcpService,
   getGroupHandlersCache,
   getGroupServicesCache,
 } from './mcp-handler-factory.js';
-import { GroupMcpService } from './group-service.js';
 
 import type { Context } from 'hono';
 
@@ -109,7 +109,7 @@ async function groupValidationMiddleware(c: Context, next: () => Promise<void>) 
  * 预先消耗请求流。
  */
 groupMcpRouter.post('/:group/mcp', groupValidationMiddleware, async (c) => {
-  const groupId = c.req.param("group")!;
+  const groupId = c.req.param('group')!;
 
   try {
     logger.info('处理组特定MCP请求', { groupId });
@@ -148,7 +148,7 @@ groupMcpRouter.post('/:group/mcp', groupValidationMiddleware, async (c) => {
  * 获取组状态信息
  */
 groupMcpRouter.get('/:group/status', groupValidationMiddleware, async (c) => {
-  const groupId = c.req.param("group")!;
+  const groupId = c.req.param('group')!;
 
   try {
     logger.debug('获取组状态信息', { groupId });
@@ -179,7 +179,7 @@ groupMcpRouter.get('/:group/status', groupValidationMiddleware, async (c) => {
  * 获取组可用工具列表
  */
 groupMcpRouter.get('/:group/tools', groupValidationMiddleware, async (c) => {
-  const groupId = c.req.param("group")!;
+  const groupId = c.req.param('group')!;
 
   try {
     logger.debug('获取组工具列表', { groupId });

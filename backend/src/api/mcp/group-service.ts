@@ -447,7 +447,11 @@ export class GroupMcpService {
           const status = await this.getStatus();
           return {
             contents: [
-              { uri: statusUri, mimeType: 'application/json', text: JSON.stringify(status, null, 2) },
+              {
+                uri: statusUri,
+                mimeType: 'application/json',
+                text: JSON.stringify(status, null, 2),
+              },
             ],
           };
         } catch (error) {

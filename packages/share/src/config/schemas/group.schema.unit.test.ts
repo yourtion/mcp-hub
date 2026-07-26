@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { GroupSchema } from './group.schema.js';
 
 describe('GroupSchema - cacheHints (P4)', () => {
@@ -32,7 +33,10 @@ describe('GroupSchema - cacheHints (P4)', () => {
 
   it('toolsListTtlMs 拒绝负数', () => {
     const result = GroupSchema.safeParse({
-      id: 'g1', name: 'G1', servers: ['s1'], tools: [],
+      id: 'g1',
+      name: 'G1',
+      servers: ['s1'],
+      tools: [],
       cacheHints: { toolsListTtlMs: -100 },
     });
     expect(result.success).toBe(false);
@@ -40,7 +44,10 @@ describe('GroupSchema - cacheHints (P4)', () => {
 
   it('toolsListCacheScope 拒绝非法枚举值', () => {
     const result = GroupSchema.safeParse({
-      id: 'g1', name: 'G1', servers: ['s1'], tools: [],
+      id: 'g1',
+      name: 'G1',
+      servers: ['s1'],
+      tools: [],
       cacheHints: { toolsListCacheScope: 'shared' },
     });
     expect(result.success).toBe(false);

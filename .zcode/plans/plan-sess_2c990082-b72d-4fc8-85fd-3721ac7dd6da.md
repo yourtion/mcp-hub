@@ -10,21 +10,22 @@
 
 这些替换会直接受益于阶段 4 建立的 ErrorCode→httpStatus 自动推导：
 
-| 文件 | 行号 | 替换为 |
-|------|------|--------|
-| `services/config_service.ts` | L98, L923 | `ConfigError(INVALID_CONFIG_FORMAT)` |
-| `services/config_service.ts` | L437 | `ConfigError(CONFIG_FILE_NOT_FOUND)` |
-| `services/server_manager.ts` | L258, L323 | `ServiceError(SERVER_UNAVAILABLE)` → 404/503 |
-| `services/server_manager.ts` | L262 | `ConnectionError(SERVER_DISCONNECTED)` → 503 |
-| `services/api-to-mcp-web-service.ts` | L98, L330 | `McpHubCoreError(INTERNAL_SERVER_ERROR)` |
-| `services/sse_event_manager.ts` | L54 | `ServiceError(SERVICE_UNAVAILABLE)` |
-| `api/groups/crypto.ts` | L19 | `ConfigError(INVALID_SERVER_CONFIG)` |
+| 文件                                 | 行号       | 替换为                                       |
+| ------------------------------------ | ---------- | -------------------------------------------- |
+| `services/config_service.ts`         | L98, L923  | `ConfigError(INVALID_CONFIG_FORMAT)`         |
+| `services/config_service.ts`         | L437       | `ConfigError(CONFIG_FILE_NOT_FOUND)`         |
+| `services/server_manager.ts`         | L258, L323 | `ServiceError(SERVER_UNAVAILABLE)` → 404/503 |
+| `services/server_manager.ts`         | L262       | `ConnectionError(SERVER_DISCONNECTED)` → 503 |
+| `services/api-to-mcp-web-service.ts` | L98, L330  | `McpHubCoreError(INTERNAL_SERVER_ERROR)`     |
+| `services/sse_event_manager.ts`      | L54        | `ServiceError(SERVICE_UNAVAILABLE)`          |
+| `api/groups/crypto.ts`               | L19        | `ConfigError(INVALID_SERVER_CONFIG)`         |
 
 ### A-2. 第 2 批：auth.ts 全量替换 + 同步改写 api/auth/index.ts（16+4 处）
 
 **这是最复杂的一批**——auth.ts 的 16 处 throw 当前被 api/auth/index.ts 的 catch 用 `errorMessage.includes(...)` 字符串匹配解析。替换为 AuthError 后，必须同步将 api/auth/index.ts 的 catch 改为 `error instanceof AuthError` + `error.code` 判断。
 
 替换映射：
+
 - `Invalid username or password` → `AuthError(AUTH_INVALID_CREDENTIALS)`
 - `Account temporarily locked` → `AuthError(AUTH_ACCOUNT_LOCKED)`
 - `Invalid refresh token` / `Token has been revoked` / `Invalid token type` → `AuthError(AUTH_TOKEN_INVALID)`
@@ -38,6 +39,7 @@ api/auth/index.ts 改写：3 个 catch 块（login/refresh/verify）从字符串
 ### A-3. 第 3 批：内部吞掉、低优先级（~21 处）
 
 这些 throw 被调用方内部 catch 吞掉，不会到达 errorResponse，替换价值主要是代码一致性：
+
 - `mcp_service.ts`（6 处 `Hub service not initialized`）
 - `group_manager.ts`（2 处验证错误）
 - `api-to-mcp-web-service.ts`（9 处配置路径未设置/校验错误）
@@ -63,6 +65,7 @@ api/auth/index.ts 改写：3 个 catch 块（login/refresh/verify）从字符串
 ### B-1. 提取 `tool-result-transform.ts`（~135 行）
 
 抽取两个**纯函数**（零 `this` 依赖）：
+
 - `transformToolResult(result: unknown): ToolResult`（L669-L777）
 - `formatError(error: unknown): string`（L779-L806）
 
@@ -73,6 +76,7 @@ api/auth/index.ts 改写：3 个 catch 块（login/refresh/verify）从字符串
 ### B-2. 提取 `tool-arg-validator.ts`（~200 行）
 
 抽取参数校验逻辑：
+
 - `validateToolArgsWithSchema(tool, args)`（L428-L534）
 - `validateArgumentType(argName, argValue, propSchema)`（L536-L613）
 
@@ -98,6 +102,7 @@ api/auth/index.ts 改写：3 个 catch 块（login/refresh/verify）从字符串
 **方案**：让 core 的 `McpServerConfig` 和 `initializeFromConfig` 形参接受 `Readonly` 版本。
 
 具体改动：
+
 - `packages/core/src/types/config.ts`：`McpServerConfig` 的 `servers`/`groups` 字段加 `Readonly` 前缀
 - `packages/core/src/services/mcp/service-manager.ts`：`initializeFromConfig(config: Readonly<McpServerConfig>)`
 - `backend/src/services/service-registry.ts`：移除 `as never`（L94-95）

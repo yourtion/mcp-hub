@@ -7,6 +7,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { cleanupTestEnvironment, setupTestEnvironment, sleep } from '../test-utils.js';
 import {
   cleanupMcpTestConfig,
   closeMcpClient,
@@ -14,7 +15,6 @@ import {
   ensureTestServerRunning,
   type McpTestConfig,
 } from './mcp-test-config.js';
-import { cleanupTestEnvironment, setupTestEnvironment, sleep } from '../test-utils.js';
 
 import type { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 

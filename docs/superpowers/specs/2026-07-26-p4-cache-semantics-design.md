@@ -28,15 +28,15 @@
 
 ### 显式排除（防止范围蔓延）
 
-| 事项 | 决策 | 理由 |
-|---|---|---|
-| `RedisCacheManager` 实现 | ❌ 不在 P4 | 协议层 cacheHint 不依赖 Redis（客户端自己缓存）；Hub 侧 tools/list 响应缓存由 McpServer 实例缓存覆盖，无需额外存储层。归属仍为 P6/独立基建 |
-| Hub 侧 `tools/list` 响应缓存（用 `CacheManager`） | ❌ 不在 P4 | McpServer 实例按 group 缓存（注册的工具存在内存），已是事实上的响应缓存；再套一层 CacheManager 是缓存已缓存的数据，价值低（方案 A 决策） |
-| 上游 MCP server resources 透传 | ❌ 不在 P4 | 独立待办，未归属（见总览 spec 跨子项目共享待办）。需处理上游 resource 发现、URI 重写、聚合，复杂度高 |
-| REST API 端点作为 resource | ❌ 不在 P4 | 属 api-to-mcp 子系统，与 P4 的 group-router 路径不同 |
-| `group://tools` resource | ❌ 不在 P4 | 与 `tools/list` 内容重叠，YAGNI |
-| 移除现有 `group_status`/`list_group_tools` 工具 | ❌ 不在 P4 | 保留以维持向后兼容；工具用于主动调用，resource 用于预读取/缓存，两者形态不同（文本 vs JSON） |
-| P2 OAuth 引入的按用户工具过滤 | ❌ 不在 P4 | P4 保持 `cacheScope: public`；P2 落地后若引入按权限过滤，需复查 cacheScope（见 §3.1 follow-up） |
+| 事项                                              | 决策       | 理由                                                                                                                                       |
+| ------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `RedisCacheManager` 实现                          | ❌ 不在 P4 | 协议层 cacheHint 不依赖 Redis（客户端自己缓存）；Hub 侧 tools/list 响应缓存由 McpServer 实例缓存覆盖，无需额外存储层。归属仍为 P6/独立基建 |
+| Hub 侧 `tools/list` 响应缓存（用 `CacheManager`） | ❌ 不在 P4 | McpServer 实例按 group 缓存（注册的工具存在内存），已是事实上的响应缓存；再套一层 CacheManager 是缓存已缓存的数据，价值低（方案 A 决策）   |
+| 上游 MCP server resources 透传                    | ❌ 不在 P4 | 独立待办，未归属（见总览 spec 跨子项目共享待办）。需处理上游 resource 发现、URI 重写、聚合，复杂度高                                       |
+| REST API 端点作为 resource                        | ❌ 不在 P4 | 属 api-to-mcp 子系统，与 P4 的 group-router 路径不同                                                                                       |
+| `group://tools` resource                          | ❌ 不在 P4 | 与 `tools/list` 内容重叠，YAGNI                                                                                                            |
+| 移除现有 `group_status`/`list_group_tools` 工具   | ❌ 不在 P4 | 保留以维持向后兼容；工具用于主动调用，resource 用于预读取/缓存，两者形态不同（文本 vs JSON）                                               |
+| P2 OAuth 引入的按用户工具过滤                     | ❌ 不在 P4 | P4 保持 `cacheScope: public`；P2 落地后若引入按权限过滤，需复查 cacheScope（见 §3.1 follow-up）                                            |
 
 ### 前置条件
 
@@ -44,28 +44,28 @@
 
 ### DoD（完成标准）
 
-| DoD 项 | 验证方式 |
-|---|---|
-| `tools/list` 响应带 cacheHint | 客户端（或 e2e 用 StreamableHTTPClientTransport）调用 `tools/list`，响应包含 `ttlMs: 60_000`、`cacheScope: 'public'` |
-| `tools/list` 确定性排序 | 连续两次 `tools/list`，工具顺序一致；顺序为先 `serverId` 后 `toolName` 字典序 |
-| `resources/list` 返回 4 个 resource | 客户端调用 `resources/list`，能看到 `group://.../status`、`group://.../servers`、`hub://config`、`hub://version` |
-| `resources/read` 返回内容且带 cacheHint | 读取任一 resource，返回 JSON 内容，响应带对应 `ttlMs`/`cacheScope` |
-| 配置变更联动 | PUT/DELETE 组或工具过滤变更后，`tools/list` 和 resources 内容更新（依赖现有 `invalidateGroupMcpService`） |
-| 组配置 cacheHints 入口生效 | 在组配置里设 `cacheHints.toolsListTtlMs: 120000`，`tools/list` 响应的 ttlMs 反映该值 |
-| `pnpm typecheck && pnpm test` 全绿 | CI 验证 |
+| DoD 项                                  | 验证方式                                                                                                             |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `tools/list` 响应带 cacheHint           | 客户端（或 e2e 用 StreamableHTTPClientTransport）调用 `tools/list`，响应包含 `ttlMs: 60_000`、`cacheScope: 'public'` |
+| `tools/list` 确定性排序                 | 连续两次 `tools/list`，工具顺序一致；顺序为先 `serverId` 后 `toolName` 字典序                                        |
+| `resources/list` 返回 4 个 resource     | 客户端调用 `resources/list`，能看到 `group://.../status`、`group://.../servers`、`hub://config`、`hub://version`     |
+| `resources/read` 返回内容且带 cacheHint | 读取任一 resource，返回 JSON 内容，响应带对应 `ttlMs`/`cacheScope`                                                   |
+| 配置变更联动                            | PUT/DELETE 组或工具过滤变更后，`tools/list` 和 resources 内容更新（依赖现有 `invalidateGroupMcpService`）            |
+| 组配置 cacheHints 入口生效              | 在组配置里设 `cacheHints.toolsListTtlMs: 120000`，`tools/list` 响应的 ttlMs 反映该值                                 |
+| `pnpm typecheck && pnpm test` 全绿      | CI 验证                                                                                                              |
 
 ## 现状分析
 
 ### 关键代码挂载点
 
-| 文件:行 | 现状 | P4 改动 |
-|---|---|---|
-| `backend/src/api/mcp/group-service.ts:82` | `new McpServer({name, version})` 不传 cacheHints（等于 SDK 默认 `ttlMs:0` 不缓存） | 加 `cacheHints` 选项；构造时机调整（见 §2.1） |
-| `backend/src/api/mcp/group-service.ts:91-122` | `initialize()` 里 `loadGroupConfig → registerTools → registerDynamicTools` | 新增 `registerGroupResources()` 步骤 |
-| `backend/src/api/mcp/group-service.ts:289-330` | `registerGroupDynamicTools`：`getAllTools → filter → applyToolFilter → register`，**无排序** | 在 register 前加确定性排序 |
-| `backend/src/api/mcp/group-service.ts:140-165` | `getStatus()` 返回 `GroupServiceStatus` | 复用为 `group://status` resource 内容源 |
-| `backend/src/api/mcp/mcp-handler-factory.ts:177-244` | `invalidateGroupMcpService` 配置变更时重建 service+handler | 无需改（resources 随 McpServer 重建自动刷新） |
-| `packages/share/src/config/schemas/group.schema.ts:29` | `GroupSchema`（zod）无 cacheHints 字段 | 加可选 `cacheHints` 字段 |
+| 文件:行                                                | 现状                                                                                         | P4 改动                                       |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `backend/src/api/mcp/group-service.ts:82`              | `new McpServer({name, version})` 不传 cacheHints（等于 SDK 默认 `ttlMs:0` 不缓存）           | 加 `cacheHints` 选项；构造时机调整（见 §2.1） |
+| `backend/src/api/mcp/group-service.ts:91-122`          | `initialize()` 里 `loadGroupConfig → registerTools → registerDynamicTools`                   | 新增 `registerGroupResources()` 步骤          |
+| `backend/src/api/mcp/group-service.ts:289-330`         | `registerGroupDynamicTools`：`getAllTools → filter → applyToolFilter → register`，**无排序** | 在 register 前加确定性排序                    |
+| `backend/src/api/mcp/group-service.ts:140-165`         | `getStatus()` 返回 `GroupServiceStatus`                                                      | 复用为 `group://status` resource 内容源       |
+| `backend/src/api/mcp/mcp-handler-factory.ts:177-244`   | `invalidateGroupMcpService` 配置变更时重建 service+handler                                   | 无需改（resources 随 McpServer 重建自动刷新） |
+| `packages/share/src/config/schemas/group.schema.ts:29` | `GroupSchema`（zod）无 cacheHints 字段                                                       | 加可选 `cacheHints` 字段                      |
 
 ### 已验证的零实现项
 
@@ -84,9 +84,9 @@ const server = new McpServer(
   {
     cacheHints: {
       'tools/list': { ttlMs: 60_000, cacheScope: 'public' },
-      'resources/read': { ttlMs: 5_000, cacheScope: 'private' }
-    }
-  }
+      'resources/read': { ttlMs: 5_000, cacheScope: 'private' },
+    },
+  },
 );
 ```
 
@@ -106,7 +106,7 @@ const server = new McpServer(
 
 ```ts
 export class GroupMcpService {
-  private mcpServer!: McpServer;  // definite assignment：initialize() 内赋值
+  private mcpServer!: McpServer; // definite assignment：initialize() 内赋值
   private groupCacheHints: { ttlMs: number; cacheScope: 'public' | 'private' };
   // ...
 
@@ -117,9 +117,11 @@ export class GroupMcpService {
   }
 
   async initialize(): Promise<void> {
-    if (this.isInitialized) { /* ... */ return; }
-    await this.loadGroupConfig();           // 先加载配置
-    this.buildMcpServer();                  // 再构造 McpServer（带 cacheHints）
+    if (this.isInitialized) {
+      /* ... */ return;
+    }
+    await this.loadGroupConfig(); // 先加载配置
+    this.buildMcpServer(); // 再构造 McpServer（带 cacheHints）
     await this.registerGroupManagementTools();
     await this.registerGroupDynamicTools();
     await this.registerGroupResources();
@@ -146,6 +148,7 @@ export class GroupMcpService {
 ```
 
 **时序安全性**：
+
 - `getMcpServer()`（`group-service.ts:127`）已有 `isInitialized` 检查，未初始化会抛 `ServiceError`。
 - `mcp-handler-factory.ts:113` 的 `ensureGroupMcpService` 在 `await groupService.initialize()` 之后才让 handler factory 取 server。
 - 因此把构造挪到 `initialize()` 内不影响任何调用方。
@@ -173,15 +176,19 @@ export const GroupSchema = z.object({
   id: z.string().min(1, { error: '组ID不能为空' }),
   name: z.string().min(1, { error: '组名称不能为空' }),
   description: z.string().optional(),
-  servers: z.array(z.string().min(1, { error: '服务器名称不能为空' })).min(1, { error: '每个组至少需要包含一个服务器' }),
+  servers: z
+    .array(z.string().min(1, { error: '服务器名称不能为空' }))
+    .min(1, { error: '每个组至少需要包含一个服务器' }),
   tools: z.array(z.string()),
   toolFilter: ToolFilterSchema.optional(),
   validation: GroupValidationSchema.optional(),
   // P4 新增：协议层 cacheHint 组级覆盖
-  cacheHints: z.object({
-    toolsListTtlMs: z.number().int().nonnegative().optional(),
-    toolsListCacheScope: z.enum(['public', 'private']).optional(),
-  }).optional(),
+  cacheHints: z
+    .object({
+      toolsListTtlMs: z.number().int().nonnegative().optional(),
+      toolsListCacheScope: z.enum(['public', 'private']).optional(),
+    })
+    .optional(),
 });
 ```
 
@@ -219,14 +226,15 @@ private async registerGroupDynamicTools(): Promise<void> {
 
 ### 2.1 Resource 清单
 
-| URI 模板 | 内容来源 | cacheScope | ttlMs | 说明 |
-|---|---|---|---|---|
-| `group://{groupId}/status` | `GroupMcpService.getStatus()`（复用现有逻辑） | `private` | `5_000`（5s） | 运行时状态（连接数、工具数），动态变化 |
-| `group://{groupId}/servers` | 新逻辑：组 server 列表 + 连接状态 | `private` | `5_000`（5s） | 运行时连接状态 |
-| `hub://config` | `getAllConfig()` 概要（版本、group 列表） | `public` | `300_000`（5min） | 跨 group 共享、变更不频繁 |
-| `hub://version` | `package.json` 的 name/version | `public` | `86_400_000`（24h） | 几乎不变 |
+| URI 模板                    | 内容来源                                      | cacheScope | ttlMs               | 说明                                   |
+| --------------------------- | --------------------------------------------- | ---------- | ------------------- | -------------------------------------- |
+| `group://{groupId}/status`  | `GroupMcpService.getStatus()`（复用现有逻辑） | `private`  | `5_000`（5s）       | 运行时状态（连接数、工具数），动态变化 |
+| `group://{groupId}/servers` | 新逻辑：组 server 列表 + 连接状态             | `private`  | `5_000`（5s）       | 运行时连接状态                         |
+| `hub://config`              | `getAllConfig()` 概要（版本、group 列表）     | `public`   | `300_000`（5min）   | 跨 group 共享、变更不频繁              |
+| `hub://version`             | `package.json` 的 name/version                | `public`   | `86_400_000`（24h） | 几乎不变                               |
 
 **cacheScope 分级理由**：
+
 - `group://status`、`group://servers` 含运行时连接状态，可能因部署环境不同而异，且未来 P2 OAuth 后可能含敏感信息，用 `private`。
 - `hub://config`、`hub://version` 是全局静态信息，跨用户一致，用 `public`。
 
@@ -369,10 +377,10 @@ private async getGroupServersStatus(): Promise<{
 
 ### 2.4 与现有工具的关系
 
-| 现有工具 | 新 resource | 关系 |
-|---|---|---|
-| `group_status`（返回纯文本状态） | `group://status`（返回 JSON） | 内容源相同（`getStatus()`），形态不同；两者并存 |
-| `list_group_tools`（返回纯文本工具列表） | 无对应 resource | 不新增 `group://tools`，避免与 `tools/list` 重叠 |
+| 现有工具                                 | 新 resource                   | 关系                                             |
+| ---------------------------------------- | ----------------------------- | ------------------------------------------------ |
+| `group_status`（返回纯文本状态）         | `group://status`（返回 JSON） | 内容源相同（`getStatus()`），形态不同；两者并存  |
+| `list_group_tools`（返回纯文本工具列表） | 无对应 resource               | 不新增 `group://tools`，避免与 `tools/list` 重叠 |
 
 ### 2.5 失效联动
 
@@ -388,12 +396,12 @@ private async getGroupServersStatus(): Promise<{
 
 ### 3.2 不影响其他子项目
 
-| 子项目 | 是否受 P4 影响 | 说明 |
-|---|---|---|
-| P2（入站 OAuth） | ⚠️ 见 §3.1 | cacheScope 在 OAuth 后可能需改 private |
-| P3（出站 OAuth） | ❌ 无 | 不同子系统（api-to-mcp vs group-router） |
-| P5（subscriptions/listen） | ❌ 无 | P5 推迟；未来 P5 的 `listChanged` 通知可与 P4 的 McpServer 重建机制协同，但 P4 不预埋 |
-| P6（OTel/弃用清理） | ❌ 无 | P4 不引入新的 console.* 或弃用项 |
+| 子项目                     | 是否受 P4 影响 | 说明                                                                                  |
+| -------------------------- | -------------- | ------------------------------------------------------------------------------------- |
+| P2（入站 OAuth）           | ⚠️ 见 §3.1     | cacheScope 在 OAuth 后可能需改 private                                                |
+| P3（出站 OAuth）           | ❌ 无          | 不同子系统（api-to-mcp vs group-router）                                              |
+| P5（subscriptions/listen） | ❌ 无          | P5 推迟；未来 P5 的 `listChanged` 通知可与 P4 的 McpServer 重建机制协同，但 P4 不预埋 |
+| P6（OTel/弃用清理）        | ❌ 无          | P4 不引入新的 console.\* 或弃用项                                                     |
 
 ### 3.3 总览 spec 更新（P4 完成后回写）
 
@@ -403,37 +411,37 @@ private async getGroupServersStatus(): Promise<{
 
 ## §4. 风险与缓解
 
-| 风险 | 缓解 |
-|---|---|
-| `registerResource` 签名在 beta 版本不确定 | 实现第一步用 context7 + 读 `node_modules/@modelcontextprotocol/server` 类型定义核实；如签名不符，调整 §2.2 代码示例 |
+| 风险                                                     | 缓解                                                                                                                                             |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `registerResource` 签名在 beta 版本不确定                | 实现第一步用 context7 + 读 `node_modules/@modelcontextprotocol/server` 类型定义核实；如签名不符，调整 §2.2 代码示例                              |
 | McpServer 构造时序调整（§1.1）破坏 `getMcpServer()` 调用 | `getMcpServer()` 已有 `isInitialized` 检查（`group-service.ts:128`）；factory 在 `await initialize()` 后才调用，时序安全；增加针对此点的单元测试 |
-| ttlMs=60s 导致客户端配置变更传播延迟 | 组配置 `cacheHints.toolsListTtlMs` 允许组级覆盖；现有 `invalidateGroupMcpService` 保证 Hub 侧立即重建，客户端最长 60s 后拿到新列表（可接受） |
-| 全局 resource（`hub://`）在每个 group 注册造成冗余 | 读取成本低（内存 JSON）；group 数量大时（>100）可考虑独立 hub-level McpServer，P4 不预埋 |
-| resources 引入新的错误处理路径 | `registerResource` 的 callback 内 try/catch，失败返回错误 JSON 而非抛出（与现有 `registerGroupManagementTools` 的错误处理风格一致） |
+| ttlMs=60s 导致客户端配置变更传播延迟                     | 组配置 `cacheHints.toolsListTtlMs` 允许组级覆盖；现有 `invalidateGroupMcpService` 保证 Hub 侧立即重建，客户端最长 60s 后拿到新列表（可接受）     |
+| 全局 resource（`hub://`）在每个 group 注册造成冗余       | 读取成本低（内存 JSON）；group 数量大时（>100）可考虑独立 hub-level McpServer，P4 不预埋                                                         |
+| resources 引入新的错误处理路径                           | `registerResource` 的 callback 内 try/catch，失败返回错误 JSON 而非抛出（与现有 `registerGroupManagementTools` 的错误处理风格一致）              |
 
 ## §5. 测试策略
 
 ### 单元测试
 
-| 测试点 | 文件 | 覆盖 |
-|---|---|---|
-| `resolveCacheHints` 默认值 | `group-service.unit.test.ts` | 不配 cacheHints 时返回 `ttlMs:60_000, cacheScope:'public'` |
-| `resolveCacheHints` 组级覆盖 | 同上 | 配 `toolsListTtlMs:120000` 时返回 120000 |
-| McpServer 构造带 cacheHints | 同上 | mock McpServer 构造函数，断言第二参数含 `cacheHints['tools/list']` |
-| `tools/list` 确定性排序 | 同上 | 构造乱序 tools，断言注册顺序为先 serverId 后 toolName |
-| McpServer 构造时序 | 同上 | 构造函数不 new McpServer；`initialize()` 后 `getMcpServer()` 返回非空 |
-| `registerGroupResources` 注册 4 个 resource | 同上 | mock `mcpServer.registerResource`，断言被调 4 次，URI/cacheHint 正确 |
-| `getGroupServersStatus` 过滤逻辑 | 同上 | 给定 groupServers + serverConnections，断言过滤+status 字段 |
+| 测试点                                      | 文件                         | 覆盖                                                                  |
+| ------------------------------------------- | ---------------------------- | --------------------------------------------------------------------- |
+| `resolveCacheHints` 默认值                  | `group-service.unit.test.ts` | 不配 cacheHints 时返回 `ttlMs:60_000, cacheScope:'public'`            |
+| `resolveCacheHints` 组级覆盖                | 同上                         | 配 `toolsListTtlMs:120000` 时返回 120000                              |
+| McpServer 构造带 cacheHints                 | 同上                         | mock McpServer 构造函数，断言第二参数含 `cacheHints['tools/list']`    |
+| `tools/list` 确定性排序                     | 同上                         | 构造乱序 tools，断言注册顺序为先 serverId 后 toolName                 |
+| McpServer 构造时序                          | 同上                         | 构造函数不 new McpServer；`initialize()` 后 `getMcpServer()` 返回非空 |
+| `registerGroupResources` 注册 4 个 resource | 同上                         | mock `mcpServer.registerResource`，断言被调 4 次，URI/cacheHint 正确  |
+| `getGroupServersStatus` 过滤逻辑            | 同上                         | 给定 groupServers + serverConnections，断言过滤+status 字段           |
 
 ### e2e 测试
 
-| 测试点 | 文件 | 覆盖 |
-|---|---|---|
-| `tools/list` 响应带 cacheHint | `group-routing-enhanced.test.ts` 或新文件 | 用 `StreamableHTTPClientTransport` 连 `/:group/mcp`，调 `tools/list`，断言响应 `ttlMs`/`cacheScope` |
-| `tools/list` 确定性排序 | 同上 | 连续两次 `tools/list`，断言顺序一致且符合排序键 |
-| `resources/list` 返回 4 个 resource | 同上 | 调 `resources/list`，断言返回 4 个 resource，URI 正确 |
-| `resources/read` 返回内容 | 同上 | 读 `group://.../status`、`hub://version` 等，断言 JSON 内容可解析 |
-| 配置变更后 tools/list 更新 | 同上 | 改组工具过滤，调 `tools/list`，断言反映变更（依赖 invalidateGroupMcpService） |
+| 测试点                              | 文件                                      | 覆盖                                                                                                |
+| ----------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `tools/list` 响应带 cacheHint       | `group-routing-enhanced.test.ts` 或新文件 | 用 `StreamableHTTPClientTransport` 连 `/:group/mcp`，调 `tools/list`，断言响应 `ttlMs`/`cacheScope` |
+| `tools/list` 确定性排序             | 同上                                      | 连续两次 `tools/list`，断言顺序一致且符合排序键                                                     |
+| `resources/list` 返回 4 个 resource | 同上                                      | 调 `resources/list`，断言返回 4 个 resource，URI 正确                                               |
+| `resources/read` 返回内容           | 同上                                      | 读 `group://.../status`、`hub://version` 等，断言 JSON 内容可解析                                   |
+| 配置变更后 tools/list 更新          | 同上                                      | 改组工具过滤，调 `tools/list`，断言反映变更（依赖 invalidateGroupMcpService）                       |
 
 ## 参考资料
 

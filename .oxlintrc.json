@@ -34,7 +34,14 @@
   },
   "overrides": [
     {
-      "files": ["*.test.ts", "*.spec.ts", "**/e2e/**", "**/test/**", "**/integration/**", "**/test-app.ts"],
+      "files": [
+        "*.test.ts",
+        "*.spec.ts",
+        "**/e2e/**",
+        "**/test/**",
+        "**/integration/**",
+        "**/test-app.ts"
+      ],
       "rules": {
         "typescript/no-explicit-any": "off",
         "no-console": "off",

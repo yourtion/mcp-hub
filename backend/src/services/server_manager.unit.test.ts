@@ -1,4 +1,4 @@
-import { Client } from "@modelcontextprotocol/client";
+import { Client } from '@modelcontextprotocol/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ServerStatus } from '../types/mcp-hub.js';
