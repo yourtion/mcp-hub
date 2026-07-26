@@ -425,8 +425,9 @@ export class GroupMcpService {
    * cacheScope 取值理由：private 短 ttl 用于运行时状态（含连接状态、初始化进度，
    * 因 group 而异、随时间漂移）；public 长 ttl 用于全局静态信息（配置/版本）。
    *
-   * 注意：SDK readCallback 第一参数是 URL 类型；本实现用闭包 uri 字符串构造响应，
-   * 因此显式接收 `_uri: URL` 以匹配 SDK 签名（避免 TS 报错）。
+   * 注意：SDK readCallback 签名为 (uri: URL, ctx: ServerContext) => ...；
+   * 本实现用闭包内的 uri 字符串构造响应，不读取入参，故 callback 显式声明
+   * `_uri: URL` 以匹配 SDK 签名（下划线前缀表示有意未使用）。
    */
   private async registerGroupResources(): Promise<void> {
     const statusUri = `group://${this.groupId}/status`;
@@ -438,7 +439,7 @@ export class GroupMcpService {
         mimeType: 'application/json',
         cacheHint: { ttlMs: 5_000, cacheScope: 'private' },
       },
-      async () => {
+      async (_uri: URL) => {
         const status = await this.getStatus();
         return {
           contents: [
@@ -457,7 +458,7 @@ export class GroupMcpService {
         mimeType: 'application/json',
         cacheHint: { ttlMs: 5_000, cacheScope: 'private' },
       },
-      async () => {
+      async (_uri: URL) => {
         const payload = await this.getGroupServersStatus();
         return {
           contents: [
@@ -479,7 +480,7 @@ export class GroupMcpService {
         mimeType: 'application/json',
         cacheHint: { ttlMs: 300_000, cacheScope: 'public' },
       },
-      async () => {
+      async (_uri: URL) => {
         const config = await getAllConfig();
         const payload = {
           version: pkg.version,
@@ -506,7 +507,7 @@ export class GroupMcpService {
         mimeType: 'application/json',
         cacheHint: { ttlMs: 86_400_000, cacheScope: 'public' },
       },
-      async () => ({
+      async (_uri: URL) => ({
         contents: [
           {
             uri: 'hub://version',

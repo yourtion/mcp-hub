@@ -54,7 +54,13 @@ function makeCoreManagerMock(): McpServiceManagerInterface {
 }
 
 // getAllConfig 可在测试中被 spy/override（默认返回无 cacheHints 的最小 group）
+// 注意：真实结构为 { mcps: { servers }, groups, system }（servers 嵌在 mcps 下），
+// 见 backend/src/utils/config.ts getAllConfig()。这样 hub_config resource 的
+// config.mcps?.servers 内容路径才能被真正覆盖。
 const getAllConfigMock = vi.fn().mockResolvedValue({
+  mcps: {
+    servers: {},
+  },
   groups: {
     testgroup: {
       id: 'testgroup',
@@ -63,7 +69,6 @@ const getAllConfigMock = vi.fn().mockResolvedValue({
       tools: [],
     },
   },
-  servers: {},
 });
 
 vi.mock('../../utils/config.js', () => ({
@@ -75,6 +80,9 @@ describe('GroupMcpService - 构造时序', () => {
     constructorCalls.length = 0;
     getAllConfigMock.mockReset();
     getAllConfigMock.mockResolvedValue({
+      mcps: {
+        servers: {},
+      },
       groups: {
         testgroup: {
           id: 'testgroup',
@@ -83,7 +91,6 @@ describe('GroupMcpService - 构造时序', () => {
           tools: [],
         },
       },
-      servers: {},
     });
   });
 
@@ -129,6 +136,9 @@ describe('GroupMcpService - 构造时序', () => {
 
   it('组级 cacheHints 覆盖被正确解析并传入 McpServer', async () => {
     getAllConfigMock.mockResolvedValue({
+      mcps: {
+        servers: {},
+      },
       groups: {
         testgroup: {
           id: 'testgroup',
@@ -141,7 +151,6 @@ describe('GroupMcpService - 构造时序', () => {
           },
         },
       },
-      servers: {},
     });
 
     const svc = new GroupMcpService('testgroup', makeCoreManagerMock());
@@ -161,6 +170,9 @@ describe('GroupMcpService - 构造时序', () => {
 
   it('单字段覆盖：仅设 toolsListTtlMs 时，cacheScope 回落默认 public', async () => {
     getAllConfigMock.mockResolvedValue({
+      mcps: {
+        servers: {},
+      },
       groups: {
         testgroup: {
           id: 'testgroup',
@@ -172,7 +184,6 @@ describe('GroupMcpService - 构造时序', () => {
           },
         },
       },
-      servers: {},
     });
 
     const svc = new GroupMcpService('testgroup', makeCoreManagerMock());
@@ -196,6 +207,9 @@ describe('GroupMcpService - tools/list 确定性排序', () => {
     // 重置默认配置
     getAllConfigMock.mockReset();
     getAllConfigMock.mockResolvedValue({
+      mcps: {
+        servers: {},
+      },
       groups: {
         testgroup: {
           id: 'testgroup',
@@ -204,7 +218,6 @@ describe('GroupMcpService - tools/list 确定性排序', () => {
           tools: [],
         },
       },
-      servers: {},
     });
   });
 
@@ -233,10 +246,21 @@ describe('GroupMcpService - tools/list 确定性排序', () => {
 });
 
 describe('GroupMcpService - registerGroupResources', () => {
-  // 把 testgroup 配置成含 ['srv1','srv2']，便于覆盖 servers resource 过滤
+  // 把 testgroup 配置成含 ['srv1','srv2']，便于覆盖 servers resource 过滤。
+  // 注意 mcps.servers 与 group.servers 的区别：
+  //   - mcps.servers: 全局上游 MCP server 配置（key 为 serverId）
+  //   - group.servers: 本组订阅的 serverId 列表（数组）
+  // 这里 mcps.servers 放 srv1/srv2 两条，用于覆盖 hub_config 的
+  // config.mcps?.servers 内容路径（使其 serverCount 为非零值）。
   function resetConfig(): void {
     getAllConfigMock.mockReset();
     getAllConfigMock.mockResolvedValue({
+      mcps: {
+        servers: {
+          srv1: { id: 'srv1' },
+          srv2: { id: 'srv2' },
+        },
+      },
       groups: {
         testgroup: {
           id: 'testgroup',
@@ -244,10 +268,6 @@ describe('GroupMcpService - registerGroupResources', () => {
           servers: ['srv1', 'srv2'],
           tools: [],
         },
-      },
-      servers: {
-        srv1: { id: 'srv1' },
-        srv2: { id: 'srv2' },
       },
     });
   }
@@ -348,5 +368,42 @@ describe('GroupMcpService - registerGroupResources', () => {
     expect(byId.get('srv2')).toBe('disconnected');
     expect(parsed.groupId).toBe('testgroup');
     expect(typeof parsed.timestamp).toBe('string');
+  });
+
+  it('hub://config resource 的 callback 返回非零 serverCount（覆盖 config.mcps.servers 路径）', async () => {
+    // resetConfig() 已在 beforeEach 注入 mcps.servers = { srv1, srv2 }，共 2 条。
+    // 此前测试 mock 用顶层 servers（无 mcps 包装），导致 config.mcps 恒为 undefined、
+    // serverCount 恒为 0，hub_config 内容路径从未被真正覆盖。本用例补齐该覆盖。
+    const cm = makeCoreManagerMock();
+    const svc = new GroupMcpService('testgroup', cm);
+    await svc.initialize();
+
+    const registerResourceCalls = (svc.getMcpServer() as unknown as {
+      registerResource: ReturnType<typeof vi.fn>;
+    }).registerResource.mock.calls;
+
+    const configEntry = registerResourceCalls.find(
+      (c: unknown[]) => c[0] === 'hub_config',
+    ) as unknown as [
+      string,
+      string,
+      unknown,
+      (uri: URL) => Promise<{ contents: Array<{ uri: string; text?: string }> }>,
+    ];
+    expect(configEntry).toBeDefined();
+
+    const callback = configEntry[3]!;
+    const result = await callback(new URL('hub://config'));
+    const parsed = JSON.parse(result.contents[0]!.text!) as {
+      version: string;
+      groups: string[];
+      serverCount: number;
+    };
+
+    // 与 resetConfig() 注入的 mcps.servers（srv1 + srv2）一致
+    expect(parsed.serverCount).toBe(2);
+    expect(parsed.serverCount).toBeGreaterThan(0);
+    expect(parsed.groups).toEqual(['testgroup']);
+    expect(typeof parsed.version).toBe('string');
   });
 });
