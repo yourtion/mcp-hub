@@ -59,7 +59,17 @@ export function createIntrospectToken(
       return { active: false };
     }
 
-    const json = (await res.json()) as Partial<IntrospectionResult>;
+    let json: Partial<IntrospectionResult>;
+    try {
+      json = (await res.json()) as Partial<IntrospectionResult>;
+    } catch (err) {
+      // IdP 返回 2xx 但 body 非 JSON（边缘场景）→ fail-closed
+      logger.warn('Introspection 响应 JSON 解析失败', {
+        endpoint,
+        error: (err as Error).message,
+      });
+      return { active: false };
+    }
     return {
       active: Boolean(json.active),
       aud: json.aud,
