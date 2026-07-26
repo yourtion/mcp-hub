@@ -50,4 +50,41 @@ export const SystemConfigSchema = z.object({
     logLevel: z.string(),
     retentionDays: z.number().min(1),
   }),
+  oauth: z
+    .object({
+      // 模式：internal（内置 AS）/ external（对接外部 IdP）/ both
+      mode: z.enum(['internal', 'external', 'both']),
+      // Hub 作为 Protected Resource 的规范 URI（RFC8707 audience 标识）
+      resource: z.string().url(),
+      scopes: z.array(z.string()).default(['mcp:tools', 'mcp:resources']),
+      // 内置 AS 配置（mode 为 internal/both 时必填）
+      internal: z
+        .object({
+          issuer: z.string().url().optional(),
+          tokenTtlSeconds: z.number().int().positive().default(3600),
+          clients: z
+            .array(
+              z.object({
+                clientId: z.string().min(1),
+                clientSecret: z.string().min(1), // bcrypt 哈希
+                scopes: z.array(z.string()).default(['mcp:tools']),
+              }),
+            )
+            .default([]),
+        })
+        .optional(),
+      // 外部 IdP 配置（mode 为 external/both 时必填）
+      external: z
+        .object({
+          issuer: z.string().url(),
+          metadataUrl: z.string().url().optional(),
+          clientId: z.string().min(1),
+          clientSecret: z.string().min(1),
+          introspectionEndpoint: z.string().url().optional(),
+          jwksUri: z.string().url().optional(),
+          audience: z.string().min(1),
+        })
+        .optional(),
+    })
+    .optional(), // 整个 oauth 块可选
 });
