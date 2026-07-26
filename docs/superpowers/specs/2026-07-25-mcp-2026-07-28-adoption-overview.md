@@ -36,7 +36,7 @@
 | **P1** | 传输层升级到 2026-07-28 无状态 | ✅ 完成 | ✅ **实现完成**（分支 `feat/p1-transport-upgrade-2026-07-28`，待合并） | `2026-07-25-p1-transport-upgrade-design.md` |
 | P2 | 入站 OAuth 2.1（Protected Resource） | ⏳ 待 brainstorming | ⬜ 未开始 | — |
 | P3 | 出站 OAuth（AuthenticationStrategy） | ⏳ 待 brainstorming | ⬜ 未开始 | — |
-| P4 | `ttlMs`/`cacheScope` 缓存语义 | ⏳ 待 brainstorming | ⬜ 未开始 | — |
+| **P4** | `ttlMs`/`cacheScope` 缓存语义 | ✅ 完成 | ✅ **实现完成**（分支 `feat/p4-cache-semantics`，待合并） | `2026-07-26-p4-cache-semantics-design.md` |
 | P5 | `subscriptions/listen` + MRTR | ⏳ 推迟（观望客户端生态） | ⬜ 未开始 | — |
 | P6 | OTel trace context + 弃用项清理 | ⏳ 待 brainstorming | ⬜ 未开始 | — |
 
@@ -330,7 +330,8 @@ P4 **不是替换**已有缓存，而是**新增协议层缓存提示**，并探
 | 子项目 | 分支 | 关键 commit | 进度 |
 |---|---|---|---|
 | P1 | `feat/p1-transport-upgrade-2026-07-28` | `438f93a` 用 createMcpHandler 重写 group-router | 🚧 核心改造已提交，DoD 待全量验证 |
-| P2-P6 | — | — | ⬜ 未开始 |
+| P4 | `feat/p4-cache-semantics` | `2b75c39` 注册 4 个 Hub 元数据 resources；`660e45b` tools/list 确定性排序；`8018afc` McpServer 构造接入 cacheHints | ✅ **实现完成**（typecheck + 1683 tests 全绿，含 5 个 P4 e2e） |
+| P2、P3、P5、P6 | — | — | ⬜ 未开始 |
 
 ## 跨子项目共享待办
 
@@ -338,7 +339,7 @@ P4 **不是替换**已有缓存，而是**新增协议层缓存提示**，并探
 
 | 事项 | 归属 | 何时做 | 现状 | 涉及子项目 |
 |---|---|---|---|---|
-| `RedisCacheManager`（当前 no-op，`cache-manager.ts:338-377`） | P6（候选）或独立基建 | P3/P4 多实例前必须实现 | 🔴 no-op 占位 | P3（token 存储）、P4（缓存共享）、P6（候选归属） |
+| `RedisCacheManager`（当前 no-op，`cache-manager.ts:338-377`） | P6（候选）或独立基建 | P3 多实例前必须实现 | 🟡 no-op 占位；**P4 评估确认协议层 cacheHint 不依赖 Redis**（客户端自行缓存，Hub 侧 tools/list 响应缓存由 McpServer 实例缓存覆盖） | P3（token 存储）、P6（候选归属） |
 | `simple-auth.ts` 假认证（任何非空 token 放行） | P2 | P2 入站 OAuth 时一并修复 | 🔴 安全债 | P2、P6（弃用清理顺带） |
 | `message-audit-service.ts` 用户归因硬编码 `'admin'` | P2 | P2 token 校验落地后修复 | 🔴 安全债 | P2、P6 |
 | `console.*` 绕过统一 Logger（25+ 处） | P6 | P6 日志统一 | 🟡 审计报告已列，分支正在修 | P6 |
