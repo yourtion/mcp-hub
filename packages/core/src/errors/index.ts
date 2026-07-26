@@ -60,6 +60,15 @@ export enum ErrorCode {
   AUTH_TOKEN_INVALID = 6003,
   AUTH_ACCESS_DENIED = 6004,
   AUTH_ACCOUNT_LOCKED = 6005,
+
+  // OAuth 错误（6100-6199，入站 OAuth 2.1 Protected Resource）
+  OAUTH_MISSING_TOKEN = 6100,
+  OAUTH_INVALID_TOKEN = 6101,
+  OAUTH_TOKEN_EXPIRED = 6102,
+  OAUTH_INVALID_AUDIENCE = 6103,
+  OAUTH_INSUFFICIENT_SCOPE = 6104,
+  OAUTH_SERVER_ERROR = 6105,
+  OAUTH_CONFIG_ERROR = 6106,
 }
 
 /**
@@ -108,6 +117,15 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.AUTH_TOKEN_INVALID]: '认证令牌无效',
   [ErrorCode.AUTH_ACCESS_DENIED]: '访问被拒绝',
   [ErrorCode.AUTH_ACCOUNT_LOCKED]: '账户已被锁定',
+
+  // OAuth 错误
+  [ErrorCode.OAUTH_MISSING_TOKEN]: '缺少 OAuth 令牌',
+  [ErrorCode.OAUTH_INVALID_TOKEN]: 'OAuth 令牌无效',
+  [ErrorCode.OAUTH_TOKEN_EXPIRED]: 'OAuth 令牌已过期',
+  [ErrorCode.OAUTH_INVALID_AUDIENCE]: 'OAuth 令牌受众不匹配',
+  [ErrorCode.OAUTH_INSUFFICIENT_SCOPE]: 'OAuth 权限范围不足',
+  [ErrorCode.OAUTH_SERVER_ERROR]: 'OAuth 服务错误',
+  [ErrorCode.OAUTH_CONFIG_ERROR]: 'OAuth 配置错误',
 };
 
 /**
@@ -166,6 +184,15 @@ export const ERROR_SEVERITY: Record<ErrorCode, ErrorSeverity> = {
   [ErrorCode.AUTH_TOKEN_INVALID]: ErrorSeverity.MEDIUM,
   [ErrorCode.AUTH_ACCESS_DENIED]: ErrorSeverity.HIGH,
   [ErrorCode.AUTH_ACCOUNT_LOCKED]: ErrorSeverity.MEDIUM,
+
+  // OAuth 错误
+  [ErrorCode.OAUTH_MISSING_TOKEN]: ErrorSeverity.LOW,
+  [ErrorCode.OAUTH_INVALID_TOKEN]: ErrorSeverity.MEDIUM,
+  [ErrorCode.OAUTH_TOKEN_EXPIRED]: ErrorSeverity.LOW,
+  [ErrorCode.OAUTH_INVALID_AUDIENCE]: ErrorSeverity.HIGH,
+  [ErrorCode.OAUTH_INSUFFICIENT_SCOPE]: ErrorSeverity.MEDIUM,
+  [ErrorCode.OAUTH_SERVER_ERROR]: ErrorSeverity.HIGH,
+  [ErrorCode.OAUTH_CONFIG_ERROR]: ErrorSeverity.HIGH,
 };
 
 /**
@@ -216,6 +243,15 @@ const ERROR_HTTP_STATUS: Record<ErrorCode, number> = {
   [ErrorCode.AUTH_TOKEN_INVALID]: 401,
   [ErrorCode.AUTH_ACCESS_DENIED]: 403,
   [ErrorCode.AUTH_ACCOUNT_LOCKED]: 423,
+
+  // OAuth 错误
+  [ErrorCode.OAUTH_MISSING_TOKEN]: 401,
+  [ErrorCode.OAUTH_INVALID_TOKEN]: 401,
+  [ErrorCode.OAUTH_TOKEN_EXPIRED]: 401,
+  [ErrorCode.OAUTH_INVALID_AUDIENCE]: 401,
+  [ErrorCode.OAUTH_INSUFFICIENT_SCOPE]: 403,
+  [ErrorCode.OAUTH_SERVER_ERROR]: 503,
+  [ErrorCode.OAUTH_CONFIG_ERROR]: 500,
 };
 
 /**
