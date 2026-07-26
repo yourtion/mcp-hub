@@ -510,6 +510,12 @@ P2 完成的判据：
 
 8. **`internal-as.ts` 空 scope 语义**（Task 6）：请求 `scope` 缺省时授予 client 全部配置 scope（RFC6749 §3.3 允许），但 spec §2.4 未明确此语义。
 
+9. **`introspection.ts` 生产实现**（最终审查 fix wave）：原 Task 8 只实现了 introspection 接口 + 缓存，生产侧 `introspectToken` 从未注入（只测试 mock）。最终全分支审查发现后补 `introspection.ts`（HTTP POST + Basic auth + fail-closed）+ resource-server 注入 + `mapIntrospection` audience 校验（去 `void aud`）。
+
+10. **introspection cache LRU 上界**（最终审查 fix wave）：原 introspectionCache 无淘汰，长生命周期进程内存增长。加 `INTROSPECTION_CACHE_MAX_ENTRIES=1000` FIFO 淘汰（实际是 FIFO 非 LRU，对 60s TTL 小规模 cache 可接受）。
+
+11. **`mcp-auth.ts` origin 推导统一**（最终审查 fix wave）：原用 `new URL(c.req.url).origin`，反代后可能指向内部地址。改用 Host 头 + `OAUTH_PUBLIC_SCHEME`（与 `well-known.ts` 一致）。
+
 ## 参考资料
 
 - [MCP 2025-11-25 Authorization Spec](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)
