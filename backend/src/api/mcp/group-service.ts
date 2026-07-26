@@ -69,20 +69,21 @@ export interface GroupToolInfo {
  * 组特定MCP服务包装器
  */
 export class GroupMcpService {
-  private mcpServer: McpServer;
+  private mcpServer!: McpServer;
   private isInitialized = false;
   private groupConfig: Group | null = null;
   private availableTools: GroupToolInfo[] = [];
+  /** P4: 解析后的组级 cacheHints（initialize 内 buildMcpServer 时由 resolveCacheHints 覆盖） */
+  private groupCacheHints: { ttlMs: number; cacheScope: 'public' | 'private' } = {
+    ttlMs: 60_000,
+    cacheScope: 'public',
+  };
 
   constructor(
     private groupId: string,
     private coreServiceManager: McpServiceManagerInterface,
   ) {
-    // 创建组特定的MCP服务器实例
-    this.mcpServer = new McpServer({
-      name: `${pkg.name}-group-${groupId}`,
-      version: pkg.version,
-    });
+    // P4: McpServer 构造延迟到 initialize()，以便读取组配置里的 cacheHints
   }
 
   /**
@@ -102,6 +103,9 @@ export class GroupMcpService {
       // 加载组配置
       await this.loadGroupConfig();
 
+      // P4: 读配置后构造 McpServer（应用组级 cacheHints）
+      this.buildMcpServer();
+
       // 注册组管理工具
       await this.registerGroupManagementTools();
 
@@ -119,6 +123,41 @@ export class GroupMcpService {
       });
       throw error;
     }
+  }
+
+  /**
+   * 构造 McpServer 并应用组级 cacheHints (P4)。
+   * 必须在 loadGroupConfig() 之后调用，以便读取组配置里的 cacheHints 覆盖。
+   */
+  private buildMcpServer(): void {
+    this.groupCacheHints = this.resolveCacheHints(this.groupConfig);
+    this.mcpServer = new McpServer(
+      { name: `${pkg.name}-group-${this.groupId}`, version: pkg.version },
+      {
+        cacheHints: {
+          'tools/list': {
+            ttlMs: this.groupCacheHints.ttlMs,
+            cacheScope: this.groupCacheHints.cacheScope,
+          },
+        },
+      },
+    );
+  }
+
+  /**
+   * 解析组级 cacheHints，应用默认值 (P4)。
+   * 默认：ttlMs=60_000（1 分钟），cacheScope='public'（工具列表跨用户一致）。
+   * 组级覆盖缺失的字段回落到默认值。
+   */
+  private resolveCacheHints(groupConfig: Group | null): {
+    ttlMs: number;
+    cacheScope: 'public' | 'private';
+  } {
+    const overrides = groupConfig?.cacheHints;
+    return {
+      ttlMs: overrides?.toolsListTtlMs ?? 60_000,
+      cacheScope: overrides?.toolsListCacheScope ?? 'public',
+    };
   }
 
   /**
