@@ -1,6 +1,6 @@
 # Spec: P4 — `ttlMs`/`cacheScope` 缓存语义（协议层 cacheHint + resources 体系）
 
-- **状态**: Draft（待实现）
+- **状态**: ✅ 已实现（合并 main，merge commit `a03f430`；typecheck + 1683 tests 全绿）
 - **日期**: 2026-07-26
 - **作者**: yourtion
 - **关联**:
