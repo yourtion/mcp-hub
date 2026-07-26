@@ -231,3 +231,122 @@ describe('GroupMcpService - tools/list 确定性排序', () => {
     expect(dynamicNames).toEqual(['aServer_a', 'aServer_b', 'zServer_a']);
   });
 });
+
+describe('GroupMcpService - registerGroupResources', () => {
+  // 把 testgroup 配置成含 ['srv1','srv2']，便于覆盖 servers resource 过滤
+  function resetConfig(): void {
+    getAllConfigMock.mockReset();
+    getAllConfigMock.mockResolvedValue({
+      groups: {
+        testgroup: {
+          id: 'testgroup',
+          name: 'Test Group',
+          servers: ['srv1', 'srv2'],
+          tools: [],
+        },
+      },
+      servers: {
+        srv1: { id: 'srv1' },
+        srv2: { id: 'srv2' },
+      },
+    });
+  }
+
+  beforeEach(() => {
+    resetConfig();
+  });
+
+  it('注册 4 个 resource，URI 与 cacheHint 正确', async () => {
+    const cm = makeCoreManagerMock();
+    const svc = new GroupMcpService('testgroup', cm);
+    await svc.initialize();
+
+    const registerResourceCalls = (svc.getMcpServer() as unknown as {
+      registerResource: ReturnType<typeof vi.fn>;
+    }).registerResource.mock.calls;
+
+    // 4 个 resource
+    expect(registerResourceCalls).toHaveLength(4);
+
+    // 抽取每个调用的 [name, uri, config.cacheHint]
+    const entries = registerResourceCalls.map(
+      (c: unknown[]) =>
+        [
+          c[0] as string,
+          c[1] as string,
+          (c[2] as { cacheHint?: { ttlMs?: number; cacheScope?: string } }).cacheHint,
+        ] as const,
+    );
+
+    // status: 运行时状态，短 ttl 私有缓存
+    expect(entries).toContainEqual([
+      'group_status_resource',
+      'group://testgroup/status',
+      { ttlMs: 5_000, cacheScope: 'private' },
+    ]);
+    // servers: 服务器列表与连接状态，短 ttl 私有缓存
+    expect(entries).toContainEqual([
+      'group_servers',
+      'group://testgroup/servers',
+      { ttlMs: 5_000, cacheScope: 'private' },
+    ]);
+    // config: 全局配置概要，长 ttl 公共缓存
+    expect(entries).toContainEqual([
+      'hub_config',
+      'hub://config',
+      { ttlMs: 300_000, cacheScope: 'public' },
+    ]);
+    // version: 版本信息，极长 ttl 公共缓存
+    expect(entries).toContainEqual([
+      'hub_version',
+      'hub://version',
+      { ttlMs: 86_400_000, cacheScope: 'public' },
+    ]);
+  });
+
+  it('group://servers resource 的 callback 返回过滤后的服务器列表', async () => {
+    // 准备 serverConnections：srv1(connected), srv2(disconnected), other(connected)
+    // 其中 other 不属于 testgroup，断言里不应出现
+    const connections = new Map([
+      ['srv1', { id: 'srv1', status: 'connected' }],
+      ['srv2', { id: 'srv2', status: 'disconnected' }],
+      ['other', { id: 'other', status: 'connected' }],
+    ]);
+
+    const cm = makeCoreManagerMock();
+    (cm.getServerConnections as ReturnType<typeof vi.fn>).mockReturnValue(connections);
+
+    const svc = new GroupMcpService('testgroup', cm);
+    await svc.initialize();
+
+    const registerResourceCalls = (svc.getMcpServer() as unknown as {
+      registerResource: ReturnType<typeof vi.fn>;
+    }).registerResource.mock.calls;
+
+    // 找到 group_servers 的注册项（第 4 个参数是 callback）
+    const serversEntry = registerResourceCalls.find(
+      (c: unknown[]) => c[0] === 'group_servers',
+    ) as unknown as [
+      string,
+      string,
+      unknown,
+      (uri: URL) => Promise<{ contents: Array<{ uri: string; text?: string }> }>,
+    ];
+    expect(serversEntry).toBeDefined();
+
+    const callback = serversEntry[3]!;
+    const result = await callback(new URL('group://testgroup/servers'));
+    const parsed = JSON.parse(result.contents[0]!.text!);
+
+    // 只含 testgroup 配置的 srv1/srv2，不含 other
+    const ids = (parsed.servers as Array<{ id: string; status: string }>).map((s) => s.id);
+    expect(ids).toEqual(['srv1', 'srv2']);
+    const byId = new Map(
+      (parsed.servers as Array<{ id: string; status: string }>).map((s) => [s.id, s.status]),
+    );
+    expect(byId.get('srv1')).toBe('connected');
+    expect(byId.get('srv2')).toBe('disconnected');
+    expect(parsed.groupId).toBe('testgroup');
+    expect(typeof parsed.timestamp).toBe('string');
+  });
+});

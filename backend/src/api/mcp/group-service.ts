@@ -121,6 +121,9 @@ export class GroupMcpService {
       // 注册组特定的动态工具
       await this.registerGroupDynamicTools();
 
+      // 注册 Hub 元数据 resources（协议层 cacheHint 在 resources/read 的落点）
+      await this.registerGroupResources();
+
       this.isInitialized = true;
       logger.info('组MCP服务初始化完成', {
         groupId: this.groupId,
@@ -383,6 +386,138 @@ export class GroupMcpService {
       });
       // 不抛出错误，允许服务继续运行
     }
+  }
+
+  /**
+   * 获取组的服务器列表与连接状态。
+   *
+   * group://servers resource 的内容源：仅返回本组配置的服务器，
+   * 不透传所有上游 server，从而保证 group 隔离边界。
+   * 连接状态从 coreServiceManager.getServerConnections() 读取，
+   * 缺失条目按 disconnected 处理。
+   */
+  private async getGroupServersStatus(): Promise<{
+    groupId: string;
+    servers: Array<{ id: string; status: string }>;
+    timestamp: string;
+  }> {
+    const groupServers = this.groupConfig?.servers ?? [];
+    const serverConnections = this.coreServiceManager.getServerConnections();
+    return {
+      groupId: this.groupId,
+      servers: groupServers.map((id) => ({
+        id,
+        status: serverConnections.get(id)?.status ?? 'disconnected',
+      })),
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * 注册 Hub 自身元数据 resources（协议层 cacheHint 在 resources/read 的落点）。
+   *
+   * 注册 4 个 resource：
+   *   - group://{groupId}/status  —— 组运行时状态（短 ttl, private；状态频繁变化，且每用户隔离）
+   *   - group://{groupId}/servers —— 服务器列表与连接状态（同上，private 短 ttl）
+   *   - hub://config              —— 全局配置概要（长 ttl, public；跨用户/跨组一致）
+   *   - hub://version             —— 版本信息（极长 ttl, public；进程生命周期内不变）
+   *
+   * cacheScope 取值理由：private 短 ttl 用于运行时状态（含连接状态、初始化进度，
+   * 因 group 而异、随时间漂移）；public 长 ttl 用于全局静态信息（配置/版本）。
+   *
+   * 注意：SDK readCallback 第一参数是 URL 类型；本实现用闭包 uri 字符串构造响应，
+   * 因此显式接收 `_uri: URL` 以匹配 SDK 签名（避免 TS 报错）。
+   */
+  private async registerGroupResources(): Promise<void> {
+    const statusUri = `group://${this.groupId}/status`;
+    this.mcpServer.registerResource(
+      'group_status_resource',
+      statusUri,
+      {
+        description: `组 '${this.groupId}' 的运行时状态`,
+        mimeType: 'application/json',
+        cacheHint: { ttlMs: 5_000, cacheScope: 'private' },
+      },
+      async () => {
+        const status = await this.getStatus();
+        return {
+          contents: [
+            { uri: statusUri, mimeType: 'application/json', text: JSON.stringify(status, null, 2) },
+          ],
+        };
+      },
+    );
+
+    const serversUri = `group://${this.groupId}/servers`;
+    this.mcpServer.registerResource(
+      'group_servers',
+      serversUri,
+      {
+        description: `组 '${this.groupId}' 的服务器列表与连接状态`,
+        mimeType: 'application/json',
+        cacheHint: { ttlMs: 5_000, cacheScope: 'private' },
+      },
+      async () => {
+        const payload = await this.getGroupServersStatus();
+        return {
+          contents: [
+            {
+              uri: serversUri,
+              mimeType: 'application/json',
+              text: JSON.stringify(payload, null, 2),
+            },
+          ],
+        };
+      },
+    );
+
+    this.mcpServer.registerResource(
+      'hub_config',
+      'hub://config',
+      {
+        description: 'Hub 全局配置概要',
+        mimeType: 'application/json',
+        cacheHint: { ttlMs: 300_000, cacheScope: 'public' },
+      },
+      async () => {
+        const config = await getAllConfig();
+        const payload = {
+          version: pkg.version,
+          groups: Object.keys(config.groups ?? {}),
+          serverCount: Object.keys(config.mcps?.servers ?? {}).length,
+        };
+        return {
+          contents: [
+            {
+              uri: 'hub://config',
+              mimeType: 'application/json',
+              text: JSON.stringify(payload, null, 2),
+            },
+          ],
+        };
+      },
+    );
+
+    this.mcpServer.registerResource(
+      'hub_version',
+      'hub://version',
+      {
+        description: 'Hub 版本信息',
+        mimeType: 'application/json',
+        cacheHint: { ttlMs: 86_400_000, cacheScope: 'public' },
+      },
+      async () => ({
+        contents: [
+          {
+            uri: 'hub://version',
+            mimeType: 'application/json',
+            text: JSON.stringify({ name: pkg.name, version: pkg.version }, null, 2),
+          },
+        ],
+      }),
+    );
+
+    logger.debug('组 resources 注册完成', { groupId: this.groupId, count: 4 });
   }
 
   /**
