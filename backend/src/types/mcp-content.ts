@@ -77,3 +77,10 @@ export function normalizeMcpContent(item: unknown): McpContentItem {
     text: String(item),
   };
 }
+
+/**
+ * 创建文本内容项（类型安全的工厂函数）
+ */
+export function createTextContent(text: string): TextContent {
+  return { type: 'text', text };
+}

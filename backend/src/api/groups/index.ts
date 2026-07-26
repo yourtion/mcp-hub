@@ -3,14 +3,25 @@
  * 提供组列表、组详情、组健康检查等API
  */
 
-import { McpServiceManager, type ToolInfo } from '@mcp-core/mcp-hub-core';
+import { type ToolInfo } from '@mcp-core/mcp-hub-core';
 import { Hono } from 'hono';
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 
+import {
+  getCoreServiceManager,
+  reloadCoreServiceManager,
+} from '../../services/service-registry.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { getAllConfig, saveConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 import { performanceMonitor } from '../../utils/performance-monitor.js';
+import { decryptValidationKey, encryptValidationKey, generateValidationKey } from './crypto.js';
+import {
+  assessKeyComplexity,
+  calculateEntropy,
+  generateSecurityRecommendations,
+  validateKeyFormat,
+} from './key-policy.js';
+import { estimateToolComplexity, validateGroupData, validateGroupId } from './validation.js';
 
 import type {
   ConfigureGroupToolsRequest,
@@ -18,32 +29,9 @@ import type {
   GroupAvailableToolsResponse,
   GroupConfig,
   GroupValidationConfig,
-  ServerConfig,
   SetGroupValidationKeyRequest,
   UpdateGroupRequest,
 } from '@mcp-core/mcp-hub-share';
-
-// 定义 JsonSchema 类型
-interface JsonSchema {
-  type?: string;
-  properties?: Record<string, JsonSchemaProperty>;
-  required?: string[];
-}
-
-interface JsonSchemaProperty {
-  type: string;
-  description?: string;
-  enum?: string[];
-  default?: unknown;
-  minimum?: number;
-  maximum?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  items?: JsonSchemaProperty;
-  properties?: Record<string, JsonSchemaProperty>;
-  required?: string[];
-}
 
 // 定义组配置类型
 export interface GroupConfigItem {
@@ -62,35 +50,6 @@ export interface GroupConfigItem {
 
 export const groupsApi = new Hono();
 
-// 全局核心服务管理器实例
-let coreServiceManager: McpServiceManager | null = null;
-
-/**
- * 确保核心服务管理器已初始化
- */
-async function ensureCoreServiceInitialized(): Promise<void> {
-  if (coreServiceManager) {
-    return;
-  }
-
-  try {
-    logger.info('初始化组管理API的核心服务管理器');
-    const config = await getAllConfig();
-
-    coreServiceManager = new McpServiceManager();
-    const coreConfig = {
-      servers: config.mcps.servers as Record<string, ServerConfig>,
-      groups: config.groups as Record<string, GroupConfigItem>,
-    };
-    await coreServiceManager.initializeFromConfig(coreConfig);
-
-    logger.info('组管理API核心服务管理器初始化成功');
-  } catch (error) {
-    logger.error('组管理API核心服务管理器初始化失败', error as Error);
-    throw error;
-  }
-}
-
 /**
  * 获取所有组列表
  */
@@ -101,11 +60,7 @@ groupsApi.get('/', async (c) => {
     const config = await getAllConfig();
     const groups = config.groups;
 
-    await ensureCoreServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const serverConnections = coreServiceManager.getServerConnections();
 
@@ -292,11 +247,7 @@ groupsApi.get('/:groupId', async (c) => {
       );
     }
 
-    await ensureCoreServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const serverConnections = coreServiceManager.getServerConnections();
     const groupServers = groupConfig.servers || [];
@@ -430,11 +381,7 @@ groupsApi.get('/:groupId/health', async (c) => {
       );
     }
 
-    await ensureCoreServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const serverConnections = coreServiceManager.getServerConnections();
     const groupServers = groupConfig.servers || [];
@@ -537,11 +484,7 @@ groupsApi.get('/:groupId/tools', async (c) => {
       );
     }
 
-    await ensureCoreServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const groupServers = groupConfig.servers || [];
     const allTools = await coreServiceManager.getAllTools();
@@ -630,11 +573,7 @@ groupsApi.get('/:groupId/servers', async (c) => {
       );
     }
 
-    await ensureCoreServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const serverConnections = coreServiceManager.getServerConnections();
     const groupServers = groupConfig.servers || [];
@@ -699,355 +638,6 @@ groupsApi.get('/:groupId/servers', async (c) => {
     return errorResponse(c, error as Error, 500);
   }
 });
-
-/**
- * 加密密钥
- */
-function encryptValidationKey(key: string): string {
-  try {
-    // 使用系统密钥进行加密（在实际生产环境中应该使用更安全的密钥管理）
-    const systemKey = process.env.VALIDATION_KEY_SECRET || 'mcp-hub-default-secret-key';
-    const keyHash = createHash('sha256').update(systemKey).digest();
-
-    // 生成随机IV
-    const iv = randomBytes(16);
-
-    const cipher = createCipheriv('aes-256-cbc', keyHash, iv);
-    let encrypted = cipher.update(key, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-
-    // 将IV和加密数据一起返回
-    return `${iv.toString('hex')}:${encrypted}`;
-  } catch (error) {
-    logger.error('加密验证密钥失败', error as Error);
-    throw new Error('密钥加密失败', { cause: error });
-  }
-}
-
-/**
- * 解密密钥
- */
-function decryptValidationKey(encryptedKey: string): string {
-  try {
-    const systemKey = process.env.VALIDATION_KEY_SECRET || 'mcp-hub-default-secret-key';
-    const keyHash = createHash('sha256').update(systemKey).digest();
-
-    // 分离IV和加密数据
-    const parts = encryptedKey.split(':');
-    const iv = Buffer.from(parts[0], 'hex');
-    const encrypted = parts[1];
-
-    const decipher = createDecipheriv('aes-256-cbc', keyHash, iv);
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-
-    return decrypted;
-  } catch (error) {
-    logger.error('解密验证密钥失败', error as Error);
-    throw new Error('密钥解密失败', { cause: error });
-  }
-}
-
-/**
- * 生成随机验证密钥
- */
-function generateValidationKey(): string {
-  return randomBytes(32).toString('hex');
-}
-
-/**
- * 评估密钥复杂度
- */
-function assessKeyComplexity(key: string): 'weak' | 'medium' | 'strong' {
-  let score = 0;
-
-  // 长度评分
-  if (key.length >= 16) score += 2;
-  else if (key.length >= 12) score += 1;
-
-  // 字符类型评分
-  const hasLower = /[a-z]/.test(key);
-  const hasUpper = /[A-Z]/.test(key);
-  const hasNumbers = /[0-9]/.test(key);
-  const hasSpecial = /[^a-zA-Z0-9]/.test(key);
-
-  if (hasLower) score += 1;
-  if (hasUpper) score += 1;
-  if (hasNumbers) score += 1;
-  if (hasSpecial) score += 2;
-
-  // 模式检测（避免简单模式）
-  const hasRepeatedChars = /(.)\1{2,}/.test(key);
-  const hasSequentialChars =
-    /(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|012|123|234|345|456|567|678|789|890)/i.test(
-      key,
-    );
-  const hasCommonPatterns = /(password|qwerty|asdf|zxcv|1234|admin|user)/i.test(key);
-
-  if (hasRepeatedChars) score -= 1;
-  if (hasSequentialChars) score -= 1;
-  if (hasCommonPatterns) score -= 2;
-
-  // 确定复杂度
-  if (score >= 6) return 'strong';
-  if (score >= 3) return 'medium';
-  return 'weak';
-}
-
-/**
- * 计算密钥熵值
- */
-function calculateEntropy(key: string): number {
-  const charSet = new Set(key);
-  const _charSetSize = charSet.size;
-
-  // 估算字符集大小
-  let estimatedCharSetSize = 0;
-  if (/[a-z]/.test(key)) estimatedCharSetSize += 26;
-  if (/[A-Z]/.test(key)) estimatedCharSetSize += 26;
-  if (/[0-9]/.test(key)) estimatedCharSetSize += 10;
-  if (/[^a-zA-Z0-9]/.test(key)) estimatedCharSetSize += 32; // 特殊字符
-
-  // 计算熵值：log2(字符集大小^长度)
-  if (estimatedCharSetSize <= 1) return 0;
-  return Math.round(key.length * Math.log2(estimatedCharSetSize) * 100) / 100;
-}
-
-/**
- * 生成安全建议
- */
-function generateSecurityRecommendations(key: string): string[] {
-  const recommendations: string[] = [];
-  const complexity = assessKeyComplexity(key);
-
-  if (complexity === 'weak') {
-    recommendations.push('使用大小写字母、数字和特殊字符的组合');
-    recommendations.push('避免使用常见词汇或重复字符');
-    recommendations.push('建议使用至少16个字符的长度');
-  }
-
-  if (key.length < 16) {
-    recommendations.push('增加密钥长度至至少16个字符');
-  }
-
-  if (!/[A-Z]/.test(key)) {
-    recommendations.push('添加大写字母');
-  }
-
-  if (!/[a-z]/.test(key)) {
-    recommendations.push('添加小写字母');
-  }
-
-  if (!/[0-9]/.test(key)) {
-    recommendations.push('添加数字');
-  }
-
-  if (!/[^a-zA-Z0-9]/.test(key)) {
-    recommendations.push('添加特殊字符');
-  }
-
-  if (/(.)\1{2,}/.test(key)) {
-    recommendations.push('避免重复字符');
-  }
-
-  if (
-    /(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|012|123|234|345|456|567|678|789|890)/i.test(
-      key,
-    )
-  ) {
-    recommendations.push('避免连续字符');
-  }
-
-  return recommendations;
-}
-
-/**
- * 验证密钥格式
- */
-function validateKeyFormat(key: string): { isValid: boolean; error?: string } {
-  if (!key || typeof key !== 'string') {
-    return { isValid: false, error: '密钥不能为空' };
-  }
-
-  if (key.length < 8) {
-    return { isValid: false, error: '密钥长度至少为8个字符' };
-  }
-
-  if (key.length > 128) {
-    return { isValid: false, error: '密钥长度不能超过128个字符' };
-  }
-
-  // 检查密钥复杂度（至少包含字母和数字）
-  const hasLetter = /[a-zA-Z]/.test(key);
-  const hasNumber = /[0-9]/.test(key);
-
-  if (!hasLetter || !hasNumber) {
-    return { isValid: false, error: '密钥必须包含字母和数字' };
-  }
-
-  return { isValid: true };
-}
-
-/**
- * 验证组配置数据
- */
-function validateGroupData(data: CreateGroupRequest | UpdateGroupRequest): {
-  isValid: boolean;
-  errors: string[];
-} {
-  const errors: string[] = [];
-
-  // 验证名称
-  if ('name' in data && data.name !== undefined) {
-    if (!data.name || typeof data.name !== 'string' || data.name.trim().length === 0) {
-      errors.push('组名称不能为空');
-    } else if (data.name.length > 100) {
-      errors.push('组名称长度不能超过100个字符');
-    }
-  }
-
-  // 验证描述
-  if ('description' in data && data.description !== undefined) {
-    if (typeof data.description !== 'string') {
-      errors.push('组描述必须是字符串类型');
-    } else if (data.description.length > 500) {
-      errors.push('组描述长度不能超过500个字符');
-    }
-  }
-
-  // 验证服务器列表
-  if ('servers' in data && data.servers !== undefined) {
-    if (!Array.isArray(data.servers)) {
-      errors.push('服务器列表必须是数组');
-    } else {
-      for (let i = 0; i < data.servers.length; i++) {
-        const serverId = data.servers[i];
-        if (!serverId || typeof serverId !== 'string') {
-          errors.push(`服务器列表[${i}]必须是非空字符串`);
-        }
-      }
-
-      // 检查重复的服务器ID
-      const uniqueServers = new Set(data.servers);
-      if (uniqueServers.size !== data.servers.length) {
-        errors.push('服务器列表包含重复的服务器ID');
-      }
-    }
-  }
-
-  // 验证工具列表
-  if ('tools' in data && data.tools !== undefined) {
-    if (!Array.isArray(data.tools)) {
-      errors.push('工具列表必须是数组');
-    } else {
-      for (let i = 0; i < data.tools.length; i++) {
-        const toolName = data.tools[i];
-        if (!toolName || typeof toolName !== 'string') {
-          errors.push(`工具列表[${i}]必须是非空字符串`);
-        }
-      }
-
-      // 检查重复的工具名称
-      const uniqueTools = new Set(data.tools);
-      if (uniqueTools.size !== data.tools.length) {
-        errors.push('工具列表包含重复的工具名称');
-      }
-    }
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
-}
-
-/**
- * 验证组ID格式
- */
-function validateGroupId(groupId: string): {
-  isValid: boolean;
-  error?: string;
-} {
-  if (!groupId || typeof groupId !== 'string') {
-    return { isValid: false, error: '组ID不能为空' };
-  }
-
-  if (groupId.length < 1 || groupId.length > 50) {
-    return { isValid: false, error: '组ID长度必须在1-50个字符之间' };
-  }
-
-  // 组ID只能包含字母、数字、连字符和下划线
-  const validIdPattern = /^[a-zA-Z0-9_-]+$/;
-  if (!validIdPattern.test(groupId)) {
-    return { isValid: false, error: '组ID只能包含字母、数字、连字符和下划线' };
-  }
-
-  return { isValid: true };
-}
-
-/**
- * 估算工具复杂度
- */
-function estimateToolComplexity(schema: JsonSchema): {
-  complexity: 'simple' | 'medium' | 'complex';
-  parameterCount: number;
-  requiredParameterCount: number;
-  estimatedExecutionTime: 'fast' | 'medium' | 'slow';
-} {
-  const properties = schema.properties || {};
-  const required = schema.required || [];
-  const parameterCount = Object.keys(properties).length;
-  const requiredParameterCount = required.length;
-
-  // 计算复杂度得分
-  let complexityScore = 0;
-
-  // 基于参数数量
-  complexityScore += parameterCount * 2;
-  complexityScore += requiredParameterCount * 3;
-
-  // 基于参数类型复杂度
-  Object.values(properties).forEach((prop) => {
-    switch (prop.type) {
-      case 'object':
-        complexityScore += 5;
-        break;
-      case 'array':
-        complexityScore += 4;
-        break;
-      case 'number':
-        complexityScore += 2;
-        break;
-      case 'boolean':
-        complexityScore += 1;
-        break;
-      default:
-        complexityScore += 1;
-    }
-  });
-
-  // 确定复杂度级别
-  let complexity: 'simple' | 'medium' | 'complex';
-  let estimatedExecutionTime: 'fast' | 'medium' | 'slow';
-
-  if (complexityScore <= 10) {
-    complexity = 'simple';
-    estimatedExecutionTime = 'fast';
-  } else if (complexityScore <= 25) {
-    complexity = 'medium';
-    estimatedExecutionTime = 'medium';
-  } else {
-    complexity = 'complex';
-    estimatedExecutionTime = 'slow';
-  }
-
-  return {
-    complexity,
-    parameterCount,
-    requiredParameterCount,
-    estimatedExecutionTime,
-  };
-}
 
 /**
  * 创建新组
@@ -1138,16 +728,12 @@ groupsApi.post('/', async (c) => {
     await saveConfig('group.json', updatedGroups as GroupConfig);
 
     // 重新初始化核心服务管理器以应用新配置
-    if (coreServiceManager) {
-      try {
-        await coreServiceManager.shutdown();
-        coreServiceManager = null;
-        await ensureCoreServiceInitialized();
-      } catch (error) {
-        logger.warn('重新初始化核心服务管理器失败', {
-          error: (error as Error).message,
-        });
-      }
+    try {
+      await reloadCoreServiceManager();
+    } catch (error) {
+      logger.warn('重新初始化核心服务管理器失败', {
+        error: (error as Error).message,
+      });
     }
 
     logger.info('组创建成功', {
@@ -1280,16 +866,12 @@ groupsApi.put('/:groupId', async (c) => {
     await saveConfig('group.json', updatedGroups as GroupConfig);
 
     // 重新初始化核心服务管理器以应用新配置
-    if (coreServiceManager) {
-      try {
-        await coreServiceManager.shutdown();
-        coreServiceManager = null;
-        await ensureCoreServiceInitialized();
-      } catch (error) {
-        logger.warn('重新初始化核心服务管理器失败', {
-          error: (error as Error).message,
-        });
-      }
+    try {
+      await reloadCoreServiceManager();
+    } catch (error) {
+      logger.warn('重新初始化核心服务管理器失败', {
+        error: (error as Error).message,
+      });
     }
 
     logger.info('组更新成功', {
@@ -1396,16 +978,12 @@ groupsApi.delete('/:groupId', async (c) => {
     await saveConfig('group.json', updatedGroups as GroupConfig);
 
     // 重新初始化核心服务管理器以应用新配置
-    if (coreServiceManager) {
-      try {
-        await coreServiceManager.shutdown();
-        coreServiceManager = null;
-        await ensureCoreServiceInitialized();
-      } catch (error) {
-        logger.warn('重新初始化核心服务管理器失败', {
-          error: (error as Error).message,
-        });
-      }
+    try {
+      await reloadCoreServiceManager();
+    } catch (error) {
+      logger.warn('重新初始化核心服务管理器失败', {
+        error: (error as Error).message,
+      });
     }
 
     logger.info('组删除成功', {
@@ -1518,34 +1096,30 @@ groupsApi.post('/:groupId/tools', async (c) => {
     }
 
     // 验证工具是否在组的服务器中可用
-    await ensureCoreServiceInitialized();
-    if (coreServiceManager) {
-      try {
-        const allTools = await coreServiceManager.getAllTools();
-        const groupServers = existingGroup.servers || [];
-        const availableTools = allTools.filter((tool) =>
-          groupServers.includes(tool.serverId || ''),
-        );
-        const availableToolNames = availableTools.map((tool) => tool.name);
+    try {
+      const coreServiceManager = await getCoreServiceManager();
+      const allTools = await coreServiceManager.getAllTools();
+      const groupServers = existingGroup.servers || [];
+      const availableTools = allTools.filter((tool) => groupServers.includes(tool.serverId || ''));
+      const availableToolNames = availableTools.map((tool) => tool.name);
 
-        const unavailableTools = body.tools.filter(
-          (toolName) => !availableToolNames.includes(toolName),
-        );
+      const unavailableTools = body.tools.filter(
+        (toolName) => !availableToolNames.includes(toolName),
+      );
 
-        if (unavailableTools.length > 0) {
-          logger.warn('配置的工具在组中不可用', {
-            groupId,
-            unavailableTools,
-            availableTools: availableToolNames,
-          });
-          // 不阻止配置，但记录警告
-        }
-      } catch (error) {
-        logger.warn('验证工具可用性时出错', {
+      if (unavailableTools.length > 0) {
+        logger.warn('配置的工具在组中不可用', {
           groupId,
-          error: (error as Error).message,
+          unavailableTools,
+          availableTools: availableToolNames,
         });
+        // 不阻止配置，但记录警告
       }
+    } catch (error) {
+      logger.warn('验证工具可用性时出错', {
+        groupId,
+        error: (error as Error).message,
+      });
     }
 
     // 更新组的工具过滤配置
@@ -1563,16 +1137,12 @@ groupsApi.post('/:groupId/tools', async (c) => {
     await saveConfig('group.json', updatedGroups as GroupConfig);
 
     // 重新初始化核心服务管理器以应用新配置
-    if (coreServiceManager) {
-      try {
-        await coreServiceManager.shutdown();
-        coreServiceManager = null;
-        await ensureCoreServiceInitialized();
-      } catch (error) {
-        logger.warn('重新初始化核心服务管理器失败', {
-          error: (error as Error).message,
-        });
-      }
+    try {
+      await reloadCoreServiceManager();
+    } catch (error) {
+      logger.warn('重新初始化核心服务管理器失败', {
+        error: (error as Error).message,
+      });
     }
 
     logger.info('组工具过滤配置成功', {
@@ -1650,11 +1220,7 @@ groupsApi.get('/:groupId/available-tools', async (c) => {
       );
     }
 
-    await ensureCoreServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const groupServers = groupConfig.servers || [];
     const allTools = await coreServiceManager.getAllTools();
@@ -1799,11 +1365,7 @@ groupsApi.post('/:groupId/validate-tool-access', async (c) => {
       );
     }
 
-    await ensureCoreServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     // 检查工具是否在组中可用
     const groupServers = groupConfig.servers || [];
@@ -2369,9 +1931,10 @@ export async function shutdownGroupsApi(): Promise<void> {
   try {
     logger.info('关闭组管理API服务');
 
-    if (coreServiceManager) {
-      await coreServiceManager.shutdown();
-      coreServiceManager = null;
+    const { shutdownCoreServiceManager } = await import('../../services/service-registry.js');
+    const manager = await shutdownCoreServiceManager();
+    if (manager) {
+      await manager.shutdown();
     }
 
     logger.info('组管理API服务关闭完成');

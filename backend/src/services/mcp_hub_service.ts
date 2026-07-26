@@ -1,3 +1,5 @@
+import { ConfigError, ErrorCode, ServiceError, ToolExecutionError } from '@mcp-core/mcp-hub-core';
+
 import { ServerStatus } from '../types/mcp-hub.js';
 import { logger } from '../utils/logger.js';
 import { ApiToolIntegrationService } from './api_tool_integration_service.js';
@@ -10,7 +12,10 @@ import { ToolManager } from './tool_manager.js';
 import type { Group, McpHubService as IMcpHubService, Tool, ToolResult } from '../types/mcp-hub.js';
 import type { DeepReadonly, GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 
-// Error types for better error handling
+/**
+ * @deprecated 使用 core 包的 McpHubCoreError 体系（ServiceError / ConfigError / ToolExecutionError）。
+ * 这些类仅为向后兼容保留，将在后续版本移除。
+ */
 export class McpHubError extends Error {
   constructor(
     message: string,
@@ -22,18 +27,27 @@ export class McpHubError extends Error {
   }
 }
 
+/**
+ * @deprecated 使用 ServiceError(ErrorCode.SERVICE_UNAVAILABLE, ...) 替代
+ */
 export class ServiceNotInitializedError extends McpHubError {
   constructor() {
     super('MCP Hub Service must be initialized before use', 'SERVICE_NOT_INITIALIZED');
   }
 }
 
+/**
+ * @deprecated 使用 ServiceError(ErrorCode.GROUP_NOT_FOUND, ...) 替代
+ */
 export class GroupNotFoundError extends McpHubError {
   constructor(groupId: string) {
     super(`Group '${groupId}' not found`, 'GROUP_NOT_FOUND', { groupId });
   }
 }
 
+/**
+ * @deprecated 使用 ToolExecutionError(ErrorCode.TOOL_NOT_FOUND, ...) 替代
+ */
 export class ToolNotFoundError extends McpHubError {
   constructor(toolName: string, groupId: string) {
     super(`Tool '${toolName}' not found in group '${groupId}'`, 'TOOL_NOT_FOUND', {
@@ -43,6 +57,9 @@ export class ToolNotFoundError extends McpHubError {
   }
 }
 
+/**
+ * @deprecated 使用 ConfigError(ErrorCode.SERVER_STARTUP_FAILED, ...) 替代
+ */
 export class ServiceInitializationError extends McpHubError {
   constructor(message: string, cause?: Error) {
     super(`Service initialization failed: ${message}`, 'INITIALIZATION_FAILED', {
@@ -163,7 +180,11 @@ export class McpHubService implements IMcpHubService {
 
       await this.cleanupFailedInitialization();
 
-      throw new ServiceInitializationError((error as Error).message, error as Error);
+      throw new ConfigError(
+        ErrorCode.SERVER_STARTUP_FAILED,
+        (error as Error).message,
+        error as Error,
+      );
     }
   }
 
@@ -233,9 +254,10 @@ export class McpHubService implements IMcpHubService {
         },
       );
 
-      throw new McpHubError(
+      throw new ServiceError(
+        ErrorCode.INTERNAL_SERVER_ERROR,
         `Shutdown completed with ${errors.length} errors: ${errors.map((e) => e.message).join(', ')}`,
-        'SHUTDOWN_ERRORS',
+        undefined,
         { errorCount: errors.length, shutdownTimeMs: shutdownDuration },
       );
     }
@@ -334,13 +356,14 @@ export class McpHubService implements IMcpHubService {
         errorType: (error as Error).constructor.name,
       });
 
-      if (error instanceof McpHubError) {
+      if (error instanceof McpHubError || error instanceof ServiceError) {
         throw error;
       }
 
-      throw new McpHubError(
+      throw new ServiceError(
+        ErrorCode.TOOL_EXECUTION_FAILED,
         `Failed to list tools for group '${targetGroupId}': ${(error as Error).message}`,
-        'TOOL_LISTING_FAILED',
+        undefined,
         { groupId: targetGroupId, originalError: (error as Error).message },
       );
     }
@@ -406,9 +429,9 @@ export class McpHubService implements IMcpHubService {
         throw error;
       }
 
-      throw new McpHubError(
+      throw new ToolExecutionError(
+        ErrorCode.TOOL_EXECUTION_FAILED,
         `Tool execution failed: ${(error as Error).message}`,
-        'TOOL_EXECUTION_FAILED',
         {
           toolName,
           groupId: targetGroupId,
@@ -724,7 +747,7 @@ export class McpHubService implements IMcpHubService {
       return diagnostics;
     } catch (error) {
       logger.error('Failed to generate service diagnostics', error as Error);
-      throw new McpHubError('Failed to generate diagnostics', 'DIAGNOSTICS_FAILED', {
+      throw new ServiceError(ErrorCode.INTERNAL_SERVER_ERROR, 'Failed to generate diagnostics', {
         originalError: (error as Error).message,
       });
     }
@@ -824,7 +847,10 @@ export class McpHubService implements IMcpHubService {
 
   private ensureInitialized(): void {
     if (!this.isInitialized) {
-      throw new Error('McpHubService must be initialized before use');
+      throw new ServiceError(
+        ErrorCode.SERVICE_UNAVAILABLE,
+        'McpHubService must be initialized before use',
+      );
     }
   }
 
@@ -872,7 +898,10 @@ export class McpHubService implements IMcpHubService {
           totalGroups,
         },
       );
-      throw new ServiceInitializationError(`Critical health issues: ${issues.join(', ')}`);
+      throw new ConfigError(
+        ErrorCode.SERVER_STARTUP_FAILED,
+        `Critical health issues: ${issues.join(', ')}`,
+      );
     }
 
     if (warnings.length > 0) {
@@ -919,12 +948,18 @@ export class McpHubService implements IMcpHubService {
 
     const group = this.groupManager.getGroup(groupId);
     if (!group) {
-      throw new GroupNotFoundError(groupId);
+      throw new ServiceError(ErrorCode.GROUP_NOT_FOUND, `Group '${groupId}' not found`, undefined, {
+        groupId,
+      });
     }
 
     const isAvailable = await this.isToolAvailable(toolName, groupId);
     if (!isAvailable) {
-      throw new ToolNotFoundError(toolName, groupId);
+      throw new ToolExecutionError(
+        ErrorCode.TOOL_NOT_FOUND,
+        `Tool '${toolName}' not found in group '${groupId}'`,
+        { toolName, groupId },
+      );
     }
 
     const availableServers = this.groupManager.getGroupServers(groupId);
@@ -934,9 +969,9 @@ export class McpHubService implements IMcpHubService {
     });
 
     if (connectedServers.length === 0) {
-      throw new McpHubError(
+      throw new ServiceError(
+        ErrorCode.SERVER_UNAVAILABLE,
         `No servers are available in group '${groupId}'`,
-        'NO_SERVERS_AVAILABLE',
         { groupId, availableServers, connectedServers },
       );
     }

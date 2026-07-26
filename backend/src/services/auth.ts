@@ -2,6 +2,7 @@
  * 认证服务
  */
 
+import { AuthError, ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -53,7 +54,7 @@ export class AuthService {
       // 为所有用户生成密码哈希
       await this.generatePasswordHashes();
     } catch (error) {
-      throw new Error(`Failed to load system config: ${error}`, { cause: error });
+      throw new Error(`Failed to load system config: ${error}`, { cause: error }); // 启动期配置加载错误，保持裸 Error
     }
   }
 
@@ -131,19 +132,22 @@ export class AuthService {
     refreshToken: string;
   }> {
     if (!this.config) {
-      throw new Error('Auth service not initialized');
+      throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Auth service not initialized');
     }
 
     // 检查登录尝试限制
     if (this.isUserLocked(username)) {
-      throw new Error('Account temporarily locked due to too many failed attempts');
+      throw new AuthError(
+        ErrorCode.AUTH_ACCOUNT_LOCKED,
+        'Account temporarily locked due to too many failed attempts',
+      );
     }
 
     // 查找用户
     const user = Object.values(this.config.users).find((u) => u.username === username);
     if (!user) {
       this.recordLoginAttempt(username, false, ip, userAgent);
-      throw new Error('Invalid username or password');
+      throw new AuthError(ErrorCode.AUTH_INVALID_CREDENTIALS, 'Invalid username or password');
     }
 
     // 验证密码
@@ -152,12 +156,12 @@ export class AuthService {
     );
     const hash = userKey ? this.passwordHashMap.get(userKey) : undefined;
     if (!hash) {
-      throw new Error('Password hash not found');
+      throw new ServiceError(ErrorCode.INTERNAL_SERVER_ERROR, 'Password hash not found');
     }
     const isValidPassword = await bcrypt.compare(password, hash);
     if (!isValidPassword) {
       this.recordLoginAttempt(username, false, ip, userAgent);
-      throw new Error('Invalid username or password');
+      throw new AuthError(ErrorCode.AUTH_INVALID_CREDENTIALS, 'Invalid username or password');
     }
 
     // 记录成功登录
@@ -201,12 +205,12 @@ export class AuthService {
     refreshToken: string;
   }> {
     if (!this.config) {
-      throw new Error('Auth service not initialized');
+      throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Auth service not initialized');
     }
 
     // 检查token是否在黑名单中
     if (this.blacklistedTokens.has(refreshToken)) {
-      throw new Error('Invalid refresh token');
+      throw new AuthError(ErrorCode.AUTH_TOKEN_INVALID, 'Invalid refresh token');
     }
 
     try {
@@ -214,13 +218,13 @@ export class AuthService {
       const payload = jwt.verify(refreshToken, this.config.auth.jwt.secret) as RefreshTokenPayload;
 
       if (payload.type !== 'refresh') {
-        throw new Error('Invalid token type');
+        throw new AuthError(ErrorCode.AUTH_TOKEN_INVALID, 'Invalid token type');
       }
 
       // 查找用户
       const user = Object.values(this.config.users).find((u) => u.id === payload.sub);
       if (!user) {
-        throw new Error('User not found');
+        throw new AuthError(ErrorCode.AUTH_INVALID_CREDENTIALS, 'User not found');
       }
 
       // 生成新的tokens
@@ -245,7 +249,7 @@ export class AuthService {
         refreshToken: newRefreshToken,
       };
     } catch (_error) {
-      throw new Error('Invalid refresh token', { cause: _error });
+      throw new AuthError(ErrorCode.AUTH_TOKEN_INVALID, 'Invalid refresh token');
     }
   }
 
@@ -269,12 +273,12 @@ export class AuthService {
    */
   async verifyAccessToken(token: string): Promise<JwtPayload> {
     if (!this.config) {
-      throw new Error('Auth service not initialized');
+      throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Auth service not initialized');
     }
 
     // 检查token是否在黑名单中
     if (this.blacklistedTokens.has(token)) {
-      throw new Error('Token has been revoked');
+      throw new AuthError(ErrorCode.AUTH_TOKEN_INVALID, 'Token has been revoked');
     }
 
     try {
@@ -287,8 +291,13 @@ export class AuthService {
       }
 
       return payload;
-    } catch (_error) {
-      throw new Error('Invalid or expired token', { cause: _error });
+    } catch (error) {
+      // 区分 JWT 错误类型
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new AuthError(ErrorCode.AUTH_TOKEN_EXPIRED, 'Token has expired');
+      }
+      // JsonWebTokenError（签名无效、格式错误等）→ INVALID
+      throw new AuthError(ErrorCode.AUTH_TOKEN_INVALID, 'Invalid token');
     }
   }
 
@@ -297,7 +306,7 @@ export class AuthService {
    */
   private generateAccessToken(user: ReadonlyUserCredentials): string {
     if (!this.config) {
-      throw new Error('Auth service not initialized');
+      throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Auth service not initialized');
     }
 
     // 生成唯一的 JWT ID
@@ -321,7 +330,7 @@ export class AuthService {
    */
   private generateRefreshToken(user: ReadonlyUserCredentials): string {
     if (!this.config) {
-      throw new Error('Auth service not initialized');
+      throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Auth service not initialized');
     }
 
     // 生成唯一的 JWT ID

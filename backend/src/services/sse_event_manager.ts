@@ -1,3 +1,5 @@
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+
 import { logger } from '../utils/logger.js';
 
 import type {
@@ -51,7 +53,10 @@ export class SSEEventManager {
         currentClients: this.clients.size,
         maxClients: this.MAX_CLIENTS,
       });
-      throw new Error(`已达到最大SSE连接数限制 (${this.MAX_CLIENTS})`);
+      throw new ServiceError(
+        ErrorCode.SERVICE_UNAVAILABLE,
+        `已达到最大SSE连接数限制 (${this.MAX_CLIENTS})`,
+      );
     }
 
     const clientId = `client_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;

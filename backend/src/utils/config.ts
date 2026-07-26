@@ -1,3 +1,4 @@
+import { ConfigError, ErrorCode } from '@mcp-core/mcp-hub-core';
 import path from 'node:path';
 
 import { JsonStorage } from './json_storage.js';
@@ -113,6 +114,6 @@ export async function saveConfig(
       await getSystemConfigInstance().write(data as SystemConfig);
       break;
     default:
-      throw new Error(`不支持的配置文件类型: ${configType}`);
+      throw new ConfigError(ErrorCode.INVALID_CONFIG_FORMAT, `不支持的配置文件类型: ${configType}`);
   }
 }

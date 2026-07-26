@@ -156,9 +156,7 @@ describe('AuthService', () => {
     });
 
     it('应该拒绝无效token', async () => {
-      await expect(authService.verifyAccessToken('invalid-token')).rejects.toThrow(
-        'Invalid or expired token',
-      );
+      await expect(authService.verifyAccessToken('invalid-token')).rejects.toThrow('Invalid token');
     });
 
     it('应该拒绝已撤销的token', async () => {

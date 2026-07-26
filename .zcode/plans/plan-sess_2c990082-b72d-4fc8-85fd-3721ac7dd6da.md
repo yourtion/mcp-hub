@@ -1,249 +1,145 @@
-# MCP Hub P0/P1 问题修复计划（4 阶段）
+# 架构债务清理（第二轮）：裸 Error 替换 + tool_manager 拆分 + 类型断言消除
 
-基于审计报告 + 深度探索验证，执行全部 4 个阶段。每个阶段独立可验证（测试 + lint + build 通过即可提交）。
-
----
-
-## 阶段 1：快速修复（1-2 天）
-
-### 1.1 console→logger 全局替换（29 处）
-
-**目标文件与改动**：
-
-| 文件 | 处数 | 改动 |
-|------|------|------|
-| `backend/src/api/config/index.ts` | 9 | 新增 `import { logger }`，`console.error` → `logger.error`，错误返回改用 `errorResponse(c, error)` |
-| `backend/src/api/auth/index.ts` | 6 | `console.log/warn` → `logger.info/warn`，带 requestId + ip 上下文 |
-| `backend/src/services/config_service.ts` | 10 | `console.error/warn` → `logger.error/warn` |
-| `backend/src/utils/json_storage.ts` | 2 | `console.error` → `logger.error` |
-| `backend/src/sse.ts` | 2 | `console.log` → `logger.info` |
-| `backend/src/validation/config.ts` | 1 | `console.warn` → `logger.warn` |
-
-**logger.error 签名**：`(message: string, error?: Error, context?: Partial<LogEntry>)` — 第二参数是 Error 对象（不是拼接字符串），需注意适配。
-
-**oxlint 规则**：`.oxlintrc.json` 第 11 行 `"no-console": "off"` → `"error"`，并在 overrides（第 37 行）的测试文件 rules 中加 `"no-console": "off"` 豁免。
-
-### 1.2 删除 simple-auth.ts 死代码
-
-探索确认：真实的 JWT 认证系统（`AuthService` + `createAuthMiddleware`，含 bcrypt + jwt.verify）已存在并全局挂载到 `apiToMcpRoutes`（`app.ts:69`）。`simple-auth.ts` 的 `requireAuth` 是冗余死代码。
-
-- 删除 `backend/src/middleware/simple-auth.ts`
-- 移除 `backend/src/api/api-to-mcp/index.ts` 中 6 处 `requireAuth` 引用（L8 import + L74/95/159/233/277/310 路由中间件参数）
-- 如果存在 `simple-auth` 的测试文件，一并删除
-
-### 1.3 修复硬编码 admin 用户
-
-`backend/src/services/config_service.ts` L387 和 L566：`user: 'admin'` → 从认证上下文获取。
-
-由于 `ConfigService` 目前不接收认证上下文，最小改动方案：给记录历史/备份的方法增加可选的 `user?: string` 参数（默认 `'system'` 而非伪造 `'admin'`），由调用方从 `c.get('user')` 或 JWT payload 传入真实用户名。
-
-### 1.4 统计数据对接现有 PerformanceMonitor
-
-探索发现 `PerformanceMonitor` 已全局挂载并收集数据，`getStatsByEndpoint()` 已提供所需字段。
-
-- `backend/src/api/groups/index.ts` L376-380：硬编码占位 → 查询 `performanceMonitor.getStatsByEndpoint()`
-- 由于现有指标按完整 path 记录（含具体 groupId），需要按组路由前缀聚合（或添加 `getStatsByPathPrefix(prefix)` 方法到 `PerformanceMonitor`）
-- 如果按前缀聚合成本高，简化方案：移除 `performance` 块（而非返回假数据），在前端标注"暂无统计"
-
-### 验证
-- `pnpm test` 全绿
-- `pnpm check`（oxlint 0 warnings，包含新的 no-console 规则）
-- `pnpm build` 通过
+在 `fix/p0-p1-architecture-cleanup` 分支上继续（PR #5 之后追加 commit），或新起分支取决于 PR 是否已合并。当前先在现有分支上继续。
 
 ---
 
-## 阶段 2：McpServiceManager 收敛到 service-registry（1-2 天）
+## 任务 A：裸 throw new Error 分批替换（64 处 → 按价值分 4 批）
 
-### 2.1 扩展 service-registry.ts
+### A-1. 第 1 批：高价值——会经 errorResponse 的 service 层替换（~18 处）
 
-在 `backend/src/services/service-registry.ts` 中新增 `McpServiceManager` 管理：
+这些替换会直接受益于阶段 4 建立的 ErrorCode→httpStatus 自动推导：
 
-```typescript
-// 新增（与 hubService 并行的第二注册项）
-let coreServiceManager: McpServiceManager | null = null;
+| 文件 | 行号 | 替换为 |
+|------|------|--------|
+| `services/config_service.ts` | L98, L923 | `ConfigError(INVALID_CONFIG_FORMAT)` |
+| `services/config_service.ts` | L437 | `ConfigError(CONFIG_FILE_NOT_FOUND)` |
+| `services/server_manager.ts` | L258, L323 | `ServiceError(SERVER_UNAVAILABLE)` → 404/503 |
+| `services/server_manager.ts` | L262 | `ConnectionError(SERVER_DISCONNECTED)` → 503 |
+| `services/api-to-mcp-web-service.ts` | L98, L330 | `McpHubCoreError(INTERNAL_SERVER_ERROR)` |
+| `services/sse_event_manager.ts` | L54 | `ServiceError(SERVICE_UNAVAILABLE)` |
+| `api/groups/crypto.ts` | L19 | `ConfigError(INVALID_SERVER_CONFIG)` |
 
-export async function getCoreServiceManager(): Promise<McpServiceManager> {
-  if (!coreServiceManager) {
-    throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'McpServiceManager 未初始化');
-  }
-  return coreServiceManager;
-}
+### A-2. 第 2 批：auth.ts 全量替换 + 同步改写 api/auth/index.ts（16+4 处）
 
-export async function reloadCoreServiceManager(): Promise<McpServiceManager> {
-  // 封装现有的 shutdown → null → reinit 逻辑
-  if (coreServiceManager) {
-    await coreServiceManager.shutdown().catch(err => logger.warn(...));
-    coreServiceManager = null;
-  }
-  return initCoreServiceManager();
-}
+**这是最复杂的一批**——auth.ts 的 16 处 throw 当前被 api/auth/index.ts 的 catch 用 `errorMessage.includes(...)` 字符串匹配解析。替换为 AuthError 后，必须同步将 api/auth/index.ts 的 catch 改为 `error instanceof AuthError` + `error.code` 判断。
 
-export async function initCoreServiceManager(): Promise<McpServiceManager> {
-  const { servers, groups } = getAllConfig();
-  coreServiceManager = new McpServiceManager();
-  await coreServiceManager.initializeFromConfig({ servers, groups });
-  return coreServiceManager;
-}
-```
+替换映射：
+- `Invalid username or password` → `AuthError(AUTH_INVALID_CREDENTIALS)`
+- `Account temporarily locked` → `AuthError(AUTH_ACCOUNT_LOCKED)`
+- `Invalid refresh token` / `Token has been revoked` / `Invalid token type` → `AuthError(AUTH_TOKEN_INVALID)`
+- `Invalid or expired token` → `AuthError(AUTH_TOKEN_EXPIRED)`
+- `Auth service not initialized` → `ServiceError(SERVICE_UNAVAILABLE)`
+- `User not found` → `AuthError(AUTH_INVALID_CREDENTIALS)`
+- `Password hash not found` → `AuthError(AUTHENTICATION_FAILED)`
 
-### 2.2 替换 4 处模块级实例化
+api/auth/index.ts 改写：3 个 catch 块（login/refresh/verify）从字符串匹配改为 instanceof 判断，保留现有的自定义错误码返回格式。
 
-| 文件 | 改动 |
-|------|------|
-| `api/groups/index.ts` L65/L79 | 删除模块级 `let coreServiceManager`，`ensureCoreServiceInitialized` → `getCoreServiceManager()`，4 处重启代码块 → `reloadCoreServiceManager()` |
-| `api/mcp/group-router.ts` L43/L58 | 同上 |
-| `services/mcp_service.ts` L28/L41 | 启动期调用 `initCoreServiceManager()` |
-| `legacy/mcp-legacy.ts` L40/L57 | 同上（或保留独立实例但标注 legacy 原因） |
+### A-3. 第 3 批：内部吞掉、低优先级（~21 处）
 
-### 验证
-- 组 CRUD 操作后不再有冷启动延迟尖峰
-- `pnpm test` + `pnpm check` + `pnpm build`
+这些 throw 被调用方内部 catch 吞掉，不会到达 errorResponse，替换价值主要是代码一致性：
+- `mcp_service.ts`（6 处 `Hub service not initialized`）
+- `group_manager.ts`（2 处验证错误）
+- `api-to-mcp-web-service.ts`（9 处配置路径未设置/校验错误）
+- `config_service.ts`（1 处 L132 validateConfig 内部 catch）
 
----
+统一替换为对应的 ConfigError/ValidationError/ServiceError。
 
-## 阶段 3：groups/index.ts 拆分 + 弱密钥修复（2-3 天）
+### A-4. 第 4 批：启动期/协议期（~10 处，最低优先级）
 
-### 3.1 拆分为 5 个文件
+- `index.ts`（启动验证）
+- `service-registry.ts`（2 处注册期）
+- `utils/sse.ts`（5 处 MCP Transport 协议路径）
+- `api/mcp/group-service.ts`（2 处 MCP 协议）
+- `utils/config.ts`（1 处）
+- `auth.ts` L56（启动 loadConfig）
 
-```
-backend/src/api/groups/
-├── index.ts              # 路由注册 + re-export groupsApi/shutdownGroupsApi（~400 行）
-├── crypto.ts             # encryptValidationKey / decryptValidationKey / generateValidationKey
-├── key-policy.ts         # assessKeyComplexity / calculateEntropy / generateSecurityRecommendations / validateKeyFormat
-├── validation.ts         # validateGroupData / validateGroupId / estimateToolComplexity + JsonSchema 类型
-└── core-service.ts       # [阶段2产物] getCoreServiceManager / reloadCoreServiceManager 的调用封装
-```
-
-拆分依据（来自探索）：
-- `crypto.ts`：依赖 `node:crypto`，与路由零耦合，天然分界
-- `key-policy.ts`：纯逻辑无外部依赖，仅 `generateSecurityRecommendations` → `assessKeyComplexity` 内部依赖
-- `validation.ts`：依赖 share 类型，`estimateToolComplexity` 带局部 `JsonSchema` 类型（L25-45）
-- `index.ts`：仅做 `new Hono()` + 路由 handler + re-export，对外接口不变（`hub.ts` 无需改动）
-
-### 3.2 移除硬编码弱密钥
-
-`crypto.ts`（原 L705）：
-```typescript
-// 修改前
-const secret = process.env.VALIDATION_KEY_SECRET || 'mcp-hub-default-secret-key';
-// 修改后
-const secret = process.env.VALIDATION_KEY_SECRET;
-if (!secret || secret.length < 32) {
-  throw new ConfigError(ErrorCode.INVALID_CONFIG_FORMAT, 'VALIDATION_KEY_SECRET 未设置或长度不足 32 字符');
-}
-```
-
-### 3.3 更新测试
-
-`backend/src/api/groups/groups.unit.test.ts` 当前检查路由存在性（17 条路由）。拆分后路由数量和路径不变，测试应继续通过。但需：
-- 更新 import 路径（如果测试直接 import 辅助函数）
-- 为拆出的 `crypto.ts` / `key-policy.ts` / `validation.ts` 各添加单元测试（这些函数之前内联在路由文件中，可能缺乏独立测试）
-
-### 验证
-- 路由测试 17 条全绿
-- 新增的 crypto/key-policy/validation 单元测试覆盖加密/解密对称性、密钥复杂度评分逻辑、校验规则
-- 弱密钥场景启动报错
-- `pnpm test` + `pnpm check` + `pnpm build`
+**策略**：A-1 和 A-2 在本轮做（核心价值），A-3 和 A-4 在后续 PR 做或注释标注 TODO。
 
 ---
 
-## 阶段 4：统一错误体系（3-5 天）
+## 任务 B：tool_manager.ts 拆分（1128 行 → 提取 ~335 行）
 
-### 4.1 ErrorCode → httpStatus 映射
+### B-1. 提取 `tool-result-transform.ts`（~135 行）
 
-在 `packages/core/src/errors/index.ts` 中新增：
+抽取两个**纯函数**（零 `this` 依赖）：
+- `transformToolResult(result: unknown): ToolResult`（L669-L777）
+- `formatError(error: unknown): string`（L779-L806）
 
-```typescript
-const ERROR_HTTP_STATUS: Record<ErrorCode, number> = {
-  // 配置错误 1000-1999 → 500 (服务器配置问题) / 400 (客户端提交配置问题)
-  [ErrorCode.INVALID_SERVER_CONFIG]: 500,
-  [ErrorCode.SCHEMA_VALIDATION_FAILED]: 400,
-  [ErrorCode.CONFIG_FILE_NOT_FOUND]: 500,
-  // 连接错误 2000-2999 → 502/503
-  [ErrorCode.SERVER_UNAVAILABLE]: 503,
-  [ErrorCode.CONNECTION_TIMEOUT]: 504,
-  [ErrorCode.AUTHENTICATION_FAILED]: 401,
-  // 运行时错误 3000-3999 → 404/403/500
-  [ErrorCode.TOOL_NOT_FOUND]: 404,
-  [ErrorCode.GROUP_NOT_FOUND]: 404,
-  [ErrorCode.TOOL_ACCESS_DENIED]: 403,
-  // 验证错误 4000-4999 → 400
-  [ErrorCode.INVALID_REQUEST_FORMAT]: 400,
-  [ErrorCode.MISSING_REQUIRED_PARAMETER]: 400,
-  // 系统错误 5000-5999 → 500
-  [ErrorCode.INTERNAL_SERVER_ERROR]: 500,
-  // 认证错误 6000-6999 → 401/403
-  [ErrorCode.AUTH_INVALID_CREDENTIALS]: 401,
-  [ErrorCode.AUTH_TOKEN_EXPIRED]: 401,
-  [ErrorCode.AUTH_ACCESS_DENIED]: 403,
-  // ... 其余映射
-};
+文件位置：`backend/src/services/tool-result-transform.ts`
 
-export function getHttpStatusForError(code: ErrorCode): number {
-  return ERROR_HTTP_STATUS[code] ?? 500;
-}
-```
+`ToolManager` 类中改为 `import { transformToolResult, formatError }` 并删除私有方法。调用点仅 1 处（`executeToolWithRetry` L280 调 `transformToolResult`，内部调 `formatError`）。
 
-### 4.2 更新 errorResponse()
+### B-2. 提取 `tool-arg-validator.ts`（~200 行）
 
-`backend/src/utils/api-response.ts`：
-```typescript
-export function errorResponse(c: Context, error: Error, status?: number): Response {
-  const requestId = c.get('requestId');
-  const formatted = defaultErrorHandler.formatErrorResponse(error, undefined, requestId);
-  // 如果调用方未指定 status 且是结构化错误，从 ErrorCode 推导
-  const httpStatus = status ?? (error instanceof McpHubCoreError
-    ? getHttpStatusForError(error.code)
-    : 500);
-  logger.error('API error', error, { requestId, path: c.req.path, method: c.req.method });
-  return c.json(formatted, httpStatus as 500);
-}
-```
+抽取参数校验逻辑：
+- `validateToolArgsWithSchema(tool, args)`（L428-L534）
+- `validateArgumentType(argName, argValue, propSchema)`（L536-L613）
 
-### 4.3 废弃 backend McpHubError 家族
+文件位置：`backend/src/services/tool-arg-validator.ts`
 
-`backend/src/services/mcp_hub_service.ts` L14-52：
-- 给 5 个错误类加 `@deprecated 使用 core 包的 McpHubCoreError 体系` JSDoc
-- 内部 9 处 throw 逐步替换为 core 包对等类：
-  - `ServiceNotInitializedError` → `ServiceError(ErrorCode.SERVICE_UNAVAILABLE, ...)`
-  - `GroupNotFoundError` → `ServiceError(ErrorCode.GROUP_NOT_FOUND, ...)`
-  - `ToolNotFoundError` → `ToolExecutionError(ErrorCode.TOOL_NOT_FOUND, ...)`
-  - `ServiceInitializationError` → `ConfigError(ErrorCode.SERVER_STARTUP_FAILED, ...)`
+这两个函数只依赖 `Tool` 类型和 `logger`，不需要 `serverManager`/`groupManager`。`validateToolArgs` 公共方法保留在 `ToolManager` 中（它需要 `findToolDefinition`），但委托给提取出的函数。
 
-### 4.4 分批替换裸 Error（73 处，按风险排序）
+### B-3. 拆分后效果
 
-**第一批（安全相关，16 处）**：`services/auth.ts`
-- 登录失败 → `AuthError(ErrorCode.AUTH_INVALID_CREDENTIALS, ...)`
-- Token 过期 → `AuthError(ErrorCode.AUTH_TOKEN_EXPIRED, ...)`
-- Token 无效 → `AuthError(ErrorCode.AUTH_TOKEN_INVALID, ...)`
-
-**第二批（API 层，9 处）**：`api/groups/index.ts`（拆分后的 index.ts）
-- 组不存在 → `ServiceError(ErrorCode.GROUP_NOT_FOUND, ...)`
-- 校验失败 → `ValidationError(ErrorCode.INVALID_PARAMETER_VALUE, ...)`
-
-**第三批（service 层）**：`api-to-mcp-web-service.ts`(12) → `server_manager.ts`(7) → `mcp_service.ts`(6) → `config_service.ts`(4) → 其余
-
-每批替换后跑测试验证，不一次性全改。
-
-### 验证
-- `pnpm test` 全绿（需要更新 mock 断言，因为错误类型变了）
-- 用 curl 验证错误响应的 HTTP 状态码正确（404 vs 400 vs 500 vs 401）
-- `pnpm check` + `pnpm build`
-- `@deprecated` 标记不影响运行，后续 PR 逐步清理
+- `tool_manager.ts`：从 1128 行降至 ~800 行，保留编排逻辑
+- `tool-result-transform.ts`：~135 行纯函数
+- `tool-arg-validator.ts`：~200 行纯函数
+- 新增独立的单元测试覆盖 `transformToolResult` 的多分支逻辑（当前只通过 `executeTool` 间接测试）
 
 ---
 
-## 横切关注点
+## 任务 C：消除 `as unknown as` 类型断言（19 处，按根因分组）
 
-### 测试策略
-- 每阶段完成后立即 `pnpm test` + `pnpm check` + `pnpm build`
-- 阶段 3 拆分出的纯函数（crypto/key-policy/validation）需要新增单元测试
-- 阶段 4 错误类型变更需要更新相关测试的 mock 断言
+### C-1. DeepReadonly 边界问题（核心，~6 处）
 
-### 文档同步
-- 每阶段完成后更新对应文档（CLAUDE.md 的错误处理章节、TROUBLESHOOTING.md 的弱密钥说明等）
-- 不在本次修改 README（产品定位文档后续单独处理）
+**根因**：`getAllConfig()` 返回 `DeepReadonly<T>`，但 core 的 `initializeFromConfig` 形参要求可变 `McpServerConfig`。
 
-### 分支策略
-- 每个阶段一个 commit（或拆得更细），保持 main 分支始终可运行
-- 不创建新分支（当前在 main，用户未要求 PR 流程）
+**方案**：让 core 的 `McpServerConfig` 和 `initializeFromConfig` 形参接受 `Readonly` 版本。
+
+具体改动：
+- `packages/core/src/types/config.ts`：`McpServerConfig` 的 `servers`/`groups` 字段加 `Readonly` 前缀
+- `packages/core/src/services/mcp/service-manager.ts`：`initializeFromConfig(config: Readonly<McpServerConfig>)`
+- `backend/src/services/service-registry.ts`：移除 `as never`（L94-95）
+- `backend/src/types/config-helpers.ts`：移除 `as McpServerConfig` 或用 `satisfies`
+- `backend/src/utils/config.ts`：`asMutable` 函数评估是否仍需要
+
+### C-2. McpContentItem 内容类型断言（6 处，mcp_service.ts）
+
+**根因**：`{ type: 'text' as const, text: ... }` 的字面量类型与 `McpContentItem` union 的精确匹配问题。
+
+**方案**：利用已有的 `normalizeMcpContent()` 函数包装，让类型推导自然完成。或定义一个 helper `createTextContent(text: string): McpContentItem`。
+
+### C-3. 配置校验入口断言（3 处，config_service.ts L224/660/754）
+
+**根因**：`Record<string, unknown>` 直接断言为 `McpConfig`/`SystemConfig`。
+
+**方案**：改用 share 包的 `McpConfigSchema.parse(config)` / `SystemConfigSchema.parse(config)` 做 schema 校验后获得推导类型，而非断言。
+
+### C-4. 非配置类局部断言（4 处）
+
+- `tools/index.ts` L299/L324：`result.content as unknown as Record<string, unknown>` — 改用类型守卫
+- `group-service.ts` L357/L378：JSONSchema/CallToolResult 断言 — 改用 schema 解析或类型守卫
+
+### C-5. 不可消除的合理断言（5 处，标注后保留）
+
+- `dashboard/index.ts` L124：mock 构造，合理
+- `frontend-logger.ts` L87/L109：浏览器环境探测，合理
+- `cli-mcp-server.ts` L241：绕过 SDK 类型限制，合理
+- `api-executor.ts` L165：错误响应 undefined 字段，用可选字段改善
+
+---
+
+## 实施顺序
+
+1. **任务 B**（tool_manager 拆分）— 最独立，不影响其他改动
+2. **任务 A-1**（高价值 Error 替换）+ **A-2**（auth 全量）— 需要同步改 api 层
+3. **任务 C-1**（DeepReadonly 边界）— 改 core 包形参，影响面广
+4. **任务 C-2/C-3**（内容类型 + 配置校验断言）
+5. **A-3/A-4** 和 **C-4** 作为可选收尾
+
+每步完成后 `pnpm test + check + build` 验证，单独 commit。
+
+## 分支策略
+
+继续在 `fix/p0-p1-architecture-cleanup` 分支上追加 commit（PR #5 尚未合并）。如果 PR 已合并则新起分支。

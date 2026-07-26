@@ -1,3 +1,4 @@
+import { ConfigError, ErrorCode } from '@mcp-core/mcp-hub-core';
 import {
   GroupConfigSchema,
   McpConfigSchema,
@@ -95,7 +96,7 @@ export class ConfigService implements IConfigService {
         fileName = 'group.json';
         break;
       default:
-        throw new Error(`不支持的配置类型: ${configType}`);
+        throw new ConfigError(ErrorCode.INVALID_CONFIG_FORMAT, `不支持的配置类型: ${configType}`);
     }
 
     // 保存配置
@@ -129,7 +130,7 @@ export class ConfigService implements IConfigService {
           schema = groupConfigSchema;
           break;
         default:
-          throw new Error(`不支持的配置类型: ${configType}`);
+          throw new ConfigError(ErrorCode.INVALID_CONFIG_FORMAT, `不支持的配置类型: ${configType}`);
       }
 
       // 使用 Zod 验证配置
@@ -221,6 +222,8 @@ export class ConfigService implements IConfigService {
     errors: ConfigValidationError[],
     _warnings: ConfigValidationWarning[],
   ): Promise<void> {
+    // NOTE: 类型断言是安全的——此函数在 validateConfig 中被调用，
+    // 调用前已由 Zod schema 校验过结构。这里只是用强类型做自定义校验。
     const mcpConfig = config as unknown as McpConfig;
 
     // 验证服务器配置
@@ -363,10 +366,7 @@ export class ConfigService implements IConfigService {
 
       return history;
     } catch (error) {
-      logger.error(
-        '获取配置历史失败',
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.error('获取配置历史失败', error instanceof Error ? error : new Error(String(error)));
       return [];
     }
   }
@@ -387,7 +387,11 @@ export class ConfigService implements IConfigService {
     }
   }
 
-  async createBackup(description?: string, includeTypes?: ConfigType[], user?: string): Promise<string> {
+  async createBackup(
+    description?: string,
+    includeTypes?: ConfigType[],
+    user?: string,
+  ): Promise<string> {
     const backupId = crypto.randomUUID();
     const timestamp = new Date().toISOString();
     const currentConfig = await this.getCurrentConfig();
@@ -433,7 +437,7 @@ export class ConfigService implements IConfigService {
     const backupFile = backupFiles.find((file) => file.includes(backupId));
 
     if (!backupFile) {
-      throw new Error(`备份文件不存在: ${backupId}`);
+      throw new ConfigError(ErrorCode.CONFIG_FILE_NOT_FOUND, `备份文件不存在: ${backupId}`);
     }
 
     const backupFilePath = path.resolve(this.backupDir, backupFile);
@@ -523,10 +527,7 @@ export class ConfigService implements IConfigService {
 
       return backups;
     } catch (error) {
-      logger.error(
-        '获取备份列表失败',
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.error('获取备份列表失败', error instanceof Error ? error : new Error(String(error)));
       return [];
     }
   }
@@ -536,10 +537,7 @@ export class ConfigService implements IConfigService {
       const backupFiles = await fs.readdir(this.backupDir);
       return backupFiles.length;
     } catch (error) {
-      logger.error(
-        '获取备份总数失败',
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.error('获取备份总数失败', error instanceof Error ? error : new Error(String(error)));
       return 0;
     }
   }
@@ -600,10 +598,7 @@ export class ConfigService implements IConfigService {
 
       await fs.writeFile(historyFilePath, JSON.stringify(historyEntry, null, 2), 'utf-8');
     } catch (error) {
-      logger.error(
-        '记录配置历史失败',
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.error('记录配置历史失败', error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -665,6 +660,7 @@ export class ConfigService implements IConfigService {
     config: Record<string, unknown>,
     tests: ConfigTest[],
   ): Promise<void> {
+    // NOTE: 类型断言是安全的——此函数在 testConfig 中被调用，用于测试已校验的配置。
     const systemConfig = config as unknown as SystemConfig;
 
     // 测试端口可用性
@@ -759,6 +755,8 @@ export class ConfigService implements IConfigService {
   }
 
   private async testMcpConfig(config: Record<string, unknown>, tests: ConfigTest[]): Promise<void> {
+    // NOTE: 类型断言是安全的——此函数在 validateConfig 中被调用，
+    // 调用前已由 Zod schema 校验过结构。这里只是用强类型做自定义校验。
     const mcpConfig = config as unknown as McpConfig;
 
     // 测试服务器配置
@@ -928,7 +926,7 @@ export class ConfigService implements IConfigService {
         oldConfig = currentConfig.groups;
         break;
       default:
-        throw new Error(`不支持的配置类型: ${configType}`);
+        throw new ConfigError(ErrorCode.INVALID_CONFIG_FORMAT, `不支持的配置类型: ${configType}`);
     }
 
     const changes = this.calculateDetailedChanges(oldConfig, config);

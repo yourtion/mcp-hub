@@ -1,4 +1,8 @@
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+
 import { logger } from '../utils/logger.js';
+import { validateToolArgsWithSchema } from './tool-arg-validator.js';
+import { transformToolResult } from './tool-result-transform.js';
 
 import type {
   Group,
@@ -6,7 +10,6 @@ import type {
   ToolManager as IToolManager,
   ServerManager,
   Tool,
-  ToolContent,
   ToolResult,
 } from '../types/mcp-hub.js';
 import type { ApiToolIntegrationService } from './api_tool_integration_service.js';
@@ -122,7 +125,7 @@ export class ToolManager implements IToolManager {
       const { serverId, tool, isApiTool } = routingResult;
 
       // Step 4: Validate tool arguments against schema
-      const argsValidation = this.validateToolArgsWithSchema(tool, args);
+      const argsValidation = validateToolArgsWithSchema(tool, args);
       if (!argsValidation.isValid) {
         const error = new Error(
           `Invalid arguments for tool '${toolName}': ${argsValidation.error}`,
@@ -277,7 +280,7 @@ export class ToolManager implements IToolManager {
           attempt,
         });
 
-        return this.transformToolResult(result);
+        return transformToolResult(result);
       } catch (error) {
         lastError = error as Error;
         logger.warn('Tool execution attempt failed', {
@@ -413,7 +416,7 @@ export class ToolManager implements IToolManager {
         return true;
       }
 
-      const validation = this.validateToolArgsWithSchema(tool, args);
+      const validation = validateToolArgsWithSchema(tool, args);
       return validation.isValid;
     } catch (error) {
       logger.error('Error validating tool arguments', error as Error, {
@@ -423,193 +426,6 @@ export class ToolManager implements IToolManager {
       // On validation error, allow execution and let server handle it
       return true;
     }
-  }
-
-  private validateToolArgsWithSchema(
-    tool: Tool,
-    args: Record<string, unknown>,
-  ): { isValid: boolean; error?: string } {
-    logger.debug('Validating tool arguments with schema', {
-      toolName: tool.name,
-      args,
-      schema: tool.inputSchema,
-    });
-
-    try {
-      // If no schema provided, allow all arguments
-      if (!tool.inputSchema || typeof tool.inputSchema !== 'object') {
-        logger.debug('No schema provided, allowing all arguments', {
-          toolName: tool.name,
-        });
-        return { isValid: true };
-      }
-
-      const schema = tool.inputSchema as {
-        type?: string;
-        properties?: Record<string, unknown>;
-        required?: string[];
-        additionalProperties?: boolean;
-      };
-
-      // Validate required fields
-      if (schema.required && Array.isArray(schema.required)) {
-        for (const requiredField of schema.required) {
-          if (!(requiredField in args)) {
-            const error = `Missing required argument: ${requiredField}`;
-            logger.warn('Missing required argument', {
-              toolName: tool.name,
-              requiredField,
-              providedArgs: Object.keys(args),
-            });
-            return { isValid: false, error };
-          }
-
-          // Check for null/undefined values in required fields
-          if (args[requiredField] === null || args[requiredField] === undefined) {
-            const error = `Required argument '${requiredField}' cannot be null or undefined`;
-            logger.warn('Required argument is null/undefined', {
-              toolName: tool.name,
-              requiredField,
-            });
-            return { isValid: false, error };
-          }
-        }
-      }
-
-      // Validate property types if schema properties are defined
-      if (schema.properties && typeof schema.properties === 'object') {
-        for (const [argName, argValue] of Object.entries(args)) {
-          const propSchema = (schema.properties as Record<string, Record<string, unknown>>)[
-            argName
-          ];
-          if (propSchema && typeof propSchema === 'object') {
-            const typeValidation = this.validateArgumentType(argName, argValue, propSchema);
-            if (!typeValidation.isValid) {
-              logger.warn('Argument type validation failed', {
-                toolName: tool.name,
-                argName,
-                argValue,
-                expectedType: propSchema.type,
-                error: typeValidation.error,
-              });
-              return typeValidation;
-            }
-          }
-        }
-      }
-
-      // Check for additional properties if not allowed
-      if (
-        schema.additionalProperties === false &&
-        schema.properties &&
-        typeof schema.properties === 'object'
-      ) {
-        const allowedProps = Object.keys(schema.properties);
-        const providedProps = Object.keys(args);
-        const extraProps = providedProps.filter((prop) => !allowedProps.includes(prop));
-
-        if (extraProps.length > 0) {
-          const error = `Additional properties not allowed: ${extraProps.join(', ')}`;
-          logger.warn('Additional properties provided', {
-            toolName: tool.name,
-            extraProps,
-            allowedProps,
-          });
-          return { isValid: false, error };
-        }
-      }
-
-      logger.debug('Tool arguments validation passed', {
-        toolName: tool.name,
-      });
-      return { isValid: true };
-    } catch (error) {
-      logger.error('Error during schema validation', error as Error, {
-        toolName: tool.name,
-        args,
-      });
-      // On validation error, allow execution and let server handle it
-      return { isValid: true };
-    }
-  }
-
-  private validateArgumentType(
-    argName: string,
-    argValue: unknown,
-    propSchema: Record<string, unknown>,
-  ): { isValid: boolean; error?: string } {
-    if (!propSchema.type) {
-      return { isValid: true }; // No type specified, allow any
-    }
-
-    const expectedType = propSchema.type;
-    const actualType = typeof argValue;
-
-    switch (expectedType) {
-      case 'string':
-        if (actualType !== 'string') {
-          return {
-            isValid: false,
-            error: `Argument '${argName}' must be a string, got ${actualType}`,
-          };
-        }
-        break;
-
-      case 'number':
-        if (actualType !== 'number' || Number.isNaN(argValue as number)) {
-          return {
-            isValid: false,
-            error: `Argument '${argName}' must be a number, got ${actualType}`,
-          };
-        }
-        break;
-
-      case 'integer':
-        if (actualType !== 'number' || !Number.isInteger(argValue as number)) {
-          return {
-            isValid: false,
-            error: `Argument '${argName}' must be an integer, got ${actualType}`,
-          };
-        }
-        break;
-
-      case 'boolean':
-        if (actualType !== 'boolean') {
-          return {
-            isValid: false,
-            error: `Argument '${argName}' must be a boolean, got ${actualType}`,
-          };
-        }
-        break;
-
-      case 'array':
-        if (!Array.isArray(argValue)) {
-          return {
-            isValid: false,
-            error: `Argument '${argName}' must be an array, got ${actualType}`,
-          };
-        }
-        break;
-
-      case 'object':
-        if (actualType !== 'object' || argValue === null || Array.isArray(argValue)) {
-          return {
-            isValid: false,
-            error: `Argument '${argName}' must be an object, got ${actualType}`,
-          };
-        }
-        break;
-
-      default:
-        // Unknown type, allow it
-        logger.debug('Unknown type in schema, allowing', {
-          argName,
-          expectedType,
-        });
-        break;
-    }
-
-    return { isValid: true };
   }
 
   private getCachedTools(groupId: string): Tool[] | null {
@@ -664,145 +480,6 @@ export class ToolManager implements IToolManager {
     }
 
     return undefined;
-  }
-
-  private transformToolResult(result: unknown): ToolResult {
-    logger.debug('Transforming tool result', { result });
-
-    try {
-      // Handle different result formats from MCP servers
-      if (result && typeof result === 'object') {
-        const mcpResult = result as {
-          content?: unknown[];
-          isError?: boolean;
-          error?: unknown;
-          _meta?: {
-            progressToken?: string;
-          };
-        };
-
-        // If it's already in the expected format
-        if (mcpResult.content && Array.isArray(mcpResult.content)) {
-          logger.debug('Result already in expected format', {
-            contentLength: mcpResult.content.length,
-            isError: mcpResult.isError,
-          });
-          return {
-            content: mcpResult.content as ToolContent[],
-            isError: mcpResult.isError || false,
-          };
-        }
-
-        // If it's an error result
-        if (mcpResult.error) {
-          logger.debug('Transforming error result', { error: mcpResult.error });
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Error: ${this.formatError(mcpResult.error)}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-
-        // Handle other object formats
-        if (Object.keys(mcpResult).length > 0) {
-          logger.debug('Transforming object result to text');
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(mcpResult, null, 2),
-              },
-            ],
-            isError: false,
-          };
-        }
-      }
-
-      // Handle primitive types
-      if (typeof result === 'string') {
-        logger.debug('Transforming string result');
-        return {
-          content: [{ type: 'text', text: result }],
-          isError: false,
-        };
-      }
-
-      if (typeof result === 'number' || typeof result === 'boolean') {
-        logger.debug('Transforming primitive result', { type: typeof result });
-        return {
-          content: [{ type: 'text', text: String(result) }],
-          isError: false,
-        };
-      }
-
-      // Handle null/undefined
-      if (result === null || result === undefined) {
-        logger.debug('Transforming null/undefined result');
-        return {
-          content: [{ type: 'text', text: String(result) }],
-          isError: false,
-        };
-      }
-
-      // Default transformation - stringify everything else
-      logger.debug('Using default transformation');
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-        isError: false,
-      };
-    } catch (error) {
-      logger.error('Error transforming tool result', error as Error, {
-        originalResult: result,
-      });
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Error transforming result: ${(error as Error).message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-  }
-
-  private formatError(error: unknown): string {
-    if (typeof error === 'string') {
-      return error;
-    }
-
-    if (error && typeof error === 'object') {
-      const errorObj = error as {
-        message?: string;
-        code?: string | number;
-        data?: unknown;
-      };
-
-      if (errorObj.message) {
-        let formatted = errorObj.message;
-        if (errorObj.code) {
-          formatted = `[${errorObj.code}] ${formatted}`;
-        }
-        if (errorObj.data) {
-          formatted += ` (${JSON.stringify(errorObj.data)})`;
-        }
-        return formatted;
-      }
-
-      return JSON.stringify(error);
-    }
-
-    return String(error);
   }
 
   // Error handling and monitoring methods
@@ -935,7 +612,7 @@ export class ToolManager implements IToolManager {
       // Get the group and its servers
       const group = this.groupManager.getGroup(groupId);
       if (!group) {
-        throw new Error(`Group ${groupId} not found`);
+        throw new ServiceError(ErrorCode.GROUP_NOT_FOUND, `Group ${groupId} not found`);
       }
 
       const toolsByServer = new Map<string, Tool[]>();

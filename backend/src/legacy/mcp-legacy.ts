@@ -6,23 +6,17 @@
  * 替代 API：`GET /api/servers`, `GET /api/tools`, `POST /api/debug/tool-test`
  */
 
-import {
-  McpServiceManager,
-  performanceMonitor,
-  performanceOptimizer,
-} from '@mcp-core/mcp-hub-core';
+import { performanceMonitor, performanceOptimizer } from '@mcp-core/mcp-hub-core';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { toFetchResponse, toReqRes } from 'fetch-to-node';
 import { Hono } from 'hono';
 
 import { initializeMcpService, mcpServer } from '../services/mcp_service.js';
-import { toMcpServerConfig } from '../types/config-helpers.js';
-import { getAllConfig } from '../utils/config.js';
+import { getCoreServiceManager } from '../services/service-registry.js';
 import { logger } from '../utils/logger.js';
 import { deprecationMiddleware } from './deprecation.js';
 
 import type { Tool } from '../types/mcp-hub.js';
-import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share';
 
 export const mcp = new Hono();
 
@@ -36,8 +30,6 @@ mcp.use('/mcp', deprecationMiddleware(LEGACY_SUNSET));
 
 // Track initialization state
 let isInitialized = false;
-// 核心服务管理器实例（用于管理和调试功能）
-let coreServiceManager: McpServiceManager | null = null;
 
 // Initialize the MCP service
 async function ensureMcpServiceInitialized(): Promise<void> {
@@ -51,16 +43,8 @@ async function ensureMcpServiceInitialized(): Promise<void> {
     // 初始化传统MCP服务（向后兼容）
     await initializeMcpService();
 
-    // 初始化核心服务管理器（用于管理功能）
-    if (!coreServiceManager) {
-      const config = await getAllConfig();
-      coreServiceManager = new McpServiceManager();
-      const coreConfig = toMcpServerConfig({
-        mcps: config.mcps as McpConfig,
-        groups: config.groups as GroupConfig,
-      });
-      await coreServiceManager.initializeFromConfig(coreConfig);
-    }
+    // 初始化核心服务管理器（用于管理功能，通过 registry 统一管理）
+    await getCoreServiceManager();
 
     isInitialized = true;
     logger.info('Enhanced MCP Service initialized successfully');
@@ -145,10 +129,7 @@ mcp.get('/mcp/status', async (c) => {
     }
 
     await ensureMcpServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const status = coreServiceManager.getServiceStatus();
     const serverConnections = coreServiceManager.getServerConnections();
@@ -224,10 +205,7 @@ mcp.get('/mcp/tools', async (c) => {
     }
 
     await ensureMcpServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const allTools = await coreServiceManager.getAllTools();
 
@@ -295,10 +273,7 @@ mcp.get('/mcp/tools', async (c) => {
 mcp.get('/mcp/servers/:serverId', async (c) => {
   try {
     await ensureMcpServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const serverId = c.req.param('serverId');
     const serverConnections = coreServiceManager.getServerConnections();
@@ -361,10 +336,7 @@ mcp.get('/mcp/servers/:serverId', async (c) => {
 mcp.post('/mcp/execute', async (c) => {
   try {
     await ensureMcpServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const body = await c.req.json();
     const { toolName, args, serverId } = body;
@@ -414,10 +386,7 @@ mcp.post('/mcp/execute', async (c) => {
 mcp.get('/mcp/health', async (c) => {
   try {
     await ensureMcpServiceInitialized();
-
-    if (!coreServiceManager) {
-      throw new Error('核心服务管理器未初始化');
-    }
+    const coreServiceManager = await getCoreServiceManager();
 
     const status = coreServiceManager.getServiceStatus();
     // 计算健康分数
@@ -477,11 +446,7 @@ export async function shutdownMcpService(): Promise<void> {
     const { shutdownMcpService: shutdownService } = await import('../services/mcp_service.js');
     await shutdownService();
 
-    // 关闭核心服务管理器
-    if (coreServiceManager) {
-      await coreServiceManager.shutdown();
-      coreServiceManager = null;
-    }
+    // 核心服务管理器由 registry 统一关闭，此处无需处理
 
     isInitialized = false;
     logger.info('Enhanced MCP Service shutdown completed');

@@ -1,4 +1,4 @@
-import { McpServiceManager } from '@mcp-core/mcp-hub-core';
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -7,14 +7,12 @@ import { z } from 'zod/v4';
 // 读取 package.json
 const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf-8'));
 
-import { toMcpServerConfig } from '../types/config-helpers.js';
-import { type McpContentItem, normalizeMcpContent } from '../types/mcp-content.js';
+import { createTextContent, normalizeMcpContent } from '../types/mcp-content.js';
 import { getAllConfig } from '../utils/config.js';
 import { logger } from '../utils/logger.js';
 import { convertToZodSchema } from '../utils/zod-schema-converter.js';
 import { McpHubService } from './mcp_hub_service.js';
-
-import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share';
+import { initCoreServiceManager, shutdownCoreServiceManager } from './service-registry.js';
 
 // Create the MCP server instance
 export const mcpServer = new McpServer({
@@ -24,8 +22,6 @@ export const mcpServer = new McpServer({
 
 // Global hub service instance
 let hubService: McpHubService | null = null;
-// Global core service manager instance
-let coreServiceManager: McpServiceManager | null = null;
 
 /**
  * Initialize the MCP Hub Service and register dynamic tools
@@ -34,20 +30,12 @@ export async function initializeMcpService(): Promise<void> {
   try {
     logger.info('Initializing MCP Service with Hub integration and Core package');
 
-    // Load configurations
-    const config = await getAllConfig();
-
-    // Create and initialize core service manager
-    coreServiceManager = new McpServiceManager();
-    // 转换配置格式以匹配核心包期望的格式
-    const coreConfig = toMcpServerConfig({
-      mcps: config.mcps as unknown as McpConfig,
-      groups: config.groups as unknown as GroupConfig,
-    });
-    await coreServiceManager.initializeFromConfig(coreConfig);
+    // Initialize core service manager via registry
+    await initCoreServiceManager();
 
     // Create and initialize hub service (for backward compatibility)
-    hubService = new McpHubService(config.mcps.servers as never, config.groups as never);
+    const config = await getAllConfig();
+    hubService = new McpHubService(config.mcps.servers, config.groups);
 
     await hubService.initialize();
 
@@ -77,7 +65,7 @@ async function registerHubTools(): Promise<void> {
     async ({ groupId }) => {
       try {
         if (!hubService) {
-          throw new Error('Hub service not initialized');
+          throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Hub service not initialized');
         }
 
         const status = hubService.getServiceStatus();
@@ -128,7 +116,7 @@ async function registerHubTools(): Promise<void> {
     async ({ groupId }) => {
       try {
         if (!hubService) {
-          throw new Error('Hub service not initialized');
+          throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Hub service not initialized');
         }
 
         const tools = await hubService.listTools(groupId);
@@ -177,7 +165,7 @@ async function registerHubTools(): Promise<void> {
     async ({ toolName, args, groupId }) => {
       try {
         if (!hubService) {
-          throw new Error('Hub service not initialized');
+          throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Hub service not initialized');
         }
 
         const result = await hubService.callTool(toolName, args, groupId);
@@ -185,12 +173,11 @@ async function registerHubTools(): Promise<void> {
         if (result.isError) {
           return {
             content: [
-              {
-                type: 'text' as const,
-                text: `Tool execution failed: ${JSON.stringify(result.content, null, 2)}`,
-              },
+              createTextContent(
+                `Tool execution failed: ${JSON.stringify(result.content, null, 2)}`,
+              ),
             ],
-          } as unknown as { content: McpContentItem[] };
+          };
         }
 
         // Ensure content has proper typing
@@ -198,17 +185,14 @@ async function registerHubTools(): Promise<void> {
 
         return {
           content: typedContent,
-        } as unknown as { content: McpContentItem[] };
+        };
       } catch (error) {
         logger.error('Error executing tool', error as Error);
         return {
           content: [
-            {
-              type: 'text' as const,
-              text: `Error executing tool '${toolName}': ${(error as Error).message}`,
-            },
+            createTextContent(`Error executing tool '${toolName}': ${(error as Error).message}`),
           ],
-        } as unknown as { content: McpContentItem[] };
+        };
       }
     },
   );
@@ -217,7 +201,7 @@ async function registerHubTools(): Promise<void> {
   mcpServer.tool('hub_diagnostics', {}, async () => {
     try {
       if (!hubService) {
-        throw new Error('Hub service not initialized');
+        throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Hub service not initialized');
       }
 
       const diagnostics = await hubService.getServiceDiagnostics();
@@ -252,7 +236,7 @@ async function registerHubTools(): Promise<void> {
 async function registerDynamicTools(): Promise<void> {
   try {
     if (!hubService) {
-      throw new Error('Hub service not initialized');
+      throw new ServiceError(ErrorCode.SERVICE_UNAVAILABLE, 'Hub service not initialized');
     }
 
     // Get all groups and their tools
@@ -281,7 +265,10 @@ async function registerDynamicTools(): Promise<void> {
           mcpServer.tool(toolName, zodSchema, async (args) => {
             try {
               if (!hubService) {
-                throw new Error('Hub service not initialized');
+                throw new ServiceError(
+                  ErrorCode.SERVICE_UNAVAILABLE,
+                  'Hub service not initialized',
+                );
               }
 
               const result = await hubService.callTool(tool.name, args, groupId);
@@ -289,12 +276,11 @@ async function registerDynamicTools(): Promise<void> {
               if (result.isError) {
                 return {
                   content: [
-                    {
-                      type: 'text' as const,
-                      text: `Tool execution failed: ${JSON.stringify(result.content, null, 2)}`,
-                    },
+                    createTextContent(
+                      `Tool execution failed: ${JSON.stringify(result.content, null, 2)}`,
+                    ),
                   ],
-                } as unknown as { content: McpContentItem[] };
+                };
               }
 
               // Ensure content has proper typing
@@ -302,17 +288,12 @@ async function registerDynamicTools(): Promise<void> {
 
               return {
                 content: typedContent,
-              } as unknown as { content: McpContentItem[] };
+              };
             } catch (error) {
               logger.error(`Error executing dynamic tool ${toolName}`, error as Error);
               return {
-                content: [
-                  {
-                    type: 'text' as const,
-                    text: `Error executing tool: ${(error as Error).message}`,
-                  },
-                ],
-              } as unknown as { content: McpContentItem[] };
+                content: [createTextContent(`Error executing tool: ${(error as Error).message}`)],
+              };
             }
           });
         }
@@ -345,10 +326,10 @@ export async function shutdownMcpService(): Promise<void> {
       hubService = null;
     }
 
-    if (coreServiceManager) {
+    const manager = await shutdownCoreServiceManager();
+    if (manager) {
       logger.info('Shutting down Core Service Manager');
-      await coreServiceManager.shutdown();
-      coreServiceManager = null;
+      await manager.shutdown();
     }
 
     logger.info('MCP Service shutdown completed');

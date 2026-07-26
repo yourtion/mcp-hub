@@ -3,6 +3,7 @@
  * 整合API到MCP核心功能，提供Web API所需的完整服务
  */
 
+import { ConfigError, ErrorCode, McpHubCoreError, ValidationError } from '@mcp-core/mcp-hub-core';
 import { ConfigLoadError } from '@mcp-core/mcp-hub-core/api-to-mcp';
 import { promises as fs } from 'node:fs';
 import { homedir } from 'node:os';
@@ -68,7 +69,11 @@ export class ApiToMcpWebService {
       }
     } catch (error) {
       logger.error('API到MCP Web服务初始化失败', error as Error);
-      throw new Error(`初始化失败: ${(error as Error).message}`, { cause: error });
+      throw new McpHubCoreError(
+        ErrorCode.INTERNAL_SERVER_ERROR,
+        `初始化失败: ${(error as Error).message}`,
+        error,
+      );
     }
   }
 
@@ -95,7 +100,11 @@ export class ApiToMcpWebService {
       return { configs };
     } catch (error) {
       logger.error('获取API配置列表失败', error as Error);
-      throw new Error(`获取配置列表失败: ${(error as Error).message}`, { cause: error });
+      throw new McpHubCoreError(
+        ErrorCode.INTERNAL_SERVER_ERROR,
+        `获取配置列表失败: ${(error as Error).message}`,
+        error,
+      );
     }
   }
 
@@ -107,7 +116,7 @@ export class ApiToMcpWebService {
       logger.info('创建新的API配置', { configId: config.id });
 
       if (!this.configPath) {
-        throw new Error('配置文件路径未设置，无法创建配置');
+        throw new ConfigError(ErrorCode.INVALID_CONFIG_FORMAT, '配置文件路径未设置，无法创建配置');
       }
 
       // 验证配置数据
@@ -158,7 +167,7 @@ export class ApiToMcpWebService {
       logger.info('更新API配置', { configId });
 
       if (!this.configPath) {
-        throw new Error('配置文件路径未设置，无法更新配置');
+        throw new ConfigError(ErrorCode.INVALID_CONFIG_FORMAT, '配置文件路径未设置，无法更新配置');
       }
 
       // 验证配置数据
@@ -217,7 +226,7 @@ export class ApiToMcpWebService {
       logger.info('删除API配置', { configId });
 
       if (!this.configPath) {
-        throw new Error('配置文件路径未设置，无法删除配置');
+        throw new ConfigError(ErrorCode.INVALID_CONFIG_FORMAT, '配置文件路径未设置，无法删除配置');
       }
 
       // 加载现有配置
@@ -327,7 +336,11 @@ export class ApiToMcpWebService {
       return fullConfig;
     } catch (error) {
       logger.error('获取API配置详情失败', error as Error);
-      throw new Error(`获取配置详情失败: ${(error as Error).message}`, { cause: error });
+      throw new McpHubCoreError(
+        ErrorCode.INTERNAL_SERVER_ERROR,
+        `获取配置详情失败: ${(error as Error).message}`,
+        error,
+      );
     }
   }
 
@@ -336,23 +349,23 @@ export class ApiToMcpWebService {
    */
   private validateApiConfig(config: ApiToolConfig): void {
     if (!config.id || !config.id.trim()) {
-      throw new Error('配置ID不能为空');
+      throw new ValidationError(ErrorCode.MISSING_REQUIRED_PARAMETER, '配置ID不能为空');
     }
 
     if (!config.name || !config.name.trim()) {
-      throw new Error('配置名称不能为空');
+      throw new ValidationError(ErrorCode.MISSING_REQUIRED_PARAMETER, '配置名称不能为空');
     }
 
     if (!config.description || !config.description.trim()) {
-      throw new Error('配置描述不能为空');
+      throw new ValidationError(ErrorCode.MISSING_REQUIRED_PARAMETER, '配置描述不能为空');
     }
 
     if (!config.api || !config.api.url || !config.api.method) {
-      throw new Error('API配置不完整');
+      throw new ValidationError(ErrorCode.MISSING_REQUIRED_PARAMETER, 'API配置不完整');
     }
 
     if (!config.parameters || !config.parameters.properties) {
-      throw new Error('参数配置不完整');
+      throw new ValidationError(ErrorCode.MISSING_REQUIRED_PARAMETER, '参数配置不完整');
     }
   }
 
@@ -383,7 +396,7 @@ export class ApiToMcpWebService {
    */
   private async saveAllConfigs(configs: ApiToolConfig[]): Promise<void> {
     if (!this.configPath) {
-      throw new Error('配置文件路径未设置');
+      throw new ConfigError(ErrorCode.INVALID_CONFIG_FORMAT, '配置文件路径未设置');
     }
 
     // 确保目录存在
