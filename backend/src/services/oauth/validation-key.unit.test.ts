@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { encryptValidationKey } from '../../api/groups/crypto.js';
-
 import { verifyValidationKey } from './validation-key.js';
 
 describe('validation-key', () => {

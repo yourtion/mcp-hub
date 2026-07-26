@@ -1,3 +1,4 @@
+import { exportJWK, generateKeyPair } from 'jose';
 /**
  * 内置 AS 的 RSA 签名密钥管理
  *
@@ -19,12 +20,10 @@
 import { createPrivateKey, createPublicKey, randomBytes } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 
-import { exportJWK, generateKeyPair } from 'jose';
+import { logger } from '../../utils/logger.js';
 
 import type { JWK } from 'jose';
 import type { KeyObject } from 'node:crypto';
-
-import { logger } from '../../utils/logger.js';
 
 /** jose SignJWT.sign() 接受的密钥输入类型 */
 export type SigningKeyMaterial = KeyObject | CryptoKey | Uint8Array;

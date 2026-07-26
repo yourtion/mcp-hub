@@ -9,7 +9,6 @@
 import { timingSafeEqual } from 'node:crypto';
 
 import { decryptValidationKey } from '../../api/groups/crypto.js';
-
 import { logger } from '../../utils/logger.js';
 
 /**

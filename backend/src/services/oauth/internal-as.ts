@@ -1,3 +1,6 @@
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+import bcrypt from 'bcryptjs';
+import { SignJWT } from 'jose';
 /**
  * 内置最小 Authorization Server
  *
@@ -8,11 +11,6 @@
  * 为兼容测试与简单部署，若配置值不是 bcrypt hash 前缀（$2），按明文比较（带常量时间）。
  */
 import { timingSafeEqual } from 'node:crypto';
-
-import bcrypt from 'bcryptjs';
-import { SignJWT } from 'jose';
-
-import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 
 import { loadOrCreateSigningKey } from './crypto-keys.js';
 
@@ -50,7 +48,10 @@ export async function issueClientCredentialsToken(
 ): Promise<IssueTokenResult> {
   const internal = config.internal;
   if (!internal) {
-    throw new ServiceError(ErrorCode.OAUTH_CONFIG_ERROR, '内置 AS 未配置（mode=internal/both 需 oauth.internal）');
+    throw new ServiceError(
+      ErrorCode.OAUTH_CONFIG_ERROR,
+      '内置 AS 未配置（mode=internal/both 需 oauth.internal）',
+    );
   }
 
   // 1. 查 client

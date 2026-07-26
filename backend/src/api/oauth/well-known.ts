@@ -1,3 +1,5 @@
+import { getProtectedResourceMetadata } from '../../services/oauth/as-metadata.js';
+import { getInternalAsMetadata } from '../../services/oauth/internal-as.js';
 /**
  * /.well-known/oauth-protected-resource（RFC9728，MCP MUST）
  * /.well-known/oauth-authorization-server（RFC8414，内置 AS）
@@ -7,8 +9,6 @@
  * 这些路由挂载在根路径（不在 /api 下），由 app.ts 单独挂载。
  */
 import { getAllConfig } from '../../utils/config.js';
-import { getInternalAsMetadata } from '../../services/oauth/internal-as.js';
-import { getProtectedResourceMetadata } from '../../services/oauth/as-metadata.js';
 
 import type { OAuthConfig } from '../../services/oauth/types.js';
 import type { Context, Hono } from 'hono';
@@ -17,7 +17,9 @@ import type { Context, Hono } from 'hono';
  * 从配置 + 请求上下文推导 oauth 配置与对外 resource URL。
  * resource 优先级：oauth.internal?.issuer（显式）> Host 头 + OAUTH_PUBLIC_SCHEME（推导）。
  */
-async function loadOAuthAndResource(c: Context): Promise<{ oauth: OAuthConfig | undefined; resourceUrl: string }> {
+async function loadOAuthAndResource(
+  c: Context,
+): Promise<{ oauth: OAuthConfig | undefined; resourceUrl: string }> {
   const cfg = await getAllConfig();
   const oauth = cfg.system.oauth as OAuthConfig | undefined;
   const host = c.req.header('host') ?? 'localhost';

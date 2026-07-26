@@ -10,7 +10,6 @@ import { Hono } from 'hono';
 
 import { createMcpAuthMiddleware } from '../../middleware/mcp-auth.js';
 import { createResourceServer } from '../../services/oauth/resource-server.js';
-import type { ResourceServerDeps } from '../../services/oauth/resource-server.js';
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 import { GroupMcpService } from './group-service.js';
@@ -21,9 +20,10 @@ import {
   getGroupServicesCache,
 } from './mcp-handler-factory.js';
 
-import type { Context } from 'hono';
+import type { ResourceServerDeps } from '../../services/oauth/resource-server.js';
 import type { SystemConfig } from '@mcp-core/mcp-hub-share';
 import type { GroupConfig } from '@mcp-core/mcp-hub-share/config';
+import type { Context } from 'hono';
 
 export const groupMcpRouter = new Hono();
 

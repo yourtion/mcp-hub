@@ -26,7 +26,9 @@ describe('mcp-auth 中间件', () => {
       ok: true,
       context: { method: 'oauth', principal: 'c1', scope: 'mcp:tools' },
     });
-    const res = await makeApp(authenticate).request('/auth/g1', { headers: { Authorization: 'Bearer x' } });
+    const res = await makeApp(authenticate).request('/auth/g1', {
+      headers: { Authorization: 'Bearer x' },
+    });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.principal).toBe('c1');
@@ -50,7 +52,9 @@ describe('mcp-auth 中间件', () => {
       reason: 'audience',
       errorCode: 6103,
     });
-    const res = await makeApp(authenticate).request('/auth/g1', { headers: { Authorization: 'Bearer x' } });
+    const res = await makeApp(authenticate).request('/auth/g1', {
+      headers: { Authorization: 'Bearer x' },
+    });
     expect(res.status).toBe(401);
     expect(res.headers.get('WWW-Authenticate')).toContain('resource_metadata=');
   });
@@ -61,7 +65,9 @@ describe('mcp-auth 中间件', () => {
       reason: 'insufficient_scope',
       errorCode: 6104,
     });
-    const res = await makeApp(authenticate).request('/auth/g1', { headers: { Authorization: 'Bearer x' } });
+    const res = await makeApp(authenticate).request('/auth/g1', {
+      headers: { Authorization: 'Bearer x' },
+    });
     expect(res.status).toBe(403);
     expect(res.headers.get('WWW-Authenticate')).toContain('insufficient_scope');
     expect(res.headers.get('WWW-Authenticate')).toContain('scope=');

@@ -1,3 +1,4 @@
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 /**
  * Token 校验编排
  *
@@ -10,14 +11,12 @@
  */
 import { jwtVerify, importJWK, errors as joseErrors } from 'jose';
 
-import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 import { logger } from '../../utils/logger.js';
-
-import { createJwksCache } from './jwks-cache.js';
 import { getInternalPublicKeySet } from './crypto-keys.js';
+import { createJwksCache } from './jwks-cache.js';
 
-import type { OAuthConfig, TokenValidationResult, IntrospectionResult } from './types.js';
 import type { JwksCache } from './jwks-cache.js';
+import type { OAuthConfig, TokenValidationResult, IntrospectionResult } from './types.js';
 import type { JWK } from 'jose';
 
 export interface TokenValidatorDeps {
@@ -33,7 +32,10 @@ export interface TokenValidator {
 
 const INTROSPECTION_CACHE_TTL_MS = 60_000;
 
-export function createTokenValidator(config: OAuthConfig, deps: TokenValidatorDeps = {}): TokenValidator {
+export function createTokenValidator(
+  config: OAuthConfig,
+  deps: TokenValidatorDeps = {},
+): TokenValidator {
   const jwksCache = deps.jwksCache ?? createJwksCache();
   const introspectionCache = new Map<string, { result: IntrospectionResult; at: number }>();
 
@@ -204,7 +206,10 @@ async function introspect(
   requiredScope: string,
 ): Promise<TokenValidationResult> {
   if (!deps.introspectToken) {
-    throw new ServiceError(ErrorCode.OAUTH_CONFIG_ERROR, 'external 模式未注入 introspectToken 实现');
+    throw new ServiceError(
+      ErrorCode.OAUTH_CONFIG_ERROR,
+      'external 模式未注入 introspectToken 实现',
+    );
   }
   // 缓存
   const cached = cache.get(token);

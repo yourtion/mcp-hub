@@ -10,10 +10,13 @@
  */
 import { ErrorCode } from '@mcp-core/mcp-hub-core';
 
-import { buildInsufficientScopeHeader, buildWwwAuthenticateHeader } from '../services/oauth/as-metadata.js';
+import {
+  buildInsufficientScopeHeader,
+  buildWwwAuthenticateHeader,
+} from '../services/oauth/as-metadata.js';
 
-import type { McpAuthContext } from '../services/oauth/types.js';
 import type { ResourceServer } from '../services/oauth/resource-server.js';
+import type { McpAuthContext } from '../services/oauth/types.js';
 import type { Context, Next } from 'hono';
 
 /** 中间件可能返回的 HTTP status（401/403，均为 ContentfulStatusCode） */

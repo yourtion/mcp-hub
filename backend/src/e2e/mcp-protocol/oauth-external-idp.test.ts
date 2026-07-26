@@ -1,3 +1,4 @@
+import { SignJWT, generateKeyPair } from 'jose';
 /**
  * e2e：外部 IdP 对接
  *   JWT 本地验签路径（mock JWKS 端点）+ introspection 回退路径（mock introspect 端点）
@@ -6,7 +7,6 @@
  * MVP：本测试在 Hub 配置 oauth.external 指向 mock server，验证两条路径。
  */
 import { describe, expect, it } from 'vitest';
-import { SignJWT, generateKeyPair, exportJWK } from 'jose';
 
 import { defaultMcpTestConfig } from './mcp-test-config.js';
 

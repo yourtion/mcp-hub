@@ -15,7 +15,11 @@ describe('SystemConfigSchema oauth 字段', () => {
       },
     },
     users: {},
-    ui: { title: 't', theme: 'light', features: { apiToMcp: true, debugging: false, monitoring: true } },
+    ui: {
+      title: 't',
+      theme: 'light',
+      features: { apiToMcp: true, debugging: false, monitoring: true },
+    },
     monitoring: { metricsEnabled: true, logLevel: 'info', retentionDays: 30 },
   };
 
@@ -29,7 +33,10 @@ describe('SystemConfigSchema oauth 字段', () => {
       oauth: {
         mode: 'internal' as const,
         resource: 'https://hub.example.com',
-        internal: { tokenTtlSeconds: 3600, clients: [{ clientId: 'c1', clientSecret: 'h', scopes: ['mcp:tools'] }] },
+        internal: {
+          tokenTtlSeconds: 3600,
+          clients: [{ clientId: 'c1', clientSecret: 'h', scopes: ['mcp:tools'] }],
+        },
       },
     };
     expect(() => SystemConfigSchema.parse(cfg)).not.toThrow();

@@ -1,16 +1,16 @@
+import { SignJWT, generateKeyPair } from 'jose';
 /**
  * e2e：RFC8707 audience 校验
  *   签发一个 aud 指向其它 resource 的 token，访问本 Hub 应被拒（401）。
  */
 import { describe, expect, it } from 'vitest';
-import { SignJWT, generateKeyPair, exportJWK } from 'jose';
 
 import { defaultMcpTestConfig } from './mcp-test-config.js';
 
 describe('OAuth audience 校验（RFC8707）', () => {
   it('aud 不匹配的 token 被拒', async () => {
     // 用任意密钥签一个 aud 错的 token（即使签名不被信任，也会因 aud 校验失败被拒）
-    const { privateKey, publicKey } = await generateKeyPair('RS256');
+    const { privateKey } = await generateKeyPair('RS256');
     const wrongToken = await new SignJWT({ scope: 'mcp:tools' })
       .setProtectedHeader({ alg: 'RS256', kid: 'wrong' })
       .setIssuedAt()

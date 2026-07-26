@@ -12,8 +12,8 @@
 import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 
 import { logger } from '../../utils/logger.js';
-import { verifyValidationKey } from './validation-key.js';
 import { createTokenValidator } from './token-validator.js';
+import { verifyValidationKey } from './validation-key.js';
 
 import type { OAuthConfig, McpAuthContext, TokenValidationResult } from './types.js';
 import type { SystemConfig } from '@mcp-core/mcp-hub-share';
@@ -22,7 +22,13 @@ export type AuthOutcome =
   | { ok: true; context: McpAuthContext }
   | {
       ok: false;
-      reason: 'missing_token' | 'invalid_token' | 'expired' | 'audience' | 'insufficient_scope' | 'config_error';
+      reason:
+        | 'missing_token'
+        | 'invalid_token'
+        | 'expired'
+        | 'audience'
+        | 'insufficient_scope'
+        | 'config_error';
       errorCode: ErrorCode;
     };
 
@@ -36,9 +42,9 @@ export interface ResourceServerDeps {
   /** 注入 validationKey 校验（默认用真实实现） */
   verifyValidationKey?: (input: string, encrypted: string) => boolean;
   /** 注入 token validator 工厂（测试用） */
-  createTokenValidator?: (
-    config: OAuthConfig,
-  ) => { validate: (token: string, scope: string) => Promise<TokenValidationResult> };
+  createTokenValidator?: (config: OAuthConfig) => {
+    validate: (token: string, scope: string) => Promise<TokenValidationResult>;
+  };
 }
 
 export interface ResourceServer {
@@ -60,8 +66,13 @@ export function createResourceServer(deps: ResourceServerDeps): ResourceServer {
       // 路径 A：未配置 oauth
       if (!oauth) {
         if (!validationEnabled) {
-          logger.warn('MCP 端点完全开放（未配置 OAuth 且组未启用 validationKey），生产环境不推荐', { groupId });
-          return { ok: true, context: { method: 'oauth', principal: 'anonymous', scope: 'mcp:tools' } };
+          logger.warn('MCP 端点完全开放（未配置 OAuth 且组未启用 validationKey），生产环境不推荐', {
+            groupId,
+          });
+          return {
+            ok: true,
+            context: { method: 'oauth', principal: 'anonymous', scope: 'mcp:tools' },
+          };
         }
         return verifyValidationKeyPath(authHeader, group!.validation!.validationKey!, verifyVk);
       }
@@ -72,7 +83,8 @@ export function createResourceServer(deps: ResourceServerDeps): ResourceServer {
         return { ok: false, reason: 'missing_token', errorCode: ErrorCode.OAUTH_MISSING_TOKEN };
       }
 
-      const validatorFactory = deps.createTokenValidator ?? ((c: OAuthConfig) => createTokenValidator(c));
+      const validatorFactory =
+        deps.createTokenValidator ?? ((c: OAuthConfig) => createTokenValidator(c));
       const validator = validatorFactory(oauth);
       const result = await validator.validate(token, REQUIRED_SCOPE);
 
@@ -89,7 +101,11 @@ export function createResourceServer(deps: ResourceServerDeps): ResourceServer {
 
       // OAuth 失败：both 模式 + 组启用 validation → 回退
       if (oauth.mode === 'both' && validationEnabled && group?.validation?.validationKey) {
-        const vkResult = verifyValidationKeyPath(authHeader, group.validation.validationKey, verifyVk);
+        const vkResult = verifyValidationKeyPath(
+          authHeader,
+          group.validation.validationKey,
+          verifyVk,
+        );
         if (vkResult.ok) return vkResult;
       }
 
@@ -117,7 +133,11 @@ function verifyValidationKeyPath(
   if (verifyVk(token, encryptedStored)) {
     return {
       ok: true,
-      context: { method: 'validationKey', principal: 'validation-key', scope: 'mcp:tools mcp:resources' },
+      context: {
+        method: 'validationKey',
+        principal: 'validation-key',
+        scope: 'mcp:tools mcp:resources',
+      },
     };
   }
   return { ok: false, reason: 'invalid_token', errorCode: ErrorCode.OAUTH_INVALID_TOKEN };
@@ -130,7 +150,11 @@ function mapValidationFailure(r: { ok: false; reason: string }): AuthOutcome {
     case 'audience':
       return { ok: false, reason: 'audience', errorCode: ErrorCode.OAUTH_INVALID_AUDIENCE };
     case 'scope':
-      return { ok: false, reason: 'insufficient_scope', errorCode: ErrorCode.OAUTH_INSUFFICIENT_SCOPE };
+      return {
+        ok: false,
+        reason: 'insufficient_scope',
+        errorCode: ErrorCode.OAUTH_INSUFFICIENT_SCOPE,
+      };
     case 'inactive':
     case 'invalid':
       return { ok: false, reason: 'invalid_token', errorCode: ErrorCode.OAUTH_INVALID_TOKEN };

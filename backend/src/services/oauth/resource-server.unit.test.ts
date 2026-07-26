@@ -1,6 +1,5 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-
 import { ErrorCode } from '@mcp-core/mcp-hub-core';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 import { createResourceServer } from './resource-server.js';
 
@@ -19,7 +18,10 @@ describe('resource-server 编排', () => {
 
   it('未配置 oauth + 组未启用 validation → 放行（开放模式，warn）', async () => {
     const rs = createResourceServer({
-      getConfig: async () => ({ oauth: undefined, groups: { g1: { validation: { enabled: false } } } }),
+      getConfig: async () => ({
+        oauth: undefined,
+        groups: { g1: { validation: { enabled: false } } },
+      }),
     });
     const outcome = await rs.authenticate('g1', undefined);
     expect(outcome.ok).toBe(true);
@@ -80,7 +82,11 @@ describe('resource-server 编排', () => {
         groups: {},
       }),
       createTokenValidator: () => ({
-        validate: vi.fn().mockResolvedValue({ ok: true, claims: { sub: 'c1', scope: 'mcp:tools' }, method: 'jwt' }),
+        validate: vi.fn().mockResolvedValue({
+          ok: true,
+          claims: { sub: 'c1', scope: 'mcp:tools' },
+          method: 'jwt',
+        }),
       }),
     });
     const outcome = await rs.authenticate('g1', 'Bearer sometoken');
@@ -91,6 +97,7 @@ describe('resource-server 编排', () => {
 
 // 辅助：从失败 outcome 取可读标识（errorCode 的枚举名标签，如 OAUTH_MISSING_TOKEN；缺省时回退到 reason）
 function reasonOrCode(o: { ok: false; reason?: string; errorCode?: number }): string {
-  if (o.errorCode !== undefined && errorCodeLabels[o.errorCode]) return errorCodeLabels[o.errorCode]!;
+  if (o.errorCode !== undefined && errorCodeLabels[o.errorCode])
+    return errorCodeLabels[o.errorCode]!;
   return o.reason ?? `code_${o.errorCode ?? 'unknown'}`;
 }

@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { jwtVerify } from 'jose';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 
 import { loadOrCreateSigningKey, _resetForTesting } from './crypto-keys.js';
 import { issueClientCredentialsToken, getInternalAsMetadata } from './internal-as.js';
@@ -20,7 +20,9 @@ describe('internal-as', () => {
     internal: {
       issuer: 'https://hub.example.com',
       tokenTtlSeconds: 3600,
-      clients: [{ clientId: 'c1', clientSecret: '$2a$10$hashedplaceholder', scopes: ['mcp:tools'] }],
+      clients: [
+        { clientId: 'c1', clientSecret: '$2a$10$hashedplaceholder', scopes: ['mcp:tools'] },
+      ],
     },
   };
 
@@ -28,7 +30,12 @@ describe('internal-as', () => {
     // 用真实 bcrypt hash：为测试可执行性，这里直接传明文 secret 配合 mock
     const cfg = withPlaintextClient(config, 'c1', 'secret123');
     const result = await issueClientCredentialsToken(
-      { clientId: 'c1', clientSecret: 'secret123', scope: 'mcp:tools', resource: 'https://hub.example.com' },
+      {
+        clientId: 'c1',
+        clientSecret: 'secret123',
+        scope: 'mcp:tools',
+        resource: 'https://hub.example.com',
+      },
       cfg,
     );
     expect(result.accessToken.split('.')).toHaveLength(3);
@@ -40,7 +47,12 @@ describe('internal-as', () => {
     const cfg = withPlaintextClient(config, 'c1', 'secret123');
     await expect(
       issueClientCredentialsToken(
-        { clientId: 'c1', clientSecret: 'wrong', scope: 'mcp:tools', resource: 'https://hub.example.com' },
+        {
+          clientId: 'c1',
+          clientSecret: 'wrong',
+          scope: 'mcp:tools',
+          resource: 'https://hub.example.com',
+        },
         cfg,
       ),
     ).rejects.toThrow(/client_secret|invalid/i);
@@ -49,7 +61,12 @@ describe('internal-as', () => {
   it('签发的 token claims 含 iss/aud/scope（audience 绑定 resource）', async () => {
     const cfg = withPlaintextClient(config, 'c1', 'secret123');
     const { accessToken } = await issueClientCredentialsToken(
-      { clientId: 'c1', clientSecret: 'secret123', scope: 'mcp:tools', resource: 'https://hub.example.com' },
+      {
+        clientId: 'c1',
+        clientSecret: 'secret123',
+        scope: 'mcp:tools',
+        resource: 'https://hub.example.com',
+      },
       cfg,
     );
     const { publicKeyJwk, kid } = await loadOrCreateSigningKey();
@@ -68,7 +85,12 @@ describe('internal-as', () => {
     const cfg = withPlaintextClient(config, 'c1', 'secret123'); // client scopes = ['mcp:tools']
     await expect(
       issueClientCredentialsToken(
-        { clientId: 'c1', clientSecret: 'secret123', scope: 'mcp:admin', resource: 'https://hub.example.com' },
+        {
+          clientId: 'c1',
+          clientSecret: 'secret123',
+          scope: 'mcp:admin',
+          resource: 'https://hub.example.com',
+        },
         cfg,
       ),
     ).rejects.toThrow(/scope/i);

@@ -3,8 +3,8 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { defaultMcpTestConfig } from './mcp-test-config.js';
 import { checkServerHealth } from '../test-server.js';
+import { defaultMcpTestConfig } from './mcp-test-config.js';
 
 describe('OAuth 发现（oauth-discovery）', () => {
   it('server 健康', async () => {
@@ -12,9 +12,7 @@ describe('OAuth 发现（oauth-discovery）', () => {
   });
 
   it('GET /.well-known/oauth-protected-resource 返回符合 RFC9728 的 metadata', async () => {
-    const res = await fetch(
-      `${defaultMcpTestConfig.baseUrl}/.well-known/oauth-protected-resource`,
-    );
+    const res = await fetch(`${defaultMcpTestConfig.baseUrl}/.well-known/oauth-protected-resource`);
     // 若测试配置未启用 oauth，端点返回 404，此测试用 conditional 跳过
     if (res.status === 404) {
       console.warn('测试环境未配置 oauth，跳过 metadata 断言');

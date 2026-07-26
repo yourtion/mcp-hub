@@ -59,12 +59,16 @@ describe('as-metadata', () => {
       'mcp:tools',
     );
     expect(header).toContain('Bearer');
-    expect(header).toContain('resource_metadata="https://hub.example.com/.well-known/oauth-protected-resource"');
+    expect(header).toContain(
+      'resource_metadata="https://hub.example.com/.well-known/oauth-protected-resource"',
+    );
     expect(header).toContain('scope="mcp:tools"');
   });
 
   it('WWW-Authenticate 头无 scope 时省略', () => {
-    const header = buildWwwAuthenticateHeader('https://hub.example.com/.well-known/oauth-protected-resource');
+    const header = buildWwwAuthenticateHeader(
+      'https://hub.example.com/.well-known/oauth-protected-resource',
+    );
     expect(header).toContain('resource_metadata=');
     expect(header).not.toContain('scope=');
   });

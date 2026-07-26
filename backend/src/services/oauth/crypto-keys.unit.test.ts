@@ -18,7 +18,11 @@ const loggerMock = vi.hoisted(() => ({
 }));
 vi.mock('../../utils/logger.js', () => ({ logger: loggerMock }));
 
-import { _resetForTesting, getInternalPublicKeySet, loadOrCreateSigningKey } from './crypto-keys.js';
+import {
+  _resetForTesting,
+  getInternalPublicKeySet,
+  loadOrCreateSigningKey,
+} from './crypto-keys.js';
 
 describe('crypto-keys', () => {
   const origEnv = process.env.OAUTH_INTERNAL_PRIVATE_KEY;

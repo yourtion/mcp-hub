@@ -1,9 +1,9 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { SignJWT, generateKeyPair, exportJWK } from 'jose';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 
-import { createTokenValidator } from './token-validator.js';
 import { _resetForTesting as resetCryptoKeys, loadOrCreateSigningKey } from './crypto-keys.js';
 import { issueClientCredentialsToken } from './internal-as.js';
+import { createTokenValidator } from './token-validator.js';
 
 import type { OAuthConfig } from './types.js';
 
@@ -42,7 +42,7 @@ describe('token-validator', () => {
   function stubJwks() {
     // jose v6 的 createRemoteJWKSet 校验 res.status（=== 200）而非 res.ok，
     // 因此 mock 必须返回 status: 200（参考 jwks-cache.unit.test.ts 的可用写法）。
-    vi.stubGlobal('fetch', async (url: string) => ({
+    vi.stubGlobal('fetch', async () => ({
       status: 200,
       json: async () => ({ keys: [{ ...(await exportJWK(keypair.publicKey)), kid: keypair.kid }] }),
     }));
@@ -60,7 +60,7 @@ describe('token-validator', () => {
   it('aud 不匹配拒绝（OAUTH_INVALID_AUDIENCE）', async () => {
     stubJwks();
     const validator = createTokenValidator(externalCfg);
-    const token = await signToken({}).then((t) =>
+    const token = await signToken({}).then(() =>
       // 重新签一个 aud 错的
       new SignJWT({ scope: 'mcp:tools' })
         .setProtectedHeader({ alg: 'RS256', kid: keypair.kid })
@@ -138,7 +138,11 @@ describe('token-validator', () => {
   });
 
   it('mode=internal 且 JWT 验签失败 → 不回退 introspection，直接 invalid', async () => {
-    const internalCfg: OAuthConfig = { ...externalCfg, mode: 'internal', internal: { tokenTtlSeconds: 3600, clients: [] } };
+    const internalCfg: OAuthConfig = {
+      ...externalCfg,
+      mode: 'internal',
+      internal: { tokenTtlSeconds: 3600, clients: [] },
+    };
     delete (internalCfg as { external?: unknown }).external;
     const introspectMock = vi.fn();
     const validator = createTokenValidator(internalCfg, { introspectToken: introspectMock });
@@ -164,9 +168,7 @@ describe('token-validator', () => {
       internal: {
         issuer: internalIssuer,
         tokenTtlSeconds: 3600,
-        clients: [
-          { clientId: 'c1', clientSecret: 's3cret', scopes: ['mcp:tools'] },
-        ],
+        clients: [{ clientId: 'c1', clientSecret: 's3cret', scopes: ['mcp:tools'] }],
       },
     };
 

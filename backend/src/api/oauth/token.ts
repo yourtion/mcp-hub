@@ -6,8 +6,8 @@
  */
 import { ErrorCode, McpHubCoreError } from '@mcp-core/mcp-hub-core';
 
-import { getAllConfig } from '../../utils/config.js';
 import { issueClientCredentialsToken } from '../../services/oauth/internal-as.js';
+import { getAllConfig } from '../../utils/config.js';
 
 import type { OAuthConfig } from '../../services/oauth/types.js';
 import type { Hono } from 'hono';
@@ -75,10 +75,7 @@ export function registerTokenRoutes(app: Hono) {
     const cfg = await getAllConfig();
     const oauth = cfg.system.oauth as OAuthConfig | undefined;
     if (!oauth || !oauth.internal) {
-      return c.json(
-        { error: 'server_error', error_description: '内置 AS 未配置' },
-        503,
-      );
+      return c.json({ error: 'server_error', error_description: '内置 AS 未配置' }, 503);
     }
 
     try {

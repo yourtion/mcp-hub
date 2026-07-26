@@ -15,7 +15,10 @@ export interface ProtectedResourceMetadata {
   scopes_supported?: string[];
 }
 
-export function getProtectedResourceMetadata(config: OAuthConfig, resource: string): ProtectedResourceMetadata {
+export function getProtectedResourceMetadata(
+  config: OAuthConfig,
+  resource: string,
+): ProtectedResourceMetadata {
   const servers: string[] = [];
   // MCP 规范 MUST：authorization_servers 至少一个
   if (config.mode === 'internal' || config.mode === 'both') {
