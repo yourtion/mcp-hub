@@ -254,6 +254,54 @@ describe('OAuthStrategy', () => {
       expect(result.headers!.Authorization).toBe('Bearer fallback-tok');
       expect(httpClient.request).toHaveBeenCalledTimes(2); // refresh 1 次 + client_credentials 1 次
     });
+
+    it('refresh 返回 2xx 但缺 access_token → 回退 client_credentials', async () => {
+      const cache = createMockCache();
+      const httpClient = {
+        request: vi.fn(async (req: HttpRequestConfig) => {
+          const body = req.data as string;
+          if (body.includes('grant_type=refresh_token')) {
+            // 2xx 但响应体缺 access_token
+            return {
+              status: 200,
+              statusText: 'OK',
+              headers: new Headers(),
+              data: { expires_in: 3600 }, // 缺 access_token
+              raw: new Response(),
+              config: req,
+            } as unknown as HttpResponse;
+          }
+          return {
+            status: 200,
+            statusText: 'OK',
+            headers: new Headers(),
+            data: { access_token: 'fallback-tok', expires_in: 3600 },
+            raw: new Response(),
+            config: req,
+          } as unknown as HttpResponse;
+        }),
+      } as unknown as HttpClient;
+
+      const strategy = new OAuthStrategy(httpClient, cache);
+      vi.spyOn(cache, 'get').mockResolvedValueOnce({
+        accessToken: 'old-tok',
+        expiresAt: Date.now() + 30_000,
+        refreshToken: 'rt-xxx',
+      } as unknown as CachedToken);
+
+      const config = {
+        type: 'oauth' as const,
+        grantType: 'client_credentials' as const,
+        clientId: 'cid',
+        clientSecret: 'secret',
+        tokenUrl: 'https://as.example.com/token',
+      };
+      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+
+      const result = await strategy.applyAuth(request, config);
+      expect(result.headers!.Authorization).toBe('Bearer fallback-tok');
+      expect(httpClient.request).toHaveBeenCalledTimes(2); // refresh 1 次（抛错）+ client_credentials 1 次
+    });
   });
 
   describe('validateConfig', () => {

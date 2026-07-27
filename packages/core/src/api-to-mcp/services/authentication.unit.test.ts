@@ -19,6 +19,8 @@ import {
 import type { AuthConfig } from '../types/api-config.js';
 import type { HttpRequestConfig } from '../types/http-client.js';
 import type { AuthenticationStrategy } from './authentication.js';
+import type { HttpClient } from './http-client.js';
+import type { CacheManager } from './cache-manager.js';
 
 vi.mock('../../utils/logger.js', () => ({
   createLogger: () => ({
@@ -494,15 +496,6 @@ describe('AuthenticationManager', function () {
       expect(result.headers!.Authorization).toBe(`Basic ${expectedEncoded}`);
     });
 
-    it('未知的认证类型应该抛出错误', async function () {
-      const request = createBaseRequest();
-      const config = { type: 'oauth' } as unknown as AuthConfig;
-
-      await expect(manager.applyAuthentication(request, config)).rejects.toThrow(
-        '不支持的认证类型: oauth',
-      );
-    });
-
     it('无效的配置应该抛出错误', async function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'bearer' };
@@ -527,14 +520,6 @@ describe('AuthenticationManager', function () {
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Bearer认证需要提供token');
-    });
-
-    it('未知的认证类型应返回错误', async function () {
-      const config = { type: 'oauth' } as unknown as AuthConfig;
-      const result = await manager.validateAuthConfig(config);
-
-      expect(result.valid).toBe(false);
-      expect(result.error).toBe('不支持的认证类型: oauth');
     });
   });
 
@@ -625,6 +610,29 @@ describe('AuthenticationManager', function () {
       expect(resolved.token).toBe('plain-token');
       expect(resolved.type).toBe('bearer');
     });
+
+    it('应该解析 oauth clientId/clientSecret/refreshToken 中的 {{env.VAR}}', function () {
+      originalEnv['TEST_OAUTH_ID'] = process.env['TEST_OAUTH_ID'];
+      originalEnv['TEST_OAUTH_SECRET'] = process.env['TEST_OAUTH_SECRET'];
+      originalEnv['TEST_OAUTH_RT'] = process.env['TEST_OAUTH_RT'];
+      process.env['TEST_OAUTH_ID'] = 'resolved-id';
+      process.env['TEST_OAUTH_SECRET'] = 'resolved-secret';
+      process.env['TEST_OAUTH_RT'] = 'resolved-rt';
+      const config: AuthConfig = {
+        type: 'oauth',
+        grantType: 'client_credentials',
+        clientId: '{{env.TEST_OAUTH_ID}}',
+        clientSecret: '{{env.TEST_OAUTH_SECRET}}',
+        tokenUrl: 'https://as.com/token',
+        refreshToken: '{{env.TEST_OAUTH_RT}}',
+      };
+
+      const resolved = manager.resolveEnvironmentVariables(config) as typeof config;
+
+      expect(resolved.clientId).toBe('resolved-id');
+      expect(resolved.clientSecret).toBe('resolved-secret');
+      expect(resolved.refreshToken).toBe('resolved-rt');
+    });
   });
 
   describe('validateEnvironmentVariables', function () {
@@ -679,6 +687,26 @@ describe('AuthenticationManager', function () {
       expect(result.missingVars).toEqual(['MISSING_VAR']);
     });
 
+    it('oauth 配置缺环境变量时应返回错误', function () {
+      delete process.env['MISSING_OAUTH_ID'];
+      delete process.env['MISSING_OAUTH_SECRET'];
+      originalEnv['MISSING_OAUTH_ID'] = process.env['MISSING_OAUTH_ID'];
+      originalEnv['MISSING_OAUTH_SECRET'] = process.env['MISSING_OAUTH_SECRET'];
+      const config: AuthConfig = {
+        type: 'oauth',
+        grantType: 'client_credentials',
+        clientId: '{{env.MISSING_OAUTH_ID}}',
+        clientSecret: '{{env.MISSING_OAUTH_SECRET}}',
+        tokenUrl: 'https://as.com/token',
+      };
+
+      const result = manager.validateEnvironmentVariables(config);
+
+      expect(result.valid).toBe(false);
+      expect(result.missingVars).toContain('MISSING_OAUTH_ID');
+      expect(result.missingVars).toContain('MISSING_OAUTH_SECRET');
+    });
+
     it('没有环境变量引用时应返回 valid', function () {
       const config: AuthConfig = { type: 'bearer', token: 'plain-token' };
 
@@ -687,6 +715,56 @@ describe('AuthenticationManager', function () {
       expect(result.valid).toBe(true);
       expect(result.missingVars).toHaveLength(0);
     });
+  });
+});
+
+// ============================================================================
+// OAuth 策略（注入 deps）
+// ============================================================================
+describe('OAuth 策略（注入 deps）', () => {
+  let oauthManager: AuthenticationManager;
+
+  beforeEach(() => {
+    oauthManager = new AuthenticationManager({
+      httpClient: {} as HttpClient,
+      cache: {} as CacheManager,
+    });
+  });
+
+  it('注册了 oauth 策略，不抛错', async () => {
+    // 注入 mock 让 applyAuth 不真正调网络
+    const httpClient = {
+      request: vi.fn().mockResolvedValue({
+        status: 200,
+        data: { access_token: 'tok', expires_in: 3600 },
+      }),
+    } as unknown as HttpClient;
+    const cache = {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue(undefined),
+    } as unknown as CacheManager;
+    const m = new AuthenticationManager({ httpClient, cache });
+
+    const request = { url: 'https://x.com', method: 'GET' as const, headers: {} };
+    const config = {
+      type: 'oauth' as const,
+      grantType: 'client_credentials' as const,
+      clientId: 'cid',
+      clientSecret: 's',
+      tokenUrl: 'https://as.com/token',
+    };
+
+    const result = await m.applyAuthentication(request, config);
+    expect(result.headers!.Authorization).toBe('Bearer tok');
+  });
+
+  it('未注入 deps 的 manager 不注册 oauth（getSupportedTypes 不含 oauth）', () => {
+    const plainManager = new AuthenticationManager();
+    expect(plainManager.getSupportedTypes()).not.toContain('oauth');
+  });
+
+  it('注入 deps 的 manager 注册了 oauth', () => {
+    expect(oauthManager.getSupportedTypes()).toContain('oauth');
   });
 });
 

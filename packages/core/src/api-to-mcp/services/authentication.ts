@@ -7,6 +7,9 @@ import { createLogger } from '../../utils/logger.js';
 
 import type { AuthConfig } from '../types/api-config.js';
 import type { HttpRequestConfig } from '../types/http-client.js';
+import type { CacheManager } from './cache-manager.js';
+import type { HttpClient } from './http-client.js';
+import { OAuthStrategy } from './oauth-strategy.js';
 
 const logger = createLogger({ component: 'Authentication' });
 
@@ -180,19 +183,35 @@ export class BasicAuthStrategy implements AuthenticationStrategy {
 }
 
 /**
+ * AuthenticationManager 可选依赖
+ * 注入 httpClient + cache 后会注册 OAuthStrategy
+ */
+export interface AuthenticationManagerDeps {
+  httpClient?: HttpClient;
+  cache?: CacheManager;
+}
+
+/**
  * 认证管理器
  * 管理不同的认证策略并应用到HTTP请求
  */
 export class AuthenticationManager {
   private readonly strategies = new Map<string, AuthenticationStrategy>();
 
-  constructor() {
+  constructor(deps?: AuthenticationManagerDeps) {
     // 注册默认认证策略
     this.registerStrategy(new BearerTokenStrategy());
     this.registerStrategy(new ApiKeyStrategy());
     this.registerStrategy(new BasicAuthStrategy());
 
-    logger.info('认证管理器初始化完成');
+    // 注入 deps 后注册 OAuth 策略
+    if (deps?.httpClient && deps?.cache) {
+      this.registerStrategy(new OAuthStrategy(deps.httpClient, deps.cache));
+    }
+
+    logger.info('认证管理器初始化完成', {
+      context: { strategies: this.getSupportedTypes() },
+    });
   }
 
   /**
@@ -257,31 +276,32 @@ export class AuthenticationManager {
   /**
    * 处理环境变量引用
    * 支持 {{env.VARIABLE_NAME}} 语法
+   * 按认证类型解析相应字段（discriminated union 后需按 type 分支）
    */
   resolveEnvironmentVariables(authConfig: AuthConfig): AuthConfig {
-    const resolved = { ...authConfig };
-
-    // 处理token中的环境变量
-    if (resolved.token) {
-      resolved.token = this.resolveEnvVariable(resolved.token);
+    if (authConfig.type === 'bearer' || authConfig.type === 'apikey') {
+      return {
+        ...authConfig,
+        token: authConfig.token ? this.resolveEnvVariable(authConfig.token) : authConfig.token,
+        header: authConfig.header ? this.resolveEnvVariable(authConfig.header) : authConfig.header,
+      };
     }
-
-    // 处理用户名中的环境变量
-    if (resolved.username) {
-      resolved.username = this.resolveEnvVariable(resolved.username);
+    if (authConfig.type === 'basic') {
+      return {
+        ...authConfig,
+        username: this.resolveEnvVariable(authConfig.username),
+        password: this.resolveEnvVariable(authConfig.password),
+      };
     }
-
-    // 处理密码中的环境变量
-    if (resolved.password) {
-      resolved.password = this.resolveEnvVariable(resolved.password);
-    }
-
-    // 处理header中的环境变量
-    if (resolved.header) {
-      resolved.header = this.resolveEnvVariable(resolved.header);
-    }
-
-    return resolved;
+    // oauth
+    return {
+      ...authConfig,
+      clientId: this.resolveEnvVariable(authConfig.clientId),
+      clientSecret: this.resolveEnvVariable(authConfig.clientSecret),
+      refreshToken: authConfig.refreshToken
+        ? this.resolveEnvVariable(authConfig.refreshToken)
+        : authConfig.refreshToken,
+    };
   }
 
   /**
@@ -309,6 +329,7 @@ export class AuthenticationManager {
 
   /**
    * 检查认证配置中的环境变量是否都已定义
+   * 按认证类型检查相应字段（discriminated union 后需按 type 分支）
    */
   validateEnvironmentVariables(authConfig: AuthConfig): {
     valid: boolean;
@@ -317,13 +338,16 @@ export class AuthenticationManager {
     const missingVars: string[] = [];
     const envPattern = /\{\{env\.([A-Z_][A-Z0-9_]*)\}\}/g;
 
-    // 检查所有可能包含环境变量的字段
-    const fieldsToCheck = [
-      authConfig.token,
-      authConfig.username,
-      authConfig.password,
-      authConfig.header,
-    ].filter(Boolean) as string[];
+    let fieldsToCheck: string[] = [];
+    if (authConfig.type === 'bearer' || authConfig.type === 'apikey') {
+      fieldsToCheck = [authConfig.token, authConfig.header].filter(Boolean) as string[];
+    } else if (authConfig.type === 'basic') {
+      fieldsToCheck = [authConfig.username, authConfig.password].filter(Boolean) as string[];
+    } else if (authConfig.type === 'oauth') {
+      fieldsToCheck = [authConfig.clientId, authConfig.clientSecret, authConfig.refreshToken].filter(
+        Boolean,
+      ) as string[];
+    }
 
     for (const field of fieldsToCheck) {
       let match: RegExpExecArray | null;
@@ -354,3 +378,6 @@ export function createAuthenticationManager(): AuthenticationManager {
  * 默认认证管理器实例
  */
 export const defaultAuthManager = createAuthenticationManager();
+
+export { OAuthStrategy } from './oauth-strategy.js';
+export type { CachedToken } from './oauth-strategy.js';

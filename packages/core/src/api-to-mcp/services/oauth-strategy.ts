@@ -234,6 +234,15 @@ export class OAuthStrategy implements AuthenticationStrategy {
       refresh_token?: string;
     };
 
+    if (!tokenData.access_token) {
+      throw new ServiceError(
+        ErrorCode.OAUTH_OUTBOUND_TOKEN_FETCH_FAILED,
+        'OAuth refresh 响应缺 access_token',
+        undefined,
+        { clientId: config.clientId, tokenUrl: config.tokenUrl },
+      );
+    }
+
     const expiresIn = tokenData.expires_in ?? 3600;
     const cached: CachedToken = {
       accessToken: tokenData.access_token,
