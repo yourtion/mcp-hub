@@ -267,12 +267,18 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
       const missingVars = this.environmentResolver.validateRequiredVariables(requiredVars);
 
       if (missingVars.length > 0) {
-        console.warn(`工具 ${config.id} 缺少环境变量: ${missingVars.join(', ')}`);
+        logger.warn(`工具 ${config.id} 缺少环境变量: ${missingVars.join(', ')}`, {
+          context: { toolId: config.id, missingVars },
+        });
       }
 
       return resolvedConfig;
     } catch (error) {
-      console.error(`解析工具 ${config.id} 的环境变量失败:`, error);
+      logger.error(
+        `解析工具 ${config.id} 的环境变量失败`,
+        error instanceof Error ? error : undefined,
+        { context: { toolId: config.id } },
+      );
       return config; // 返回原始配置
     }
   }

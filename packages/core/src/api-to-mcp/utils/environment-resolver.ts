@@ -3,6 +3,10 @@
  * 处理配置中的环境变量引用
  */
 
+import { createLogger } from '../../utils/logger.js';
+
+const logger = createLogger({ component: 'EnvironmentResolver' });
+
 /**
  * 环境变量解析器接口
  */
@@ -40,7 +44,9 @@ export class EnvironmentResolverImpl implements EnvironmentResolver {
     return value.replace(this.envPattern, (match, varName) => {
       const envValue = process.env[varName];
       if (envValue === undefined) {
-        console.warn(`环境变量 ${varName} 未定义，保持原始值`);
+        logger.warn(`环境变量 ${varName} 未定义，保持原始值`, {
+          context: { varName },
+        });
         return match;
       }
       return envValue;

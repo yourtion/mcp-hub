@@ -4,6 +4,9 @@
  */
 
 import type { ConnectionStatus, ServerConfig, ToolInfo } from '../../types/index.js';
+import { createLogger } from '../../utils/logger.js';
+
+const logger = createLogger({ component: 'ConnectionManager' });
 
 /**
  * 连接状态枚举
@@ -161,20 +164,20 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
 
   async initialize(): Promise<void> {
     if (this.initialized) {
-      console.warn('服务器连接管理器已初始化，跳过重复初始化');
+      logger.warn('服务器连接管理器已初始化，跳过重复初始化');
       return;
     }
 
-    console.info('初始化服务器连接管理器');
+    logger.info('初始化服务器连接管理器');
 
     try {
       // 初始化连接池
       this.connections.clear();
       this.initialized = true;
 
-      console.info('服务器连接管理器初始化完成');
+      logger.info('服务器连接管理器初始化完成');
     } catch (error) {
-      console.error('服务器连接管理器初始化失败', error);
+      logger.error('服务器连接管理器初始化失败', error as Error);
       throw new ConnectionManagerError(
         `连接管理器初始化失败: ${(error as Error).message}`,
         'INITIALIZATION_FAILED',
@@ -187,14 +190,14 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
   async createConnection(serverId: string, config: ServerConfig): Promise<void> {
     this.ensureInitialized();
 
-    console.info('创建服务器连接', {
+    logger.info('创建服务器连接', {
       serverId,
-      command: 'command' in config ? config.command : config.url,
+      context: { command: 'command' in config ? config.command : config.url },
     });
 
     // 检查是否已存在连接
     if (this.connections.has(serverId)) {
-      console.warn('服务器连接已存在，将重新创建', { serverId });
+      logger.warn('服务器连接已存在，将重新创建', { serverId });
       await this.closeConnection(serverId);
     }
 
@@ -218,7 +221,7 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
       connectionInfo.lastConnected = new Date();
       connectionInfo.reconnectAttempts = 0;
 
-      console.info('服务器连接创建成功', { serverId });
+      logger.info('服务器连接创建成功', { serverId });
 
       // 发现工具
       await this.discoverTools(connectionInfo);
@@ -226,7 +229,7 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
       connectionInfo.state = ConnectionState.ERROR;
       connectionInfo.lastError = error as Error;
 
-      console.error('服务器连接创建失败', error, { serverId });
+      logger.error('服务器连接创建失败', error as Error, { serverId });
       throw new ConnectionFailedError(serverId, (error as Error).message);
     }
   }
@@ -260,11 +263,11 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
   async closeConnection(serverId: string): Promise<void> {
     const connection = this.connections.get(serverId);
     if (!connection) {
-      console.warn('尝试关闭不存在的连接', { serverId });
+      logger.warn('尝试关闭不存在的连接', { serverId });
       return;
     }
 
-    console.info('关闭服务器连接', { serverId });
+    logger.info('关闭服务器连接', { serverId });
 
     try {
       // 如果有客户端实例，关闭它
@@ -279,9 +282,9 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
       connection.state = ConnectionState.DISCONNECTED;
       connection.client = undefined;
 
-      console.info('服务器连接已关闭', { serverId });
+      logger.info('服务器连接已关闭', { serverId });
     } catch (error) {
-      console.error('关闭服务器连接时出错', error, { serverId });
+      logger.error('关闭服务器连接时出错', error as Error, { serverId });
       connection.lastError = error as Error;
     } finally {
       // 从连接池中移除
@@ -301,7 +304,7 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
       return false;
     }
 
-    console.debug('执行健康检查', { serverId });
+    logger.debug('执行健康检查', { serverId });
 
     try {
       // 更新健康检查统计
@@ -322,7 +325,7 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
 
       return false;
     } catch (error) {
-      console.error('健康检查失败', error, { serverId });
+      logger.error('健康检查失败', error as Error, { serverId });
       connection.lastError = error as Error;
       return false;
     }
@@ -355,7 +358,7 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
       );
     }
 
-    console.debug('在服务器上执行工具', { serverId, toolName, args });
+    logger.debug('在服务器上执行工具', { serverId, toolName, context: { args } });
 
     try {
       // 这里应该调用实际的MCP客户端callTool方法
@@ -370,10 +373,10 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
         isError: false,
       };
 
-      console.debug('工具执行完成', { serverId, toolName });
+      logger.debug('工具执行完成', { serverId, toolName });
       return mockResult;
     } catch (error) {
-      console.error('工具执行失败', error, { serverId, toolName });
+      logger.error('工具执行失败', error as Error, { serverId, toolName });
       throw new ConnectionManagerError(
         `工具执行失败: ${(error as Error).message}`,
         'TOOL_EXECUTION_FAILED',
@@ -390,9 +393,9 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
     }
 
     if (connection.state !== ConnectionState.CONNECTED) {
-      console.warn('服务器未连接，返回空工具列表', {
+      logger.warn('服务器未连接，返回空工具列表', {
         serverId,
-        state: connection.state,
+        context: { state: connection.state },
       });
       return [];
     }
@@ -425,9 +428,9 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
       throw new ConnectionNotFoundError(serverId);
     }
 
-    console.info('重新连接服务器', {
+    logger.info('重新连接服务器', {
       serverId,
-      attempts: connection.reconnectAttempts,
+      context: { attempts: connection.reconnectAttempts },
     });
 
     // 检查重连次数限制
@@ -466,9 +469,9 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
       connection.lastConnected = new Date();
       connection.lastError = undefined;
 
-      console.info('服务器重连成功', {
+      logger.info('服务器重连成功', {
         serverId,
-        attempts: connection.reconnectAttempts,
+        context: { attempts: connection.reconnectAttempts },
       });
 
       // 重新发现工具
@@ -477,9 +480,9 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
       connection.state = ConnectionState.ERROR;
       connection.lastError = error as Error;
 
-      console.error('服务器重连失败', error, {
+      logger.error('服务器重连失败', error as Error, {
         serverId,
-        attempts: connection.reconnectAttempts,
+        context: { attempts: connection.reconnectAttempts },
       });
 
       throw new ConnectionFailedError(serverId, (error as Error).message);
@@ -488,21 +491,23 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
 
   async shutdown(): Promise<void> {
     if (!this.initialized) {
-      console.warn('连接管理器未初始化，跳过关闭');
+      logger.warn('连接管理器未初始化，跳过关闭');
       return;
     }
 
     if (this.shutdownInProgress) {
-      console.warn('关闭已在进行中，等待完成');
+      logger.warn('关闭已在进行中，等待完成');
       return;
     }
 
     this.shutdownInProgress = true;
     const shutdownStartTime = Date.now();
 
-    console.info('开始关闭服务器连接管理器', {
-      totalConnections: this.connections.size,
-      timestamp: new Date().toISOString(),
+    logger.info('开始关闭服务器连接管理器', {
+      context: {
+        totalConnections: this.connections.size,
+        timestamp: new Date().toISOString(),
+      },
     });
 
     try {
@@ -519,14 +524,14 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
       this.shutdownInProgress = false;
 
       const shutdownDuration = Date.now() - shutdownStartTime;
-      console.info('服务器连接管理器关闭完成', {
-        shutdownTimeMs: shutdownDuration,
-        timestamp: new Date().toISOString(),
+      logger.info('服务器连接管理器关闭完成', {
+        duration: shutdownDuration,
+        context: { timestamp: new Date().toISOString() },
       });
     } catch (error) {
       const shutdownDuration = Date.now() - shutdownStartTime;
-      console.error('服务器连接管理器关闭时出错', error, {
-        shutdownTimeMs: shutdownDuration,
+      logger.error('服务器连接管理器关闭时出错', error as Error, {
+        duration: shutdownDuration,
       });
 
       this.shutdownInProgress = false;
@@ -550,9 +555,9 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
   private async performConnection(connection: ServerConnectionInfo): Promise<void> {
     const { id: serverId, config } = connection;
 
-    console.debug('执行服务器连接', {
+    logger.debug('执行服务器连接', {
       serverId,
-      command: 'command' in config ? config.command : config.url,
+      context: { command: 'command' in config ? config.command : config.url },
     });
 
     try {
@@ -560,9 +565,9 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
       // 暂时模拟连接过程
       await this.simulateConnection(connection);
 
-      console.debug('服务器连接成功', { serverId });
+      logger.debug('服务器连接成功', { serverId });
     } catch (error) {
-      console.error('服务器连接失败', error, { serverId });
+      logger.error('服务器连接失败', error as Error, { serverId });
       throw error;
     }
   }
@@ -578,17 +583,17 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
       id: connection.id,
       connected: true,
       close: async () => {
-        console.debug('模拟客户端关闭', { serverId: connection.id });
+        logger.debug('模拟客户端关闭', { serverId: connection.id });
       },
     };
 
-    console.debug('模拟连接完成', { serverId: connection.id });
+    logger.debug('模拟连接完成', { serverId: connection.id });
   }
 
   private async discoverTools(connection: ServerConnectionInfo): Promise<void> {
     const { id: serverId } = connection;
 
-    console.debug('发现服务器工具', { serverId });
+    logger.debug('发现服务器工具', { serverId });
 
     try {
       // 这里应该调用实际的MCP客户端listTools方法
@@ -608,13 +613,15 @@ export class ServerConnectionManager implements ServerConnectionManagerInterface
 
       connection.tools = mockTools;
 
-      console.info('工具发现完成', {
+      logger.info('工具发现完成', {
         serverId,
-        toolCount: mockTools.length,
-        toolNames: mockTools.map((t) => t.name),
+        context: {
+          toolCount: mockTools.length,
+          toolNames: mockTools.map((t) => t.name),
+        },
       });
     } catch (error) {
-      console.error('工具发现失败', error, { serverId });
+      logger.error('工具发现失败', error as Error, { serverId });
       connection.tools = [];
       connection.lastError = error as Error;
     }

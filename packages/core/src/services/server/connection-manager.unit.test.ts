@@ -15,17 +15,18 @@ import {
 
 import type { ServerConfig } from '../../types';
 
-// 模拟控制台方法（完整的 console 对象）
-const mockConsole = {
-  log: vi.fn(),
+// 模拟 logger（生产代码使用项目统一 Logger）；使用 vi.hoisted 保证 vi.mock 工厂可访问
+const mockLogger = vi.hoisted(() => ({
+  debug: vi.fn(),
   info: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
-  debug: vi.fn(),
-  trace: vi.fn(),
-  table: vi.fn(),
-  dir: vi.fn(),
-};
+}));
+
+vi.mock('../../utils/logger', () => ({
+  createLogger: () => mockLogger,
+  logger: mockLogger,
+}));
 
 describe('ServerConnectionManager', () => {
   let connectionManager: ServerConnectionManager;
@@ -34,10 +35,6 @@ describe('ServerConnectionManager', () => {
   beforeEach(() => {
     // 重置所有模拟
     vi.clearAllMocks();
-
-    // 在每个测试前重新替换全局console
-    // （因为 unstubGlobals: true 会在每个测试后恢复 console）
-    vi.stubGlobal('console', mockConsole);
 
     // 创建模拟服务器配置
     mockServerConfig = {
@@ -62,20 +59,20 @@ describe('ServerConnectionManager', () => {
     it('应该成功初始化连接管理器', async () => {
       await connectionManager.initialize();
 
-      expect(mockConsole.info).toHaveBeenCalledWith('初始化服务器连接管理器');
-      expect(mockConsole.info).toHaveBeenCalledWith('服务器连接管理器初始化完成');
+      expect(mockLogger.info).toHaveBeenCalledWith('初始化服务器连接管理器');
+      expect(mockLogger.info).toHaveBeenCalledWith('服务器连接管理器初始化完成');
     });
 
     it('应该跳过重复初始化', async () => {
       await connectionManager.initialize();
 
       // 清除之前的日志调用
-      mockConsole.warn.mockClear();
+      mockLogger.warn.mockClear();
 
       // 尝试再次初始化
       await connectionManager.initialize();
 
-      expect(mockConsole.warn).toHaveBeenCalledWith('服务器连接管理器已初始化，跳过重复初始化');
+      expect(mockLogger.warn).toHaveBeenCalledWith('服务器连接管理器已初始化，跳过重复初始化');
     });
 
     it('应该在未初始化时抛出错误', async () => {
@@ -98,15 +95,15 @@ describe('ServerConnectionManager', () => {
       expect(status.lastConnected).toBeInstanceOf(Date);
       expect(status.error).toBeNull();
 
-      expect(mockConsole.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         '创建服务器连接',
         expect.objectContaining({
           serverId: 'test-server',
-          command: 'node',
+          context: { command: 'node' },
         }),
       );
 
-      expect(mockConsole.info).toHaveBeenCalledWith('服务器连接创建成功', {
+      expect(mockLogger.info).toHaveBeenCalledWith('服务器连接创建成功', {
         serverId: 'test-server',
       });
     });
@@ -116,12 +113,12 @@ describe('ServerConnectionManager', () => {
       await connectionManager.createConnection('test-server', mockServerConfig);
 
       // 清除日志
-      mockConsole.warn.mockClear();
+      mockLogger.warn.mockClear();
 
       // 重新创建连接
       await connectionManager.createConnection('test-server', mockServerConfig);
 
-      expect(mockConsole.warn).toHaveBeenCalledWith('服务器连接已存在，将重新创建', {
+      expect(mockLogger.warn).toHaveBeenCalledWith('服务器连接已存在，将重新创建', {
         serverId: 'test-server',
       });
     });
@@ -152,7 +149,7 @@ describe('ServerConnectionManager', () => {
       await connectionManager.createConnection('test-server', mockServerConfig);
 
       // 清除日志
-      mockConsole.info.mockClear();
+      mockLogger.info.mockClear();
 
       await connectionManager.closeConnection('test-server');
 
@@ -160,7 +157,7 @@ describe('ServerConnectionManager', () => {
       expect(status.connected).toBe(false);
       expect(status.error).toBe('连接不存在');
 
-      expect(mockConsole.info).toHaveBeenCalledWith('关闭服务器连接', {
+      expect(mockLogger.info).toHaveBeenCalledWith('关闭服务器连接', {
         serverId: 'test-server',
       });
     });
@@ -168,7 +165,7 @@ describe('ServerConnectionManager', () => {
     it('应该处理关闭不存在的连接', async () => {
       await connectionManager.closeConnection('nonexistent-server');
 
-      expect(mockConsole.warn).toHaveBeenCalledWith('尝试关闭不存在的连接', {
+      expect(mockLogger.warn).toHaveBeenCalledWith('尝试关闭不存在的连接', {
         serverId: 'nonexistent-server',
       });
     });
@@ -453,7 +450,7 @@ describe('ServerConnectionManager', () => {
     it('应该在未初始化时跳过关闭', async () => {
       await connectionManager.shutdown();
 
-      expect(mockConsole.warn).toHaveBeenCalledWith('连接管理器未初始化，跳过关闭');
+      expect(mockLogger.warn).toHaveBeenCalledWith('连接管理器未初始化，跳过关闭');
     });
 
     it('应该成功关闭连接管理器', async () => {
@@ -462,21 +459,23 @@ describe('ServerConnectionManager', () => {
       await connectionManager.createConnection('server2', mockServerConfig);
 
       // 清除初始化日志
-      mockConsole.info.mockClear();
+      mockLogger.info.mockClear();
 
       await connectionManager.shutdown();
 
-      expect(mockConsole.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         '开始关闭服务器连接管理器',
         expect.objectContaining({
-          totalConnections: 2,
+          context: expect.objectContaining({
+            totalConnections: 2,
+          }),
         }),
       );
 
-      expect(mockConsole.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         '服务器连接管理器关闭完成',
         expect.objectContaining({
-          shutdownTimeMs: expect.any(Number),
+          duration: expect.any(Number),
         }),
       );
 
@@ -495,7 +494,7 @@ describe('ServerConnectionManager', () => {
 
       await Promise.all([shutdownPromise1, shutdownPromise2]);
 
-      expect(mockConsole.warn).toHaveBeenCalledWith('关闭已在进行中，等待完成');
+      expect(mockLogger.warn).toHaveBeenCalledWith('关闭已在进行中，等待完成');
     });
   });
 
