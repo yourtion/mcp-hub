@@ -7,17 +7,19 @@
  *
  * 参考 P2 oauth-client-credentials.test.ts 的 conditional skip 模式。
  */
-import { describe, expect, it } from 'vitest';
+import { describe, it } from 'vitest';
 
 // 参考 P2：若测试环境未配 api-to-mcp oauth 工具，conditional skip
 const hasOAuthOutboundFixture = !!process.env.P3_OAUTH_OUTBOUND_E2E;
 
 describe.skipIf(!hasOAuthOutboundFixture)('OAuth 出站（api-to-mcp）', () => {
   it('调 oauth 保护的 API 工具 → 自动取 token + 注入 + 缓存命中', async () => {
-    // TODO: 用 test-app 挂载假 AS token endpoint + 假受保护资源
+    // TODO(fixture 激活): 用 test-app 挂假 AS token endpoint + 假受保护资源
     // 1. 配置一个 api-to-mcp 工具，auth.type=oauth, tokenUrl 指向假 AS
     // 2. 调工具 → 验证 Authorization: Bearer <token> 注入到受保护资源请求
     // 3. 第二次调 → 验证不再打 token endpoint（缓存命中）
-    expect(true).toBe(true);
+    throw new Error(
+      'P3_OAUTH_OUTBOUND_E2E fixture 未实现：设置 P3_OAUTH_OUTBOUND_E2E=1 前需先完成 fixture',
+    );
   });
 });

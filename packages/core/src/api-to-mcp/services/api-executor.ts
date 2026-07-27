@@ -3,6 +3,7 @@
  * 负责执行API调用的完整流程，包括参数处理、认证、HTTP请求和错误处理
  */
 
+import { ErrorCode, ServiceError } from '../../errors/index.js';
 import { createLogger } from '../../utils/logger.js';
 import { HttpRequestBuilderImpl } from '../utils/http-request-builder.js';
 import { ParameterValidatorImpl } from '../utils/parameter-validator.js';
@@ -221,6 +222,19 @@ export class ApiExecutorImpl implements ApiExecutor {
     // 验证环境变量
     const envValidation = this.authManager.validateEnvironmentVariables(resolvedAuthConfig);
     if (!envValidation.valid) {
+      // OAuth 出站路径用专用错误码 6203（spec §4），便于上层精确区分；
+      // bearer/apikey/basic 保持原有裸 Error 行为不变。
+      if (resolvedAuthConfig.type === 'oauth') {
+        throw new ServiceError(
+          ErrorCode.OAUTH_OUTBOUND_ENV_VAR_MISSING,
+          `OAuth 出站环境变量未定义: ${envValidation.missingVars.join(', ')}`,
+          undefined,
+          {
+            clientId: resolvedAuthConfig.clientId,
+            missingVars: envValidation.missingVars,
+          },
+        );
+      }
       throw new Error(`认证配置中的环境变量未定义: ${envValidation.missingVars.join(', ')}`);
     }
 
