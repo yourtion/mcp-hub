@@ -3,8 +3,9 @@
  * 负责MCP服务器连接池管理和状态监控
  */
 
-import type { ConnectionStatus, ServerConfig, ToolInfo } from '../../types/index.js';
 import { createLogger } from '../../utils/logger.js';
+
+import type { ConnectionStatus, ServerConfig, ToolInfo } from '../../types/index.js';
 
 const logger = createLogger({ component: 'ConnectionManager' });
 

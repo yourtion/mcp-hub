@@ -57,9 +57,21 @@ describe('Dashboard Store', () => {
       status: 'healthy',
       issues: [],
       checks: {
-        servers: { status: 'healthy', message: 'ok', details: { total: 0, connected: 0, failed: 0 } },
-        groups: { status: 'healthy', message: 'ok', details: { total: 0, healthy: 0, unhealthy: 0 } },
-        apiTools: { status: 'healthy', message: 'ok', details: { initialized: true, totalTools: 0, errors: [] } },
+        servers: {
+          status: 'healthy',
+          message: 'ok',
+          details: { total: 0, connected: 0, failed: 0 },
+        },
+        groups: {
+          status: 'healthy',
+          message: 'ok',
+          details: { total: 0, healthy: 0, unhealthy: 0 },
+        },
+        apiTools: {
+          status: 'healthy',
+          message: 'ok',
+          details: { initialized: true, totalTools: 0, errors: [] },
+        },
         memory: { status: 'healthy', message: 'ok', details: { used: 0, total: 0, percentage: 0 } },
       },
       uptime: 100,

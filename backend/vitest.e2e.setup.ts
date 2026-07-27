@@ -24,13 +24,18 @@ beforeAll(async () => {
   }
   initialized = true;
 
+  // open profile：无 oauth / validation（保持与历史行为完全一致）。
+  // 端口由 E2E_PORT 注入（api-e2e project 配置里设为 3000，默认回退 3000）。
+  const port = Number(process.env.E2E_PORT) || 3000;
+  const baseUrl = `http://localhost:${port}`;
+
   // 1. 写入测试配置（含 `default` 组，CONFIG_PATH 指向临时目录）
-  setupTestConfig();
+  setupTestConfig('open');
 
   // 2. 启动 TestServer（worker 内单例）
-  if (!(await checkServerHealth('http://localhost:3000'))) {
+  if (!(await checkServerHealth(baseUrl))) {
     try {
-      await startTestServer(3000);
+      await startTestServer(port);
     } catch (error) {
       console.error('[api-e2e setup] 测试服务器启动失败:', error);
       return;
@@ -38,5 +43,5 @@ beforeAll(async () => {
   }
 
   // 3. 等待就绪
-  await waitForServer('http://localhost:3000', 25, 200);
+  await waitForServer(baseUrl, 25, 200);
 }, 60000);
