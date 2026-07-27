@@ -1,3 +1,4 @@
+import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 /**
  * e2e：内置 AS client_credentials 完整流程
  *   1. POST /api/oauth/token 拿 token
@@ -15,12 +16,8 @@
  *     请求在 auth 中间件即被拒（不到协议层），裸 fetch 直接断言 401 即可。
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 
-import {
-  closeMcpClient,
-  defaultMcpTestConfig,
-} from './mcp-test-config.js';
+import { closeMcpClient, defaultMcpTestConfig } from './mcp-test-config.js';
 
 const TOKEN_ENDPOINT = `${defaultMcpTestConfig.baseUrl}/api/oauth/token`;
 const RESOURCE = `${defaultMcpTestConfig.baseUrl}`; // 内置 AS issuer = resource

@@ -8,7 +8,12 @@ import type {
   ToolExecutionEvent,
 } from '@/types/dashboard';
 
-export type SSEEventType = 'server_status' | 'tool_execution' | 'system_alert' | 'activity' | 'health_check';
+export type SSEEventType =
+  | 'server_status'
+  | 'tool_execution'
+  | 'system_alert'
+  | 'activity'
+  | 'health_check';
 
 export type SSEEventHandler<T = unknown> = (event: T) => void;
 

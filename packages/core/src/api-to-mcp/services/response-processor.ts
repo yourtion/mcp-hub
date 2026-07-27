@@ -5,9 +5,10 @@
 
 import jsonata from 'jsonata';
 
+import { createLogger } from '../../utils/logger.js';
+
 import type { ValidationResult } from '../types/api-tool.js';
 import type { HttpResponse } from '../types/http-client.js';
-import { createLogger } from '../../utils/logger.js';
 
 const logger = createLogger({ component: 'ResponseProcessor' });
 

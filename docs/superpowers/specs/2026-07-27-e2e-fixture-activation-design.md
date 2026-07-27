@@ -35,12 +35,12 @@
 
 ## 关键风险与决策（已核实）
 
-| 风险 | 核实结果 | 决策 |
-| --- | --- | --- |
-| client-credentials 错误凭据返回 400 还是 401 | `token.ts:43` 返回 **401**（invalid_client），测试期望 400 | **改测试**：`toBe(400)` → `toBe(401)` |
-| api-tools schema 是否含 oauth 分支 | core runtime schema 已含（Task 2 改的）；share 镜像未同步但 runtime 不用 | **无需改 schema** |
-| api-to-mcp 在 e2e 是否 initialize | `app.ts:28` 模块级 new，`initialize()` 只在 `index.ts`（e2e 不跑）调 → **未 initialize** | **测试侧补**：在 outbound e2e 的 setup 里 `await apiToMcpWebService.initialize(configPath)`（`app.ts` 暴露单例，测试可导入） |
-| validation/oauth 互斥 | `resource-server.ts:68` 确认互斥 | **拆 vitest project**：oauth-profile 和 validation-profile 各自独立 project + setup，配置隔离 |
+| 风险                                         | 核实结果                                                                                 | 决策                                                                                                                         |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| client-credentials 错误凭据返回 400 还是 401 | `token.ts:43` 返回 **401**（invalid_client），测试期望 400                               | **改测试**：`toBe(400)` → `toBe(401)`                                                                                        |
+| api-tools schema 是否含 oauth 分支           | core runtime schema 已含（Task 2 改的）；share 镜像未同步但 runtime 不用                 | **无需改 schema**                                                                                                            |
+| api-to-mcp 在 e2e 是否 initialize            | `app.ts:28` 模块级 new，`initialize()` 只在 `index.ts`（e2e 不跑）调 → **未 initialize** | **测试侧补**：在 outbound e2e 的 setup 里 `await apiToMcpWebService.initialize(configPath)`（`app.ts` 暴露单例，测试可导入） |
+| validation/oauth 互斥                        | `resource-server.ts:68` 确认互斥                                                         | **拆 vitest project**：oauth-profile 和 validation-profile 各自独立 project + setup，配置隔离                                |
 
 ## 设计
 
@@ -49,6 +49,7 @@
 **当前**：`vitest.e2e.setup.ts` 单 setup，`fileParallelism: false` 串行，所有 e2e 文件共享一份配置。
 
 **改造**：拆成两个 vitest project（在 `vitest.e2e.config.ts` 定义）：
+
 - `api-e2e`（现有）：open 模式配置（无 oauth/validation），跑现有的非 oauth e2e（mcp-basic / hub-aggregation / cache-semantics / mcp-http-api / protocol-compliance）。
 - `api-e2e-oauth`（新增）：oauth internal 模式配置，跑 4 个 oauth 入站 e2e（discovery/client-credentials/audience/external-idp）。
 - `api-e2e-validation`（新增）：validation 模式配置，跑 validation-key e2e。
@@ -63,6 +64,7 @@
 ### Step 2: 激活 4 个 oauth 入站 e2e（oauth profile）
 
 **fixture（oauth profile 的 system.json）**：
+
 ```json
 {
   "oauth": {
@@ -71,14 +73,18 @@
     "scopes": ["mcp:tools", "mcp:resources"],
     "internal": {
       "tokenTtlSeconds": 3600,
-      "clients": [{ "clientId": "test-client", "clientSecret": "test-secret", "scopes": ["mcp:tools"] }]
+      "clients": [
+        { "clientId": "test-client", "clientSecret": "test-secret", "scopes": ["mcp:tools"] }
+      ]
     }
   }
 }
 ```
+
 group.json 沿用现有 `default` 组（servers: `['test-server-1']`，stdio echo）。
 
 **逐个测试激活**：
+
 - **oauth-discovery**：删 `if (status===404) return` 守卫，改严格断言（metadata 符合 RFC9728、无 token 返回 401 + WWW-Authenticate）。
 - **oauth-client-credentials**：
   - 正确凭据：删 503 守卫，断言签发 token。
@@ -90,6 +96,7 @@ group.json 沿用现有 `default` 组（servers: `['test-server-1']`，stdio ech
 ### Step 3: 激活 oauth-external-idp（external profile + fetch stub）
 
 **fixture（external profile 的 system.json）**：
+
 ```json
 {
   "oauth": {
@@ -108,85 +115,108 @@ group.json 沿用现有 `default` 组（servers: `['test-server-1']`，stdio ech
 ```
 
 **测试文件 mock**（`beforeAll`）：
+
 ```typescript
 import { generateKeyPair, SignJWT } from 'jose';
 
 const { privateKey, publicKey } = await generateKeyPair('RS256');
 const jwk = await exportJWK(publicKey);
 
-vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
-  // JWKS 请求 → 返回测试公钥
-  if (url.includes('/.well-known/jwks.json')) {
-    return { status: 200, json: async () => ({ keys: [jwk] }) } as Response;
-  }
-  // introspect 请求 → 返回 active
-  if (url.includes('/introspect')) {
-    return { status: 200, json: async () => ({ active: true, aud: 'http://localhost:3000', scope: 'mcp:tools' }) } as Response;
-  }
-  return { status: 404 } as Response;
-}));
+vi.stubGlobal(
+  'fetch',
+  vi.fn(async (url: string, init?: RequestInit) => {
+    // JWKS 请求 → 返回测试公钥
+    if (url.includes('/.well-known/jwks.json')) {
+      return { status: 200, json: async () => ({ keys: [jwk] }) } as Response;
+    }
+    // introspect 请求 → 返回 active
+    if (url.includes('/introspect')) {
+      return {
+        status: 200,
+        json: async () => ({ active: true, aud: 'http://localhost:3000', scope: 'mcp:tools' }),
+      } as Response;
+    }
+    return { status: 404 } as Response;
+  }),
+);
 
 // afterAll: vi.unstubAllGlobals();
 ```
+
 测试用 `privateKey` 签发测试 token，发给 MCP 端点验证通过。
 
 参考 `token-validator.unit.test.ts:18-50` 的 mock 范式。
 
 ### Step 4: 激活 oauth-outbound（outbound profile + api-to-mcp initialize）
 
+> **实现修正（Step 4 实现时校准）**：spec 初稿假设"经 `/:group/mcp` MCP 端点调 api-to-mcp 工具"——**代码核实证明此路不通**。`/:group/mcp` 的 `GroupMcpService` 用 `coreServiceManager.getAllTools()`，只返回已连接 stdio server 的工具，**不加载 api_tools.json**。api-to-mcp 工具唯一可达路径是 `/api/api-to-mcp/configs/:id/test` REST 路由（经 `apiToMcpWebService.testConfig` → `OAuthStrategy.applyAuth` → `HttpClient.request`）。实际测试改走 REST 路由触发，出站 OAuth 全链路（token 获取 + Authorization 注入 + 缓存命中）仍完整覆盖，绕过 `/:group/mcp` 无覆盖率损失（该端点本就无法访问 api-to-mcp 工具）。
+
 **fixture（outbound profile）**：
+
 - `api_tools.json` 加一个 oauth 工具：
+
 ```json
 {
   "version": "1.0",
-  "tools": [{
-    "id": "oauth-protected-tool",
-    "name": "oauth_protected_tool",
-    "description": "测试出站 OAuth",
-    "api": { "url": "https://mock-resource.example.com/data", "method": "GET" },
-    "parameters": { "type": "object", "properties": {} },
-    "response": {},
-    "security": {
-      "authentication": {
-        "type": "oauth",
-        "grantType": "client_credentials",
-        "clientId": "outbound-client",
-        "clientSecret": "outbound-secret",
-        "tokenUrl": "https://mock-as.example.com/token",
-        "scope": "read"
+  "tools": [
+    {
+      "id": "oauth-protected-tool",
+      "name": "oauth_protected_tool",
+      "description": "测试出站 OAuth",
+      "api": { "url": "https://mock-resource.example.com/data", "method": "GET" },
+      "parameters": { "type": "object", "properties": {} },
+      "response": {},
+      "security": {
+        "authentication": {
+          "type": "oauth",
+          "grantType": "client_credentials",
+          "clientId": "outbound-client",
+          "clientSecret": "outbound-secret",
+          "tokenUrl": "https://mock-as.example.com/token",
+          "scope": "read"
+        }
       }
     }
-  }]
+  ]
 }
 ```
 
 **e2e setup 补 api-to-mcp initialize**：
+
 ```typescript
 // vitest.e2e.outbound.setup.ts
-import { apiToMcpWebService } from '../app.js';  // 或重新导出
+import { apiToMcpWebService } from '../app.js'; // 或重新导出
 
 beforeAll(async () => {
   setupTestConfig('outbound');
   await apiToMcpWebService.initialize(process.env.CONFIG_PATH + '/api_tools.json');
-  await startTestServer(3000);  // 注意端口隔离
+  await startTestServer(3000); // 注意端口隔离
 });
 ```
+
 **核查**：`app.ts` 是否 export `apiToMcpWebService`。若未 export，在 app.ts 加 `export { apiToMcpWebService }`（这是最小暴露，不算生产行为改动）。
 
 **测试逻辑**（替换 `oauth-outbound.test.ts` 的 throw 占位）：
+
 ```typescript
 let fetchCallCount = 0;
-vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-  fetchCallCount++;
-  if (url.includes('/token')) {
-    return { status: 200, json: async () => ({ access_token: 'outbound-tok', expires_in: 3600 }) } as Response;
-  }
-  if (url.includes('/data')) {
-    // 校验 Authorization 头，返回数据
-    return { status: 200, json: async () => ({ result: 'ok' }) } as Response;
-  }
-  return { status: 404 } as Response;
-}));
+vi.stubGlobal(
+  'fetch',
+  vi.fn(async (url: string) => {
+    fetchCallCount++;
+    if (url.includes('/token')) {
+      return {
+        status: 200,
+        json: async () => ({ access_token: 'outbound-tok', expires_in: 3600 }),
+      } as Response;
+    }
+    if (url.includes('/data')) {
+      // 校验 Authorization 头，返回数据
+      return { status: 200, json: async () => ({ result: 'ok' }) } as Response;
+    }
+    return { status: 404 } as Response;
+  }),
+);
 
 // 第一次调用 → fetchToken（token endpoint 调用 1 次）+ 资源调用
 const r1 = await callTool(client, 'oauth_protected_tool', {});
@@ -207,12 +237,12 @@ await callTool(client, 'oauth_protected_tool', {});
 
 ## 风险与缓解
 
-| 风险 | 缓解 |
-| --- | --- |
-| 拆 project 后端口冲突（多 server 抢 3000） | 各 project 用不同端口（3000/3010/3020/3030），或串行跑（fileParallelism: false 保留） |
-| external IdP mock 的 fetch stub 影响其他测试 | `afterAll` 严格 `vi.unstubAllGlobals()`；external e2e 独立 project 隔离 |
-| outbound 的 api-to-mcp initialize 依赖配置文件路径 | setup 里显式传 configPath，不依赖默认路径 |
-| 临时密钥每次生成导致 JWKS 不稳定 | external profile 的 fetch stub 用同一测试密钥派生公钥，不依赖服务端临时密钥 |
+| 风险                                               | 缓解                                                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 拆 project 后端口冲突（多 server 抢 3000）         | 各 project 用不同端口（3000/3010/3020/3030），或串行跑（fileParallelism: false 保留） |
+| external IdP mock 的 fetch stub 影响其他测试       | `afterAll` 严格 `vi.unstubAllGlobals()`；external e2e 独立 project 隔离               |
+| outbound 的 api-to-mcp initialize 依赖配置文件路径 | setup 里显式传 configPath，不依赖默认路径                                             |
+| 临时密钥每次生成导致 JWKS 不稳定                   | external profile 的 fetch stub 用同一测试密钥派生公钥，不依赖服务端临时密钥           |
 
 ## 待实现时确认的细节
 
