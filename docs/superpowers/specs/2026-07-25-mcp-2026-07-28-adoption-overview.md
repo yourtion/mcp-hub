@@ -35,7 +35,7 @@
 | ------ | ------------------------------------ | ------------------------- | --------------------------------------------------------------------- | ------------------------------------------- |
 | **P1** | 传输层升级到 2026-07-28 无状态       | ✅ 完成                   | ✅ **实现完成**（已合并 main，commits `6aedf23`/`f802256`/`5303574`） | `2026-07-25-p1-transport-upgrade-design.md` |
 | **P2** | 入站 OAuth 2.1（Protected Resource） | ✅ 完成                   | ✅ **实现完成**（分支 `feat/p2-inbound-oauth`，待合并）               | `2026-07-26-p2-inbound-oauth-design.md`     |
-| P3     | 出站 OAuth（AuthenticationStrategy） | ⏳ 待 brainstorming       | ⬜ 未开始                                                             | —                                           |
+| P3     | 出站 OAuth（AuthenticationStrategy） | ✅ 完成                   | ⬜ 未开始                                                             | `2026-07-27-p3-outbound-oauth-design.md`    |
 | **P4** | `ttlMs`/`cacheScope` 缓存语义        | ✅ 完成                   | ✅ **实现完成**（已合并 main，merge `a03f430`）                       | `2026-07-26-p4-cache-semantics-design.md`   |
 | P5     | `subscriptions/listen` + MRTR        | ⏳ 推迟（观望客户端生态） | ⬜ 未开始                                                             | —                                           |
 | P6     | OTel trace context + 弃用项清理      | ⏳ 待 brainstorming       | ⬜ 未开始                                                             | —                                           |
