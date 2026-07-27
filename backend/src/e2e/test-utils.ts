@@ -8,22 +8,45 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { expect } from 'vitest';
 
+import { encryptValidationKey } from '../api/groups/crypto.js';
 import { ConsoleLogger, LogLevel } from '../utils/logger.js';
+
+/**
+ * e2e 配置 profile。
+ *
+ * - `open`（默认）：无 oauth / validation，跑现有非 oauth e2e（向后兼容）。
+ * - `oauth`：system.json 配 oauth internal 块，group.json 沿用 default 组。
+ * - `validation`：设 VALIDATION_KEY_SECRET，default 组启用 validation。
+ * - `outbound`：system.json 配 oauth internal 块（保护 MCP 端点），api_tools.json
+ *   预置一个 oauth 工具占位（Step 4 才真正 initialize + 调用）。
+ *
+ * oauth 与 validation 互斥（见 resource-server.ts），所以二者各有独立 profile。
+ */
+export type TestConfigProfile = 'open' | 'oauth' | 'validation' | 'outbound';
 
 // 测试配置目录路径
 let testConfigDir: string | null = null;
 
 /**
- * 创建测试配置目录并写入测试配置文件
- * @param enableAuth 是否启用认证，默认为 true
+ * 创建测试配置目录并写入测试配置文件。
+ *
+ * @param profileOrEnableAuth 配置 profile。为兼容历史调用，仍接受 boolean：
+ *   `true`（默认）= `'open'`，`false` = `'open'` 但关闭 users（等同旧 enableAuth=false）。
+ *   新代码应直接传 `'open' | 'oauth' | 'validation' | 'outbound'`。
+ * @returns 测试配置目录绝对路径
  */
-export function setupTestConfig(enableAuth: boolean = true): string {
+export function setupTestConfig(profileOrEnableAuth: TestConfigProfile | boolean = 'open'): string {
   if (testConfigDir) {
     return testConfigDir; // 已经设置过了
   }
 
-  // 创建临时配置目录
-  testConfigDir = path.join(tmpdir(), `mcp-hub-e2e-test-${Date.now()}`);
+  // 归一化 profile + 兼容旧 boolean 入参
+  const profile: TestConfigProfile =
+    typeof profileOrEnableAuth === 'boolean' ? 'open' : profileOrEnableAuth;
+  const enableAuth = typeof profileOrEnableAuth === 'boolean' ? profileOrEnableAuth : true;
+
+  // 创建临时配置目录（按 profile 区分前缀，避免 JsonStorage 缓存串）
+  testConfigDir = path.join(tmpdir(), `mcp-hub-e2e-${profile}-${process.pid}-${Date.now()}`);
   mkdirSync(testConfigDir, { recursive: true });
 
   // 设置环境变量（在创建文件前设置）
@@ -44,7 +67,9 @@ export function setupTestConfig(enableAuth: boolean = true): string {
   // 写入测试配置文件
 
   // 1. group.json - 测试组配置
-  const groupConfig = {
+  //   validation profile 给 default 组追加 validation 块（运行时加密 validationKey）。
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- e2e fixture, dynamic config shape
+  const groupConfig: Record<string, any> = {
     default: {
       id: 'default',
       name: '默认组',
@@ -67,7 +92,6 @@ export function setupTestConfig(enableAuth: boolean = true): string {
       tools: [],
     },
   };
-  writeFileSync(path.join(testConfigDir, 'group.json'), JSON.stringify(groupConfig, null, 2));
 
   // 2. mcp_server.json - 测试 MCP 服务器配置
   const mcpServerConfig = {
@@ -91,16 +115,48 @@ export function setupTestConfig(enableAuth: boolean = true): string {
     JSON.stringify(mcpServerConfig, null, 2),
   );
 
-  // 2.5. api_tools.json - API工具配置（空文件用于测试）
+  // 2.5. api_tools.json - API工具配置
+  //   默认空；outbound profile 预置一个 oauth 工具占位（Step 4 才真正 initialize 调用）。
+  const apiToolsConfig =
+    profile === 'outbound'
+      ? {
+          configs: [
+            {
+              id: 'oauth-protected-tool',
+              name: 'oauth_protected_tool',
+              description: '测试出站 OAuth（fixture 占位，Step 4 激活）',
+              api: { url: 'https://mock-resource.example.com/data', method: 'GET' },
+              parameters: { type: 'object', properties: {} },
+              response: {},
+              security: {
+                authentication: {
+                  type: 'oauth',
+                  grantType: 'client_credentials',
+                  clientId: 'outbound-client',
+                  clientSecret: 'outbound-secret',
+                  tokenUrl: 'https://mock-as.example.com/token',
+                  scope: 'read',
+                },
+              },
+            },
+          ],
+        }
+      : { configs: [] };
   writeFileSync(
     path.join(testConfigDir, 'api_tools.json'),
-    JSON.stringify({ configs: [] }, null, 2),
+    JSON.stringify(apiToolsConfig, null, 2),
   );
 
   // 3. system.json - 基本系统配置
-  const systemConfig = {
+  //   oauth / outbound profile 追加 oauth internal 块（resource 跟随当前端口，默认 3000）。
+  //   validation profile 不配 oauth（互斥），由 group.json 启用 validation。
+  const port = Number(process.env.E2E_PORT) || 3000;
+  const resource = `http://localhost:${port}`;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- e2e fixture, dynamic config shape
+  const systemConfig: Record<string, any> = {
     server: {
-      port: 3000,
+      port,
       host: 'localhost',
     },
     apiToolsConfigPath: path.join(testConfigDir, 'api_tools.json'),
@@ -146,7 +202,38 @@ export function setupTestConfig(enableAuth: boolean = true): string {
       retentionDays: 7,
     },
   };
+
+  if (profile === 'oauth' || profile === 'outbound') {
+    // oauth internal 块（spec Step 2 fixture）
+    systemConfig.oauth = {
+      mode: 'internal',
+      resource,
+      scopes: ['mcp:tools', 'mcp:resources'],
+      internal: {
+        tokenTtlSeconds: 3600,
+        clients: [{ clientId: 'test-client', clientSecret: 'test-secret', scopes: ['mcp:tools'] }],
+      },
+    };
+  }
+
   writeFileSync(path.join(testConfigDir, 'system.json'), JSON.stringify(systemConfig, null, 2));
+
+  // 4. validation profile：给 default 组追加 validation 块（运行时加密 validationKey）。
+  //    oauth / outbound profile 沿用现有 default 组（不加 validation，因 oauth/validation 互斥）。
+  if (profile === 'validation') {
+    // fail-fast：crypto.ts 要求 VALIDATION_KEY_SECRET >= 32 字符
+    process.env.VALIDATION_KEY_SECRET = 'test-validation-key-secret-32chars-min!!';
+    // 加密已知明文 'testValidationKey123'（validation-key.test.ts 的 KNOWN_KEY）
+    const encryptedKey = encryptValidationKey('testValidationKey123');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    groupConfig.default.validation = {
+      enabled: true,
+      validationKey: encryptedKey,
+    };
+  }
+
+  // 统一写 group.json（含或不含 validation 块）
+  writeFileSync(path.join(testConfigDir, 'group.json'), JSON.stringify(groupConfig, null, 2));
 
   return testConfigDir;
 }
