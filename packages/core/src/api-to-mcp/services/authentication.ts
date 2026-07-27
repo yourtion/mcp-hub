@@ -18,10 +18,10 @@ export interface AuthenticationStrategy {
   readonly name: string;
 
   /** 应用认证到HTTP请求 */
-  applyAuth(request: HttpRequestConfig, config: AuthConfig): HttpRequestConfig;
+  applyAuth(request: HttpRequestConfig, config: AuthConfig): Promise<HttpRequestConfig>;
 
   /** 验证认证配置 */
-  validateConfig(config: AuthConfig): { valid: boolean; error?: string };
+  validateConfig(config: AuthConfig): Promise<{ valid: boolean; error?: string }>;
 }
 
 /**
@@ -30,7 +30,10 @@ export interface AuthenticationStrategy {
 export class BearerTokenStrategy implements AuthenticationStrategy {
   readonly name = 'bearer';
 
-  applyAuth(request: HttpRequestConfig, config: AuthConfig): HttpRequestConfig {
+  async applyAuth(request: HttpRequestConfig, config: AuthConfig): Promise<HttpRequestConfig> {
+    if (config.type !== 'bearer') {
+      throw new Error('Bearer 策略收到非 bearer 配置');
+    }
     if (!config.token) {
       throw new Error('Bearer token认证需要提供token');
     }
@@ -46,7 +49,7 @@ export class BearerTokenStrategy implements AuthenticationStrategy {
     };
   }
 
-  validateConfig(config: AuthConfig): { valid: boolean; error?: string } {
+  async validateConfig(config: AuthConfig): Promise<{ valid: boolean; error?: string }> {
     if (config.type !== 'bearer') {
       return { valid: false, error: '认证类型不匹配' };
     }
@@ -73,7 +76,10 @@ export class BearerTokenStrategy implements AuthenticationStrategy {
 export class ApiKeyStrategy implements AuthenticationStrategy {
   readonly name = 'apikey';
 
-  applyAuth(request: HttpRequestConfig, config: AuthConfig): HttpRequestConfig {
+  async applyAuth(request: HttpRequestConfig, config: AuthConfig): Promise<HttpRequestConfig> {
+    if (config.type !== 'apikey') {
+      throw new Error('API Key 策略收到非 apikey 配置');
+    }
     if (!config.token) {
       throw new Error('API Key认证需要提供token');
     }
@@ -90,7 +96,7 @@ export class ApiKeyStrategy implements AuthenticationStrategy {
     };
   }
 
-  validateConfig(config: AuthConfig): { valid: boolean; error?: string } {
+  async validateConfig(config: AuthConfig): Promise<{ valid: boolean; error?: string }> {
     if (config.type !== 'apikey') {
       return { valid: false, error: '认证类型不匹配' };
     }
@@ -120,7 +126,10 @@ export class ApiKeyStrategy implements AuthenticationStrategy {
 export class BasicAuthStrategy implements AuthenticationStrategy {
   readonly name = 'basic';
 
-  applyAuth(request: HttpRequestConfig, config: AuthConfig): HttpRequestConfig {
+  async applyAuth(request: HttpRequestConfig, config: AuthConfig): Promise<HttpRequestConfig> {
+    if (config.type !== 'basic') {
+      throw new Error('Basic 策略收到非 basic 配置');
+    }
     if (!config.username || !config.password) {
       throw new Error('Basic认证需要提供用户名和密码');
     }
@@ -137,7 +146,7 @@ export class BasicAuthStrategy implements AuthenticationStrategy {
     };
   }
 
-  validateConfig(config: AuthConfig): { valid: boolean; error?: string } {
+  async validateConfig(config: AuthConfig): Promise<{ valid: boolean; error?: string }> {
     if (config.type !== 'basic') {
       return { valid: false, error: '认证类型不匹配' };
     }
@@ -211,14 +220,17 @@ export class AuthenticationManager {
   /**
    * 应用认证到HTTP请求
    */
-  applyAuthentication(request: HttpRequestConfig, authConfig: AuthConfig): HttpRequestConfig {
+  async applyAuthentication(
+    request: HttpRequestConfig,
+    authConfig: AuthConfig,
+  ): Promise<HttpRequestConfig> {
     const strategy = this.strategies.get(authConfig.type);
     if (!strategy) {
       throw new Error(`不支持的认证类型: ${authConfig.type}`);
     }
 
     // 验证认证配置
-    const validation = strategy.validateConfig(authConfig);
+    const validation = await strategy.validateConfig(authConfig);
     if (!validation.valid) {
       throw new Error(`认证配置无效: ${validation.error}`);
     }
@@ -230,10 +242,10 @@ export class AuthenticationManager {
   /**
    * 验证认证配置
    */
-  validateAuthConfig(authConfig: AuthConfig): {
+  async validateAuthConfig(authConfig: AuthConfig): Promise<{
     valid: boolean;
     error?: string;
-  } {
+  }> {
     const strategy = this.strategies.get(authConfig.type);
     if (!strategy) {
       return { valid: false, error: `不支持的认证类型: ${authConfig.type}` };
