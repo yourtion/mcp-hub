@@ -19,6 +19,8 @@ import {
 import type { AuthConfig } from '../types/api-config.js';
 import type { HttpRequestConfig } from '../types/http-client.js';
 import type { AuthenticationStrategy } from './authentication.js';
+import type { CacheManager } from './cache-manager.js';
+import type { HttpClient } from './http-client.js';
 
 vi.mock('../../utils/logger.js', () => ({
   createLogger: () => ({
@@ -49,11 +51,11 @@ describe('BearerTokenStrategy', function () {
   });
 
   describe('applyAuth', function () {
-    it('应该在请求头中添加 Bearer Token 认证头', function () {
+    it('应该在请求头中添加 Bearer Token 认证头', async function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'bearer', token: 'my-secret-token' };
 
-      const result = strategy.applyAuth(request, config);
+      const result = await strategy.applyAuth(request, config);
 
       expect(result.headers).toBeDefined();
       expect(result.headers!.Authorization).toBe('Bearer my-secret-token');
@@ -61,60 +63,60 @@ describe('BearerTokenStrategy', function () {
       expect(result.headers!['Content-Type']).toBe('application/json');
     });
 
-    it('当未提供 token 时应该抛出错误', function () {
+    it('当未提供 token 时应该抛出错误', async function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'bearer' };
 
-      expect(function () {
-        strategy.applyAuth(request, config);
-      }).toThrow('Bearer token认证需要提供token');
+      await expect(strategy.applyAuth(request, config)).rejects.toThrow(
+        'Bearer token认证需要提供token',
+      );
     });
   });
 
   describe('validateConfig', function () {
-    it('有效的配置应返回 { valid: true }', function () {
+    it('有效的配置应返回 { valid: true }', async function () {
       const config: AuthConfig = { type: 'bearer', token: 'valid-token' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(true);
       expect(result.error).toBeUndefined();
     });
 
-    it('类型不匹配时应返回错误', function () {
+    it('类型不匹配时应返回错误', async function () {
       const config: AuthConfig = { type: 'apikey', token: 'some-token' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('认证类型不匹配');
     });
 
-    it('缺少 token 时应返回错误', function () {
+    it('缺少 token 时应返回错误', async function () {
       const config: AuthConfig = { type: 'bearer' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Bearer认证需要提供token');
     });
 
-    it('空字符串 token 应返回错误', function () {
+    it('空字符串 token 应返回错误', async function () {
       const config: AuthConfig = { type: 'bearer', token: '' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Bearer认证需要提供token');
     });
 
-    it('仅包含空白字符的 token 应返回错误', function () {
+    it('仅包含空白字符的 token 应返回错误', async function () {
       const config: AuthConfig = { type: 'bearer', token: '   ' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Token必须是非空字符串');
     });
 
-    it('非字符串的 token 应返回错误', function () {
+    it('非字符串的 token 应返回错误', async function () {
       const config = { type: 'bearer' as const, token: 123 as unknown as string };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Token必须是字符串');
@@ -133,115 +135,113 @@ describe('ApiKeyStrategy', function () {
   });
 
   describe('applyAuth', function () {
-    it('应该使用默认 X-API-Key 头添加 API Key', function () {
+    it('应该使用默认 X-API-Key 头添加 API Key', async function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'apikey', token: 'my-api-key' };
 
-      const result = strategy.applyAuth(request, config);
+      const result = await strategy.applyAuth(request, config);
 
       expect(result.headers).toBeDefined();
       expect(result.headers!['X-API-Key']).toBe('my-api-key');
     });
 
-    it('应该使用指定的自定义头名称', function () {
+    it('应该使用指定的自定义头名称', async function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'apikey', token: 'my-api-key', header: 'X-Custom-Auth' };
 
-      const result = strategy.applyAuth(request, config);
+      const result = await strategy.applyAuth(request, config);
 
       expect(result.headers).toBeDefined();
       expect(result.headers!['X-Custom-Auth']).toBe('my-api-key');
     });
 
-    it('当未提供 token 时应该抛出错误', function () {
+    it('当未提供 token 时应该抛出错误', async function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'apikey' };
 
-      expect(function () {
-        strategy.applyAuth(request, config);
-      }).toThrow('API Key认证需要提供token');
+      await expect(strategy.applyAuth(request, config)).rejects.toThrow('API Key认证需要提供token');
     });
   });
 
   describe('validateConfig', function () {
-    it('有效配置应返回 { valid: true }', function () {
+    it('有效配置应返回 { valid: true }', async function () {
       const config: AuthConfig = { type: 'apikey', token: 'valid-key' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(true);
       expect(result.error).toBeUndefined();
     });
 
-    it('带自定义 header 的有效配置应返回 { valid: true }', function () {
+    it('带自定义 header 的有效配置应返回 { valid: true }', async function () {
       const config: AuthConfig = { type: 'apikey', token: 'valid-key', header: 'X-Custom' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(true);
     });
 
-    it('类型不匹配时应返回错误', function () {
+    it('类型不匹配时应返回错误', async function () {
       const config: AuthConfig = { type: 'bearer', token: 'some-token' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('认证类型不匹配');
     });
 
-    it('缺少 token 时应返回错误', function () {
+    it('缺少 token 时应返回错误', async function () {
       const config: AuthConfig = { type: 'apikey' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('API Key认证需要提供token');
     });
 
-    it('空字符串 token 应返回错误', function () {
+    it('空字符串 token 应返回错误', async function () {
       const config: AuthConfig = { type: 'apikey', token: '' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('API Key认证需要提供token');
     });
 
-    it('仅包含空白字符的 token 应返回错误', function () {
+    it('仅包含空白字符的 token 应返回错误', async function () {
       const config: AuthConfig = { type: 'apikey', token: '   ' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('API Key必须是非空字符串');
     });
 
-    it('非字符串 token 应返回错误', function () {
+    it('非字符串 token 应返回错误', async function () {
       const config = { type: 'apikey' as const, token: 42 as unknown as string };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('API Key必须是非空字符串');
     });
 
-    it('空字符串 header 应返回错误', function () {
+    it('空字符串 header 应返回错误', async function () {
       const config: AuthConfig = { type: 'apikey', token: 'valid-key', header: '' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Header名称必须是非空字符串');
     });
 
-    it('仅包含空白字符的 header 应返回错误', function () {
+    it('仅包含空白字符的 header 应返回错误', async function () {
       const config: AuthConfig = { type: 'apikey', token: 'valid-key', header: '  ' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Header名称必须是非空字符串');
     });
 
-    it('非字符串 header 应返回错误', function () {
+    it('非字符串 header 应返回错误', async function () {
       const config = {
         type: 'apikey' as const,
         token: 'valid-key',
         header: 99 as unknown as string,
       };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Header名称必须是非空字符串');
@@ -260,129 +260,129 @@ describe('BasicAuthStrategy', function () {
   });
 
   describe('applyAuth', function () {
-    it('应该添加 base64 编码的 Basic 认证头', function () {
+    it('应该添加 base64 编码的 Basic 认证头', async function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'basic', username: 'user', password: 'pass' };
 
-      const result = strategy.applyAuth(request, config);
+      const result = await strategy.applyAuth(request, config);
 
       expect(result.headers).toBeDefined();
       const expectedEncoded = Buffer.from('user:pass').toString('base64');
       expect(result.headers!.Authorization).toBe(`Basic ${expectedEncoded}`);
     });
 
-    it('缺少用户名时应该抛出错误', function () {
+    it('缺少用户名时应该抛出错误', async function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'basic', password: 'pass' };
 
-      expect(function () {
-        strategy.applyAuth(request, config);
-      }).toThrow('Basic认证需要提供用户名和密码');
+      await expect(strategy.applyAuth(request, config)).rejects.toThrow(
+        'Basic认证需要提供用户名和密码',
+      );
     });
 
-    it('缺少密码时应该抛出错误', function () {
+    it('缺少密码时应该抛出错误', async function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'basic', username: 'user' };
 
-      expect(function () {
-        strategy.applyAuth(request, config);
-      }).toThrow('Basic认证需要提供用户名和密码');
+      await expect(strategy.applyAuth(request, config)).rejects.toThrow(
+        'Basic认证需要提供用户名和密码',
+      );
     });
 
-    it('用户名和密码都缺少时应该抛出错误', function () {
+    it('用户名和密码都缺少时应该抛出错误', async function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'basic' };
 
-      expect(function () {
-        strategy.applyAuth(request, config);
-      }).toThrow('Basic认证需要提供用户名和密码');
+      await expect(strategy.applyAuth(request, config)).rejects.toThrow(
+        'Basic认证需要提供用户名和密码',
+      );
     });
   });
 
   describe('validateConfig', function () {
-    it('有效配置应返回 { valid: true }', function () {
+    it('有效配置应返回 { valid: true }', async function () {
       const config: AuthConfig = { type: 'basic', username: 'user', password: 'pass' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(true);
       expect(result.error).toBeUndefined();
     });
 
-    it('类型不匹配时应返回错误', function () {
+    it('类型不匹配时应返回错误', async function () {
       const config: AuthConfig = { type: 'bearer', username: 'user', password: 'pass' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('认证类型不匹配');
     });
 
-    it('缺少用户名应返回错误', function () {
+    it('缺少用户名应返回错误', async function () {
       const config: AuthConfig = { type: 'basic', password: 'pass' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Basic认证需要提供用户名');
     });
 
-    it('缺少密码应返回错误', function () {
+    it('缺少密码应返回错误', async function () {
       const config: AuthConfig = { type: 'basic', username: 'user' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Basic认证需要提供密码');
     });
 
-    it('空字符串用户名应返回错误', function () {
+    it('空字符串用户名应返回错误', async function () {
       const config: AuthConfig = { type: 'basic', username: '', password: 'pass' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Basic认证需要提供用户名');
     });
 
-    it('仅包含空白字符的用户名应返回错误', function () {
+    it('仅包含空白字符的用户名应返回错误', async function () {
       const config: AuthConfig = { type: 'basic', username: '  ', password: 'pass' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('用户名必须是非空字符串');
     });
 
-    it('空字符串密码应返回错误', function () {
+    it('空字符串密码应返回错误', async function () {
       const config: AuthConfig = { type: 'basic', username: 'user', password: '' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Basic认证需要提供密码');
     });
 
-    it('仅包含空白字符的密码应返回错误', function () {
+    it('仅包含空白字符的密码应返回错误', async function () {
       const config: AuthConfig = { type: 'basic', username: 'user', password: '  ' };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('密码必须是非空字符串');
     });
 
-    it('非字符串用户名应返回错误', function () {
+    it('非字符串用户名应返回错误', async function () {
       const config = {
         type: 'basic' as const,
         username: 123 as unknown as string,
         password: 'pass',
       };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('用户名必须是字符串');
     });
 
-    it('非字符串密码应返回错误', function () {
+    it('非字符串密码应返回错误', async function () {
       const config = {
         type: 'basic' as const,
         username: 'user',
         password: 456 as unknown as string,
       };
-      const result = strategy.validateConfig(config);
+      const result = await strategy.validateConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('密码必须是字符串');
@@ -449,11 +449,11 @@ describe('AuthenticationManager', function () {
     it('应该能够注册自定义策略', function () {
       const customStrategy: AuthenticationStrategy = {
         name: 'custom',
-        applyAuth(request: HttpRequestConfig) {
+        async applyAuth(request: HttpRequestConfig) {
           const headers = { ...request.headers, 'X-Custom': 'custom-value' };
           return { ...request, headers };
         },
-        validateConfig() {
+        async validateConfig() {
           return { valid: true };
         },
       };
@@ -466,75 +466,58 @@ describe('AuthenticationManager', function () {
   });
 
   describe('applyAuthentication', function () {
-    it('应该使用 bearer 策略应用认证', function () {
+    it('应该使用 bearer 策略应用认证', async function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'bearer', token: 'test-token' };
 
-      const result = manager.applyAuthentication(request, config);
+      const result = await manager.applyAuthentication(request, config);
 
       expect(result.headers!.Authorization).toBe('Bearer test-token');
     });
 
-    it('应该使用 apikey 策略应用认证', function () {
+    it('应该使用 apikey 策略应用认证', async function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'apikey', token: 'test-key' };
 
-      const result = manager.applyAuthentication(request, config);
+      const result = await manager.applyAuthentication(request, config);
 
       expect(result.headers!['X-API-Key']).toBe('test-key');
     });
 
-    it('应该使用 basic 策略应用认证', function () {
+    it('应该使用 basic 策略应用认证', async function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'basic', username: 'user', password: 'pass' };
 
-      const result = manager.applyAuthentication(request, config);
+      const result = await manager.applyAuthentication(request, config);
 
       const expectedEncoded = Buffer.from('user:pass').toString('base64');
       expect(result.headers!.Authorization).toBe(`Basic ${expectedEncoded}`);
     });
 
-    it('未知的认证类型应该抛出错误', function () {
-      const request = createBaseRequest();
-      const config = { type: 'oauth' } as unknown as AuthConfig;
-
-      expect(function () {
-        manager.applyAuthentication(request, config);
-      }).toThrow('不支持的认证类型: oauth');
-    });
-
-    it('无效的配置应该抛出错误', function () {
+    it('无效的配置应该抛出错误', async function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'bearer' };
 
-      expect(function () {
-        manager.applyAuthentication(request, config);
-      }).toThrow('认证配置无效: Bearer认证需要提供token');
+      await expect(manager.applyAuthentication(request, config)).rejects.toThrow(
+        '认证配置无效: Bearer认证需要提供token',
+      );
     });
   });
 
   describe('validateAuthConfig', function () {
-    it('有效的 bearer 配置应返回 valid', function () {
+    it('有效的 bearer 配置应返回 valid', async function () {
       const config: AuthConfig = { type: 'bearer', token: 'valid-token' };
-      const result = manager.validateAuthConfig(config);
+      const result = await manager.validateAuthConfig(config);
 
       expect(result.valid).toBe(true);
     });
 
-    it('无效的 bearer 配置应返回错误', function () {
+    it('无效的 bearer 配置应返回错误', async function () {
       const config: AuthConfig = { type: 'bearer' };
-      const result = manager.validateAuthConfig(config);
+      const result = await manager.validateAuthConfig(config);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Bearer认证需要提供token');
-    });
-
-    it('未知的认证类型应返回错误', function () {
-      const config = { type: 'oauth' } as unknown as AuthConfig;
-      const result = manager.validateAuthConfig(config);
-
-      expect(result.valid).toBe(false);
-      expect(result.error).toBe('不支持的认证类型: oauth');
     });
   });
 
@@ -625,6 +608,29 @@ describe('AuthenticationManager', function () {
       expect(resolved.token).toBe('plain-token');
       expect(resolved.type).toBe('bearer');
     });
+
+    it('应该解析 oauth clientId/clientSecret/refreshToken 中的 {{env.VAR}}', function () {
+      originalEnv['TEST_OAUTH_ID'] = process.env['TEST_OAUTH_ID'];
+      originalEnv['TEST_OAUTH_SECRET'] = process.env['TEST_OAUTH_SECRET'];
+      originalEnv['TEST_OAUTH_RT'] = process.env['TEST_OAUTH_RT'];
+      process.env['TEST_OAUTH_ID'] = 'resolved-id';
+      process.env['TEST_OAUTH_SECRET'] = 'resolved-secret';
+      process.env['TEST_OAUTH_RT'] = 'resolved-rt';
+      const config: AuthConfig = {
+        type: 'oauth',
+        grantType: 'client_credentials',
+        clientId: '{{env.TEST_OAUTH_ID}}',
+        clientSecret: '{{env.TEST_OAUTH_SECRET}}',
+        tokenUrl: 'https://as.com/token',
+        refreshToken: '{{env.TEST_OAUTH_RT}}',
+      };
+
+      const resolved = manager.resolveEnvironmentVariables(config) as typeof config;
+
+      expect(resolved.clientId).toBe('resolved-id');
+      expect(resolved.clientSecret).toBe('resolved-secret');
+      expect(resolved.refreshToken).toBe('resolved-rt');
+    });
   });
 
   describe('validateEnvironmentVariables', function () {
@@ -679,6 +685,26 @@ describe('AuthenticationManager', function () {
       expect(result.missingVars).toEqual(['MISSING_VAR']);
     });
 
+    it('oauth 配置缺环境变量时应返回错误', function () {
+      delete process.env['MISSING_OAUTH_ID'];
+      delete process.env['MISSING_OAUTH_SECRET'];
+      originalEnv['MISSING_OAUTH_ID'] = process.env['MISSING_OAUTH_ID'];
+      originalEnv['MISSING_OAUTH_SECRET'] = process.env['MISSING_OAUTH_SECRET'];
+      const config: AuthConfig = {
+        type: 'oauth',
+        grantType: 'client_credentials',
+        clientId: '{{env.MISSING_OAUTH_ID}}',
+        clientSecret: '{{env.MISSING_OAUTH_SECRET}}',
+        tokenUrl: 'https://as.com/token',
+      };
+
+      const result = manager.validateEnvironmentVariables(config);
+
+      expect(result.valid).toBe(false);
+      expect(result.missingVars).toContain('MISSING_OAUTH_ID');
+      expect(result.missingVars).toContain('MISSING_OAUTH_SECRET');
+    });
+
     it('没有环境变量引用时应返回 valid', function () {
       const config: AuthConfig = { type: 'bearer', token: 'plain-token' };
 
@@ -687,6 +713,56 @@ describe('AuthenticationManager', function () {
       expect(result.valid).toBe(true);
       expect(result.missingVars).toHaveLength(0);
     });
+  });
+});
+
+// ============================================================================
+// OAuth 策略（注入 deps）
+// ============================================================================
+describe('OAuth 策略（注入 deps）', () => {
+  let oauthManager: AuthenticationManager;
+
+  beforeEach(() => {
+    oauthManager = new AuthenticationManager({
+      httpClient: {} as HttpClient,
+      cache: {} as CacheManager,
+    });
+  });
+
+  it('注册了 oauth 策略，不抛错', async () => {
+    // 注入 mock 让 applyAuth 不真正调网络
+    const httpClient = {
+      request: vi.fn().mockResolvedValue({
+        status: 200,
+        data: { access_token: 'tok', expires_in: 3600 },
+      }),
+    } as unknown as HttpClient;
+    const cache = {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue(undefined),
+    } as unknown as CacheManager;
+    const m = new AuthenticationManager({ httpClient, cache });
+
+    const request = { url: 'https://x.com', method: 'GET' as const, headers: {} };
+    const config = {
+      type: 'oauth' as const,
+      grantType: 'client_credentials' as const,
+      clientId: 'cid',
+      clientSecret: 's',
+      tokenUrl: 'https://as.com/token',
+    };
+
+    const result = await m.applyAuthentication(request, config);
+    expect(result.headers!.Authorization).toBe('Bearer tok');
+  });
+
+  it('未注入 deps 的 manager 不注册 oauth（getSupportedTypes 不含 oauth）', () => {
+    const plainManager = new AuthenticationManager();
+    expect(plainManager.getSupportedTypes()).not.toContain('oauth');
+  });
+
+  it('注入 deps 的 manager 注册了 oauth', () => {
+    expect(oauthManager.getSupportedTypes()).toContain('oauth');
   });
 });
 

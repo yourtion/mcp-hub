@@ -4,9 +4,12 @@
  */
 
 import { createLogger } from '../../utils/logger.js';
+import { OAuthStrategy } from './oauth-strategy.js';
 
 import type { AuthConfig } from '../types/api-config.js';
 import type { HttpRequestConfig } from '../types/http-client.js';
+import type { CacheManager } from './cache-manager.js';
+import type { HttpClient } from './http-client.js';
 
 const logger = createLogger({ component: 'Authentication' });
 
@@ -18,10 +21,10 @@ export interface AuthenticationStrategy {
   readonly name: string;
 
   /** 应用认证到HTTP请求 */
-  applyAuth(request: HttpRequestConfig, config: AuthConfig): HttpRequestConfig;
+  applyAuth(request: HttpRequestConfig, config: AuthConfig): Promise<HttpRequestConfig>;
 
   /** 验证认证配置 */
-  validateConfig(config: AuthConfig): { valid: boolean; error?: string };
+  validateConfig(config: AuthConfig): Promise<{ valid: boolean; error?: string }>;
 }
 
 /**
@@ -30,7 +33,10 @@ export interface AuthenticationStrategy {
 export class BearerTokenStrategy implements AuthenticationStrategy {
   readonly name = 'bearer';
 
-  applyAuth(request: HttpRequestConfig, config: AuthConfig): HttpRequestConfig {
+  async applyAuth(request: HttpRequestConfig, config: AuthConfig): Promise<HttpRequestConfig> {
+    if (config.type !== 'bearer') {
+      throw new Error('Bearer 策略收到非 bearer 配置');
+    }
     if (!config.token) {
       throw new Error('Bearer token认证需要提供token');
     }
@@ -46,7 +52,7 @@ export class BearerTokenStrategy implements AuthenticationStrategy {
     };
   }
 
-  validateConfig(config: AuthConfig): { valid: boolean; error?: string } {
+  async validateConfig(config: AuthConfig): Promise<{ valid: boolean; error?: string }> {
     if (config.type !== 'bearer') {
       return { valid: false, error: '认证类型不匹配' };
     }
@@ -73,7 +79,10 @@ export class BearerTokenStrategy implements AuthenticationStrategy {
 export class ApiKeyStrategy implements AuthenticationStrategy {
   readonly name = 'apikey';
 
-  applyAuth(request: HttpRequestConfig, config: AuthConfig): HttpRequestConfig {
+  async applyAuth(request: HttpRequestConfig, config: AuthConfig): Promise<HttpRequestConfig> {
+    if (config.type !== 'apikey') {
+      throw new Error('API Key 策略收到非 apikey 配置');
+    }
     if (!config.token) {
       throw new Error('API Key认证需要提供token');
     }
@@ -90,7 +99,7 @@ export class ApiKeyStrategy implements AuthenticationStrategy {
     };
   }
 
-  validateConfig(config: AuthConfig): { valid: boolean; error?: string } {
+  async validateConfig(config: AuthConfig): Promise<{ valid: boolean; error?: string }> {
     if (config.type !== 'apikey') {
       return { valid: false, error: '认证类型不匹配' };
     }
@@ -120,7 +129,10 @@ export class ApiKeyStrategy implements AuthenticationStrategy {
 export class BasicAuthStrategy implements AuthenticationStrategy {
   readonly name = 'basic';
 
-  applyAuth(request: HttpRequestConfig, config: AuthConfig): HttpRequestConfig {
+  async applyAuth(request: HttpRequestConfig, config: AuthConfig): Promise<HttpRequestConfig> {
+    if (config.type !== 'basic') {
+      throw new Error('Basic 策略收到非 basic 配置');
+    }
     if (!config.username || !config.password) {
       throw new Error('Basic认证需要提供用户名和密码');
     }
@@ -137,7 +149,7 @@ export class BasicAuthStrategy implements AuthenticationStrategy {
     };
   }
 
-  validateConfig(config: AuthConfig): { valid: boolean; error?: string } {
+  async validateConfig(config: AuthConfig): Promise<{ valid: boolean; error?: string }> {
     if (config.type !== 'basic') {
       return { valid: false, error: '认证类型不匹配' };
     }
@@ -171,19 +183,35 @@ export class BasicAuthStrategy implements AuthenticationStrategy {
 }
 
 /**
+ * AuthenticationManager 可选依赖
+ * 注入 httpClient + cache 后会注册 OAuthStrategy
+ */
+export interface AuthenticationManagerDeps {
+  httpClient?: HttpClient;
+  cache?: CacheManager;
+}
+
+/**
  * 认证管理器
  * 管理不同的认证策略并应用到HTTP请求
  */
 export class AuthenticationManager {
   private readonly strategies = new Map<string, AuthenticationStrategy>();
 
-  constructor() {
+  constructor(deps?: AuthenticationManagerDeps) {
     // 注册默认认证策略
     this.registerStrategy(new BearerTokenStrategy());
     this.registerStrategy(new ApiKeyStrategy());
     this.registerStrategy(new BasicAuthStrategy());
 
-    logger.info('认证管理器初始化完成');
+    // 注入 deps 后注册 OAuth 策略
+    if (deps?.httpClient && deps?.cache) {
+      this.registerStrategy(new OAuthStrategy(deps.httpClient, deps.cache));
+    }
+
+    logger.info('认证管理器初始化完成', {
+      context: { strategies: this.getSupportedTypes() },
+    });
   }
 
   /**
@@ -211,14 +239,17 @@ export class AuthenticationManager {
   /**
    * 应用认证到HTTP请求
    */
-  applyAuthentication(request: HttpRequestConfig, authConfig: AuthConfig): HttpRequestConfig {
+  async applyAuthentication(
+    request: HttpRequestConfig,
+    authConfig: AuthConfig,
+  ): Promise<HttpRequestConfig> {
     const strategy = this.strategies.get(authConfig.type);
     if (!strategy) {
       throw new Error(`不支持的认证类型: ${authConfig.type}`);
     }
 
     // 验证认证配置
-    const validation = strategy.validateConfig(authConfig);
+    const validation = await strategy.validateConfig(authConfig);
     if (!validation.valid) {
       throw new Error(`认证配置无效: ${validation.error}`);
     }
@@ -230,10 +261,10 @@ export class AuthenticationManager {
   /**
    * 验证认证配置
    */
-  validateAuthConfig(authConfig: AuthConfig): {
+  async validateAuthConfig(authConfig: AuthConfig): Promise<{
     valid: boolean;
     error?: string;
-  } {
+  }> {
     const strategy = this.strategies.get(authConfig.type);
     if (!strategy) {
       return { valid: false, error: `不支持的认证类型: ${authConfig.type}` };
@@ -245,31 +276,32 @@ export class AuthenticationManager {
   /**
    * 处理环境变量引用
    * 支持 {{env.VARIABLE_NAME}} 语法
+   * 按认证类型解析相应字段（discriminated union 后需按 type 分支）
    */
   resolveEnvironmentVariables(authConfig: AuthConfig): AuthConfig {
-    const resolved = { ...authConfig };
-
-    // 处理token中的环境变量
-    if (resolved.token) {
-      resolved.token = this.resolveEnvVariable(resolved.token);
+    if (authConfig.type === 'bearer' || authConfig.type === 'apikey') {
+      return {
+        ...authConfig,
+        token: authConfig.token ? this.resolveEnvVariable(authConfig.token) : authConfig.token,
+        header: authConfig.header ? this.resolveEnvVariable(authConfig.header) : authConfig.header,
+      };
     }
-
-    // 处理用户名中的环境变量
-    if (resolved.username) {
-      resolved.username = this.resolveEnvVariable(resolved.username);
+    if (authConfig.type === 'basic') {
+      return {
+        ...authConfig,
+        username: this.resolveEnvVariable(authConfig.username),
+        password: this.resolveEnvVariable(authConfig.password),
+      };
     }
-
-    // 处理密码中的环境变量
-    if (resolved.password) {
-      resolved.password = this.resolveEnvVariable(resolved.password);
-    }
-
-    // 处理header中的环境变量
-    if (resolved.header) {
-      resolved.header = this.resolveEnvVariable(resolved.header);
-    }
-
-    return resolved;
+    // oauth
+    return {
+      ...authConfig,
+      clientId: this.resolveEnvVariable(authConfig.clientId),
+      clientSecret: this.resolveEnvVariable(authConfig.clientSecret),
+      refreshToken: authConfig.refreshToken
+        ? this.resolveEnvVariable(authConfig.refreshToken)
+        : authConfig.refreshToken,
+    };
   }
 
   /**
@@ -297,6 +329,7 @@ export class AuthenticationManager {
 
   /**
    * 检查认证配置中的环境变量是否都已定义
+   * 按认证类型检查相应字段（discriminated union 后需按 type 分支）
    */
   validateEnvironmentVariables(authConfig: AuthConfig): {
     valid: boolean;
@@ -305,13 +338,18 @@ export class AuthenticationManager {
     const missingVars: string[] = [];
     const envPattern = /\{\{env\.([A-Z_][A-Z0-9_]*)\}\}/g;
 
-    // 检查所有可能包含环境变量的字段
-    const fieldsToCheck = [
-      authConfig.token,
-      authConfig.username,
-      authConfig.password,
-      authConfig.header,
-    ].filter(Boolean) as string[];
+    let fieldsToCheck: string[] = [];
+    if (authConfig.type === 'bearer' || authConfig.type === 'apikey') {
+      fieldsToCheck = [authConfig.token, authConfig.header].filter(Boolean) as string[];
+    } else if (authConfig.type === 'basic') {
+      fieldsToCheck = [authConfig.username, authConfig.password].filter(Boolean) as string[];
+    } else if (authConfig.type === 'oauth') {
+      fieldsToCheck = [
+        authConfig.clientId,
+        authConfig.clientSecret,
+        authConfig.refreshToken,
+      ].filter(Boolean) as string[];
+    }
 
     for (const field of fieldsToCheck) {
       let match: RegExpExecArray | null;
@@ -342,3 +380,6 @@ export function createAuthenticationManager(): AuthenticationManager {
  * 默认认证管理器实例
  */
 export const defaultAuthManager = createAuthenticationManager();
+
+export { OAuthStrategy } from './oauth-strategy.js';
+export type { CachedToken } from './oauth-strategy.js';

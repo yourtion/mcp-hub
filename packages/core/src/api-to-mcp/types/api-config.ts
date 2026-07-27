@@ -51,15 +51,56 @@ export const HttpMethodSchema = z.enum([
 ]);
 
 /**
- * 认证配置的Zod schema
+ * Bearer Token 认证配置
  */
-export const AuthConfigSchema = z.object({
-  type: z.enum(['bearer', 'apikey', 'basic']),
-  token: z.string().optional(),
+export const BearerAuthConfigSchema = z.object({
+  type: z.literal('bearer'),
+  token: z.string(),
   header: z.string().optional(),
-  username: z.string().optional(),
-  password: z.string().optional(),
 });
+
+/**
+ * API Key 认证配置
+ */
+export const ApiKeyAuthConfigSchema = z.object({
+  type: z.literal('apikey'),
+  token: z.string(),
+  header: z.string().optional(),
+});
+
+/**
+ * Basic Auth 认证配置
+ */
+export const BasicAuthConfigSchema = z.object({
+  type: z.literal('basic'),
+  username: z.string(),
+  password: z.string(),
+});
+
+/**
+ * OAuth 出站认证配置（client_credentials / refresh_token）
+ */
+export const OAuthAuthConfigSchema = z.object({
+  type: z.literal('oauth'),
+  grantType: z.enum(['client_credentials', 'refresh_token']),
+  clientId: z.string(),
+  clientSecret: z.string(),
+  tokenUrl: z.string().url(),
+  scope: z.string().optional(),
+  refreshToken: z.string().optional(),
+  headerName: z.string().optional(),
+  tokenPrefix: z.string().optional(),
+});
+
+/**
+ * 认证配置的 Zod schema（discriminated union，按 type 区分字段）
+ */
+export const AuthConfigSchema = z.discriminatedUnion('type', [
+  BearerAuthConfigSchema,
+  ApiKeyAuthConfigSchema,
+  BasicAuthConfigSchema,
+  OAuthAuthConfigSchema,
+]);
 
 /**
  * 频率限制配置的Zod schema
@@ -182,6 +223,10 @@ export const ApiToolsConfigSchema = z.object({
  */
 export type HttpMethod = z.infer<typeof HttpMethodSchema>;
 export type AuthConfig = z.infer<typeof AuthConfigSchema>;
+export type BearerAuthConfig = z.infer<typeof BearerAuthConfigSchema>;
+export type ApiKeyAuthConfig = z.infer<typeof ApiKeyAuthConfigSchema>;
+export type BasicAuthConfig = z.infer<typeof BasicAuthConfigSchema>;
+export type OAuthAuthConfig = z.infer<typeof OAuthAuthConfigSchema>;
 export type SecurityConfig = z.infer<typeof SecurityConfigSchema>;
 export type ResponseConfig = z.infer<typeof ResponseConfigSchema>;
 export type ApiEndpointConfig = z.infer<typeof ApiEndpointConfigSchema>;

@@ -4,6 +4,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ErrorCode, ServiceError } from '../../errors/index.js';
 import { ApiExecutorImpl, createApiExecutor } from './api-executor.js';
 
 import type { ApiToolConfig, AuthConfig } from '../types/api-config.js';
@@ -147,7 +148,7 @@ describe('ApiExecutorImpl', () => {
   });
 
   describe('applyAuthentication', () => {
-    it('应该应用认证到HTTP请求', () => {
+    it('应该应用认证到HTTP请求', async () => {
       const request: HttpRequestConfig = {
         url: 'https://api.example.com/test',
         method: 'GET',
@@ -169,9 +170,9 @@ describe('ApiExecutorImpl', () => {
         valid: true,
         missingVars: [],
       });
-      vi.mocked(mockAuthManager.applyAuthentication).mockReturnValue(authenticatedRequest);
+      vi.mocked(mockAuthManager.applyAuthentication).mockResolvedValue(authenticatedRequest);
 
-      const result = apiExecutor.applyAuthentication(request, authConfig);
+      const result = await apiExecutor.applyAuthentication(request, authConfig);
 
       expect(mockAuthManager.resolveEnvironmentVariables).toHaveBeenCalledWith(authConfig);
       expect(mockAuthManager.validateEnvironmentVariables).toHaveBeenCalled();
@@ -179,7 +180,7 @@ describe('ApiExecutorImpl', () => {
       expect(result).toEqual(authenticatedRequest);
     });
 
-    it('应该在环境变量缺失时抛出错误', () => {
+    it('应该在环境变量缺失时抛出错误', async () => {
       const request: HttpRequestConfig = {
         url: 'https://api.example.com/test',
         method: 'GET',
@@ -197,8 +198,46 @@ describe('ApiExecutorImpl', () => {
         missingVars: ['MISSING_TOKEN'],
       });
 
-      expect(() => apiExecutor.applyAuthentication(request, authConfig)).toThrow(
+      await expect(apiExecutor.applyAuthentication(request, authConfig)).rejects.toThrow(
         '认证配置中的环境变量未定义: MISSING_TOKEN',
+      );
+    });
+
+    it('oauth 配置环境变量未定义 → 抛 OAUTH_OUTBOUND_ENV_VAR_MISSING (6203)', async () => {
+      const request: HttpRequestConfig = {
+        url: 'https://api.example.com/test',
+        method: 'GET',
+      };
+
+      // OAuth 配置：clientSecret 引用了未设置的环境变量
+      const authConfig: AuthConfig = {
+        type: 'oauth',
+        grantType: 'client_credentials',
+        clientId: 'test-client-id',
+        clientSecret: '{{env.NOT_SET_VAR}}',
+        tokenUrl: 'https://as.example.com/token',
+      };
+
+      // Mock：resolveEnvironmentVariables 原样返回（未定义的引用保持原样），
+      // validateEnvironmentVariables 报告 NOT_SET_VAR 缺失。
+      vi.mocked(mockAuthManager.resolveEnvironmentVariables).mockReturnValue(authConfig);
+      vi.mocked(mockAuthManager.validateEnvironmentVariables).mockReturnValue({
+        valid: false,
+        missingVars: ['NOT_SET_VAR'],
+      });
+
+      await expect(apiExecutor.applyAuthentication(request, authConfig)).rejects.toMatchObject({
+        name: 'ServiceError',
+        code: ErrorCode.OAUTH_OUTBOUND_ENV_VAR_MISSING,
+        message: 'OAuth 出站环境变量未定义: NOT_SET_VAR',
+        context: {
+          clientId: 'test-client-id',
+          missingVars: ['NOT_SET_VAR'],
+        },
+      });
+      // 同时确认是 ServiceError 实例（而非裸 Error）
+      await expect(apiExecutor.applyAuthentication(request, authConfig)).rejects.toBeInstanceOf(
+        ServiceError,
       );
     });
   });
@@ -401,7 +440,7 @@ describe('ApiExecutorImpl', () => {
         valid: true,
         missingVars: [],
       });
-      vi.mocked(mockAuthManager.applyAuthentication).mockImplementation((req) => ({
+      vi.mocked(mockAuthManager.applyAuthentication).mockImplementation(async (req) => ({
         ...req,
         headers: { ...req.headers, Authorization: 'Bearer test-token' },
       }));

@@ -10,6 +10,7 @@ import { ApiExecutorImpl } from './api-executor.js';
 import { ApiToolGenerator } from './api-tool-generator.js';
 import { ApiToolRegistry } from './api-tool-registry.js';
 import { AuthenticationManager } from './authentication.js';
+import { CacheManagerImpl } from './cache-manager.js';
 import { HttpClient } from './http-client.js';
 
 import type { ApiToolConfig } from '../types/api-config.js';
@@ -137,7 +138,8 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
 
     // 创建HTTP客户端和认证管理器
     const httpClient = new HttpClient();
-    const authManager = new AuthenticationManager();
+    const cacheManager = new CacheManagerImpl();
+    const authManager = new AuthenticationManager({ httpClient, cache: cacheManager });
     this.apiExecutor = new ApiExecutorImpl(httpClient, authManager);
 
     this.parameterValidator = new ParameterValidatorImpl();
@@ -472,7 +474,8 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
 
         // 创建HTTP客户端和认证管理器
         const httpClient = new HttpClient();
-        const authManager = new AuthenticationManager();
+        const cacheManager = new CacheManagerImpl();
+        const authManager = new AuthenticationManager({ httpClient, cache: cacheManager });
         this.apiExecutor = new ApiExecutorImpl(httpClient, authManager);
 
         this.parameterValidator = new ParameterValidatorImpl();

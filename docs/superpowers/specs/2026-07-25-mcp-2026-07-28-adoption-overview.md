@@ -35,7 +35,7 @@
 | ------ | ------------------------------------ | ------------------------- | --------------------------------------------------------------------- | ------------------------------------------- |
 | **P1** | 传输层升级到 2026-07-28 无状态       | ✅ 完成                   | ✅ **实现完成**（已合并 main，commits `6aedf23`/`f802256`/`5303574`） | `2026-07-25-p1-transport-upgrade-design.md` |
 | **P2** | 入站 OAuth 2.1（Protected Resource） | ✅ 完成                   | ✅ **实现完成**（分支 `feat/p2-inbound-oauth`，待合并）               | `2026-07-26-p2-inbound-oauth-design.md`     |
-| P3     | 出站 OAuth（AuthenticationStrategy） | ⏳ 待 brainstorming       | ⬜ 未开始                                                             | —                                           |
+| P3     | 出站 OAuth（AuthenticationStrategy） | ✅ 完成                   | ✅ **实现完成**（分支 `feat/p3-outbound-oauth`，commit `5194ed2`）    | `2026-07-27-p3-outbound-oauth-design.md`    |
 | **P4** | `ttlMs`/`cacheScope` 缓存语义        | ✅ 完成                   | ✅ **实现完成**（已合并 main，merge `a03f430`）                       | `2026-07-26-p4-cache-semantics-design.md`   |
 | P5     | `subscriptions/listen` + MRTR        | ⏳ 推迟（观望客户端生态） | ⬜ 未开始                                                             | —                                           |
 | P6     | OTel trace context + 弃用项清理      | ⏳ 待 brainstorming       | ⬜ 未开始                                                             | —                                           |
@@ -328,12 +328,13 @@ P4 **不是替换**已有缓存，而是**新增协议层缓存提示**，并探
 
 ### 各子项目实现进度
 
-| 子项目     | 分支                           | 关键 commit                                                                                                        | 进度                                                           |
-| ---------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
-| P1         | 已合并 main                    | `f802256` 用 createMcpHandler 重写 group-router；`6aedf23` SDK v2 codemod                                          | ✅ **实现完成**（已合并 main）                                 |
-| P4         | 已合并 main（merge `a03f430`） | `2b75c39` 注册 4 个 Hub 元数据 resources；`660e45b` tools/list 确定性排序；`8018afc` McpServer 构造接入 cacheHints | ✅ **实现完成**（typecheck + 1683 tests 全绿，含 5 个 P4 e2e） |
-| P2         | `feat/p2-inbound-oauth`        | `0ffb6b8` 主线接入 + internal 模式 token 验签；`f6a82c4` OAuth 端点；`8d966f3` Resource Server 编排                | ✅ **实现完成**（typecheck + 1750 tests 全绿，含 5 个 P2 e2e） |
-| P3、P5、P6 | —                              | —                                                                                                                  | ⬜ 未开始                                                      |
+| 子项目 | 分支                           | 关键 commit                                                                                                                    | 进度                                                                                 |
+| ------ | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| P1     | 已合并 main                    | `f802256` 用 createMcpHandler 重写 group-router；`6aedf23` SDK v2 codemod                                                      | ✅ **实现完成**（已合并 main）                                                       |
+| P4     | 已合并 main（merge `a03f430`） | `2b75c39` 注册 4 个 Hub 元数据 resources；`660e45b` tools/list 确定性排序；`8018afc` McpServer 构造接入 cacheHints             | ✅ **实现完成**（typecheck + 1683 tests 全绿，含 5 个 P4 e2e）                       |
+| P2     | `feat/p2-inbound-oauth`        | `0ffb6b8` 主线接入 + internal 模式 token 验签；`f6a82c4` OAuth 端点；`8d966f3` Resource Server 编排                            | ✅ **实现完成**（typecheck + 1750 tests 全绿，含 5 个 P2 e2e）                       |
+| P3     | `feat/p3-outbound-oauth`       | `ff482e3` OAuthStrategy 实现（client_credentials + refresh + cache）；`f98d7c5` AuthenticationManager 注册；`5194ed2` e2e 骨架 | ✅ **实现完成**（typecheck + 1783 tests 全绿；e2e conditional skip 待 fixture 激活） |
+| P5、P6 | —                              | —                                                                                                                              | ⬜ 未开始                                                                            |
 
 ## 跨子项目共享待办
 
