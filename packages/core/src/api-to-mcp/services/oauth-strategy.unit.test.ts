@@ -126,6 +126,51 @@ describe('OAuthStrategy', () => {
 
       expect(result.headers!['X-Token']).toBe('tok-x');
     });
+
+    it('并发请求同 cacheKey → 只打一次 token endpoint（in-flight 去重）', async () => {
+      // 慢响应：让第一个 request 在第二个 applyAuth 进入时还未完成
+      let callCount = 0;
+      const httpClient = {
+        request: vi.fn(async () => {
+          callCount++;
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          return {
+            status: 200,
+            statusText: 'OK',
+            headers: new Headers(),
+            data: { access_token: 'tok-concurrent', expires_in: 3600 },
+            raw: new Response(),
+            config: { url: '', method: 'POST' },
+          } as unknown as import('../types/http-client.js').HttpResponse;
+        }),
+      } as unknown as HttpClient;
+      const cache = createMockCache();
+      const strategy = new OAuthStrategy(httpClient, cache);
+
+      const config = {
+        type: 'oauth' as const,
+        grantType: 'client_credentials' as const,
+        clientId: 'cid',
+        clientSecret: 'secret',
+        tokenUrl: 'https://as.example.com/token',
+        scope: 'read',
+      };
+      const request: HttpRequestConfig = {
+        url: 'https://api.example.com/x',
+        method: 'GET',
+        headers: {},
+      };
+
+      // 并发发起两个 applyAuth，缓存都 miss
+      const [r1, r2] = await Promise.all([
+        strategy.applyAuth(request, config),
+        strategy.applyAuth(request, config),
+      ]);
+
+      expect(r1.headers!.Authorization).toBe('Bearer tok-concurrent');
+      expect(r2.headers!.Authorization).toBe('Bearer tok-concurrent');
+      expect(callCount).toBe(1);
+    });
   });
 
   describe('applyAuth — 失败处理', () => {
