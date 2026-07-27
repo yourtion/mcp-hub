@@ -3,6 +3,10 @@
  * 定义MCP Hub核心包的错误类型和处理逻辑
  */
 
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger({ component: 'ErrorHandler' });
+
 /**
  * 错误类别枚举
  */
@@ -586,7 +590,9 @@ export class UnifiedErrorHandler implements ErrorHandler {
     if (this.logger) {
       this.logger(`[${context.component}] ${context.operation} 失败`, logData);
     } else {
-      console.error(`[${context.component}] ${context.operation} 失败:`, logData);
+      logger.error(`[${context.component}] ${context.operation} 失败`, undefined, {
+        context: { logData },
+      });
     }
   }
 

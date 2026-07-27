@@ -1,6 +1,44 @@
 // API到MCP相关类型定义
 
-import type { CacheConfig, HttpMethod, JsonSchema, SecurityConfig } from './api';
+import type { JsonSchema } from './tool';
+
+/**
+ * HTTP请求方法
+ */
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+
+/**
+ * 认证配置
+ */
+export interface AuthConfig {
+  type: 'bearer' | 'apikey' | 'basic';
+  token?: string;
+  header?: string;
+  username?: string;
+  password?: string;
+}
+
+/**
+ * 安全配置
+ */
+export interface SecurityConfig {
+  authentication?: AuthConfig;
+  allowedDomains?: string[];
+  rateLimiting?: {
+    windowSeconds: number;
+    maxRequests: number;
+    enabled: boolean;
+  };
+}
+
+/**
+ * 缓存配置
+ */
+export interface CacheConfig {
+  enabled: boolean;
+  ttl: number;
+  maxSize?: number;
+}
 
 /**
  * API端点配置

@@ -174,6 +174,7 @@ export interface HealthCheckEvent {
   data: {
     status: 'healthy' | 'warning' | 'error';
     timestamp: string;
+    lastCheck?: string;
     changes: Array<{
       component: string;
       previousStatus: string;

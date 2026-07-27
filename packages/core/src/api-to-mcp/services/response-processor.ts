@@ -5,8 +5,12 @@
 
 import jsonata from 'jsonata';
 
+import { createLogger } from '../../utils/logger.js';
+
 import type { ValidationResult } from '../types/api-tool.js';
 import type { HttpResponse } from '../types/http-client.js';
+
+const logger = createLogger({ component: 'ResponseProcessor' });
 
 /**
  * MCP错误代码枚举
@@ -218,7 +222,7 @@ export class ResponseProcessorImpl implements ResponseProcessor {
       return result;
     } catch (error) {
       // 如果JSONata处理失败，抛出异常而不是返回错误对象
-      console.error('JSONata处理失败:', error);
+      logger.error('JSONata处理失败', error as Error);
       throw error;
     }
   }
@@ -294,7 +298,9 @@ export class ResponseProcessorImpl implements ResponseProcessor {
           }
         }
       } catch (error) {
-        console.warn('无法从响应中提取错误信息:', error);
+        logger.warn('无法从响应中提取错误信息', {
+          context: { error: error instanceof Error ? error.message : String(error) },
+        });
         // 如果错误路径无效，继续使用默认逻辑
       }
     }
@@ -579,14 +585,20 @@ export class ResponseProcessorImpl implements ResponseProcessor {
     try {
       return await this.processResponse(response, jsonataExpression);
     } catch (error) {
-      console.warn('主要响应处理失败，尝试降级处理:', error);
+      logger.warn('主要响应处理失败，尝试降级处理', {
+        context: { error: error instanceof Error ? error.message : String(error) },
+      });
 
       // 如果有降级表达式，尝试使用它
       if (fallbackExpression) {
         try {
           return await this.processResponse(response, fallbackExpression);
         } catch (fallbackError) {
-          console.warn('降级处理也失败:', fallbackError);
+          logger.warn('降级处理也失败', {
+            context: {
+              error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+            },
+          });
         }
       }
 

@@ -85,7 +85,7 @@ export const OAuthAuthConfigSchema = z.object({
   grantType: z.enum(['client_credentials', 'refresh_token']),
   clientId: z.string(),
   clientSecret: z.string(),
-  tokenUrl: z.string().url(),
+  tokenUrl: z.url(),
   scope: z.string().optional(),
   refreshToken: z.string().optional(),
   headerName: z.string().optional(),
@@ -152,7 +152,7 @@ export type RequestBody = string | Record<string, unknown>;
  * API端点配置的Zod schema
  */
 export const ApiEndpointConfigSchema = z.object({
-  url: z.string().url(),
+  url: z.url(),
   method: HttpMethodSchema,
   headers: z.record(z.string(), z.string()).optional(),
   queryParams: z.record(z.string(), z.string()).optional(),

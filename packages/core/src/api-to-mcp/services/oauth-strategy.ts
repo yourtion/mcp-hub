@@ -51,6 +51,12 @@ function buildCacheKey(config: OAuthAuthConfig): string {
 export class OAuthStrategy implements AuthenticationStrategy {
   readonly name = 'oauth';
 
+  /**
+   * 同 cacheKey 进行中的取 token Promise，防止并发 stampede：
+   * 缓存 miss 时，多个并发请求复用同一个 token 获取操作。
+   */
+  private readonly inflightRequests = new Map<string, Promise<string>>();
+
   constructor(
     private readonly httpClient: HttpClient,
     private readonly cache: CacheManager,
@@ -101,6 +107,9 @@ export class OAuthStrategy implements AuthenticationStrategy {
    * 1) 缓存未过期 → 直接用
    * 2) 缓存将过期且有 refreshToken → 尝试 refresh（失败静默回退）
    * 3) 否则 client_credentials 重取
+   *
+   * 路径 2/3 走 in-flight 去重：同 cacheKey 的并发请求复用一次取 token 操作，
+   * 避免 token endpoint 被 stampede。
    */
   private async getAccessToken(config: OAuthAuthConfig): Promise<string> {
     const cacheKey = buildCacheKey(config);
@@ -112,11 +121,32 @@ export class OAuthStrategy implements AuthenticationStrategy {
       return cached.accessToken;
     }
 
-    // 将过期且有 refreshToken → 尝试 refresh（失败静默回退）
+    // 已有同 cacheKey 的进行中请求 → 复用，避免并发 stampede
+    const existing = this.inflightRequests.get(cacheKey);
+    if (existing) {
+      logger.debug('OAuth token in-flight 去重命中', { context: { clientId: config.clientId } });
+      return existing;
+    }
+
+    const promise = this.fetchFreshToken(config, cacheKey, cached).finally(() => {
+      this.inflightRequests.delete(cacheKey);
+    });
+    this.inflightRequests.set(cacheKey, promise);
+    return promise;
+  }
+
+  /**
+   * 获取新 token：缓存将过期且有 refreshToken → 尝试 refresh（失败静默回退）；
+   * 否则 client_credentials 重取。由 getAccessToken 经 in-flight map 调度。
+   */
+  private async fetchFreshToken(
+    config: OAuthAuthConfig,
+    cacheKey: string,
+    cached: CachedToken | null,
+  ): Promise<string> {
     if (cached?.refreshToken) {
       try {
-        const refreshed = await this.refreshToken(config, cached.refreshToken, cacheKey);
-        return refreshed;
+        return await this.refreshToken(config, cached.refreshToken, cacheKey);
       } catch (err) {
         logger.warn('OAuth refresh 失败，回退到 client_credentials', {
           context: {
@@ -126,7 +156,6 @@ export class OAuthStrategy implements AuthenticationStrategy {
         });
       }
     }
-
     return this.fetchToken(config, cacheKey);
   }
 

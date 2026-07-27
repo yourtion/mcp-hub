@@ -1,12 +1,13 @@
 import api, { handleApiResponse } from './api';
 
+import type { ApiResponse } from '@/types/api';
 import type { LoginRequest, LoginResponse, RefreshResponse } from '@/types/auth';
 
 /**
  * 用户登录
  */
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  const response = await api.post<LoginResponse>('/auth/login', credentials);
+  const response = await api.post<ApiResponse<LoginResponse>>('/auth/login', credentials);
   return handleApiResponse(response);
 }
 
@@ -28,7 +29,7 @@ export async function logout(): Promise<void> {
  * 刷新token
  */
 export async function refreshToken(refreshToken: string): Promise<RefreshResponse> {
-  const response = await api.post<RefreshResponse>('/auth/refresh', {
+  const response = await api.post<ApiResponse<RefreshResponse>>('/auth/refresh', {
     refreshToken,
   });
   return handleApiResponse(response);

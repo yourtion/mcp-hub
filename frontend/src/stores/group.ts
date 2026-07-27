@@ -17,7 +17,7 @@ import type {
 
 export const useGroupStore = defineStore('group', () => {
   // 状态
-  const groups = ref<Map<string, GroupInfo>>(new Map());
+  const groups = ref<Map<string, GroupInfo | GroupDetailInfo>>(new Map());
   const loading = ref(false);
   const error = ref<string | null>(null);
   const summary = ref({
@@ -103,10 +103,8 @@ export const useGroupStore = defineStore('group', () => {
 
       const response = await GroupService.createGroup(data);
 
-      // 添加新组到状态中
-      groups.value.set(data.id, response.data);
-
-      // 重新获取列表以更新统计信息
+      // 重新获取列表以更新统计信息（createGroup 响应不含完整的 GroupInfo 计数字段，
+      // 直接依赖 fetchGroups 刷新本地状态）
       await fetchGroups();
 
       return response;

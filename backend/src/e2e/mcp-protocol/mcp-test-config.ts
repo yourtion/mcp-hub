@@ -27,10 +27,16 @@ export interface McpTestConfig {
 /**
  * 默认测试配置：连 `default` 组的 `/default/mcp`。
  * `setupTestConfig()` 写入的 group.json 里包含 `default` 组。
+ *
+ * 端口由各 vitest project 通过 `E2E_PORT` 环境变量隔离：
+ *   api-e2e=3000 / api-e2e-oauth=3010 / api-e2e-validation=3020 / api-e2e-outbound=3030 /
+ *   api-e2e-oauth-external=3040
+ * 缺省回退 3000（保持与历史 open profile 一致）。
  */
+const e2ePort = Number(process.env.E2E_PORT) || 3000;
 export const defaultMcpTestConfig: McpTestConfig = {
-  serverPort: 3000,
-  baseUrl: 'http://localhost:3000',
+  serverPort: e2ePort,
+  baseUrl: `http://localhost:${e2ePort}`,
   group: 'default',
   mcpEndpoint: '/default/mcp',
   timeout: 30000,

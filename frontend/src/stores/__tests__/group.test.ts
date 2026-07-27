@@ -26,7 +26,7 @@ vi.mock('@/services/group', () => ({
 import * as groupService from '@/services/group';
 
 // Get mocked functions
-const mockGroupService = groupService as Record<string, ReturnType<typeof vi.fn>>;
+const mockGroupService = groupService as unknown as Record<string, ReturnType<typeof vi.fn>>;
 
 describe('Group Store', () => {
   beforeEach(() => {
