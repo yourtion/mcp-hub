@@ -119,22 +119,27 @@ export function setupTestConfig(profileOrEnableAuth: TestConfigProfile | boolean
   );
 
   // 2.5. api_tools.json - API工具配置
-  //   默认空；outbound profile 预置一个 oauth 工具占位（Step 4 才真正 initialize 调用）。
+  //   必须符合 core 的 ApiToolsConfigSchema（{ version, tools: [...] }）——
+  //   api-config-manager.ts:112 loadConfig 读 `config.tools`（不是 `configs`），
+  //   且 ApiToolsConfigSchema 要求顶层 `version: string` + `tools: ApiToolConfig[]`。
+  //   默认空；outbound profile 预置一个 oauth 工具（Step 4 激活，经
+  //   /api/api-to-mcp/configs/:id/test 调用，触发 OAuthStrategy 取 token + 缓存）。
   const apiToolsConfig =
     profile === 'outbound'
       ? {
-          configs: [
+          version: '1.0',
+          tools: [
             {
               id: 'oauth-protected-tool',
               name: 'oauth_protected_tool',
-              description: '测试出站 OAuth（fixture 占位，Step 4 激活）',
+              description: '测试出站 OAuth（fixture，Step 4 激活）',
               api: { url: 'https://mock-resource.example.com/data', method: 'GET' },
               parameters: { type: 'object', properties: {} },
               response: {},
               security: {
                 authentication: {
-                  type: 'oauth',
-                  grantType: 'client_credentials',
+                  type: 'oauth' as const,
+                  grantType: 'client_credentials' as const,
                   clientId: 'outbound-client',
                   clientSecret: 'outbound-secret',
                   tokenUrl: 'https://mock-as.example.com/token',
@@ -144,7 +149,7 @@ export function setupTestConfig(profileOrEnableAuth: TestConfigProfile | boolean
             },
           ],
         }
-      : { configs: [] };
+      : { version: '1.0', tools: [] };
   writeFileSync(
     path.join(testConfigDir, 'api_tools.json'),
     JSON.stringify(apiToolsConfig, null, 2),
