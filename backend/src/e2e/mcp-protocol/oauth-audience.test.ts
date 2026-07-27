@@ -28,9 +28,9 @@ describe('OAuth audience 校验（RFC8707）', () => {
       },
       body: JSON.stringify({ jsonrpc: '2.0', method: 'tools/list', id: 1 }),
     });
-    // 开放模式（未配置 oauth）下，请求在协议层（缺 Accept / 未 initialize）即被拒，
-    // 返回 400/404，不会走到 auth 中间件；503 = oauth 未配置外部 IdP。
-    // 这些都按 conditional skip 策略放行；仅 401 才是 aud 校验失败的有意义信号。
-    expect([401, 400, 404, 503]).toContain(res.status);
+    // oauth profile：配了 oauth，无有效 token 或 aud 不匹配必拒（auth 中间件返回 401）。
+    // 不再放行 400/404/503——那些是「测试环境未进入 oauth-enforced 状态」的信号，
+    // 现在 oauth profile 已强制配置，必须严格 401。
+    expect(res.status).toBe(401);
   });
 });
