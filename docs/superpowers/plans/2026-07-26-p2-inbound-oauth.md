@@ -26,49 +26,50 @@
 
 ## 文件结构
 
-| 文件 | 操作 | 责任 |
-|------|------|------|
-| `packages/core/src/errors/index.ts` | Modify | 加 7 个 OAUTH 错误码（6100-6106）+ 四处映射 |
-| `packages/core/src/errors/index.ts` 测试 | Modify | 错误码映射覆盖 |
-| `packages/share/src/config/schemas/system.schema.ts` | Modify | `SystemConfigSchema` 加 `oauth?` 字段 |
-| `packages/share/src/config/schemas/system.schema.unit.test.ts` | Create | oauth schema 校验测试 |
-| `backend/src/services/oauth/types.ts` | Create | OAuth 配置/claims/auth context 类型定义 |
-| `backend/src/services/oauth/crypto-keys.ts` | Create | RSA 密钥对加载/生成（内置 AS 签名） |
-| `backend/src/services/oauth/crypto-keys.unit.test.ts` | Create | 密钥加载测试 |
-| `backend/src/services/oauth/jwks-cache.ts` | Create | 外部 IdP JWKS 拉取+缓存（kid 索引） |
-| `backend/src/services/oauth/jwks-cache.unit.test.ts` | Create | JWKS 缓存测试 |
-| `backend/src/services/oauth/internal-as.ts` | Create | 内置 AS：client_credentials 签发 + metadata 生成 |
-| `backend/src/services/oauth/internal-as.unit.test.ts` | Create | 签发测试 |
-| `backend/src/services/oauth/as-metadata.ts` | Create | AS metadata 发现/缓存（外部 IdP）+ Protected Resource metadata 生成 |
-| `backend/src/services/oauth/as-metadata.unit.test.ts` | Create | metadata 测试 |
-| `backend/src/services/oauth/token-validator.ts` | Create | JWT 验签 + introspection 回退编排 |
-| `backend/src/services/oauth/token-validator.unit.test.ts` | Create | 校验各路径测试 |
-| `backend/src/services/oauth/validation-key.ts` | Create | 组级 validationKey 校验（纯逻辑） |
-| `backend/src/services/oauth/validation-key.unit.test.ts` | Create | validationKey 测试 |
-| `backend/src/services/oauth/resource-server.ts` | Create | Protected Resource 校验编排（OAuth vs validationKey 分支） |
-| `backend/src/services/oauth/resource-server.unit.test.ts` | Create | 编排测试 |
-| `backend/src/middleware/mcp-auth.ts` | Create | MCP 端点认证中间件（401/403 响应） |
-| `backend/src/middleware/mcp-auth.unit.test.ts` | Create | 中间件测试 |
-| `backend/src/api/oauth/token.ts` | Create | `/api/oauth/token` 端点 |
-| `backend/src/api/oauth/jwks.ts` | Create | `/api/oauth/jwks` 端点 |
-| `backend/src/api/oauth/well-known.ts` | Create | `/.well-known/oauth-protected-resource` + `oauth-authorization-server` |
-| `backend/src/api/oauth/index.ts` | Create | 路由聚合 |
-| `backend/src/api/mcp/group-router.ts` | Modify | 插入 `mcpAuthMiddleware` |
-| `backend/src/app.ts` | Modify | 挂载 `/api/oauth` + `/.well-known` 路由 |
-| `backend/src/e2e/mcp-protocol/oauth-discovery.test.ts` | Create | e2e：metadata 发现 + 401 格式 |
-| `backend/src/e2e/mcp-protocol/oauth-client-credentials.test.ts` | Create | e2e：内置 AS 完整流程 |
-| `backend/src/e2e/mcp-protocol/oauth-audience.test.ts` | Create | e2e：RFC8707 audience 校验 |
-| `backend/src/e2e/mcp-protocol/oauth-external-idp.test.ts` | Create | e2e：外部 IdP JWT + introspection |
-| `backend/src/e2e/mcp-protocol/validation-key.test.ts` | Create | e2e：组级 validationKey 强制 |
-| `docs/superpowers/specs/2026-07-26-p2-inbound-oauth-design.md` | Modify | 实现修正回填 |
-| `docs/superpowers/specs/2026-07-25-mcp-2026-07-28-adoption-overview.md` | Modify | P1/P2 状态回写 + 跨子项目待办修正 |
-| `RELEASE_NOTES.md` | Modify | P2 breaking change 说明 |
+| 文件                                                                    | 操作   | 责任                                                                   |
+| ----------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------- |
+| `packages/core/src/errors/index.ts`                                     | Modify | 加 7 个 OAUTH 错误码（6100-6106）+ 四处映射                            |
+| `packages/core/src/errors/index.ts` 测试                                | Modify | 错误码映射覆盖                                                         |
+| `packages/share/src/config/schemas/system.schema.ts`                    | Modify | `SystemConfigSchema` 加 `oauth?` 字段                                  |
+| `packages/share/src/config/schemas/system.schema.unit.test.ts`          | Create | oauth schema 校验测试                                                  |
+| `backend/src/services/oauth/types.ts`                                   | Create | OAuth 配置/claims/auth context 类型定义                                |
+| `backend/src/services/oauth/crypto-keys.ts`                             | Create | RSA 密钥对加载/生成（内置 AS 签名）                                    |
+| `backend/src/services/oauth/crypto-keys.unit.test.ts`                   | Create | 密钥加载测试                                                           |
+| `backend/src/services/oauth/jwks-cache.ts`                              | Create | 外部 IdP JWKS 拉取+缓存（kid 索引）                                    |
+| `backend/src/services/oauth/jwks-cache.unit.test.ts`                    | Create | JWKS 缓存测试                                                          |
+| `backend/src/services/oauth/internal-as.ts`                             | Create | 内置 AS：client_credentials 签发 + metadata 生成                       |
+| `backend/src/services/oauth/internal-as.unit.test.ts`                   | Create | 签发测试                                                               |
+| `backend/src/services/oauth/as-metadata.ts`                             | Create | AS metadata 发现/缓存（外部 IdP）+ Protected Resource metadata 生成    |
+| `backend/src/services/oauth/as-metadata.unit.test.ts`                   | Create | metadata 测试                                                          |
+| `backend/src/services/oauth/token-validator.ts`                         | Create | JWT 验签 + introspection 回退编排                                      |
+| `backend/src/services/oauth/token-validator.unit.test.ts`               | Create | 校验各路径测试                                                         |
+| `backend/src/services/oauth/validation-key.ts`                          | Create | 组级 validationKey 校验（纯逻辑）                                      |
+| `backend/src/services/oauth/validation-key.unit.test.ts`                | Create | validationKey 测试                                                     |
+| `backend/src/services/oauth/resource-server.ts`                         | Create | Protected Resource 校验编排（OAuth vs validationKey 分支）             |
+| `backend/src/services/oauth/resource-server.unit.test.ts`               | Create | 编排测试                                                               |
+| `backend/src/middleware/mcp-auth.ts`                                    | Create | MCP 端点认证中间件（401/403 响应）                                     |
+| `backend/src/middleware/mcp-auth.unit.test.ts`                          | Create | 中间件测试                                                             |
+| `backend/src/api/oauth/token.ts`                                        | Create | `/api/oauth/token` 端点                                                |
+| `backend/src/api/oauth/jwks.ts`                                         | Create | `/api/oauth/jwks` 端点                                                 |
+| `backend/src/api/oauth/well-known.ts`                                   | Create | `/.well-known/oauth-protected-resource` + `oauth-authorization-server` |
+| `backend/src/api/oauth/index.ts`                                        | Create | 路由聚合                                                               |
+| `backend/src/api/mcp/group-router.ts`                                   | Modify | 插入 `mcpAuthMiddleware`                                               |
+| `backend/src/app.ts`                                                    | Modify | 挂载 `/api/oauth` + `/.well-known` 路由                                |
+| `backend/src/e2e/mcp-protocol/oauth-discovery.test.ts`                  | Create | e2e：metadata 发现 + 401 格式                                          |
+| `backend/src/e2e/mcp-protocol/oauth-client-credentials.test.ts`         | Create | e2e：内置 AS 完整流程                                                  |
+| `backend/src/e2e/mcp-protocol/oauth-audience.test.ts`                   | Create | e2e：RFC8707 audience 校验                                             |
+| `backend/src/e2e/mcp-protocol/oauth-external-idp.test.ts`               | Create | e2e：外部 IdP JWT + introspection                                      |
+| `backend/src/e2e/mcp-protocol/validation-key.test.ts`                   | Create | e2e：组级 validationKey 强制                                           |
+| `docs/superpowers/specs/2026-07-26-p2-inbound-oauth-design.md`          | Modify | 实现修正回填                                                           |
+| `docs/superpowers/specs/2026-07-25-mcp-2026-07-28-adoption-overview.md` | Modify | P1/P2 状态回写 + 跨子项目待办修正                                      |
+| `RELEASE_NOTES.md`                                                      | Modify | P2 breaking change 说明                                                |
 
 ---
 
 ## Task 1: 新增 OAuth 错误码
 
 **Files:**
+
 - Modify: `packages/core/src/errors/index.ts:57-63`（ErrorCode 枚举）
 - Modify: `packages/core/src/errors/index.ts:105-111`（ERROR_MESSAGES）
 - Modify: `packages/core/src/errors/index.ts:163-169`（ERROR_SEVERITY）
@@ -76,6 +77,7 @@
 - Test: `packages/core/src/errors/http-status-mapping.unit.test.ts`
 
 **Interfaces:**
+
 - Produces: `ErrorCode.OAUTH_MISSING_TOKEN` / `OAUTH_INVALID_TOKEN` / `OAUTH_TOKEN_EXPIRED` / `OAUTH_INVALID_AUDIENCE` / `OAUTH_INSUFFICIENT_SCOPE` / `OAUTH_SERVER_ERROR` / `OAUTH_CONFIG_ERROR`（6100-6106）
 
 - [ ] **Step 1: 写失败测试**
@@ -178,10 +180,12 @@ git commit -m "feat(errors): 新增 OAuth 错误码 6100-6106（P2 入站 OAuth 
 ## Task 2: SystemConfig 加 oauth schema 字段
 
 **Files:**
+
 - Modify: `packages/share/src/config/schemas/system.schema.ts`
 - Create: `packages/share/src/config/schemas/system.schema.unit.test.ts`
 
 **Interfaces:**
+
 - Produces: `SystemConfig['oauth']` 类型（`mode: 'internal'|'external'|'both'` + `internal?` + `external?` + `resource` + `scopes`）
 
 - [ ] **Step 1: 写失败测试**
@@ -206,7 +210,11 @@ describe('SystemConfigSchema oauth 字段', () => {
       },
     },
     users: {},
-    ui: { title: 't', theme: 'light', features: { apiToMcp: true, debugging: false, monitoring: true } },
+    ui: {
+      title: 't',
+      theme: 'light',
+      features: { apiToMcp: true, debugging: false, monitoring: true },
+    },
     monitoring: { metricsEnabled: true, logLevel: 'info', retentionDays: 30 },
   };
 
@@ -220,7 +228,10 @@ describe('SystemConfigSchema oauth 字段', () => {
       oauth: {
         mode: 'internal' as const,
         resource: 'https://hub.example.com',
-        internal: { tokenTtlSeconds: 3600, clients: [{ clientId: 'c1', clientSecret: 'h', scopes: ['mcp:tools'] }] },
+        internal: {
+          tokenTtlSeconds: 3600,
+          clients: [{ clientId: 'c1', clientSecret: 'h', scopes: ['mcp:tools'] }],
+        },
       },
     };
     expect(() => SystemConfigSchema.parse(cfg)).not.toThrow();
@@ -326,9 +337,11 @@ git commit -m "feat(share): SystemConfig 加 oauth 配置 schema（P2）"
 ## Task 3: OAuth 类型定义
 
 **Files:**
+
 - Create: `backend/src/services/oauth/types.ts`
 
 **Interfaces:**
+
 - Produces: `OAuthConfig`（从 SystemConfig 提取的强类型）、`TokenClaims`（JWT claims）、`McpAuthContext`（中间件注入到 Hono context 的认证上下文）
 
 - [ ] **Step 1: 写类型定义文件**
@@ -403,10 +416,12 @@ git commit -m "feat(oauth): OAuth 子系统类型定义（P2）"
 ## Task 4: RSA 密钥管理（内置 AS 签名）
 
 **Files:**
+
 - Create: `backend/src/services/oauth/crypto-keys.ts`
 - Create: `backend/src/services/oauth/crypto-keys.unit.test.ts`
 
 **Interfaces:**
+
 - Consumes: 环境变量 `OAUTH_INTERNAL_PRIVATE_KEY`（PEM 字符串或文件路径）
 - Produces: `loadOrCreateSigningKey(): Promise<{ privateKey: Uint8Array; publicKeyJwk: JWK; kid: string }>`、`getInternalPublicKeySet(): JWK[]`
 
@@ -580,10 +595,12 @@ git commit -m "feat(oauth): 内置 AS RSA 密钥管理（P2）"
 ## Task 5: JWKS 缓存（外部 IdP 公钥拉取）
 
 **Files:**
+
 - Create: `backend/src/services/oauth/jwks-cache.ts`
 - Create: `backend/src/services/oauth/jwks-cache.unit.test.ts`
 
 **Interfaces:**
+
 - Produces: `createJwksCache(): { getKey(kid: string, jwksUri: string): Promise<KeyLike | Uint8Array> }`
 
 - [ ] **Step 1: 写失败测试**
@@ -736,10 +753,12 @@ git commit -m "feat(oauth): JWKS 缓存（外部 IdP 公钥，kid 索引 + TTL�
 ## Task 6: 内置最小 AS（client_credentials 签发）
 
 **Files:**
+
 - Create: `backend/src/services/oauth/internal-as.ts`
 - Create: `backend/src/services/oauth/internal-as.unit.test.ts`
 
 **Interfaces:**
+
 - Consumes: `loadOrCreateSigningKey`（Task 4）、`OAuthConfig['internal']`、`OAuthConfig['resource']`
 - Produces: `issueClientCredentialsToken(params, config): Promise<{ accessToken, expiresIn, scope }>`、`getInternalAsMetadata(issuer): AsMetadata`
 
@@ -770,7 +789,9 @@ describe('internal-as', () => {
     internal: {
       issuer: 'https://hub.example.com',
       tokenTtlSeconds: 3600,
-      clients: [{ clientId: 'c1', clientSecret: '$2a$10$hashedplaceholder', scopes: ['mcp:tools'] }],
+      clients: [
+        { clientId: 'c1', clientSecret: '$2a$10$hashedplaceholder', scopes: ['mcp:tools'] },
+      ],
     },
   };
 
@@ -778,7 +799,12 @@ describe('internal-as', () => {
     // 用真实 bcrypt hash：为测试可执行性，这里直接传明文 secret 配合 mock
     const cfg = withPlaintextClient(config, 'c1', 'secret123');
     const result = await issueClientCredentialsToken(
-      { clientId: 'c1', clientSecret: 'secret123', scope: 'mcp:tools', resource: 'https://hub.example.com' },
+      {
+        clientId: 'c1',
+        clientSecret: 'secret123',
+        scope: 'mcp:tools',
+        resource: 'https://hub.example.com',
+      },
       cfg,
     );
     expect(result.accessToken.split('.')).toHaveLength(3);
@@ -790,7 +816,12 @@ describe('internal-as', () => {
     const cfg = withPlaintextClient(config, 'c1', 'secret123');
     await expect(
       issueClientCredentialsToken(
-        { clientId: 'c1', clientSecret: 'wrong', scope: 'mcp:tools', resource: 'https://hub.example.com' },
+        {
+          clientId: 'c1',
+          clientSecret: 'wrong',
+          scope: 'mcp:tools',
+          resource: 'https://hub.example.com',
+        },
         cfg,
       ),
     ).rejects.toThrow(/client_secret|invalid/i);
@@ -799,7 +830,12 @@ describe('internal-as', () => {
   it('签发的 token claims 含 iss/aud/scope（audience 绑定 resource）', async () => {
     const cfg = withPlaintextClient(config, 'c1', 'secret123');
     const { accessToken } = await issueClientCredentialsToken(
-      { clientId: 'c1', clientSecret: 'secret123', scope: 'mcp:tools', resource: 'https://hub.example.com' },
+      {
+        clientId: 'c1',
+        clientSecret: 'secret123',
+        scope: 'mcp:tools',
+        resource: 'https://hub.example.com',
+      },
       cfg,
     );
     const { publicKeyJwk, kid } = await loadOrCreateSigningKey();
@@ -815,7 +851,12 @@ describe('internal-as', () => {
     const cfg = withPlaintextClient(config, 'c1', 'secret123'); // client scopes = ['mcp:tools']
     await expect(
       issueClientCredentialsToken(
-        { clientId: 'c1', clientSecret: 'secret123', scope: 'mcp:admin', resource: 'https://hub.example.com' },
+        {
+          clientId: 'c1',
+          clientSecret: 'secret123',
+          scope: 'mcp:admin',
+          resource: 'https://hub.example.com',
+        },
         cfg,
       ),
     ).rejects.toThrow(/scope/i);
@@ -910,7 +951,10 @@ export async function issueClientCredentialsToken(
 ): Promise<IssueTokenResult> {
   const internal = config.internal;
   if (!internal) {
-    throw new ServiceError(ErrorCode.OAUTH_CONFIG_ERROR, '内置 AS 未配置（mode=internal/both 需 oauth.internal）');
+    throw new ServiceError(
+      ErrorCode.OAUTH_CONFIG_ERROR,
+      '内置 AS 未配置（mode=internal/both 需 oauth.internal）',
+    );
   }
 
   // 1. 查 client
@@ -999,10 +1043,12 @@ git commit -m "feat(oauth): 内置最小 AS（client_credentials 签发 + metada
 ## Task 7: Protected Resource Metadata 生成
 
 **Files:**
+
 - Create: `backend/src/services/oauth/as-metadata.ts`
 - Create: `backend/src/services/oauth/as-metadata.unit.test.ts`
 
 **Interfaces:**
+
 - Consumes: `OAuthConfig`
 - Produces: `getProtectedResourceMetadata(resource, opts): PrmDoc`、`buildWwwAuthenticateHeader(resourceMetadataUrl, scope?): string`
 
@@ -1072,12 +1118,16 @@ describe('as-metadata', () => {
       'mcp:tools',
     );
     expect(header).toContain('Bearer');
-    expect(header).toContain('resource_metadata="https://hub.example.com/.well-known/oauth-protected-resource"');
+    expect(header).toContain(
+      'resource_metadata="https://hub.example.com/.well-known/oauth-protected-resource"',
+    );
     expect(header).toContain('scope="mcp:tools"');
   });
 
   it('WWW-Authenticate 头无 scope 时省略', () => {
-    const header = buildWwwAuthenticateHeader('https://hub.example.com/.well-known/oauth-protected-resource');
+    const header = buildWwwAuthenticateHeader(
+      'https://hub.example.com/.well-known/oauth-protected-resource',
+    );
     expect(header).toContain('resource_metadata=');
     expect(header).not.toContain('scope=');
   });
@@ -1111,7 +1161,10 @@ export interface ProtectedResourceMetadata {
   scopes_supported?: string[];
 }
 
-export function getProtectedResourceMetadata(config: OAuthConfig, resource: string): ProtectedResourceMetadata {
+export function getProtectedResourceMetadata(
+  config: OAuthConfig,
+  resource: string,
+): ProtectedResourceMetadata {
   const servers: string[] = [];
   // MCP 规范 MUST：authorization_servers 至少一个
   if (config.mode === 'internal' || config.mode === 'both') {
@@ -1180,10 +1233,12 @@ git commit -m "feat(oauth): Protected Resource Metadata + WWW-Authenticate 头�
 ## Task 8: Token 校验编排（JWT 验签 + introspection 回退）
 
 **Files:**
+
 - Create: `backend/src/services/oauth/token-validator.ts`
 - Create: `backend/src/services/oauth/token-validator.unit.test.ts`
 
 **Interfaces:**
+
 - Consumes: `OAuthConfig`、`createJwksCache`（Task 5）、jose
 - Produces: `createTokenValidator(config, deps): { validate(token, requiredScope): Promise<TokenValidationResult> }`
 
@@ -1327,7 +1382,11 @@ describe('token-validator', () => {
   });
 
   it('mode=internal 且 JWT 验签失败 → 不回退 introspection，直接 invalid', async () => {
-    const internalCfg: OAuthConfig = { ...externalCfg, mode: 'internal', internal: { tokenTtlSeconds: 3600, clients: [] } };
+    const internalCfg: OAuthConfig = {
+      ...externalCfg,
+      mode: 'internal',
+      internal: { tokenTtlSeconds: 3600, clients: [] },
+    };
     delete (internalCfg as { external?: unknown }).external;
     const introspectMock = vi.fn();
     const validator = createTokenValidator(internalCfg, { introspectToken: introspectMock });
@@ -1381,7 +1440,10 @@ export interface TokenValidator {
 
 const INTROSPECTION_CACHE_TTL_MS = 60_000;
 
-export function createTokenValidator(config: OAuthConfig, deps: TokenValidatorDeps = {}): TokenValidator {
+export function createTokenValidator(
+  config: OAuthConfig,
+  deps: TokenValidatorDeps = {},
+): TokenValidator {
   const jwksCache = deps.jwksCache ?? createJwksCache();
   const introspectionCache = new Map<string, { result: IntrospectionResult; at: number }>();
 
@@ -1423,11 +1485,15 @@ async function verifyJwt(
   }
   const jwksUri = ext.jwksUri ?? `${ext.issuer}/jwks`;
   try {
-    const { payload } = await jwtVerify(token, (header: { kid?: string }) => jwksCache.getKey(header.kid, jwksUri), {
-      algorithms: ['RS256'],
-      issuer: ext.issuer,
-      audience: ext.audience,
-    });
+    const { payload } = await jwtVerify(
+      token,
+      (header: { kid?: string }) => jwksCache.getKey(header.kid, jwksUri),
+      {
+        algorithms: ['RS256'],
+        issuer: ext.issuer,
+        audience: ext.audience,
+      },
+    );
     // scope 校验
     const tokenScopes = String(payload.scope ?? '').split(' ');
     if (!tokenScopes.includes(requiredScope)) {
@@ -1454,7 +1520,10 @@ async function introspect(
   requiredScope: string,
 ): Promise<TokenValidationResult> {
   if (!deps.introspectToken) {
-    throw new ServiceError(ErrorCode.OAUTH_CONFIG_ERROR, 'external 模式未注入 introspectToken 实现');
+    throw new ServiceError(
+      ErrorCode.OAUTH_CONFIG_ERROR,
+      'external 模式未注入 introspectToken 实现',
+    );
   }
   // 缓存
   const cached = cache.get(token);
@@ -1501,10 +1570,12 @@ git commit -m "feat(oauth): token 校验编排（JWT 验签 + introspection 回�
 ## Task 9: validationKey 校验逻辑（填补现状缺口）
 
 **Files:**
+
 - Create: `backend/src/services/oauth/validation-key.ts`
 - Create: `backend/src/services/oauth/validation-key.unit.test.ts`
 
 **Interfaces:**
+
 - Consumes: `decryptValidationKey`（`backend/src/api/groups/crypto.ts` 已存在）
 - Produces: `verifyValidationKey(input, encryptedStored): boolean`
 
@@ -1611,10 +1682,12 @@ git commit -m "feat(oauth): validationKey 校验纯逻辑（填补 MCP 端点缺
 ## Task 10: Resource Server 校验编排（OAuth vs validationKey 分支）
 
 **Files:**
+
 - Create: `backend/src/services/oauth/resource-server.ts`
 - Create: `backend/src/services/oauth/resource-server.unit.test.ts`
 
 **Interfaces:**
+
 - Consumes: `createTokenValidator`（Task 8）、`verifyValidationKey`（Task 9）、`SystemConfig`、`getAllConfig`
 - Produces: `createResourceServer(): ResourceServer`，其中 `authenticate(groupId, authHeader): Promise<AuthOutcome>`
 
@@ -1634,7 +1707,10 @@ describe('resource-server 编排', () => {
 
   it('未配置 oauth + 组未启用 validation → 放行（开放模式，warn）', async () => {
     const rs = createResourceServer({
-      getConfig: async () => ({ oauth: undefined, groups: { g1: { validation: { enabled: false } } } }),
+      getConfig: async () => ({
+        oauth: undefined,
+        groups: { g1: { validation: { enabled: false } } },
+      }),
     });
     const outcome = await rs.authenticate('g1', undefined);
     expect(outcome.ok).toBe(true);
@@ -1694,7 +1770,13 @@ describe('resource-server 编排', () => {
         oauth: { mode: 'internal', resource: 'https://hub.example.com', scopes: ['mcp:tools'] },
         groups: {},
       }),
-      createTokenValidator: () => ({ validate: vi.fn().mockResolvedValue({ ok: true, claims: { sub: 'c1', scope: 'mcp:tools' }, method: 'jwt' }) }),
+      createTokenValidator: () => ({
+        validate: vi.fn().mockResolvedValue({
+          ok: true,
+          claims: { sub: 'c1', scope: 'mcp:tools' },
+          method: 'jwt',
+        }),
+      }),
     });
     const outcome = await rs.authenticate('g1', 'Bearer sometoken');
     expect(outcome.ok).toBe(true);
@@ -1743,15 +1825,31 @@ import type { SystemConfig } from '@mcp-core/mcp-hub-share';
 
 export type AuthOutcome =
   | { ok: true; context: McpAuthContext }
-  | { ok: false; reason: 'missing_token' | 'invalid_token' | 'expired' | 'audience' | 'insufficient_scope' | 'config_error'; errorCode: ErrorCode };
+  | {
+      ok: false;
+      reason:
+        | 'missing_token'
+        | 'invalid_token'
+        | 'expired'
+        | 'audience'
+        | 'insufficient_scope'
+        | 'config_error';
+      errorCode: ErrorCode;
+    };
 
 export interface ResourceServerDeps {
   /** 注入配置读取（生产用 getAllConfig；测试用 mock） */
-  getConfig: () => Promise<Pick<SystemConfig, 'oauth'> & { groups: Record<string, { validation?: { enabled?: boolean; validationKey?: string } }> }>;
+  getConfig: () => Promise<
+    Pick<SystemConfig, 'oauth'> & {
+      groups: Record<string, { validation?: { enabled?: boolean; validationKey?: string } }>;
+    }
+  >;
   /** 注入 validationKey 校验（默认用真实实现） */
   verifyValidationKey?: (input: string, encrypted: string) => boolean;
   /** 注入 token validator 工厂（测试用） */
-  createTokenValidator?: (config: OAuthConfig) => { validate: (token: string, scope: string) => Promise<TokenValidationResult> };
+  createTokenValidator?: (config: OAuthConfig) => {
+    validate: (token: string, scope: string) => Promise<TokenValidationResult>;
+  };
 }
 
 export interface ResourceServer {
@@ -1773,8 +1871,13 @@ export function createResourceServer(deps: ResourceServerDeps): ResourceServer {
       // 路径 A：未配置 oauth
       if (!oauth) {
         if (!validationEnabled) {
-          logger.warn('MCP 端点完全开放（未配置 OAuth 且组未启用 validationKey），生产环境不推荐', { groupId });
-          return { ok: true, context: { method: 'oauth', principal: 'anonymous', scope: 'mcp:tools' } };
+          logger.warn('MCP 端点完全开放（未配置 OAuth 且组未启用 validationKey），生产环境不推荐', {
+            groupId,
+          });
+          return {
+            ok: true,
+            context: { method: 'oauth', principal: 'anonymous', scope: 'mcp:tools' },
+          };
         }
         return verifyValidationKeyPath(authHeader, group!.validation!.validationKey!, verifyVk);
       }
@@ -1785,12 +1888,16 @@ export function createResourceServer(deps: ResourceServerDeps): ResourceServer {
         return { ok: false, reason: 'missing_token', errorCode: ErrorCode.OAUTH_MISSING_TOKEN };
       }
 
-      const validatorFactory = deps.createTokenValidator ?? ((c: OAuthConfig) => createTokenValidator(c));
+      const validatorFactory =
+        deps.createTokenValidator ?? ((c: OAuthConfig) => createTokenValidator(c));
       const validator = validatorFactory(oauth);
       const result = await validator.validate(token, REQUIRED_SCOPE);
 
       if (result.ok) {
-        const principal = (result.claims as { sub?: string; client_id?: string }).sub ?? (result.claims as { client_id?: string }).client_id ?? 'unknown';
+        const principal =
+          (result.claims as { sub?: string; client_id?: string }).sub ??
+          (result.claims as { client_id?: string }).client_id ??
+          'unknown';
         return {
           ok: true,
           context: { method: 'oauth', principal, scope: REQUIRED_SCOPE },
@@ -1799,7 +1906,11 @@ export function createResourceServer(deps: ResourceServerDeps): ResourceServer {
 
       // OAuth 失败：both 模式 + 组启用 validation → 回退
       if (oauth.mode === 'both' && validationEnabled && group?.validation?.validationKey) {
-        const vkResult = verifyValidationKeyPath(authHeader, group.validation.validationKey, verifyVk);
+        const vkResult = verifyValidationKeyPath(
+          authHeader,
+          group.validation.validationKey,
+          verifyVk,
+        );
         if (vkResult.ok) return vkResult;
       }
 
@@ -1825,7 +1936,14 @@ function verifyValidationKeyPath(
     return { ok: false, reason: 'missing_token', errorCode: ErrorCode.OAUTH_MISSING_TOKEN };
   }
   if (verifyVk(token, encryptedStored)) {
-    return { ok: true, context: { method: 'validationKey', principal: 'validation-key', scope: 'mcp:tools mcp:resources' } };
+    return {
+      ok: true,
+      context: {
+        method: 'validationKey',
+        principal: 'validation-key',
+        scope: 'mcp:tools mcp:resources',
+      },
+    };
   }
   return { ok: false, reason: 'invalid_token', errorCode: ErrorCode.OAUTH_INVALID_TOKEN };
 }
@@ -1837,7 +1955,11 @@ function mapValidationFailure(r: { ok: false; reason: string }): AuthOutcome {
     case 'audience':
       return { ok: false, reason: 'audience', errorCode: ErrorCode.OAUTH_INVALID_AUDIENCE };
     case 'scope':
-      return { ok: false, reason: 'insufficient_scope', errorCode: ErrorCode.OAUTH_INSUFFICIENT_SCOPE };
+      return {
+        ok: false,
+        reason: 'insufficient_scope',
+        errorCode: ErrorCode.OAUTH_INSUFFICIENT_SCOPE,
+      };
     case 'inactive':
     case 'invalid':
       return { ok: false, reason: 'invalid_token', errorCode: ErrorCode.OAUTH_INVALID_TOKEN };
@@ -1871,10 +1993,12 @@ git commit -m "feat(oauth): Resource Server 校验编排（OAuth/validationKey �
 ## Task 11: MCP 认证中间件
 
 **Files:**
+
 - Create: `backend/src/middleware/mcp-auth.ts`
 - Create: `backend/src/middleware/mcp-auth.unit.test.ts`
 
 **Interfaces:**
+
 - Consumes: `createResourceServer`（Task 10）、`buildWwwAuthenticateHeader`/`buildInsufficientScopeHeader`（Task 7）
 - Produces: `createMcpAuthMiddleware(deps?): HonoMiddleware`，注入 `McpAuthContext` 到 `c.var`
 
@@ -1908,7 +2032,9 @@ describe('mcp-auth 中间件', () => {
       ok: true,
       context: { method: 'oauth', principal: 'c1', scope: 'mcp:tools' },
     });
-    const res = await makeApp(authenticate).request('/auth/g1', { headers: { Authorization: 'Bearer x' } });
+    const res = await makeApp(authenticate).request('/auth/g1', {
+      headers: { Authorization: 'Bearer x' },
+    });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.principal).toBe('c1');
@@ -1932,7 +2058,9 @@ describe('mcp-auth 中间件', () => {
       reason: 'audience',
       errorCode: 6103,
     });
-    const res = await makeApp(authenticate).request('/auth/g1', { headers: { Authorization: 'Bearer x' } });
+    const res = await makeApp(authenticate).request('/auth/g1', {
+      headers: { Authorization: 'Bearer x' },
+    });
     expect(res.status).toBe(401);
     expect(res.headers.get('WWW-Authenticate')).toContain('resource_metadata=');
   });
@@ -1943,7 +2071,9 @@ describe('mcp-auth 中间件', () => {
       reason: 'insufficient_scope',
       errorCode: 6104,
     });
-    const res = await makeApp(authenticate).request('/auth/g1', { headers: { Authorization: 'Bearer x' } });
+    const res = await makeApp(authenticate).request('/auth/g1', {
+      headers: { Authorization: 'Bearer x' },
+    });
     expect(res.status).toBe(403);
     expect(res.headers.get('WWW-Authenticate')).toContain('insufficient_scope');
     expect(res.headers.get('WWW-Authenticate')).toContain('scope=');
@@ -1973,7 +2103,10 @@ Expected: FAIL（模块不存在）
  */
 import { ErrorCode } from '@mcp-core/mcp-hub-core';
 
-import { buildInsufficientScopeHeader, buildWwwAuthenticateHeader } from '../services/oauth/as-metadata.js';
+import {
+  buildInsufficientScopeHeader,
+  buildWwwAuthenticateHeader,
+} from '../services/oauth/as-metadata.js';
 
 import type { McpAuthContext } from '../services/oauth/types.js';
 import type { ResourceServer } from '../services/oauth/resource-server.js';
@@ -1998,7 +2131,10 @@ export function createMcpAuthMiddleware(deps: McpAuthMiddlewareDeps) {
     const groupId = c.get('groupId') as string | undefined;
     if (!groupId) {
       // groupId 应由前置的 groupValidationMiddleware 注入
-      return c.json({ jsonrpc: '2.0', error: { code: -32602, message: '缺少 groupId 上下文' }, id: null }, 400);
+      return c.json(
+        { jsonrpc: '2.0', error: { code: -32602, message: '缺少 groupId 上下文' }, id: null },
+        400,
+      );
     }
     const authHeader = c.req.header('Authorization');
     const outcome = await deps.resourceServer.authenticate(groupId, authHeader);
@@ -2049,12 +2185,14 @@ git commit -m "feat(oauth): MCP 端点认证中间件（401/403 + WWW-Authentica
 ## Task 12: OAuth 端点（token / jwks / well-known）
 
 **Files:**
+
 - Create: `backend/src/api/oauth/token.ts`
 - Create: `backend/src/api/oauth/jwks.ts`
 - Create: `backend/src/api/oauth/well-known.ts`
 - Create: `backend/src/api/oauth/index.ts`
 
 **Interfaces:**
+
 - Consumes: `issueClientCredentialsToken`（Task 6）、`getInternalAsMetadata`（Task 6）、`getProtectedResourceMetadata`（Task 7）、`getInternalPublicKeySet`（Task 4）
 
 - [ ] **Step 1: 实现 token.ts**
@@ -2090,7 +2228,10 @@ export function registerTokenRoutes(app: Hono) {
     const resource = String(form.get('resource') ?? '');
 
     if (!clientId || !resource) {
-      return c.json({ error: 'invalid_request', error_description: '缺少 client_id 或 resource' }, 400);
+      return c.json(
+        { error: 'invalid_request', error_description: '缺少 client_id 或 resource' },
+        400,
+      );
     }
 
     const cfg = await getAllConfig();
@@ -2100,7 +2241,10 @@ export function registerTokenRoutes(app: Hono) {
     }
 
     try {
-      const result = await issueClientCredentialsToken({ clientId, clientSecret, scope, resource }, oauth);
+      const result = await issueClientCredentialsToken(
+        { clientId, clientSecret, scope, resource },
+        oauth,
+      );
       return c.json({
         access_token: result.accessToken,
         token_type: 'Bearer',
@@ -2109,7 +2253,8 @@ export function registerTokenRoutes(app: Hono) {
       });
     } catch (err) {
       if (err instanceof AuthError) {
-        const code = err.code === ErrorCode.OAUTH_INSUFFICIENT_SCOPE ? 'invalid_scope' : 'invalid_client';
+        const code =
+          err.code === ErrorCode.OAUTH_INSUFFICIENT_SCOPE ? 'invalid_scope' : 'invalid_client';
         return c.json({ error: code, error_description: err.message }, 400);
       }
       return c.json({ error: 'server_error', error_description: (err as Error).message }, 503);
@@ -2234,6 +2379,7 @@ git commit -m "feat(oauth): token/jwks/well-known 端点（P2）"
 ## Task 13: 挂载中间件与路由（group-router + app.ts）
 
 **Files:**
+
 - Modify: `backend/src/api/mcp/group-router.ts:111`（POST 路由插入 mcpAuthMiddleware）
 - Modify: `backend/src/app.ts`（挂载 oauthApi + well-known + 创建 resourceServer）
 
@@ -2307,6 +2453,7 @@ git commit -m "feat(oauth): 挂载 MCP 认证中间件 + OAuth 路由（P2 主�
 ## Task 14: e2e —— OAuth 发现 + 401 格式
 
 **Files:**
+
 - Create: `backend/src/e2e/mcp-protocol/oauth-discovery.test.ts`
 
 - [ ] **Step 1: 写 e2e 测试**
@@ -2379,6 +2526,7 @@ git commit -m "test(e2e): OAuth 发现与 401 格式验证（P2）"
 ## Task 15: e2e —— client_credentials 完整流程 + audience 校验
 
 **Files:**
+
 - Create: `backend/src/e2e/mcp-protocol/oauth-client-credentials.test.ts`
 - Create: `backend/src/e2e/mcp-protocol/oauth-audience.test.ts`
 
@@ -2527,6 +2675,7 @@ git commit -m "test(e2e): client_credentials 流程 + audience 校验（P2）"
 ## Task 16: e2e —— 外部 IdP 对接 + validationKey 强制
 
 **Files:**
+
 - Create: `backend/src/e2e/mcp-protocol/oauth-external-idp.test.ts`
 - Create: `backend/src/e2e/mcp-protocol/validation-key.test.ts`
 
@@ -2659,6 +2808,7 @@ git commit -m "test(e2e): 外部 IdP 对接 + validationKey 强制（P2）"
 ## Task 17: 文档同步（spec 实现修正 + 总体 spec 状态 + RELEASE_NOTES）
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-07-26-p2-inbound-oauth-design.md`（实现修正节回填）
 - Modify: `docs/superpowers/specs/2026-07-25-mcp-2026-07-28-adoption-overview.md`（P1/P2 状态 + 跨子项目待办修正）
 - Modify: `RELEASE_NOTES.md`
@@ -2677,12 +2827,14 @@ Expected: lint/format 通过（提交门禁）
 - [ ] **Step 2: 修复任何回归**
 
 逐个处理失败的测试或 lint 错误。常见回归点：
+
 - 现有 e2e（`mcp-basic.test.ts` 等）若不带 token 访问 MCP 端点，现在可能 401 → 确认测试配置是否启用 oauth/validation，未启用则应放行
 - `group-router` 相关单测若 mock 了中间件链，需补 mcpAuthMiddleware 的 mock
 
 - [ ] **Step 3: 回填 P2 spec 实现修正节**
 
 修改 `docs/superpowers/specs/2026-07-26-p2-inbound-oauth-design.md` 的"## 实现修正"节，记录实现时发现的偏差，至少包括：
+
 - `crypto-keys.ts` 的 PKCS8→SPKI 推导是否如预期工作（若改了方案，记录新方案）
 - `token-validator.ts` 的 reason 枚举是否加了 `'scope'`
 - `mcp-auth.ts` 的 resourceMetadataUrl 是否改成 origin 推导
@@ -2734,6 +2886,7 @@ Expected: lint/format 通过（提交门禁）
 ## [Unreleased] - P2: 入站 OAuth 2.1
 
 ### ⚠️ Breaking Changes
+
 - **组级 validationKey 现在在 MCP 端点强制校验**：之前配置了 `validation.enabled = true` 的组，
   MCP 端点（`/:group/mcp`）实际不校验 validationKey（任何请求放行）。P2 修复后，启用 validation 的组
   必须在 `Authorization: Bearer <validationKey>` 提供正确 key 才能访问。
@@ -2741,6 +2894,7 @@ Expected: lint/format 通过（提交门禁）
   - 若要使用 validation，确保客户端带上配置的 validationKey。
 
 ### Added
+
 - Hub 现在作为 MCP OAuth 2.1 Protected Resource（RFC9728），支持标准 OAuth 授权。
 - 内置最小 Authorization Server（`client_credentials` grant），无外部 IdP 也可开箱即用。
 - 对接外部 IdP（Keycloak/Entra/Auth0/OIDC）：JWT 本地验签（JWKS）+ introspection 回退。
@@ -2749,6 +2903,7 @@ Expected: lint/format 通过（提交门禁）
 - 系统配置新增 `oauth` 块（见 `system.schema.ts`）。
 
 ### Security
+
 - 填补 MCP 端点无认证的安全缺口（CVE 级别）。
 - RFC8707 audience 绑定、RFC9207 iss 防护、PKCE S256 声明。
 ```

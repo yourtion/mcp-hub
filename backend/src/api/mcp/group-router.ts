@@ -8,6 +8,8 @@
  */
 import { Hono } from 'hono';
 
+import { createMcpAuthMiddleware } from '../../middleware/mcp-auth.js';
+import { createResourceServer } from '../../services/oauth/resource-server.js';
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 import { GroupMcpService } from './group-service.js';
@@ -18,9 +20,34 @@ import {
   getGroupServicesCache,
 } from './mcp-handler-factory.js';
 
+import type { ResourceServerDeps } from '../../services/oauth/resource-server.js';
+import type { SystemConfig } from '@mcp-core/mcp-hub-share';
+import type { GroupConfig } from '@mcp-core/mcp-hub-share/config';
 import type { Context } from 'hono';
 
 export const groupMcpRouter = new Hono();
+
+/**
+ * MCP 端点认证中间件（单例）。
+ *
+ * resourceServer.getConfig 适配 getAllConfig 的返回结构：
+ * getAllConfig 返回 DeepReadonly 的 `{ mcps, groups, system: { oauth, ... } }`，
+ * 而 ResourceServerDeps.getConfig 期望可变的 `{ oauth, groups }`（oauth 在顶层）。
+ * 故这里做一次结构映射（system.oauth 提到顶层）。配置在运行时只读，
+ * DeepReadonly → mutable 的转换是安全的（resource-server 不修改配置）。
+ */
+const resourceServerGetConfig: ResourceServerDeps['getConfig'] = async () => {
+  const cfg = await getAllConfig();
+  return {
+    oauth: cfg.system.oauth as SystemConfig['oauth'],
+    groups: cfg.groups as GroupConfig,
+  };
+};
+
+const mcpAuthMiddleware = createMcpAuthMiddleware({
+  resourceServer: createResourceServer({ getConfig: resourceServerGetConfig }),
+  resourceMetadataUrlPath: '/.well-known/oauth-protected-resource',
+});
 
 // 复用 mcp-handler-factory 中模块级单例缓存（保持原导出名不变）
 const groupServices = getGroupServicesCache();
@@ -108,7 +135,7 @@ async function groupValidationMiddleware(c: Context, next: () => Promise<void>) 
  * 直接透传 c.req.raw，由 handler 内部 clone+读取请求体，避免在 Hono 中
  * 预先消耗请求流。
  */
-groupMcpRouter.post('/:group/mcp', groupValidationMiddleware, async (c) => {
+groupMcpRouter.post('/:group/mcp', groupValidationMiddleware, mcpAuthMiddleware, async (c) => {
   const groupId = c.req.param('group')!;
 
   try {

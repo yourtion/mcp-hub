@@ -1,6 +1,27 @@
 # MCP Hub Release Notes
 
-## Unreleased — MCP 2026-07-28 协议升级（P1 传输层 + P4 缓存语义）
+## Unreleased — MCP 2026-07-28 协议升级（P1 传输层 + P4 缓存语义 + P2 入站 OAuth）
+
+### 新增（P2：入站 OAuth 2.1 Protected Resource）
+
+- **Hub 作为 MCP OAuth 2.1 Protected Resource（RFC9728）**：`/:group/mcp` 端点现在校验 `Authorization: Bearer <token>`，对 MCP 客户端（Claude Desktop 等）做标准授权。
+- **内置最小 Authorization Server**：无外部 IdP 时，Hub 内置 AS 通过 `client_credentials` grant 签发 RS256 JWT，开箱即用。
+- **对接外部 IdP**（Keycloak/Entra/Auth0/OIDC Provider）：JWT 本地验签（JWKS）+ opaque token introspection（RFC7662）回退。
+- **新增 OAuth 端点**：
+  - `GET /.well-known/oauth-protected-resource`（RFC9728 Protected Resource Metadata）
+  - `GET /.well-known/oauth-authorization-server`（RFC8414 AS Metadata，内置 AS）
+  - `POST /api/oauth/token`（`client_credentials` 签发）
+  - `GET /api/oauth/jwks`（内置 AS 公钥集合）
+- **401 响应带 `WWW-Authenticate` 头**：`Bearer resource_metadata="...", scope="..."`（MCP 规范 MUST），客户端可自动发现授权流程。
+- **系统配置新增 `oauth` 块**：见 `packages/share/src/config/schemas/system.schema.ts`，支持 `mode: 'internal' | 'external' | 'both'`。
+- **安全加固**：RFC8707 audience 绑定（token `aud` 必须匹配 resource）、RFC9207 `iss` 防护、PKCE S256 声明（为客户端 metadata 验证）。
+
+### ⚠️ Breaking Changes（P2：validationKey 现在强制校验）
+
+- **组级 `validationKey` 在 MCP 端点强制校验**：之前配置了 `validation.enabled = true` 的组，MCP 端点（`/:group/mcp`）实际不校验 validationKey（任何请求放行）。P2 修复后，启用 validation 的组必须在 `Authorization: Bearer <validationKey>` 提供正确 key 才能访问。
+  - **迁移**：若你的组启用了 validation 但希望保持开放，将 `validation.enabled` 改为 `false`。
+  - 若要使用 validation，确保客户端带上配置的 validationKey。
+  - **默认行为不变**：未配置 `oauth` 且组未启用 `validation` 时，MCP 端点保持开放（启动时 warn 提示安全风险）。
 
 ### 新增（P4：协议层缓存语义）
 

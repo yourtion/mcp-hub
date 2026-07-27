@@ -59,6 +59,13 @@ describe('getHttpStatusForError', () => {
     { code: ErrorCode.AUTH_TOKEN_INVALID, expected: 401, label: 'AUTH_TOKEN_INVALID' },
     { code: ErrorCode.AUTH_ACCESS_DENIED, expected: 403, label: 'AUTH_ACCESS_DENIED' },
     { code: ErrorCode.AUTH_ACCOUNT_LOCKED, expected: 423, label: 'AUTH_ACCOUNT_LOCKED' },
+    { code: ErrorCode.OAUTH_MISSING_TOKEN, expected: 401, label: 'OAUTH_MISSING_TOKEN' },
+    { code: ErrorCode.OAUTH_INVALID_TOKEN, expected: 401, label: 'OAUTH_INVALID_TOKEN' },
+    { code: ErrorCode.OAUTH_TOKEN_EXPIRED, expected: 401, label: 'OAUTH_TOKEN_EXPIRED' },
+    { code: ErrorCode.OAUTH_INVALID_AUDIENCE, expected: 401, label: 'OAUTH_INVALID_AUDIENCE' },
+    { code: ErrorCode.OAUTH_INSUFFICIENT_SCOPE, expected: 403, label: 'OAUTH_INSUFFICIENT_SCOPE' },
+    { code: ErrorCode.OAUTH_SERVER_ERROR, expected: 503, label: 'OAUTH_SERVER_ERROR' },
+    { code: ErrorCode.OAUTH_CONFIG_ERROR, expected: 500, label: 'OAUTH_CONFIG_ERROR' },
   ];
 
   for (const { code, expected, label } of cases) {

@@ -8,6 +8,7 @@ import { debugApi } from './api/debug/index.js';
 import { groupsApi } from './api/groups/index.js';
 import { hubApi } from './api/hub.js';
 import { groupMcpRouter } from './api/mcp/group-router.js';
+import { oauthApi, registerWellKnownRoutes } from './api/oauth/index.js';
 import { performanceApi } from './api/performance/index.js';
 import { serversApi } from './api/servers/index.js';
 import { toolsAdminApi } from './api/tools-admin/index.js';
@@ -86,6 +87,16 @@ app.route('/api/tools-admin', toolsAdminApi);
 app.route('/api/groups', groupsApi);
 app.route('/api/performance', performanceApi);
 app.route('/api/api-to-mcp', apiToMcpRoutes);
+
+// OAuth 端点（内置 AS：token / jwks）
+app.route('/api/oauth', oauthApi);
+
+// /.well-known 路由（RFC9728 Protected Resource metadata / RFC8414 AS metadata）
+// 挂载在根路径：/.well-known/oauth-protected-resource 等
+const wellKnownApp = new Hono();
+registerWellKnownRoutes(wellKnownApp);
+app.route('/', wellKnownApp);
+
 // 通配符路由放在最后
 app.route('/', groupMcpRouter); // 组特定MCP路由
 
