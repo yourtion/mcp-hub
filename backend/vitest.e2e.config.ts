@@ -15,7 +15,10 @@ import configShared from '../vitest.shared.js';
  *
  * - `api-e2e`（改造现有）：open profile（无 oauth/validation），跑非 oauth e2e。
  *   include 排除 oauth/validation/outbound 文件。
- * - `api-e2e-oauth`（新增）：oauth internal profile，跑 4 个 oauth 入站 e2e。
+ * - `api-e2e-oauth`（新增）：oauth internal profile，跑 3 个 oauth 入站 e2e（discovery /
+ *   client-credentials / audience）。
+ * - `api-e2e-oauth-external`（新增）：oauth external profile，跑 oauth-external-idp e2e
+ *   （需 mode='external' + fetch stub mock 外部 IdP，与 internal profile 互斥故独立）。
  * - `api-e2e-validation`（新增）：validation profile，跑 validation-key e2e。
  * - `api-e2e-outbound`（新增）：oauth 出站 profile，跑 oauth-outbound e2e。
  *
@@ -75,7 +78,8 @@ export const apiE2eOpen = defineProject(
 /**
  * api-e2e-oauth（oauth internal profile，端口 3010）
  *
- * 4 个 oauth 入站 e2e：discovery / client-credentials / audience / external-idp。
+ * 3 个 oauth 入站 e2e：discovery / client-credentials / audience（internal profile）。
+ * external-idp 归 api-e2e-oauth-external（external profile，profile 不匹配故独立）。
  * Step 1 仅搭 setup；测试体仍 conditional skip（503/400 守卫未拆），Step 2 才激活。
  */
 export const apiE2eOauth = defineProject(
@@ -90,8 +94,31 @@ export const apiE2eOauth = defineProject(
         'src/e2e/mcp-protocol/oauth-discovery.test.ts',
         'src/e2e/mcp-protocol/oauth-client-credentials.test.ts',
         'src/e2e/mcp-protocol/oauth-audience.test.ts',
-        'src/e2e/mcp-protocol/oauth-external-idp.test.ts',
       ],
+      ...e2eTestCommon,
+    },
+  }),
+);
+
+/**
+ * api-e2e-oauth-external（oauth external profile，端口 3040）
+ *
+ * oauth-external-idp e2e：测试体用 fetch stub mock 外部 IdP 的 JWKS / introspect 端点，
+ * 验证 token-validator 走 external 路径（JWKS 验签 + introspection 回退）。
+ *
+ * 为何独立 project：external 测试需要 system.json 配 oauth.mode='external'（指向 mock IdP），
+ * 与 internal profile 的 mode='internal' 互斥；且 fetch stub 若与同 project 其它测试共享
+ * 可能干扰。独立 profile + 独立端口（3040）+ 独立临时配置目录，干净隔离。
+ */
+export const apiE2eOauthExternal = defineProject(
+  mergeConfig(configShared, {
+    resolve: { alias: resolveAlias },
+    test: {
+      name: 'api-e2e-oauth-external',
+      root: backendRoot,
+      setupFiles: ['./vitest.e2e.external.setup.ts'],
+      env: { E2E_PORT: '3040' },
+      include: ['src/e2e/mcp-protocol/oauth-external-idp.test.ts'],
       ...e2eTestCommon,
     },
   }),
@@ -138,6 +165,12 @@ export const apiE2eOutbound = defineProject(
 );
 
 /**
- * 4 个 e2e project 的内联配置数组，供根 vitest.config.ts 通过 `...e2eProjects` 展开。
+ * 5 个 e2e project 的内联配置数组，供根 vitest.config.ts 通过 `...e2eProjects` 展开。
  */
-export const e2eProjects = [apiE2eOpen, apiE2eOauth, apiE2eValidation, apiE2eOutbound];
+export const e2eProjects = [
+  apiE2eOpen,
+  apiE2eOauth,
+  apiE2eOauthExternal,
+  apiE2eValidation,
+  apiE2eOutbound,
+];

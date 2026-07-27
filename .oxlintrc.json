@@ -59,6 +59,7 @@
         "**/scripts/**",
         "**/vitest.e2e.setup.ts",
         "**/vitest.e2e.oauth.setup.ts",
+        "**/vitest.e2e.external.setup.ts",
         "**/vitest.e2e.validation.setup.ts",
         "**/vitest.e2e.outbound.setup.ts"
       ],

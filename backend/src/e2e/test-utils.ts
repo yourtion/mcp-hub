@@ -19,10 +19,13 @@ import { ConsoleLogger, LogLevel } from '../utils/logger.js';
  * - `validation`：设 VALIDATION_KEY_SECRET，default 组启用 validation。
  * - `outbound`：system.json 配 oauth internal 块（保护 MCP 端点），api_tools.json
  *   预置一个 oauth 工具占位（Step 4 才真正 initialize + 调用）。
+ * - `external`：system.json 配 oauth.mode='external' + external 块（issuer/jwksUri/
+ *   introspectionEndpoint/audience 指向 mock IdP `https://mock-idp.example.com`）。
+ *   测试体用 fetch stub 拦截 JWKS/introspect 请求（Step 3 激活 external-idp e2e）。
  *
  * oauth 与 validation 互斥（见 resource-server.ts），所以二者各有独立 profile。
  */
-export type TestConfigProfile = 'open' | 'oauth' | 'validation' | 'outbound';
+export type TestConfigProfile = 'open' | 'oauth' | 'validation' | 'outbound' | 'external';
 
 // 测试配置目录路径
 let testConfigDir: string | null = null;
@@ -32,7 +35,7 @@ let testConfigDir: string | null = null;
  *
  * @param profileOrEnableAuth 配置 profile。为兼容历史调用，仍接受 boolean：
  *   `true`（默认）= `'open'`，`false` = `'open'` 但关闭 users（等同旧 enableAuth=false）。
- *   新代码应直接传 `'open' | 'oauth' | 'validation' | 'outbound'`。
+ *   新代码应直接传 `'open' | 'oauth' | 'validation' | 'outbound' | 'external'`。
  * @returns 测试配置目录绝对路径
  */
 export function setupTestConfig(profileOrEnableAuth: TestConfigProfile | boolean = 'open'): string {
@@ -212,6 +215,26 @@ export function setupTestConfig(profileOrEnableAuth: TestConfigProfile | boolean
       internal: {
         tokenTtlSeconds: 3600,
         clients: [{ clientId: 'test-client', clientSecret: 'test-secret', scopes: ['mcp:tools'] }],
+      },
+    };
+  }
+
+  if (profile === 'external') {
+    // oauth external 块（spec Step 3 fixture）
+    //   外部 IdP 用 mock URL（https://mock-idp.example.com）；测试体在 beforeAll 用
+    //   fetch stub 拦截 JWKS / introspect 请求，无需真实 HTTP 服务。
+    //   resource / audience 跟随当前端口（external profile = 3040），token 的 aud 须匹配。
+    systemConfig.oauth = {
+      mode: 'external',
+      resource,
+      scopes: ['mcp:tools', 'mcp:resources'],
+      external: {
+        issuer: 'https://mock-idp.example.com',
+        clientId: 'test-client',
+        clientSecret: 'test-secret',
+        jwksUri: 'https://mock-idp.example.com/.well-known/jwks.json',
+        introspectionEndpoint: 'https://mock-idp.example.com/introspect',
+        audience: resource,
       },
     };
   }
