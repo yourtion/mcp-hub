@@ -37,7 +37,10 @@ export interface ApiExecutor {
    * @param request HTTP请求配置
    * @param authConfig 认证配置
    */
-  applyAuthentication(request: HttpRequestConfig, authConfig: AuthConfig): HttpRequestConfig;
+  applyAuthentication(
+    request: HttpRequestConfig,
+    authConfig: AuthConfig,
+  ): Promise<HttpRequestConfig>;
 
   /**
    * 处理超时和重试
@@ -120,7 +123,7 @@ export class ApiExecutorImpl implements ApiExecutor {
 
       // 3. 应用认证
       if (config.security?.authentication) {
-        request = this.applyAuthentication(request, config.security.authentication);
+        request = await this.applyAuthentication(request, config.security.authentication);
       }
 
       // 4. 记录请求日志
@@ -206,7 +209,10 @@ export class ApiExecutorImpl implements ApiExecutor {
   /**
    * 应用认证
    */
-  applyAuthentication(request: HttpRequestConfig, authConfig: AuthConfig): HttpRequestConfig {
+  async applyAuthentication(
+    request: HttpRequestConfig,
+    authConfig: AuthConfig,
+  ): Promise<HttpRequestConfig> {
     logger.debug(`应用认证: ${authConfig.type}`);
 
     // 解析环境变量

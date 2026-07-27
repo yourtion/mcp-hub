@@ -175,7 +175,10 @@ export class CachedApiExecutor implements ApiExecutor {
   /**
    * 应用认证（委托给基础执行器）
    */
-  applyAuthentication(request: HttpRequestConfig, authConfig: AuthConfig) {
+  async applyAuthentication(
+    request: HttpRequestConfig,
+    authConfig: AuthConfig,
+  ): Promise<HttpRequestConfig> {
     return this.baseExecutor.applyAuthentication(request, authConfig);
   }
 

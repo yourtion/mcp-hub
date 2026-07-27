@@ -428,7 +428,7 @@ describe('CachedApiExecutor', () => {
       expect(mockBaseExecutor.buildHttpRequest).toHaveBeenCalledWith(mockConfig, mockParameters);
     });
 
-    it('应该正确委托applyAuthentication', () => {
+    it('应该正确委托applyAuthentication', async () => {
       const mockRequest = { url: 'test', method: 'GET' as const };
       const mockAuth = { type: 'bearer' as const, token: 'test-token' };
       const mockAuthenticatedRequest = {
@@ -436,9 +436,9 @@ describe('CachedApiExecutor', () => {
         headers: { Authorization: 'Bearer test-token' },
       };
 
-      vi.mocked(mockBaseExecutor.applyAuthentication).mockReturnValue(mockAuthenticatedRequest);
+      vi.mocked(mockBaseExecutor.applyAuthentication).mockResolvedValue(mockAuthenticatedRequest);
 
-      const result = cachedExecutor.applyAuthentication(mockRequest, mockAuth);
+      const result = await cachedExecutor.applyAuthentication(mockRequest, mockAuth);
 
       expect(result).toBe(mockAuthenticatedRequest);
       expect(mockBaseExecutor.applyAuthentication).toHaveBeenCalledWith(mockRequest, mockAuth);

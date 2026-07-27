@@ -147,7 +147,7 @@ describe('ApiExecutorImpl', () => {
   });
 
   describe('applyAuthentication', () => {
-    it('应该应用认证到HTTP请求', () => {
+    it('应该应用认证到HTTP请求', async () => {
       const request: HttpRequestConfig = {
         url: 'https://api.example.com/test',
         method: 'GET',
@@ -169,9 +169,9 @@ describe('ApiExecutorImpl', () => {
         valid: true,
         missingVars: [],
       });
-      vi.mocked(mockAuthManager.applyAuthentication).mockReturnValue(authenticatedRequest);
+      vi.mocked(mockAuthManager.applyAuthentication).mockResolvedValue(authenticatedRequest);
 
-      const result = apiExecutor.applyAuthentication(request, authConfig);
+      const result = await apiExecutor.applyAuthentication(request, authConfig);
 
       expect(mockAuthManager.resolveEnvironmentVariables).toHaveBeenCalledWith(authConfig);
       expect(mockAuthManager.validateEnvironmentVariables).toHaveBeenCalled();
@@ -179,7 +179,7 @@ describe('ApiExecutorImpl', () => {
       expect(result).toEqual(authenticatedRequest);
     });
 
-    it('应该在环境变量缺失时抛出错误', () => {
+    it('应该在环境变量缺失时抛出错误', async () => {
       const request: HttpRequestConfig = {
         url: 'https://api.example.com/test',
         method: 'GET',
@@ -197,7 +197,7 @@ describe('ApiExecutorImpl', () => {
         missingVars: ['MISSING_TOKEN'],
       });
 
-      expect(() => apiExecutor.applyAuthentication(request, authConfig)).toThrow(
+      await expect(apiExecutor.applyAuthentication(request, authConfig)).rejects.toThrow(
         '认证配置中的环境变量未定义: MISSING_TOKEN',
       );
     });
@@ -401,7 +401,7 @@ describe('ApiExecutorImpl', () => {
         valid: true,
         missingVars: [],
       });
-      vi.mocked(mockAuthManager.applyAuthentication).mockImplementation((req) => ({
+      vi.mocked(mockAuthManager.applyAuthentication).mockImplementation(async (req) => ({
         ...req,
         headers: { ...req.headers, Authorization: 'Bearer test-token' },
       }));
