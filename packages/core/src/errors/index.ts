@@ -69,6 +69,12 @@ export enum ErrorCode {
   OAUTH_INSUFFICIENT_SCOPE = 6104,
   OAUTH_SERVER_ERROR = 6105,
   OAUTH_CONFIG_ERROR = 6106,
+
+  // OAuth 出站错误（6200-6299，出站 OAuth client_credentials/refresh_token）
+  OAUTH_OUTBOUND_CONFIG_INVALID = 6200,
+  OAUTH_OUTBOUND_TOKEN_FETCH_FAILED = 6201,
+  OAUTH_OUTBOUND_TOKEN_EXPIRED = 6202,
+  OAUTH_OUTBOUND_ENV_VAR_MISSING = 6203,
 }
 
 /**
@@ -126,6 +132,12 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.OAUTH_INSUFFICIENT_SCOPE]: 'OAuth 权限范围不足',
   [ErrorCode.OAUTH_SERVER_ERROR]: 'OAuth 服务错误',
   [ErrorCode.OAUTH_CONFIG_ERROR]: 'OAuth 配置错误',
+
+  // OAuth 出站错误
+  [ErrorCode.OAUTH_OUTBOUND_CONFIG_INVALID]: 'OAuth 出站配置无效',
+  [ErrorCode.OAUTH_OUTBOUND_TOKEN_FETCH_FAILED]: 'OAuth 出站 token 获取失败',
+  [ErrorCode.OAUTH_OUTBOUND_TOKEN_EXPIRED]: 'OAuth 出站 token 已过期',
+  [ErrorCode.OAUTH_OUTBOUND_ENV_VAR_MISSING]: 'OAuth 出站环境变量未定义',
 };
 
 /**
@@ -193,6 +205,12 @@ export const ERROR_SEVERITY: Record<ErrorCode, ErrorSeverity> = {
   [ErrorCode.OAUTH_INSUFFICIENT_SCOPE]: ErrorSeverity.MEDIUM,
   [ErrorCode.OAUTH_SERVER_ERROR]: ErrorSeverity.HIGH,
   [ErrorCode.OAUTH_CONFIG_ERROR]: ErrorSeverity.HIGH,
+
+  // OAuth 出站错误
+  [ErrorCode.OAUTH_OUTBOUND_CONFIG_INVALID]: ErrorSeverity.LOW,
+  [ErrorCode.OAUTH_OUTBOUND_TOKEN_FETCH_FAILED]: ErrorSeverity.HIGH,
+  [ErrorCode.OAUTH_OUTBOUND_TOKEN_EXPIRED]: ErrorSeverity.HIGH,
+  [ErrorCode.OAUTH_OUTBOUND_ENV_VAR_MISSING]: ErrorSeverity.LOW,
 };
 
 /**
@@ -252,6 +270,12 @@ const ERROR_HTTP_STATUS: Record<ErrorCode, number> = {
   [ErrorCode.OAUTH_INSUFFICIENT_SCOPE]: 403,
   [ErrorCode.OAUTH_SERVER_ERROR]: 503,
   [ErrorCode.OAUTH_CONFIG_ERROR]: 500,
+
+  // OAuth 出站错误（内部错误，不直接映射 HTTP；用 500 占位，api-executor 会重新包装）
+  [ErrorCode.OAUTH_OUTBOUND_CONFIG_INVALID]: 500,
+  [ErrorCode.OAUTH_OUTBOUND_TOKEN_FETCH_FAILED]: 500,
+  [ErrorCode.OAUTH_OUTBOUND_TOKEN_EXPIRED]: 500,
+  [ErrorCode.OAUTH_OUTBOUND_ENV_VAR_MISSING]: 500,
 };
 
 /**
