@@ -19,8 +19,8 @@ import {
 import type { AuthConfig } from '../types/api-config.js';
 import type { HttpRequestConfig } from '../types/http-client.js';
 import type { AuthenticationStrategy } from './authentication.js';
-import type { HttpClient } from './http-client.js';
 import type { CacheManager } from './cache-manager.js';
+import type { HttpClient } from './http-client.js';
 
 vi.mock('../../utils/logger.js', () => ({
   createLogger: () => ({
@@ -159,9 +159,7 @@ describe('ApiKeyStrategy', function () {
       const request = createBaseRequest();
       const config: AuthConfig = { type: 'apikey' };
 
-      await expect(strategy.applyAuth(request, config)).rejects.toThrow(
-        'API Key认证需要提供token',
-      );
+      await expect(strategy.applyAuth(request, config)).rejects.toThrow('API Key认证需要提供token');
     });
   });
 

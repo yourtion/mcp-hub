@@ -1,6 +1,6 @@
 # P3：出站 OAuth（AuthenticationStrategy）
 
-- **状态**: Draft（待实现）
+- **状态**: 实现完成
 - **日期**: 2026-07-27
 - **作者**: yourtion
 - **关联**:
@@ -22,12 +22,12 @@
 
 ### 不做什么（边界）
 
-| 问题 | 是否属 P3 | 说明 |
-| --- | --- | --- |
-| `api-to-mcp` 调外部 REST API 的 OAuth | ✅ 是 | P3 核心 |
-| Hub 连外部 **MCP server** 的出站认证（`server_manager.ts` 只透传静态 headers） | ❌ 否 | 另一套代码路径（MCP client transport），已登记在 adoption-overview 跨子项目待办，待独立立项 |
-| `authorization_code` grant（需用户交互/redirect/PKCE） | ❌ 否 | 本轮只做服务间场景，复杂度高且 api-to-mcp 场景少见 |
-| 多实例 token 共享（Redis） | ❌ 否 | MVP 用 `MemoryCacheManager`，多实例待 P6 实现 `RedisCacheManager` 后接入 |
+| 问题                                                                           | 是否属 P3 | 说明                                                                                        |
+| ------------------------------------------------------------------------------ | --------- | ------------------------------------------------------------------------------------------- |
+| `api-to-mcp` 调外部 REST API 的 OAuth                                          | ✅ 是     | P3 核心                                                                                     |
+| Hub 连外部 **MCP server** 的出站认证（`server_manager.ts` 只透传静态 headers） | ❌ 否     | 另一套代码路径（MCP client transport），已登记在 adoption-overview 跨子项目待办，待独立立项 |
+| `authorization_code` grant（需用户交互/redirect/PKCE）                         | ❌ 否     | 本轮只做服务间场景，复杂度高且 api-to-mcp 场景少见                                          |
+| 多实例 token 共享（Redis）                                                     | ❌ 否     | MVP 用 `MemoryCacheManager`，多实例待 P6 实现 `RedisCacheManager` 后接入                    |
 
 ### 对 adoption-overview spec 描述的修正
 
@@ -35,15 +35,15 @@ adoption-overview §P3 称"`authentication.ts:217` 有 oauth 抛错占位"——
 
 ## 关键决策（brainstorming 已确认）
 
-| 决策 | 选择 | 理由 |
-| --- | --- | --- |
-| 接口 async 化 | 改 `applyAuth`/`validateConfig` 为 `Promise` 返回，现有 3 策略包 `async` | OAuth 需异步取 token；同步接口装不下。bearer/apikey/basic 逻辑不变，向后兼容 |
-| grant types | `client_credentials` + `refresh_token` | 服务间最常用；refresh 是优化路径（AS 顺带返回就存，避免频繁打扰 token endpoint） |
-| token 存储 | 复用现有 `CacheManager`（async 接口 `get/set(ttl)`） | MVP 用 `MemoryCacheManager`；多实例待 P6 Redis |
-| 配置 schema | `z.discriminatedUnion('type', [...])` 重构 | 类型安全最好，TS 能按 type 收窄字段 |
-| clientSecret 安全 | 支持 `{{env.VAR}}` + 绝不记日志/错误 context | 复用现有环境变量解析机制 |
-| HTTP 客户端 | **注入现有 `HttpClient`** | HttpClient 本就是原生 fetch 封装（`http-client.ts:129`），复用超时/重试/日志；依赖图无环（HttpClient 是叶子） |
-| 失败策略 | fail-fast 抛明确错误码 | token 获取失败不静默吞；可配少量重试应对网络抖动 |
+| 决策              | 选择                                                                     | 理由                                                                                                          |
+| ----------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| 接口 async 化     | 改 `applyAuth`/`validateConfig` 为 `Promise` 返回，现有 3 策略包 `async` | OAuth 需异步取 token；同步接口装不下。bearer/apikey/basic 逻辑不变，向后兼容                                  |
+| grant types       | `client_credentials` + `refresh_token`                                   | 服务间最常用；refresh 是优化路径（AS 顺带返回就存，避免频繁打扰 token endpoint）                              |
+| token 存储        | 复用现有 `CacheManager`（async 接口 `get/set(ttl)`）                     | MVP 用 `MemoryCacheManager`；多实例待 P6 Redis                                                                |
+| 配置 schema       | `z.discriminatedUnion('type', [...])` 重构                               | 类型安全最好，TS 能按 type 收窄字段                                                                           |
+| clientSecret 安全 | 支持 `{{env.VAR}}` + 绝不记日志/错误 context                             | 复用现有环境变量解析机制                                                                                      |
+| HTTP 客户端       | **注入现有 `HttpClient`**                                                | HttpClient 本就是原生 fetch 封装（`http-client.ts:129`），复用超时/重试/日志；依赖图无环（HttpClient 是叶子） |
+| 失败策略          | fail-fast 抛明确错误码                                                   | token 获取失败不静默吞；可配少量重试应对网络抖动                                                              |
 
 ## 设计
 
@@ -67,8 +67,8 @@ export interface AuthenticationStrategy {
 export class OAuthStrategy implements AuthenticationStrategy {
   readonly name = 'oauth';
   constructor(
-    private readonly httpClient: HttpClient,   // 复用原生 fetch 封装（超时/重试/日志）
-    private readonly cache: CacheManager,       // token 存储
+    private readonly httpClient: HttpClient, // 复用原生 fetch 封装（超时/重试/日志）
+    private readonly cache: CacheManager, // token 存储
   ) {}
 }
 ```
@@ -126,12 +126,12 @@ export const AuthConfigSchema = z.discriminatedUnion('type', [
     type: z.literal('oauth'),
     grantType: z.enum(['client_credentials', 'refresh_token']),
     clientId: z.string(),
-    clientSecret: z.string(),        // 支持 {{env.VAR}}
+    clientSecret: z.string(), // 支持 {{env.VAR}}
     tokenUrl: z.string().url(),
     scope: z.string().optional(),
-    refreshToken: z.string().optional(),  // 首次可能没有，靠 client_credentials 换
-    headerName: z.string().optional(),    // 默认 'Authorization'
-    tokenPrefix: z.string().optional(),   // 默认 'Bearer '
+    refreshToken: z.string().optional(), // 首次可能没有，靠 client_credentials 换
+    headerName: z.string().optional(), // 默认 'Authorization'
+    tokenPrefix: z.string().optional(), // 默认 'Bearer '
   }),
 ]);
 
@@ -199,12 +199,12 @@ POST {tokenUrl}
 
 复用现有错误码体系（`packages/core/src/errors/index.ts`，P2 已加 6100-6106 入站）。P3 出站加独立段：
 
-| 错误码 | 名称 | 触发场景 | severity |
-| --- | --- | --- | --- |
-| 6200 | `OAUTH_OUTBOUND_CONFIG_INVALID` | OAuth 配置校验失败（缺 clientId/tokenUrl 等） | warn |
-| 6201 | `OAUTH_OUTBOUND_TOKEN_FETCH_FAILED` | token endpoint 返回非 2xx 或网络错 | error |
-| 6202 | `OAUTH_OUTBOUND_TOKEN_EXPIRED` | 缓存无 token 且无法获取新 token（fail-fast 终态） | error |
-| 6203 | `OAUTH_OUTBOUND_ENV_VAR_MISSING` | `{{env.*}}` 引用的环境变量未定义 | warn |
+| 错误码 | 名称                                | 触发场景                                          | severity |
+| ------ | ----------------------------------- | ------------------------------------------------- | -------- |
+| 6200   | `OAUTH_OUTBOUND_CONFIG_INVALID`     | OAuth 配置校验失败（缺 clientId/tokenUrl 等）     | warn     |
+| 6201   | `OAUTH_OUTBOUND_TOKEN_FETCH_FAILED` | token endpoint 返回非 2xx 或网络错                | error    |
+| 6202   | `OAUTH_OUTBOUND_TOKEN_EXPIRED`      | 缓存无 token 且无法获取新 token（fail-fast 终态） | error    |
+| 6203   | `OAUTH_OUTBOUND_ENV_VAR_MISSING`    | `{{env.*}}` 引用的环境变量未定义                  | warn     |
 
 不设 httpStatus——这些是内部调用外部 API 时的错误，不直接暴露给 MCP 客户端；上游工具调用失败时由 `api-executor` 统一包装成 MCP 工具错误。错误对象带 `context: { clientId, tokenUrl, scope, statusCode, errorBody摘要 }`，**绝不带 clientSecret / refreshToken 原文**。
 
@@ -214,30 +214,30 @@ POST {tokenUrl}
 
 #### 必改（async 化）
 
-| 文件 | 改动 |
-| --- | --- |
-| `authentication.ts` | `AuthenticationStrategy` 接口 + 3 策略方法体加 `async` + `AuthenticationManager.applyAuthentication/validateAuthConfig` 加 `async` |
-| `api-executor.ts` | L123 `request = this.applyAuthentication(...)` → `request = await this.applyAuthentication(...)`；L209 方法签名加 `async` |
-| `cached-api-executor.ts` | L178 包装方法加 `async`（已转发，无逻辑改动） |
+| 文件                     | 改动                                                                                                                               |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `authentication.ts`      | `AuthenticationStrategy` 接口 + 3 策略方法体加 `async` + `AuthenticationManager.applyAuthentication/validateAuthConfig` 加 `async` |
+| `api-executor.ts`        | L123 `request = this.applyAuthentication(...)` → `request = await this.applyAuthentication(...)`；L209 方法签名加 `async`          |
+| `cached-api-executor.ts` | L178 包装方法加 `async`（已转发，无逻辑改动）                                                                                      |
 
 #### 需核查的字段访问点（discriminated union 改了类型形态）
 
-| 文件 | 访问点 | 处理 |
-| --- | --- | --- |
-| `authentication.ts` `BearerTokenStrategy.validateConfig` | `config.token` | 加 `if (config.type === 'bearer')` 守卫（现有逻辑已按 type 分策略，TS 需显式收窄） |
-| `ApiKeyStrategy` / `BasicAuthStrategy` | 类似 | 同上 |
-| `resolveEnvironmentVariables` | 遍历 token/username/password/header | 改成按 type 分支处理对应字段（oauth 加 clientSecret/refreshToken/clientId） |
-| `validateEnvironmentVariables` | 同上 | 同步改 |
+| 文件                                                     | 访问点                              | 处理                                                                               |
+| -------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------- |
+| `authentication.ts` `BearerTokenStrategy.validateConfig` | `config.token`                      | 加 `if (config.type === 'bearer')` 守卫（现有逻辑已按 type 分策略，TS 需显式收窄） |
+| `ApiKeyStrategy` / `BasicAuthStrategy`                   | 类似                                | 同上                                                                               |
+| `resolveEnvironmentVariables`                            | 遍历 token/username/password/header | 改成按 type 分支处理对应字段（oauth 加 clientSecret/refreshToken/clientId）        |
+| `validateEnvironmentVariables`                           | 同上                                | 同步改                                                                             |
 
 #### 新增
 
-| 文件 | 内容 |
-| --- | --- |
-| `oauth-strategy.ts`（新建，独立文件避免 `authentication.ts` 膨胀） | `OAuthStrategy` 类 |
-| `authentication.ts` | re-export `OAuthStrategy` |
-| `api-config.ts` | discriminated union schema + 导出 `OAuthAuthConfig` |
-| `errors/index.ts` | 6200-6203 |
-| `AuthenticationManager` 构造函数 | 接收可选 `{ httpClient?, cache? }` |
+| 文件                                                               | 内容                                                |
+| ------------------------------------------------------------------ | --------------------------------------------------- |
+| `oauth-strategy.ts`（新建，独立文件避免 `authentication.ts` 膨胀） | `OAuthStrategy` 类                                  |
+| `authentication.ts`                                                | re-export `OAuthStrategy`                           |
+| `api-config.ts`                                                    | discriminated union schema + 导出 `OAuthAuthConfig` |
+| `errors/index.ts`                                                  | 6200-6203                                           |
+| `AuthenticationManager` 构造函数                                   | 接收可选 `{ httpClient?, cache? }`                  |
 
 #### new AuthenticationManager() 调用点
 
@@ -252,6 +252,7 @@ POST {tokenUrl}
 #### 单测（重点，覆盖率高）
 
 **`oauth-strategy.unit.test.ts`（新增）：**
+
 - `fetchToken` 成功 → 缓存命中 → 注入正确 header（含自定义 `headerName`/`tokenPrefix`）
 - `fetchToken` 失败（4xx/5xx/网络错）→ 抛 6201 + 错误 context 不含 secret
 - refresh_token 续期成功 → 缓存更新
@@ -262,6 +263,7 @@ POST {tokenUrl}
 - clientSecret 绝不出现在日志/错误 context（断言）
 
 **`authentication.unit.test.ts`（改造现有）：**
+
 - L499/533 的 oauth 测试从"期望抛错"改成"期望成功"（type 注册了）
 - 现有 bearer/apikey/basic 测试加 `await`（async 化），逻辑不变
 - 加"OAuthStrategy 在 manager 未注入 httpClient 时不注册"的边界测试
@@ -290,16 +292,24 @@ POST {tokenUrl}
 
 ## 风险与缓解
 
-| 风险 | 缓解 |
-| --- | --- |
-| async 化波及面超出预期（隐藏的同步调用点） | TDD 逐文件改造，每步跑测试；TS 会强制把遗漏的 await 暴露出来 |
+| 风险                                               | 缓解                                                                                                                  |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| async 化波及面超出预期（隐藏的同步调用点）         | TDD 逐文件改造，每步跑测试；TS 会强制把遗漏的 await 暴露出来                                                          |
 | discriminated union 改变类型形态，破坏现有配置文件 | 现有 bearer/apikey/basic 配置字段不变，只是 schema 结构从平坦变 union，运行时解析兼容；核查所有 `config.token` 访问点 |
-| clientSecret 泄漏到日志/错误 | 单测断言"clientSecret 绝不出现在日志/错误 context"；错误对象只带 clientId/tokenUrl/scope/statusCode |
-| e2e mock 外部 AS 成本高 | 降级策略：单测优先，e2e 允许 conditional skip |
-| token stampede（并发 miss） | 标记为 follow-up；MVP 不做并发去重，CacheManager 若有锁则用 |
+| clientSecret 泄漏到日志/错误                       | 单测断言"clientSecret 绝不出现在日志/错误 context"；错误对象只带 clientId/tokenUrl/scope/statusCode                   |
+| e2e mock 外部 AS 成本高                            | 降级策略：单测优先，e2e 允许 conditional skip                                                                         |
+| token stampede（并发 miss）                        | 标记为 follow-up；MVP 不做并发去重，CacheManager 若有锁则用                                                           |
 
 ## 待实现时评估的 follow-up
 
 - 并发去重（in-flight Promise）是否值得加。
 - e2e mock AS 用 msw 还是内嵌假 AS。
 - `RedisCacheManager` 接入（依赖 P6 实现）。
+
+## 实现修正 / follow-up（2026-07-27 收尾）
+
+P3 八个实现 task 已完成（commits `8d953de`..`5194ed2`），门禁全绿（`pnpm check:ci` 0 warnings/errors，`pnpm test` 1783 passed | 2 skipped，core + backend `tsc --noEmit` 0 errors）。记录实现期间产生的 follow-up：
+
+- **e2e conditional skip（待 fixture 激活）**：`backend` e2e 骨架 `oauth-outbound.test.ts` 已落地，但按 P2 模式做了 conditional skip——环境未配置内嵌假 AS / msw fixture 时默认跳过（运行时确认 1 test | 1 skipped）。单测 `oauth-strategy.unit.test.ts` 已覆盖 `fetchToken`/`refresh`/`cacheKey`/`env` 全路径。激活 e2e 需补 mock AS fixture，登记为 follow-up，不阻塞 P3 DoD（设计 §6 已允许 e2e 降级为 conditional skip）。
+- **并发去重（stampede 防护）未实现**：`OAuthStrategy` 当前不做 in-flight Promise 去重，同一 cacheKey 并发 miss 会各自打 token endpoint。设计 §3 已标记为 follow-up，MVP 不做。后续评估 `CacheManager` 是否提供锁机制，再决定是否加单飞去重。
+- **`RedisCacheManager` 接入待 P6**：当前 token 缓存用 `MemoryCacheManager`（单实例）。多实例部署下 token 不共享，需 P6 实现 `RedisCacheManager` 后接入。已登记在 adoption-overview 跨子项目共享待办。

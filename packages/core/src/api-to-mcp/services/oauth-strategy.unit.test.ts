@@ -4,11 +4,11 @@
 
 import { describe, expect, it, vi } from 'vitest';
 
+import { OAuthStrategy } from './oauth-strategy.js';
+
+import type { HttpRequestConfig, HttpResponse } from '../types/http-client.js';
 import type { CacheManager } from './cache-manager.js';
 import type { HttpClient } from './http-client.js';
-import type { HttpRequestConfig, HttpResponse } from '../types/http-client.js';
-
-import { OAuthStrategy } from './oauth-strategy.js';
 import type { CachedToken } from './oauth-strategy.js';
 
 function createMockHttpClient(tokenResponse: unknown, status = 200): HttpClient {
@@ -55,7 +55,11 @@ describe('OAuthStrategy', () => {
       const cache = createMockCache();
       const strategy = new OAuthStrategy(httpClient, cache);
 
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+      const request: HttpRequestConfig = {
+        url: 'https://api.example.com/x',
+        method: 'GET',
+        headers: {},
+      };
       const config = {
         type: 'oauth' as const,
         grantType: 'client_credentials' as const,
@@ -84,7 +88,11 @@ describe('OAuthStrategy', () => {
         tokenUrl: 'https://as.example.com/token',
         scope: 'read',
       };
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+      const request: HttpRequestConfig = {
+        url: 'https://api.example.com/x',
+        method: 'GET',
+        headers: {},
+      };
 
       // 第一次：miss → fetch
       await strategy.applyAuth(request, config);
@@ -108,7 +116,11 @@ describe('OAuthStrategy', () => {
         headerName: 'X-Token',
         tokenPrefix: '',
       };
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+      const request: HttpRequestConfig = {
+        url: 'https://api.example.com/x',
+        method: 'GET',
+        headers: {},
+      };
 
       const result = await strategy.applyAuth(request, config);
 
@@ -129,7 +141,11 @@ describe('OAuthStrategy', () => {
         clientSecret: 'secret',
         tokenUrl: 'https://as.example.com/token',
       };
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+      const request: HttpRequestConfig = {
+        url: 'https://api.example.com/x',
+        method: 'GET',
+        headers: {},
+      };
 
       await expect(strategy.applyAuth(request, config)).rejects.toThrow();
     });
@@ -146,7 +162,11 @@ describe('OAuthStrategy', () => {
         clientSecret: 'super-secret-value',
         tokenUrl: 'https://as.example.com/token',
       };
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+      const request: HttpRequestConfig = {
+        url: 'https://api.example.com/x',
+        method: 'GET',
+        headers: {},
+      };
 
       try {
         await strategy.applyAuth(request, config);
@@ -194,7 +214,11 @@ describe('OAuthStrategy', () => {
         clientSecret: 'secret',
         tokenUrl: 'https://as.example.com/token',
       };
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+      const request: HttpRequestConfig = {
+        url: 'https://api.example.com/x',
+        method: 'GET',
+        headers: {},
+      };
 
       // 让 cache.get 返回一个"将过期 + 有 refreshToken"的 token，触发 refresh 路径
       vi.spyOn(cache, 'get').mockResolvedValueOnce({
@@ -248,7 +272,11 @@ describe('OAuthStrategy', () => {
         clientSecret: 'secret',
         tokenUrl: 'https://as.example.com/token',
       };
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+      const request: HttpRequestConfig = {
+        url: 'https://api.example.com/x',
+        method: 'GET',
+        headers: {},
+      };
 
       const result = await strategy.applyAuth(request, config);
       expect(result.headers!.Authorization).toBe('Bearer fallback-tok');
@@ -296,7 +324,11 @@ describe('OAuthStrategy', () => {
         clientSecret: 'secret',
         tokenUrl: 'https://as.example.com/token',
       };
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+      const request: HttpRequestConfig = {
+        url: 'https://api.example.com/x',
+        method: 'GET',
+        headers: {},
+      };
 
       const result = await strategy.applyAuth(request, config);
       expect(result.headers!.Authorization).toBe('Bearer fallback-tok');

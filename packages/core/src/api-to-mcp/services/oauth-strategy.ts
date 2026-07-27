@@ -8,10 +8,10 @@ import { createHash } from 'node:crypto';
 import { ErrorCode, ServiceError } from '../../errors/index.js';
 import { createLogger } from '../../utils/logger.js';
 
+import type { AuthConfig, HttpRequestConfig, OAuthAuthConfig } from '../types/index.js';
+import type { AuthenticationStrategy } from './authentication.js';
 import type { CacheManager } from './cache-manager.js';
 import type { HttpClient } from './http-client.js';
-import type { AuthenticationStrategy } from './authentication.js';
-import type { AuthConfig, HttpRequestConfig, OAuthAuthConfig } from '../types/index.js';
 
 const logger = createLogger({ component: 'OAuthStrategy' });
 
@@ -60,7 +60,10 @@ export class OAuthStrategy implements AuthenticationStrategy {
 
   async applyAuth(request: HttpRequestConfig, config: AuthConfig): Promise<HttpRequestConfig> {
     if (config.type !== 'oauth') {
-      throw new ServiceError(ErrorCode.OAUTH_OUTBOUND_CONFIG_INVALID, 'OAuth 策略收到非 oauth 配置');
+      throw new ServiceError(
+        ErrorCode.OAUTH_OUTBOUND_CONFIG_INVALID,
+        'OAuth 策略收到非 oauth 配置',
+      );
     }
 
     const accessToken = await this.getAccessToken(config);

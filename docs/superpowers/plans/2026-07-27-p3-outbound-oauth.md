@@ -25,10 +25,12 @@
 ## File Structure
 
 **新建：**
+
 - `packages/core/src/api-to-mcp/services/oauth-strategy.ts` — `OAuthStrategy` 类（fetchToken/refresh/applyAuth/validateConfig/cacheKey）。
 - `packages/core/src/api-to-mcp/services/oauth-strategy.unit.test.ts` — OAuthStrategy 单测。
 
 **修改：**
+
 - `packages/core/src/errors/index.ts` — 加 6200-6203 错误码 + 三张映射表。
 - `packages/core/src/api-to-mcp/types/api-config.ts` — `AuthConfigSchema` 重构为 discriminated union + 导出 `OAuthAuthConfig`。
 - `packages/core/src/api-to-mcp/services/authentication.ts` — 接口 async 化 + `AuthenticationManager` 构造接收 deps + 环境变量解析扩展 + re-export OAuthStrategy。
@@ -43,10 +45,12 @@
 ## Task 1: 错误码 6200-6203
 
 **Files:**
+
 - Modify: `packages/core/src/errors/index.ts`（enum L65-71 之后、`ERROR_MESSAGES` L128、`ERROR_SEVERITY` L195、`ERROR_HTTP_STATUS` L254）
 - Test: `packages/core/src/errors/index.test.ts`（如存在；否则新建 `errors.unit.test.ts`）
 
 **Interfaces:**
+
 - Produces: `ErrorCode.OAUTH_OUTBOUND_CONFIG_INVALID` (6200)、`OAUTH_OUTBOUND_TOKEN_FETCH_FAILED` (6201)、`OAUTH_OUTBOUND_TOKEN_EXPIRED` (6202)、`OAUTH_OUTBOUND_ENV_VAR_MISSING` (6203)，后续 task 的 `OAuthStrategy` 抛错依赖这些。
 
 - [ ] **Step 1: 写失败测试**
@@ -156,10 +160,12 @@ git commit -m "feat(errors): P3 出站 OAuth 错误码 6200-6203"
 ## Task 2: AuthConfigSchema 重构为 discriminated union
 
 **Files:**
+
 - Modify: `packages/core/src/api-to-mcp/types/api-config.ts:54-62`（`AuthConfigSchema`）+ L184（`AuthConfig` 类型）
 - Test: `packages/core/src/api-to-mcp/types/api-config.unit.test.ts`（新建）
 
 **Interfaces:**
+
 - Produces: `AuthConfigSchema`（discriminated union）、`AuthConfig`（联合类型）、`OAuthAuthConfig`（oauth 分支类型）。后续 task 的 `OAuthStrategy` 和 `authentication.ts` 依赖这些类型。
 - 注意：此 task 改变 `AuthConfig` 类型形态（平坦 → 联合），会触发现有 `authentication.ts` / `api-executor.ts` 的 TS 错误（访问 `config.token` 需先收窄 type）。**这些 TS 错误在 Task 3/4 修复**，本 task 只负责 schema + 类型导出 + 自身测试。
 
@@ -336,10 +342,12 @@ git commit -m "feat(api-to-mcp): AuthConfigSchema 重构为 discriminated union 
 ## Task 3: AuthenticationStrategy 接口 async 化（含现有 3 策略回归）
 
 **Files:**
+
 - Modify: `packages/core/src/api-to-mcp/services/authentication.ts`（接口 L16-25 + 3 策略类 + `AuthenticationManager.applyAuthentication/validateAuthConfig`）
 - Modify: `packages/core/src/api-to-mcp/services/authentication.unit.test.ts`（所有 `applyAuthentication`/`validateAuthConfig` 调用加 await）
 
 **Interfaces:**
+
 - Produces: async 化的 `AuthenticationStrategy.applyAuth(request, config): Promise<HttpRequestConfig>`、`validateConfig(config): Promise<{valid, error?}>`、`AuthenticationManager.applyAuthentication(...): Promise<HttpRequestConfig>`。
 - Consumes: Task 2 的 `AuthConfig` 联合类型（现有 3 策略的 `validateConfig` 内访问 `config.token`/`username`/`password` 需加 type 守卫）。
 
@@ -370,7 +378,9 @@ expect(function () {
 }).toThrow('不支持的认证类型: oauth');
 
 // 改后
-await expect(manager.applyAuthentication(request, config)).rejects.toThrow('不支持的认证类型: oauth');
+await expect(manager.applyAuthentication(request, config)).rejects.toThrow(
+  '不支持的认证类型: oauth',
+);
 ```
 
 **注意 L497-504 和 L532-538 的 oauth 抛错测试**：本 task 暂保留"oauth 未注册 → 抛错"的期望（Task 5 才注册 OAuthStrategy），但要改成 async。
@@ -387,6 +397,7 @@ Expected: FAIL（接口还是同步，await 同步返回值不报错，但 rejec
 在 `authentication.ts`：
 
 改接口（L16-25）：
+
 ```typescript
 export interface AuthenticationStrategy {
   readonly name: string;
@@ -396,6 +407,7 @@ export interface AuthenticationStrategy {
 ```
 
 `BearerTokenStrategy`：方法签名加 `async`，加 type 守卫：
+
 ```typescript
 export class BearerTokenStrategy implements AuthenticationStrategy {
   readonly name = 'bearer';
@@ -438,6 +450,7 @@ export class BearerTokenStrategy implements AuthenticationStrategy {
 - [ ] **Step 4: AuthenticationManager 方法 async 化**
 
 改 `applyAuthentication`（L214-228）：
+
 ```typescript
 async applyAuthentication(request: HttpRequestConfig, authConfig: AuthConfig): Promise<HttpRequestConfig> {
   const strategy = this.strategies.get(authConfig.type);
@@ -453,6 +466,7 @@ async applyAuthentication(request: HttpRequestConfig, authConfig: AuthConfig): P
 ```
 
 改 `validateAuthConfig`（L233-243）：
+
 ```typescript
 async validateAuthConfig(authConfig: AuthConfig): Promise<{ valid: boolean; error?: string }> {
   const strategy = this.strategies.get(authConfig.type);
@@ -480,15 +494,18 @@ git commit -m "feat(auth): AuthenticationStrategy 接口 async 化 + 现有 3 �
 ## Task 4: 调用链 async 化（api-executor + cached-api-executor）
 
 **Files:**
+
 - Modify: `packages/core/src/api-to-mcp/services/api-executor.ts:123`（调用点加 await）+ L209（方法签名加 async）
 - Modify: `packages/core/src/api-to-mcp/services/cached-api-executor.ts:178`（包装方法加 async）
 
 **Interfaces:**
+
 - Consumes: Task 3 的 async `applyAuthentication`。
 
 - [ ] **Step 1: api-executor 调用点加 await**
 
 `api-executor.ts:123`：
+
 ```typescript
 // 改前
 request = this.applyAuthentication(request, config.security.authentication);
@@ -497,6 +514,7 @@ request = await this.applyAuthentication(request, config.security.authentication
 ```
 
 `api-executor.ts:209` 方法签名：
+
 ```typescript
 // 改前
 applyAuthentication(request: HttpRequestConfig, authConfig: AuthConfig): HttpRequestConfig {
@@ -509,6 +527,7 @@ async applyAuthentication(request: HttpRequestConfig, authConfig: AuthConfig): P
 - [ ] **Step 2: cached-api-executor 包装方法加 async**
 
 `cached-api-executor.ts:178`：
+
 ```typescript
 // 改前
 applyAuthentication(request: HttpRequestConfig, authConfig: AuthConfig) {
@@ -537,17 +556,20 @@ git commit -m "feat(api-to-mcp): applyAuthentication 调用链 async 化"
 ## Task 5: OAuthStrategy 实现（client_credentials + refresh + cache）
 
 **Files:**
+
 - Create: `packages/core/src/api-to-mcp/services/oauth-strategy.ts`
 - Create: `packages/core/src/api-to-mcp/services/oauth-strategy.unit.test.ts`
 - Modify: `packages/core/src/api-to-mcp/services/authentication.ts`（`AuthenticationManager` 构造接收 deps + 注册 OAuthStrategy + re-export）
 
 **Interfaces:**
+
 - Consumes: Task 1 错误码、Task 2 `OAuthAuthConfig`、Task 3 async 接口、现有 `HttpClient`（`../services/http-client.js`）、`CacheManager`（`./cache-manager.js`）。
 - Produces: `OAuthStrategy` 类，注入到 `AuthenticationManager`。
 
 **关键常量：**
+
 ```typescript
-const EXPIRY_BUFFER_MS = 60_000;  // expiresAt 前 60s 视为将过期
+const EXPIRY_BUFFER_MS = 60_000; // expiresAt 前 60s 视为将过期
 const REDACTED = '[REDACTED]';
 ```
 
@@ -608,7 +630,11 @@ describe('OAuthStrategy', () => {
       const cache = createMockCache();
       const strategy = new OAuthStrategy(httpClient, cache);
 
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+      const request: HttpRequestConfig = {
+        url: 'https://api.example.com/x',
+        method: 'GET',
+        headers: {},
+      };
       const config = {
         type: 'oauth' as const,
         grantType: 'client_credentials' as const,
@@ -637,7 +663,11 @@ describe('OAuthStrategy', () => {
         tokenUrl: 'https://as.example.com/token',
         scope: 'read',
       };
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+      const request: HttpRequestConfig = {
+        url: 'https://api.example.com/x',
+        method: 'GET',
+        headers: {},
+      };
 
       // 第一次：miss → fetch
       await strategy.applyAuth(request, config);
@@ -661,7 +691,11 @@ describe('OAuthStrategy', () => {
         headerName: 'X-Token',
         tokenPrefix: '',
       };
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+      const request: HttpRequestConfig = {
+        url: 'https://api.example.com/x',
+        method: 'GET',
+        headers: {},
+      };
 
       const result = await strategy.applyAuth(request, config);
 
@@ -729,7 +763,10 @@ export class OAuthStrategy implements AuthenticationStrategy {
 
   async applyAuth(request: HttpRequestConfig, config: AuthConfig): Promise<HttpRequestConfig> {
     if (config.type !== 'oauth') {
-      throw new ServiceError(ErrorCode.OAUTH_OUTBOUND_CONFIG_INVALID, 'OAuth 策略收到非 oauth 配置');
+      throw new ServiceError(
+        ErrorCode.OAUTH_OUTBOUND_CONFIG_INVALID,
+        'OAuth 策略收到非 oauth 配置',
+      );
     }
 
     const accessToken = await this.getAccessToken(config);
@@ -782,7 +819,10 @@ export class OAuthStrategy implements AuthenticationStrategy {
         return refreshed;
       } catch (err) {
         logger.warn('OAuth refresh 失败，回退到 client_credentials', {
-          context: { clientId: config.clientId, error: err instanceof Error ? err.message : String(err) },
+          context: {
+            clientId: config.clientId,
+            error: err instanceof Error ? err.message : String(err),
+          },
         });
       }
     }
@@ -815,7 +855,12 @@ export class OAuthStrategy implements AuthenticationStrategy {
         ErrorCode.OAUTH_OUTBOUND_TOKEN_FETCH_FAILED,
         `OAuth token endpoint 返回 ${response.status}`,
         undefined,
-        { clientId: config.clientId, tokenUrl: config.tokenUrl, scope: config.scope, statusCode: response.status },
+        {
+          clientId: config.clientId,
+          tokenUrl: config.tokenUrl,
+          scope: config.scope,
+          statusCode: response.status,
+        },
       );
     }
 
@@ -852,7 +897,11 @@ export class OAuthStrategy implements AuthenticationStrategy {
   /**
    * refresh_token 续期（优化路径，失败由调用方静默回退）
    */
-  private async refreshToken(config: OAuthAuthConfig, refreshToken: string, cacheKey: string): Promise<string> {
+  private async refreshToken(
+    config: OAuthAuthConfig,
+    refreshToken: string,
+    cacheKey: string,
+  ): Promise<string> {
     const body = new URLSearchParams({
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
@@ -908,195 +957,211 @@ Expected: PASS（3 个用例）。
 在 `oauth-strategy.unit.test.ts` 末尾追加：
 
 ```typescript
-  describe('applyAuth — 失败处理', () => {
-    it('token endpoint 返回 401 → 抛 OAUTH_OUTBOUND_TOKEN_FETCH_FAILED', async () => {
-      const httpClient = createMockHttpClient({ error: 'invalid_client' }, 401);
-      const cache = createMockCache();
-      const strategy = new OAuthStrategy(httpClient, cache);
+describe('applyAuth — 失败处理', () => {
+  it('token endpoint 返回 401 → 抛 OAUTH_OUTBOUND_TOKEN_FETCH_FAILED', async () => {
+    const httpClient = createMockHttpClient({ error: 'invalid_client' }, 401);
+    const cache = createMockCache();
+    const strategy = new OAuthStrategy(httpClient, cache);
 
-      const config = {
-        type: 'oauth' as const,
-        grantType: 'client_credentials' as const,
-        clientId: 'cid',
-        clientSecret: 'secret',
-        tokenUrl: 'https://as.example.com/token',
-      };
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+    const config = {
+      type: 'oauth' as const,
+      grantType: 'client_credentials' as const,
+      clientId: 'cid',
+      clientSecret: 'secret',
+      tokenUrl: 'https://as.example.com/token',
+    };
+    const request: HttpRequestConfig = {
+      url: 'https://api.example.com/x',
+      method: 'GET',
+      headers: {},
+    };
 
-      await expect(strategy.applyAuth(request, config)).rejects.toThrow();
-    });
-
-    it('错误 context 不含 clientSecret', async () => {
-      const httpClient = createMockHttpClient({ error: 'bad' }, 500);
-      const cache = createMockCache();
-      const strategy = new OAuthStrategy(httpClient, cache);
-
-      const config = {
-        type: 'oauth' as const,
-        grantType: 'client_credentials' as const,
-        clientId: 'cid',
-        clientSecret: 'super-secret-value',
-        tokenUrl: 'https://as.example.com/token',
-      };
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
-
-      try {
-        await strategy.applyAuth(request, config);
-        expect.fail('应抛错');
-      } catch (err) {
-        const str = JSON.stringify(err);
-        expect(str).not.toContain('super-secret-value');
-      }
-    });
+    await expect(strategy.applyAuth(request, config)).rejects.toThrow();
   });
 
-  describe('applyAuth — refresh_token 续期', () => {
-    it('缓存将过期 + 有 refreshToken → refresh 成功', async () => {
-      const cache = createMockCache();
-      // 预置一个将过期的 token
-      const cacheKey = 'oauth:token:' + 'x'.repeat(32); // 实际 key 由 hash 算出，测试用 spy 验证调用即可
-      cache.store.set(cacheKey, {
-        accessToken: 'old-tok',
-        expiresAt: Date.now() + 30_000, // 30s 后过期，< 60s buffer → 触发 refresh
-        refreshToken: 'rt-xxx',
-      });
+  it('错误 context 不含 clientSecret', async () => {
+    const httpClient = createMockHttpClient({ error: 'bad' }, 500);
+    const cache = createMockCache();
+    const strategy = new OAuthStrategy(httpClient, cache);
 
-      let callCount = 0;
-      const httpClient = {
-        request: vi.fn(async (req: HttpRequestConfig) => {
-          callCount++;
-          const body = req.data as string;
-          if (body.includes('grant_type=refresh_token')) {
-            return {
-              status: 200,
-              statusText: 'OK',
-              headers: new Headers(),
-              data: { access_token: 'refreshed-tok', expires_in: 3600 },
-              raw: new Response(),
-              config: req,
-            } as unknown as HttpResponse;
-          }
+    const config = {
+      type: 'oauth' as const,
+      grantType: 'client_credentials' as const,
+      clientId: 'cid',
+      clientSecret: 'super-secret-value',
+      tokenUrl: 'https://as.example.com/token',
+    };
+    const request: HttpRequestConfig = {
+      url: 'https://api.example.com/x',
+      method: 'GET',
+      headers: {},
+    };
+
+    try {
+      await strategy.applyAuth(request, config);
+      expect.fail('应抛错');
+    } catch (err) {
+      const str = JSON.stringify(err);
+      expect(str).not.toContain('super-secret-value');
+    }
+  });
+});
+
+describe('applyAuth — refresh_token 续期', () => {
+  it('缓存将过期 + 有 refreshToken → refresh 成功', async () => {
+    const cache = createMockCache();
+    // 预置一个将过期的 token
+    const cacheKey = 'oauth:token:' + 'x'.repeat(32); // 实际 key 由 hash 算出，测试用 spy 验证调用即可
+    cache.store.set(cacheKey, {
+      accessToken: 'old-tok',
+      expiresAt: Date.now() + 30_000, // 30s 后过期，< 60s buffer → 触发 refresh
+      refreshToken: 'rt-xxx',
+    });
+
+    let callCount = 0;
+    const httpClient = {
+      request: vi.fn(async (req: HttpRequestConfig) => {
+        callCount++;
+        const body = req.data as string;
+        if (body.includes('grant_type=refresh_token')) {
           return {
             status: 200,
             statusText: 'OK',
             headers: new Headers(),
-            data: { access_token: 'fresh-tok', expires_in: 3600 },
+            data: { access_token: 'refreshed-tok', expires_in: 3600 },
             raw: new Response(),
             config: req,
           } as unknown as HttpResponse;
-        }),
-      } as unknown as HttpClient;
+        }
+        return {
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
+          data: { access_token: 'fresh-tok', expires_in: 3600 },
+          raw: new Response(),
+          config: req,
+        } as unknown as HttpResponse;
+      }),
+    } as unknown as HttpClient;
 
-      const strategy = new OAuthStrategy(httpClient, cache);
-      const config = {
-        type: 'oauth' as const,
-        grantType: 'client_credentials' as const,
-        clientId: 'cid',
-        clientSecret: 'secret',
-        tokenUrl: 'https://as.example.com/token',
-      };
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+    const strategy = new OAuthStrategy(httpClient, cache);
+    const config = {
+      type: 'oauth' as const,
+      grantType: 'client_credentials' as const,
+      clientId: 'cid',
+      clientSecret: 'secret',
+      tokenUrl: 'https://as.example.com/token',
+    };
+    const request: HttpRequestConfig = {
+      url: 'https://api.example.com/x',
+      method: 'GET',
+      headers: {},
+    };
 
-      // 注意：上面预置的 cacheKey 是假的，实际 getAccessToken 会算真实 key 找不到。
-      // 这个用例验证的是"当缓存返回将过期 token 时走 refresh"——需要让 cache.get 返回将过期 token。
-      // 改用 spy 控制 cache.get 返回值：
-      vi.spyOn(cache, 'get').mockResolvedValueOnce({
-        accessToken: 'old-tok',
-        expiresAt: Date.now() + 30_000,
-        refreshToken: 'rt-xxx',
-      } as unknown as CachedToken);
+    // 注意：上面预置的 cacheKey 是假的，实际 getAccessToken 会算真实 key 找不到。
+    // 这个用例验证的是"当缓存返回将过期 token 时走 refresh"——需要让 cache.get 返回将过期 token。
+    // 改用 spy 控制 cache.get 返回值：
+    vi.spyOn(cache, 'get').mockResolvedValueOnce({
+      accessToken: 'old-tok',
+      expiresAt: Date.now() + 30_000,
+      refreshToken: 'rt-xxx',
+    } as unknown as CachedToken);
 
-      const result = await strategy.applyAuth(request, config);
-      expect(result.headers!.Authorization).toBe('Bearer refreshed-tok');
-      expect(httpClient.request).toHaveBeenCalledOnce();
-    });
+    const result = await strategy.applyAuth(request, config);
+    expect(result.headers!.Authorization).toBe('Bearer refreshed-tok');
+    expect(httpClient.request).toHaveBeenCalledOnce();
+  });
 
-    it('refresh 失败（invalid_grant）→ 静默回退 client_credentials', async () => {
-      const cache = createMockCache();
-      const httpClient = {
-        request: vi.fn(async (req: HttpRequestConfig) => {
-          const body = req.data as string;
-          if (body.includes('grant_type=refresh_token')) {
-            return {
-              status: 400,
-              statusText: 'Bad Request',
-              headers: new Headers(),
-              data: { error: 'invalid_grant' },
-              raw: new Response(),
-              config: req,
-            } as unknown as HttpResponse;
-          }
+  it('refresh 失败（invalid_grant）→ 静默回退 client_credentials', async () => {
+    const cache = createMockCache();
+    const httpClient = {
+      request: vi.fn(async (req: HttpRequestConfig) => {
+        const body = req.data as string;
+        if (body.includes('grant_type=refresh_token')) {
           return {
-            status: 200,
-            statusText: 'OK',
+            status: 400,
+            statusText: 'Bad Request',
             headers: new Headers(),
-            data: { access_token: 'fallback-tok', expires_in: 3600 },
+            data: { error: 'invalid_grant' },
             raw: new Response(),
             config: req,
           } as unknown as HttpResponse;
-        }),
-      } as unknown as HttpClient;
+        }
+        return {
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
+          data: { access_token: 'fallback-tok', expires_in: 3600 },
+          raw: new Response(),
+          config: req,
+        } as unknown as HttpResponse;
+      }),
+    } as unknown as HttpClient;
 
-      const strategy = new OAuthStrategy(httpClient, cache);
-      vi.spyOn(cache, 'get').mockResolvedValueOnce({
-        accessToken: 'old-tok',
-        expiresAt: Date.now() + 30_000,
-        refreshToken: 'rt-xxx',
-      } as unknown as CachedToken);
+    const strategy = new OAuthStrategy(httpClient, cache);
+    vi.spyOn(cache, 'get').mockResolvedValueOnce({
+      accessToken: 'old-tok',
+      expiresAt: Date.now() + 30_000,
+      refreshToken: 'rt-xxx',
+    } as unknown as CachedToken);
 
-      const config = {
-        type: 'oauth' as const,
-        grantType: 'client_credentials' as const,
-        clientId: 'cid',
-        clientSecret: 'secret',
-        tokenUrl: 'https://as.example.com/token',
-      };
-      const request: HttpRequestConfig = { url: 'https://api.example.com/x', method: 'GET', headers: {} };
+    const config = {
+      type: 'oauth' as const,
+      grantType: 'client_credentials' as const,
+      clientId: 'cid',
+      clientSecret: 'secret',
+      tokenUrl: 'https://as.example.com/token',
+    };
+    const request: HttpRequestConfig = {
+      url: 'https://api.example.com/x',
+      method: 'GET',
+      headers: {},
+    };
 
-      const result = await strategy.applyAuth(request, config);
-      expect(result.headers!.Authorization).toBe('Bearer fallback-tok');
-      expect(httpClient.request).toHaveBeenCalledTimes(2); // refresh 1 次 + client_credentials 1 次
+    const result = await strategy.applyAuth(request, config);
+    expect(result.headers!.Authorization).toBe('Bearer fallback-tok');
+    expect(httpClient.request).toHaveBeenCalledTimes(2); // refresh 1 次 + client_credentials 1 次
+  });
+});
+
+describe('validateConfig', () => {
+  const strategy = new OAuthStrategy({} as HttpClient, {} as CacheManager);
+
+  it('缺 clientId → 无效', async () => {
+    const result = await strategy.validateConfig({
+      type: 'oauth',
+      grantType: 'client_credentials',
+      // @ts-expect-error 测试缺字段
+      clientId: undefined,
+      clientSecret: 's',
+      tokenUrl: 'https://x.com/token',
     });
+    expect(result.valid).toBe(false);
   });
 
-  describe('validateConfig', () => {
-    const strategy = new OAuthStrategy({} as HttpClient, {} as CacheManager);
-
-    it('缺 clientId → 无效', async () => {
-      const result = await strategy.validateConfig({
-        type: 'oauth',
-        grantType: 'client_credentials',
-        // @ts-expect-error 测试缺字段
-        clientId: undefined,
-        clientSecret: 's',
-        tokenUrl: 'https://x.com/token',
-      });
-      expect(result.valid).toBe(false);
+  it('refresh_token grant 缺 refreshToken → 无效', async () => {
+    const result = await strategy.validateConfig({
+      type: 'oauth',
+      grantType: 'refresh_token',
+      clientId: 'cid',
+      clientSecret: 's',
+      tokenUrl: 'https://x.com/token',
     });
-
-    it('refresh_token grant 缺 refreshToken → 无效', async () => {
-      const result = await strategy.validateConfig({
-        type: 'oauth',
-        grantType: 'refresh_token',
-        clientId: 'cid',
-        clientSecret: 's',
-        tokenUrl: 'https://x.com/token',
-      });
-      expect(result.valid).toBe(false);
-      expect(result.error).toContain('refreshToken');
-    });
-
-    it('完整配置 → 有效', async () => {
-      const result = await strategy.validateConfig({
-        type: 'oauth',
-        grantType: 'client_credentials',
-        clientId: 'cid',
-        clientSecret: 's',
-        tokenUrl: 'https://x.com/token',
-      });
-      expect(result.valid).toBe(true);
-    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('refreshToken');
   });
+
+  it('完整配置 → 有效', async () => {
+    const result = await strategy.validateConfig({
+      type: 'oauth',
+      grantType: 'client_credentials',
+      clientId: 'cid',
+      clientSecret: 's',
+      tokenUrl: 'https://x.com/token',
+    });
+    expect(result.valid).toBe(true);
+  });
+});
 ```
 
 **注意**：`CachedToken` 是内部类型未导出，测试里用 `as unknown as CachedToken` 需要先在测试文件顶部加 `import type { CachedToken } from './oauth-strategy.js'`，并在 `oauth-strategy.ts` 里 `export interface CachedToken {...}`（导出该类型）。
@@ -1126,16 +1191,19 @@ git commit -m "feat(oauth): OAuthStrategy 实现（client_credentials + refresh 
 ## Task 6: AuthenticationManager 注册 OAuthStrategy + 环境变量解析扩展
 
 **Files:**
+
 - Modify: `packages/core/src/api-to-mcp/services/authentication.ts`（构造函数 L180-187 + `resolveEnvironmentVariables` L249 + `validateEnvironmentVariables` L301）
 - Modify: `packages/core/src/api-to-mcp/services/authentication.unit.test.ts`（改 oauth 抛错测试为期望成功 + 加边界测试）
 
 **Interfaces:**
+
 - Consumes: Task 5 `OAuthStrategy`。
 - Produces: `AuthenticationManager` 可选 deps 注入 + oauth 环境变量解析。
 
 - [ ] **Step 1: 改造 oauth 测试（从抛错改为成功）**
 
 在 `authentication.unit.test.ts` 顶部 import 加：
+
 ```typescript
 import type { HttpClient } from './http-client.js';
 import type { CacheManager } from './cache-manager.js';
@@ -1202,6 +1270,7 @@ Expected: FAIL（`new AuthenticationManager({ httpClient, cache })` 还不支持
 - [ ] **Step 3: 构造函数接收 deps + 注册 OAuthStrategy**
 
 在 `authentication.ts` 顶部 import 加：
+
 ```typescript
 import { HttpClient } from './http-client.js';
 import type { CacheManager } from './cache-manager.js';
@@ -1211,6 +1280,7 @@ import { OAuthStrategy } from './oauth-strategy.js';
 （`HttpClient` 用值导入因构造要 new 实例的类型注解；实际只用作类型可也用 `import type`。核查现有 `HttpClient` 是否 class——是 class，用 `import type` 即可作类型注解。统一用 `import type`。）
 
 改构造函数（L180-187）：
+
 ```typescript
 export interface AuthenticationManagerDeps {
   httpClient?: HttpClient;
@@ -1236,6 +1306,7 @@ export class AuthenticationManager {
 ```
 
 在文件末尾 re-export：
+
 ```typescript
 export { OAuthStrategy } from './oauth-strategy.js';
 export type { CachedToken } from './oauth-strategy.js';
@@ -1330,9 +1401,11 @@ git commit -m "feat(auth): AuthenticationManager 注入 deps 注册 OAuthStrateg
 ## Task 7: service-manager 注入 deps
 
 **Files:**
+
 - Modify: `packages/core/src/api-to-mcp/services/api-to-mcp-service-manager.ts:140` + L475
 
 **Interfaces:**
+
 - Consumes: Task 6 的 `AuthenticationManager(deps)` 构造签名。
 
 - [ ] **Step 1: 改两处 new AuthenticationManager() 调用**
@@ -1340,6 +1413,7 @@ git commit -m "feat(auth): AuthenticationManager 注入 deps 注册 OAuthStrateg
 `api-to-mcp-service-manager.ts:140` 附近，找到 `const authManager = new AuthenticationManager();`。该作用域内已有 `const httpClient = new HttpClient();`（L139）和应有 cache 实例。核查上下文 cache 变量名（搜索 `cacheManager` 或 `CacheManagerImpl`）。
 
 改：
+
 ```typescript
 const httpClient = new HttpClient();
 const cacheManager = new CacheManagerImpl(/* 现有参数 */);
@@ -1367,9 +1441,11 @@ git commit -m "feat(api-to-mcp): service-manager 注入 HttpClient/CacheManager 
 ## Task 8: e2e 测试（内嵌假 AS）
 
 **Files:**
+
 - Create: `backend/src/e2e/mcp-protocol/oauth-outbound.test.ts`
 
 **Interfaces:**
+
 - Consumes: Task 1-7 完整 P3 实现。
 
 **说明：** 参考 P2 e2e 的内嵌假 AS 模式。若搭建成本高，本 task 降级为 conditional skip 并登记 follow-up（仍需文件存在 + skip 标记，证明 DoD 项有交代）。
@@ -1416,6 +1492,7 @@ git commit -m "test(e2e): P3 OAuth 出站 e2e 骨架（conditional skip，待 fi
 ## Task 9: 收尾 — 全量门禁 + 文档同步
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-07-25-mcp-2026-07-28-adoption-overview.md`（P3 实现进度）
 - Modify: `docs/superpowers/specs/2026-07-27-p3-outbound-oauth-design.md`（状态改 实现完成 + 记 follow-up）
 
@@ -1437,6 +1514,7 @@ Expected: 0 errors。
 - [ ] **Step 3: 更新 adoption-overview P3 行**
 
 把 P3 行的"实现进度"从 ⬜ 改为 ✅，加关键 commit + 测试数。参考 P2 行格式：
+
 ```
 | P3 | 出站 OAuth（AuthenticationStrategy） | ✅ 完成 | ✅ **实现完成**（commit `xxx`） | `2026-07-27-p3-outbound-oauth-design.md` |
 ```
@@ -1446,6 +1524,7 @@ Expected: 0 errors。
 - [ ] **Step 4: 更新 P3 spec 状态**
 
 把 `2026-07-27-p3-outbound-oauth-design.md` 顶部"状态"从 `Draft（待实现）` 改为 `实现完成`。在末尾加"实现修正 / follow-up"节，记录：
+
 - e2e 是 conditional skip（待 fixture 激活），登记为 follow-up。
 - 并发去重（stampede 防护）未实现，登记为 follow-up。
 - RedisCacheManager 接入待 P6。

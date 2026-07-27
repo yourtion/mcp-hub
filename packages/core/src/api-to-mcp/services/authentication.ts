@@ -4,12 +4,12 @@
  */
 
 import { createLogger } from '../../utils/logger.js';
+import { OAuthStrategy } from './oauth-strategy.js';
 
 import type { AuthConfig } from '../types/api-config.js';
 import type { HttpRequestConfig } from '../types/http-client.js';
 import type { CacheManager } from './cache-manager.js';
 import type { HttpClient } from './http-client.js';
-import { OAuthStrategy } from './oauth-strategy.js';
 
 const logger = createLogger({ component: 'Authentication' });
 
@@ -344,9 +344,11 @@ export class AuthenticationManager {
     } else if (authConfig.type === 'basic') {
       fieldsToCheck = [authConfig.username, authConfig.password].filter(Boolean) as string[];
     } else if (authConfig.type === 'oauth') {
-      fieldsToCheck = [authConfig.clientId, authConfig.clientSecret, authConfig.refreshToken].filter(
-        Boolean,
-      ) as string[];
+      fieldsToCheck = [
+        authConfig.clientId,
+        authConfig.clientSecret,
+        authConfig.refreshToken,
+      ].filter(Boolean) as string[];
     }
 
     for (const field of fieldsToCheck) {
