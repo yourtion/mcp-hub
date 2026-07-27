@@ -99,8 +99,8 @@ describe('MainLayout', () => {
     expect(wrapper.find('.sidebar').classes()).not.toContain('collapsed');
 
     // Access the component instance and call toggleSidebar directly
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (wrapper.vm as Record<string, unknown>).toggleSidebar();
+    const vm = wrapper.vm as Record<string, unknown>;
+    (vm.toggleSidebar as () => void)();
     await wrapper.vm.$nextTick();
 
     expect(wrapper.find('.sidebar').classes()).toContain('collapsed');

@@ -56,6 +56,14 @@ describe('Dashboard Store', () => {
     store.systemHealth = {
       status: 'healthy',
       issues: [],
+      checks: {
+        servers: { status: 'healthy', message: 'ok', details: { total: 0, connected: 0, failed: 0 } },
+        groups: { status: 'healthy', message: 'ok', details: { total: 0, healthy: 0, unhealthy: 0 } },
+        apiTools: { status: 'healthy', message: 'ok', details: { initialized: true, totalTools: 0, errors: [] } },
+        memory: { status: 'healthy', message: 'ok', details: { used: 0, total: 0, percentage: 0 } },
+      },
+      uptime: 100,
+      lastCheck: new Date().toISOString(),
     };
 
     expect(store.isHealthy).toBe(true);
@@ -73,11 +81,19 @@ describe('Dashboard Store', () => {
         connectedServers: 4,
         totalTools: 20,
         totalGroups: 3,
+        apiTools: 0,
       },
       recentActivity: [],
       systemHealth: {
         status: 'healthy',
         issues: [],
+        uptime: 100,
+      },
+      performance: {
+        totalRequests: 0,
+        averageResponseTime: 0,
+        errorRate: 0,
+        topTools: [],
       },
     };
 
@@ -99,11 +115,19 @@ describe('Dashboard Store', () => {
         connectedServers: 8,
         totalTools: 20,
         totalGroups: 3,
+        apiTools: 0,
       },
       recentActivity: [],
       systemHealth: {
         status: 'healthy',
         issues: [],
+        uptime: 100,
+      },
+      performance: {
+        totalRequests: 0,
+        averageResponseTime: 0,
+        errorRate: 0,
+        topTools: [],
       },
     };
 

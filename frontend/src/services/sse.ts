@@ -8,7 +8,7 @@ import type {
   ToolExecutionEvent,
 } from '@/types/dashboard';
 
-export type SSEEventType = 'server_status' | 'tool_execution' | 'system_alert' | 'health_check';
+export type SSEEventType = 'server_status' | 'tool_execution' | 'system_alert' | 'activity' | 'health_check';
 
 export type SSEEventHandler<T = unknown> = (event: T) => void;
 
@@ -26,6 +26,7 @@ export class SSEService {
     this.handlers.set('server_status', new Set());
     this.handlers.set('tool_execution', new Set());
     this.handlers.set('system_alert', new Set());
+    this.handlers.set('activity', new Set());
     this.handlers.set('health_check', new Set());
   }
 

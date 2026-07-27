@@ -30,21 +30,25 @@ export interface GroupInfo {
   error?: string;
 }
 
-export interface GroupDetailInfo extends GroupInfo {
-  servers: Array<{
-    id: string;
-    status: string;
-    lastConnected?: string;
-    toolCount: number;
-    error?: string;
-  }>;
-  tools: Array<{
-    name: string;
-    description: string;
-    serverId: string;
-    parameters?: unknown;
-    category?: string;
-  }>;
+export interface GroupDetailServer {
+  id: string;
+  status: string;
+  lastConnected?: string;
+  toolCount: number;
+  error?: string;
+}
+
+export interface GroupDetailTool {
+  name: string;
+  description: string;
+  serverId: string;
+  parameters?: unknown;
+  category?: string;
+}
+
+export interface GroupDetailInfo extends Omit<GroupInfo, 'servers' | 'tools'> {
+  servers: GroupDetailServer[];
+  tools: GroupDetailTool[];
   performance: {
     averageResponseTime: number;
     totalRequests: number;

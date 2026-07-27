@@ -7,6 +7,7 @@ import type {
   ApiImportConfig,
   ApiToolConfig,
   CreateApiConfigRequest,
+  McpToolPreview,
   TestApiConfigRequest,
   TestApiConfigResponse,
   UpdateApiConfigRequest,
