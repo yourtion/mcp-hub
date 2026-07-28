@@ -70,6 +70,15 @@ export class ServiceInitializationError extends McpHubError {
 
 export class McpHubService implements IMcpHubService {
   private serverManager: ServerManager;
+
+  /**
+   * 暴露 ServerManager 供 BackendCoreServiceAdapter 委托（P6 架构修正，spec §10.3）。
+   * 适配器让 group-service（经 McpServiceManagerInterface）拿到真实连接/调用。
+   */
+  getServerManager(): ServerManager {
+    return this.serverManager;
+  }
+
   private groupManager: GroupManager;
   private toolManager: ToolManager;
   private apiToolService: ApiToolIntegrationService;
