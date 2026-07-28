@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import {
+  runWithTraceContext,
+  getCurrentTraceContext,
+  type TraceContext,
+} from '../middleware/trace-context.js';
 import { BackendCoreServiceAdapter } from './backend-core-service-adapter.js';
 
 import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
@@ -118,7 +123,7 @@ describe('BackendCoreServiceAdapter', () => {
     expect(await adapter.isToolAvailable('missing', 's')).toBe(false);
   });
 
-  it('initializeFromConfig / shutdown / registerServer 委托 ServerManager', async () => {
+  it('initializeFromConfig / registerServer 委托 ServerManager；shutdown 为 no-op（不关闭借用的 ServerManager）', async () => {
     const sm = makeMockServerManager({
       initialize: vi.fn().mockResolvedValue(undefined),
       shutdown: vi.fn().mockResolvedValue(undefined),
@@ -128,6 +133,36 @@ describe('BackendCoreServiceAdapter', () => {
     await adapter.registerServer('s', { type: 'stdio', command: 'x' } as never);
     await adapter.shutdown();
     expect(sm.initialize).toHaveBeenCalled();
-    expect(sm.shutdown).toHaveBeenCalled();
+    // 适配器不拥有 ServerManager（hubService 才拥有），shutdown 必须为 no-op，
+    // 否则 reloadCoreServiceManager（groups API 增删改）会断开全部真实上游连接。
+    expect(sm.shutdown).not.toHaveBeenCalled();
+  });
+
+  // P6 端到端 trace 传播断言（Task 7 Step 4）：
+  // 验证 group-service handler 的 trace context（Task 3 入站提取后写入 ALS）
+  // 经适配器 → ServerManager.executeToolOnServer 时仍存活（ALS 上下文未断链）。
+  // ServerManager 自身的 _meta 注入已在 server_manager.unit.test.ts（Task 2）验证，
+  // 这里只断言"适配器不脱离 ALS scope"——即在 executeToolCall 执行期间，
+  // getCurrentTraceContext() 仍能读到 handler 注入的 context。
+  it('executeToolCall 在 ALS trace scope 内执行（trace context 不被适配器断链）', async () => {
+    const ctx: TraceContext = {
+      traceparent: '00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01',
+      tracestate: 'congo=t61rcWkgMzE',
+      baggage: 'userId=am9',
+    };
+    let observed: TraceContext | undefined;
+    const sm = makeMockServerManager({
+      executeToolOnServer: vi.fn().mockImplementation(async () => {
+        // 模拟 ServerManager 在执行 callTool 前读取 ALS（Task 2 出站注入点）
+        observed = getCurrentTraceContext();
+        return { content: [{ type: 'text', text: 'ok' }] };
+      }),
+    });
+    const adapter = new BackendCoreServiceAdapter(sm);
+
+    await runWithTraceContext(ctx, () => adapter.executeToolCall('tool', { x: 1 }, 'srv'));
+
+    expect(observed).toEqual(ctx);
+    expect(sm.executeToolOnServer).toHaveBeenCalledWith('srv', 'tool', { x: 1 });
   });
 });

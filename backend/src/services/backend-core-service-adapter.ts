@@ -104,6 +104,13 @@ export class BackendCoreServiceAdapter implements McpServiceManagerInterface {
   }
 
   async shutdown(): Promise<void> {
-    await this.serverManager.shutdown();
+    // 不关闭 ServerManager：适配器只是"借"用 hubService 的 ServerManager（非拥有者），
+    // 其生命周期由 McpHubService.shutdown() 统一管理。
+    //
+    // 若此处委托 serverManager.shutdown()，会在 service-registry 的
+    // reloadCoreServiceManager() 路径（groups API 增删改后调用）中把真实上游连接全部断开，
+    // 随后重建的适配器仍指向同一个已关闭的 ServerManager——连接无法恢复，group-service
+    // 将拿到全断开的连接状态。同理 shutdownGroupsApi() 也会经由 hubService.shutdown()
+    // 重复关闭。故此处保持 no-op，由真正的拥有者负责关闭。
   }
 }
