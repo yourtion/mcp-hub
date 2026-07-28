@@ -9,6 +9,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod/v4';
 
+import { extractFromMeta, runWithTraceContext } from '../../middleware/trace-context.js';
+
 import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
 import type { CallToolResult } from '@modelcontextprotocol/server';
 // JSON Schema types
@@ -619,52 +621,63 @@ export class GroupMcpService {
 
       // 注册工具
       // v2: registerTool(name, { inputSchema }, handler)，zodSchema 是 raw shape 需用 z.object() 包装
-      this.mcpServer.registerTool(toolName, { inputSchema: z.object(zodSchema) }, async (args) => {
-        try {
-          logger.debug('执行组动态工具', {
-            groupId: this.groupId,
-            toolName: tool.name,
-            serverId: tool.serverId,
-            args,
+      this.mcpServer.registerTool(
+        toolName,
+        { inputSchema: z.object(zodSchema) },
+        async (args, extra) => {
+          // P6/SEP-414：从请求 _meta 提取 trace context，注入 AsyncLocalStorage，
+          // 使下游 server_manager.executeToolOnServer 的出站 callTool 能读到并注入上游 _meta。
+          // SDK v2 (2026-07-28 protocol) handler ctx 为 ServerContext，入站 _meta 在 ctx.mcpReq._meta；
+          // optional chaining 防御 ctx 或 mcpReq 缺失（SDK 版本差异）。
+          const traceCtx = extractFromMeta(extra?.mcpReq?._meta);
+          return runWithTraceContext(traceCtx, async () => {
+            try {
+              logger.debug('执行组动态工具', {
+                groupId: this.groupId,
+                toolName: tool.name,
+                serverId: tool.serverId,
+                args,
+              });
+
+              const result = await this.coreServiceManager.executeToolCall(
+                tool.name,
+                args,
+                tool.serverId,
+              );
+
+              // 确保返回正确的格式
+              if (result && typeof result === 'object' && 'content' in result) {
+                return result as unknown as CallToolResult;
+              }
+
+              // 转换结果格式
+              return {
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: typeof result === 'string' ? result : JSON.stringify(result, null, 2),
+                  },
+                ],
+              };
+            } catch (error) {
+              logger.error('组动态工具执行失败', error as Error, {
+                groupId: this.groupId,
+                toolName: tool.name,
+                serverId: tool.serverId,
+              });
+
+              return {
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: `工具执行失败: ${(error as Error).message}`,
+                  },
+                ],
+              };
+            }
           });
-
-          const result = await this.coreServiceManager.executeToolCall(
-            tool.name,
-            args,
-            tool.serverId,
-          );
-
-          // 确保返回正确的格式
-          if (result && typeof result === 'object' && 'content' in result) {
-            return result as unknown as CallToolResult;
-          }
-
-          // 转换结果格式
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: typeof result === 'string' ? result : JSON.stringify(result, null, 2),
-              },
-            ],
-          };
-        } catch (error) {
-          logger.error('组动态工具执行失败', error as Error, {
-            groupId: this.groupId,
-            toolName: tool.name,
-            serverId: tool.serverId,
-          });
-
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `工具执行失败: ${(error as Error).message}`,
-              },
-            ],
-          };
-        }
-      });
+        },
+      );
 
       logger.debug('动态工具注册成功', {
         groupId: this.groupId,
