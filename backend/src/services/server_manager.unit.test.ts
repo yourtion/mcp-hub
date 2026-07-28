@@ -1,6 +1,7 @@
 import { Client } from '@modelcontextprotocol/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { runWithTraceContext, type TraceContext } from '../middleware/trace-context.js';
 import { ServerStatus } from '../types/mcp-hub.js';
 import { ServerManager } from './server_manager.js';
 
@@ -208,6 +209,57 @@ describe('ServerManager', () => {
       expect(mockClient.callTool).toHaveBeenCalledWith({
         name: 'test-tool',
         arguments: { arg1: 'value1' },
+      });
+    });
+
+    it('ALS 有 context 时 callTool 收到 _meta（trace 三件套注入）', async () => {
+      const mockResult = { content: [{ type: 'text', text: 'Success' }] };
+      mockClient.callTool.mockResolvedValue(mockResult);
+      const ctx: TraceContext = {
+        traceparent: '00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01',
+        tracestate: 'congo=t61rcWkgMzE',
+        baggage: 'userId=am9',
+      };
+
+      const result = await runWithTraceContext(ctx, () =>
+        serverManager.executeToolOnServer('test-server-1', 'test-tool', { arg1: 'value1' }),
+      );
+
+      expect(result).toEqual(mockResult);
+      expect(mockClient.callTool).toHaveBeenCalledWith({
+        name: 'test-tool',
+        arguments: { arg1: 'value1' },
+        _meta: {
+          traceparent: '00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01',
+          tracestate: 'congo=t61rcWkgMzE',
+          baggage: 'userId=am9',
+        },
+      });
+    });
+
+    it('ALS context 部分字段缺失时 _meta 只含存在的字段', async () => {
+      mockClient.callTool.mockResolvedValue({ content: [] });
+      const ctx: TraceContext = { traceparent: '00-trace-span-01' };
+
+      await runWithTraceContext(ctx, () =>
+        serverManager.executeToolOnServer('test-server-1', 'test-tool', {}),
+      );
+
+      expect(mockClient.callTool).toHaveBeenCalledWith({
+        name: 'test-tool',
+        arguments: {},
+        _meta: { traceparent: '00-trace-span-01' },
+      });
+    });
+
+    it('ALS 无 context 时 callTool 不含 _meta（零回归）', async () => {
+      mockClient.callTool.mockResolvedValue({ content: [] });
+      // 不在 runWithTraceContext scope 内
+      await serverManager.executeToolOnServer('test-server-1', 'test-tool', { a: 1 });
+
+      expect(mockClient.callTool).toHaveBeenCalledWith({
+        name: 'test-tool',
+        arguments: { a: 1 },
       });
     });
 

@@ -6,6 +6,7 @@ import {
 } from '@modelcontextprotocol/client';
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
 
+import { getCurrentTraceContext, hasTraceContext } from '../middleware/trace-context.js';
 import { ServerStatus } from '../types/mcp-hub.js';
 import { logger } from '../utils/logger.js';
 
@@ -304,10 +305,23 @@ export class ServerManager implements IServerManager {
       // 而是抛 JSON-RPC -32602 (InvalidParams)。下方的 try/catch 将其捕获并在
       // messageTracker 中记为 isError，再 throw 给上游 executeToolWithRetry，
       // 后者转成 createErrorResult(isError:true)。因此本路径已兼容 v2。
-      const response = await server.client.callTool({
+      const callParams: {
+        name: string;
+        arguments: Record<string, unknown>;
+        _meta?: Record<string, string>;
+      } = {
         name: toolName,
         arguments: args,
-      });
+      };
+      // P6/SEP-414：从当前请求作用域（ALS）读取 trace context，注入到上游 callTool 的 _meta。
+      // 无 context 时不加 _meta，保持无 trace 请求的零回归。
+      const traceCtx = getCurrentTraceContext();
+      if (hasTraceContext(traceCtx)) {
+        callParams._meta = Object.fromEntries(
+          Object.entries(traceCtx).filter(([, v]) => v !== undefined),
+        ) as Record<string, string>;
+      }
+      const response = await server.client.callTool(callParams);
       const executionTime = Date.now() - startTime;
 
       logger.debug('Tool execution completed', {
