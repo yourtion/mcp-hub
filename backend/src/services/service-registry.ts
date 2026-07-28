@@ -1,11 +1,12 @@
-import { ErrorCode, McpServiceManager, ServiceError } from '@mcp-core/mcp-hub-core';
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 
-import { toMcpServerConfig } from '../types/config-helpers.js';
-import { asMutable, getAllConfig } from '../utils/config.js';
 import { logger } from '../utils/logger.js';
 
+import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
 import type { McpHubService } from './mcp_hub_service.js';
-import type { DeepReadonly, GroupConfig, McpConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
+import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
+
+import { BackendCoreServiceAdapter } from './backend-core-service-adapter.js';
 
 /**
  * 全局服务注册表
@@ -84,25 +85,27 @@ export async function createHubService(config: {
 // 配置变更后调用 reloadCoreServiceManager() 热重载。
 // ─────────────────────────────────────────────────────────────────────────────
 
-let coreServiceManager: McpServiceManager | null = null;
+let coreServiceManager: McpServiceManagerInterface | null = null;
 
 /**
  * 初始化 McpServiceManager（从当前配置读取并构建）
  */
-export async function initCoreServiceManager(): Promise<McpServiceManager> {
+export async function initCoreServiceManager(): Promise<McpServiceManagerInterface> {
   if (coreServiceManager) {
     return coreServiceManager;
   }
 
-  const config = await getAllConfig();
-  coreServiceManager = new McpServiceManager();
-  const coreConfig = toMcpServerConfig({
-    mcps: asMutable<McpConfig>(config.mcps as DeepReadonly<McpConfig>),
-    groups: asMutable<GroupConfig>(config.groups as DeepReadonly<GroupConfig>),
-  });
-  await coreServiceManager.initializeFromConfig(coreConfig);
+  // P6 架构修正（spec §10.3）：注入 backend 真实 ServerManager（经 McpHubService），
+  // 替代 core 包的 mock McpServiceManager。使 group-service / groups API 拿到真实
+  // 连接状态与工具调用，并打通 P6 trace context 链路（Task 2 出站 + Task 3 入站）。
+  //
+  // 此适配器仅服务于 group-service / groups API（只读状态 + 工具调用）。
+  // 新增 core 抽象消费者前需复核 ToolInfo.description 可空性
+  // （backend Tool.description 可选，core ToolInfo.description 必填，类型断言已规避）。
+  const hubService = getHubService();
+  coreServiceManager = new BackendCoreServiceAdapter(hubService.getServerManager());
 
-  logger.info('McpServiceManager 初始化成功');
+  logger.info('CoreServiceManager 已注入真实 ServerManager（BackendCoreServiceAdapter）');
   return coreServiceManager;
 }
 
@@ -110,7 +113,7 @@ export async function initCoreServiceManager(): Promise<McpServiceManager> {
  * 获取已初始化的 McpServiceManager
  * 若尚未初始化，会自动初始化
  */
-export async function getCoreServiceManager(): Promise<McpServiceManager> {
+export async function getCoreServiceManager(): Promise<McpServiceManagerInterface> {
   if (!coreServiceManager) {
     await initCoreServiceManager();
   }
@@ -124,7 +127,7 @@ export async function getCoreServiceManager(): Promise<McpServiceManager> {
  * 副作用：旧 manager 关闭后，所有 GroupMcpService（按 group 缓存）持有的就是过期引用，
  * 因此这里同时失效全部 group MCP 缓存（service + handler），保证下次请求惰性重建。
  */
-export async function reloadCoreServiceManager(): Promise<McpServiceManager> {
+export async function reloadCoreServiceManager(): Promise<McpServiceManagerInterface> {
   if (coreServiceManager) {
     try {
       await coreServiceManager.shutdown();
@@ -151,7 +154,7 @@ export async function reloadCoreServiceManager(): Promise<McpServiceManager> {
 /**
  * 注销并返回 McpServiceManager 实例（用于关闭流程）
  */
-export async function shutdownCoreServiceManager(): Promise<McpServiceManager | null> {
+export async function shutdownCoreServiceManager(): Promise<McpServiceManagerInterface | null> {
   const manager = coreServiceManager;
   coreServiceManager = null;
   return manager;

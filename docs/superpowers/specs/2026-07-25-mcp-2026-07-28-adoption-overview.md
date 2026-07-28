@@ -38,7 +38,7 @@
 | P3     | 出站 OAuth（AuthenticationStrategy） | ✅ 完成                   | ✅ **实现完成**（分支 `feat/p3-outbound-oauth`，commit `5194ed2`）    | `2026-07-27-p3-outbound-oauth-design.md`    |
 | **P4** | `ttlMs`/`cacheScope` 缓存语义        | ✅ 完成                   | ✅ **实现完成**（已合并 main，merge `a03f430`）                       | `2026-07-26-p4-cache-semantics-design.md`   |
 | P5     | `subscriptions/listen` + MRTR        | ⏳ 推迟（观望客户端生态） | ⬜ 未开始                                                             | —                                           |
-| P6     | OTel trace context + 弃用项清理      | ⏳ 待 brainstorming       | ⬜ 未开始                                                             | —                                           |
+| **P6** | OTel trace context + 弃用项清理      | ✅ 完成                   | ✅ **实现完成**（分支 `feat/p6-otel-trace-context`，待合并）          | `2026-07-28-p6-otel-deprecation-design.md`  |
 
 **推荐主线顺序**：P1 → P4 → P2 → P3 → P6 → P5
 
@@ -334,7 +334,8 @@ P4 **不是替换**已有缓存，而是**新增协议层缓存提示**，并探
 | P4     | 已合并 main（merge `a03f430`） | `2b75c39` 注册 4 个 Hub 元数据 resources；`660e45b` tools/list 确定性排序；`8018afc` McpServer 构造接入 cacheHints             | ✅ **实现完成**（typecheck + 1683 tests 全绿，含 5 个 P4 e2e）                       |
 | P2     | `feat/p2-inbound-oauth`        | `0ffb6b8` 主线接入 + internal 模式 token 验签；`f6a82c4` OAuth 端点；`8d966f3` Resource Server 编排                            | ✅ **实现完成**（typecheck + 1750 tests 全绿，含 5 个 P2 e2e）                       |
 | P3     | `feat/p3-outbound-oauth`       | `ff482e3` OAuthStrategy 实现（client_credentials + refresh + cache）；`f98d7c5` AuthenticationManager 注册；`5194ed2` e2e 骨架 | ✅ **实现完成**（typecheck + 1783 tests 全绿；e2e conditional skip 待 fixture 激活） |
-| P5、P6 | —                              | —                                                                                                                              | ⬜ 未开始                                                                            |
+| P6     | `feat/p6-otel-trace-context`   | `75c2b4e` TraceContextStore；`3cbb207` 出站 callTool 注入 _meta；`c94d68c` 入站 handler 提取（mcpReq._meta）；`a7d125b` 集成测试 | ✅ **实现完成**（typecheck + 542 unit tests 全绿，含 22 个 P6 新测试；弃用项/日志已核实干净） |
+| P5     | —                              | —                                                                                                                              | ⬜ 未开始（推迟）                                                                    |
 
 ## 跨子项目共享待办
 
@@ -346,7 +347,7 @@ P4 **不是替换**已有缓存，而是**新增协议层缓存提示**，并探
 | ~~`simple-auth.ts` 假认证（任何非空 token 放行）~~                                            | ~~P2~~                    | —                                                                            | ✅ **已核实：当前代码不存在该文件**（spec 描述滞后，可能 P1 时清理），无需处理                                                                  | —                                                  |
 | ~~`message-audit-service.ts` 用户归因硬编码 `'admin'`~~                                       | ~~P2~~                    | —                                                                            | ✅ **已核实：当前 `message-audit-service.ts` 无 'admin' 硬编码**，message 结构无 user 字段，描述过时                                            | —                                                  |
 | 组级 validationKey 在 MCP 端点未强制（`group-router.ts` 只校验组存在）                        | ✅ P2 已修复              | P2 一并修复                                                                  | ✅ **P2 已通过 `mcp-auth` 中间件强制**（启用了 validation 的组现在必须带正确 key）                                                              | P2                                                 |
-| `console.*` 绕过统一 Logger（25+ 处）                                                         | P6                        | P6 日志统一                                                                  | 🟡 审计报告已列，分支正在修                                                                                                                     | P6                                                 |
+| ~~`console.*` 绕过统一 Logger（25+ 处）~~                                                     | ~~P6~~                    | —                                                                            | ✅ **P6 已核实：`backend/src` 生产代码 console.* = 0 处**（统一 Logger `@mcp-core/mcp-hub-share` 已全量接入）；`packages/cli` 的 console.* 是 CLI stdout（合理），`packages/share` 是 logger 实现本身。原描述"25+ 处正在修"滞后 | —                                                  |
 | 出站连 MCP server 的 token 获取/刷新（当前只透传静态 `headers`，`server_manager.ts:179,199`） | 🔴 **未归属**（独立待办） | 待定——需 brainstorming 立项；与 P3 不同代码路径（见 [P3 范围边界](#范围-2)） | 🟡 范围已明确排除 P3                                                                                                                            | P3（边界外）、潜在新子项目                         |
 
 ## 未采纳/待评估协议特性

@@ -332,7 +332,55 @@ e2e 仿照 P3/P4 的 mock 上游 server 模式：
 | `backend/src/api/mcp/group-router.ts` | 138 | POST 路由 | （可选）加 header 提取中间件 |
 | `packages/core/src/utils/logger.ts` / `backend/src/utils/logger.ts` | — | 统一 Logger 已就绪 | 无改动 |
 
-## 10. 参考资料
+## 10. 架构修正：连通 group-service → 真实上游调用（实现期发现）
+
+> **本节是 P6 实现期（Task 1-5 完成后、最终 review 时）发现并确认的架构修正。** 原 §3 的数据流假设 `group-service.ts` 工具 handler → `coreServiceManager.executeToolCall` → 真实上游 server 调用是一条连通链路。核实发现**该假设不成立**——链路中途断在 core 包的 mock 占位实现上。本节记录发现、影响、修复方案。
+
+### 10.1 发现：两套并行且不连通的工具执行体系
+
+项目存在两套工具执行体系，P6 的入站点与出站点分属两套：
+
+| 体系 | 组成 | 服务路径 | 连接/执行 | 是否真实 |
+| --- | --- | --- | --- | --- |
+| **体系 A：backend McpHubService** | `McpHubService` → `ToolManager` → backend `ServerManager`（真实 `client.callTool`） | REST `/api/tools`（`getHubService()`） | 真实 stdio/SSE/streaming transport + 真实 `callTool`/`listTools` | ✅ 真实 |
+| **体系 B：core McpServiceManager** | `getCoreServiceManager()` = `new McpServiceManager()`（core 包类） | `group-service.ts` 工具 handler（`/:group/mcp` 端点）+ groups API | `simulateServerConnection`（假连接）+ `mockTools`（假工具）+ mock `executeToolOnServer`（假结果） | ❌ **全 mock 占位** |
+
+**核实证据**：
+- `getCoreServiceManager()`（`backend/src/services/service-registry.ts:92-106`）返回 `new McpServiceManager()`（core 包类），不经 backend `ServerManager`。
+- core `McpServiceManager.executeToolOnServer`（`packages/core/src/services/mcp/service-manager.ts:579`）注释"暂时返回模拟结果"，返回 `ToolResult { success, data: { message: "工具 X 在服务器 Y 上执行成功" } }`，无 `content` 字段，不调真实 `client.callTool`。
+- core `McpServiceManager.initializeServer`（L506）同样 mock（`simulateServerConnection`，注释"暂时模拟连接成功"）。
+- backend `ServerManager`（P6 Task 2 的出站注入点）由 `McpHubService` 持有（`mcp_hub_service.ts:92`），不经 `group-service`。
+
+### 10.2 影响（P6 与预存 bug）
+
+1. **P6 trace 传播对 MCP 端点无效**：`group-service` handler（P6 Task 3 入站点）把 trace 写入 ALS，但调用链到 core mock `executeToolOnServer` 就返回假数据，**不经过** backend `ServerManager`（P6 Task 2 出站注入点）。trace 写入后无人读取。
+2. **MCP 端点工具调用返回 mock 假数据（预存 bug，非 P6 引入）**：`/:group/mcp` 的 `tools/call` 经 core mock 返回假 `ToolResult`，handler 检查 `'content' in result` 不成立，走 fallback `JSON.stringify` 成文本返回客户端。即 MCP 端点的工具调用当前返回的是假的占位文本，不是真实上游 server 结果。
+
+### 10.3 修复方案：注入式适配器（core 当壳，backend 当引擎）
+
+让 `group-service` 继续依赖 core 的 `McpServiceManagerInterface`（抽象接口，不变），但在注入点（`initCoreServiceManager`）注入一个 **backend 适配器**（实现 `McpServiceManagerInterface`），内部委托给真实的 backend `McpHubService`/`ServerManager`。core 的 mock `McpServiceManager` 类不再用于注入（保留为 core 包内部，避免破坏其他潜在依赖）。
+
+**设计要点**：
+- **单一注入点**：只改 `initCoreServiceManager`（`service-registry.ts:92`），把 `new McpServiceManager()` 换成 `new BackendCoreServiceAdapter(hubService)`。`getCoreServiceManager()` 的所有消费者（group-service、groups API）自动拿到真实数据。
+- **适配器实现 `McpServiceManagerInterface` 的 9 个方法**，委托给 `McpHubService`/`ServerManager`：
+  - `executeToolCall(toolName, args, serverId)` → 委托 backend `ServerManager.executeToolOnServer`（P6 Task 2 已注入 trace `_meta`），返回 MCP 原生结果（带 `content`）。
+  - `getAllTools`/`getServerTools`/`getServerConnections`/`getServiceStatus`/`isToolAvailable`/`registerServer`/`initializeFromConfig`/`shutdown` → 委托 `McpHubService`/`ServerManager` 对应方法。
+- **结果格式**：适配器 `executeToolCall` 类型上返回 core `ToolResult`，但运行时**直接透传** backend `ServerManager` 的 MCP 原生 `CallToolResult`（带 `content`）——因为 `group-service` handler 用 `'content' in result` 判定，需要 `content`。`ToolResult` 的 `data` 字段是 `unknown`，可装 MCP 原生结果，类型兼容。
+- **trace 链路打通**：修复后，`group-service` handler → 适配器 → backend `ServerManager.executeToolOnServer`（读 ALS 注入 `_meta`）连成一条链，P6 Task 2/3 同时生效。
+
+### 10.4 为什么不直接让 group-service 改用 McpHubService
+
+考虑过更简单的"group-service 直接调 `getHubService().callTool`"，但否决：
+- `group-service` 现依赖 `McpServiceManagerInterface`（core 抽象接口），直接换成 `McpHubService`（具体类）会降低抽象、增加耦合，且 groups API 也用 `getCoreServiceManager()`（只读状态），需要一致的真实数据源。
+- 注入式适配器保持 `McpServiceManagerInterface` 契约不变，所有消费者零改动（除注入点），是更小、更一致的改动。
+
+### 10.5 范围界定
+
+本修正属于 P6（trace 传播依赖真实调用链），同时修复预存的 MCP 端点 mock 数据 bug。**不**包含：core `McpServiceManager` 类的删除/重构（保留，避免扩大爆破面）；groups API 行为变更（它们只读状态，适配器提供真实状态即改善而非破坏）。
+
+---
+
+## 11. 参考资料
 
 - [SEP-414 OTel trace context propagation（Final）](https://modelcontextprotocol.io/seps/414-request-meta)
 - [MCP 2026-07-28 Changelog](https://modelcontextprotocol.io/specification/draft/changelog)（Minor change #2: trace context；Deprecated #1-4）
