@@ -199,6 +199,8 @@ toolsApi.get('/:toolName', async (c) => {
       name: tool.name,
       description: tool.description,
       serverId: tool.serverId,
+      // status 与列表接口（/:toolName 上方的 GET /）保持一致：基于服务器连接状态推导。
+      status: serverStatus === 'connected' ? ('available' as const) : ('unavailable' as const),
       serverStatus,
       inputSchema: tool.inputSchema,
       groupId,
@@ -317,7 +319,10 @@ toolsApi.post('/:toolName/execute', async (c) => {
     });
 
     return c.json({
-      success: !result.isError,
+      // success 表达"API 调用是否成功"；工具业务成败由 data.isError 表达。
+      // 工具内部执行失败（isError:true）时仍返回 success:true，让前端能拿到
+      // data.result 里的错误文本并展示，而非被 handleApiResponse 当作接口错误丢弃。
+      success: true,
       data: {
         executionId,
         toolName,

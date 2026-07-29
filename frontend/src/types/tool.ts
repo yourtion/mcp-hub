@@ -96,7 +96,7 @@ export interface ToolExecution {
 }
 
 export interface ToolHistoryResponse {
-  executions: ToolExecution[];
+  history: ToolExecution[];
   pagination: {
     total: number;
     limit: number;

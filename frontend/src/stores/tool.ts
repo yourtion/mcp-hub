@@ -270,7 +270,7 @@ export const useToolStore = defineStore('tool', () => {
       clearError();
 
       const response = await ToolService.getToolHistory(params);
-      executionHistory.value = response.executions;
+      executionHistory.value = response.history;
 
       return response;
     } catch (err) {
