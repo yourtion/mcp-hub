@@ -61,10 +61,15 @@ import {
   GroupValidationManager,
 } from '@/components/groups';
 import { useGroupStore } from '@/stores/group';
+import { useServerStore } from '@/stores/server';
+import { useToolStore } from '@/stores/tool';
 
 import type { GroupInfo, CreateGroupRequest, UpdateGroupRequest } from '@/types/group';
 
 const groupStore = useGroupStore();
+// 预加载服务器与工具列表：GroupFormDialog 的"服务器/工具"多选项依赖这两个 store。
+const serverStore = useServerStore();
+const toolStore = useToolStore();
 
 // Dialog state
 const showCreateDialog = ref(false);
@@ -128,6 +133,9 @@ watch(showCreateDialog, (val) => {
 
 onMounted(() => {
   groupStore.fetchGroups();
+  // 为 GroupFormDialog 的选项提供数据（服务器/工具列表）
+  serverStore.fetchServers();
+  toolStore.fetchTools();
 });
 </script>
 

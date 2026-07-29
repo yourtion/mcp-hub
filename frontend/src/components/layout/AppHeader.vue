@@ -44,7 +44,7 @@ import {
   PoweroffIcon,
 } from 'tdesign-icons-vue-next';
 import { Button, Dropdown } from 'tdesign-vue-next';
-import { computed } from 'vue';
+import { computed, h } from 'vue';
 
 import Breadcrumb from './Breadcrumb.vue';
 import { useTheme } from '@/composables/useTheme';
@@ -74,7 +74,9 @@ const userDropdownOptions = computed(() => {
     {
       content: '退出登录',
       value: 'logout',
-      prefixIcon: PoweroffIcon,
+      // TDesign DropdownOption.prefixIcon 期望 TNode（渲染函数/插槽），不能直接传组件对象，
+      // 否则会被字符串化为 "[object Object]" 且影响菜单项交互。
+      prefixIcon: () => h(PoweroffIcon),
     },
   ];
   return options;

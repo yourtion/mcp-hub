@@ -51,7 +51,7 @@
     </div>
 
     <!-- Tabs -->
-    <t-tabs v-model="activeTab" class="tools-tabs">
+    <t-tabs v-model="activeTab" class="tools-tabs" @change="handleTabChange">
       <t-tab-panel value="list" label="工具列表">
         <ToolList
           :tools="toolStore.filteredTools"
@@ -123,6 +123,17 @@ const handleRefresh = async () => {
     MessagePlugin.success('工具列表已刷新');
   } catch {
     MessagePlugin.error('刷新失败');
+  }
+};
+
+const handleTabChange = async (value: string | number) => {
+  // 切到"执行历史"时按需加载，避免空数据（参考 ToolMonitoring 的按需加载模式）
+  if (value === 'history') {
+    try {
+      await toolStore.fetchExecutionHistory();
+    } catch {
+      MessagePlugin.error('获取执行历史失败');
+    }
   }
 };
 

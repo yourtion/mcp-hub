@@ -55,6 +55,7 @@ import { ref, reactive, watch, computed } from 'vue';
 
 import { useGroupStore } from '@/stores/group';
 import { useServerStore } from '@/stores/server';
+import { useToolStore } from '@/stores/tool';
 
 import type { GroupInfo, CreateGroupRequest, UpdateGroupRequest } from '@/types/group';
 import type { FormInstanceFunctions, FormRule } from 'tdesign-vue-next';
@@ -72,6 +73,7 @@ const emit = defineEmits<{
 
 const serverStore = useServerStore();
 const groupStore = useGroupStore();
+const toolStore = useToolStore();
 const formRef = ref<FormInstanceFunctions | null>(null);
 
 const dialogTitle = computed(() => (props.mode === 'create' ? '创建组' : '编辑组'));
@@ -105,17 +107,13 @@ const serverOptions = computed(() =>
   })),
 );
 
-// Available tool options: gather from all groups' tools to build a flat list
+// 可选工具列表：从 toolStore 拉取所有已发现工具（按工具名去重）。
+// 不再从 groupList.tools 聚合——该字段语义是"工具白名单"（空表示全部允许），
+// 用它构建选项会永远为空。
 const toolOptions = computed(() => {
   const toolNames = new Set<string>();
-  groupStore.groupList.forEach((g) => {
-    if (Array.isArray(g.tools)) {
-      g.tools.forEach((t) => {
-        if (typeof t === 'string') {
-          toolNames.add(t);
-        }
-      });
-    }
+  toolStore.toolList.forEach((t) => {
+    toolNames.add(t.name);
   });
   return Array.from(toolNames).map((name) => ({
     label: name,
