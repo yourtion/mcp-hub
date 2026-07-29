@@ -3,6 +3,12 @@
  * 用于构建时类型检查，在正式环境中应使用完整的共享类型定义
  */
 
+// 认证/安全配置直接复用 core 的定义（discriminated union），
+// 避免本地"简化版"与 core 类型结构性不一致，导致 api-to-mcp-web-service.ts
+// 在 core 与 web-api 类型之间互转时触发 TS2322。
+export type { AuthConfig, SecurityConfig } from '@mcp-core/mcp-hub-core/api-to-mcp';
+import type { AuthConfig, SecurityConfig } from '@mcp-core/mcp-hub-core/api-to-mcp';
+
 /**
  * HTTP请求方法
  */
@@ -37,30 +43,6 @@ export interface JsonSchema {
   required?: string[];
   additionalProperties?: boolean;
   description?: string;
-}
-
-/**
- * 认证配置
- */
-export interface AuthConfig {
-  type: 'bearer' | 'apikey' | 'basic';
-  token?: string;
-  header?: string;
-  username?: string;
-  password?: string;
-}
-
-/**
- * 安全配置
- */
-export interface SecurityConfig {
-  authentication?: AuthConfig;
-  allowedDomains?: string[];
-  rateLimiting?: {
-    windowSeconds: number;
-    maxRequests: number;
-    enabled: boolean;
-  };
 }
 
 /**

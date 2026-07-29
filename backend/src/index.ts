@@ -4,7 +4,7 @@ import { initializeDashboardServices, shutdownDashboardServices } from './api/da
 import { shutdownHubApi } from './api/hub.js';
 import { shutdownGroupMcpRouter } from './api/mcp/group-router.js';
 import { shutdownServersApi } from './api/servers/index.js';
-import { app } from './app.js';
+import { apiToMcpWebService, app } from './app.js';
 import {
   createHubService,
   getHubServiceSafe,
@@ -48,7 +48,11 @@ async function validateConfigurations() {
       hasSystemConfig: !!validationResult.data.systemConfig,
     });
 
-    return validationResult.data;
+    // 透传 apiToolsConfigPath：验证结果会丢弃该字段，但 ApiToMcpWebService 初始化需要它。
+    return {
+      ...validationResult.data,
+      apiToolsConfigPath: config.apiToolsConfigPath,
+    };
   } catch (error) {
     logger.error('配置验证过程中发生错误', error as Error);
     throw error;
@@ -62,6 +66,7 @@ async function initializeHubService(validatedConfig: {
   mcpConfig: McpConfig;
   groupConfig: GroupConfig;
   systemConfig?: Record<string, unknown>;
+  apiToolsConfigPath?: string;
 }) {
   logger.info('开始初始化 MCP Hub 服务...');
 
@@ -111,6 +116,18 @@ async function startServer() {
 
     // 2. 初始化 MCP Hub 服务（显式启动）
     await initializeHubService(validatedConfig);
+
+    // 2.1 初始化 API-to-MCP Web 服务（管理端 /api/api-to-mcp/* 路由依赖此单例）
+    // 失败不阻塞服务器启动：仅影响 API-to-MCP 管理功能，与 authService 初始化容错策略一致。
+    try {
+      await apiToMcpWebService.initialize(validatedConfig.apiToolsConfigPath);
+      logger.info('API-to-MCP Web 服务初始化成功', {
+        configPath: validatedConfig.apiToolsConfigPath,
+      });
+    } catch (error) {
+      // logger.warn 第二参数是 context(Record)，不接受 Error；用 error 级别记录异常对象。
+      logger.error('API-to-MCP Web 服务初始化失败，相关管理功能不可用', error as Error);
+    }
 
     // 3. 初始化仪表板服务
     const hubService = getHubServiceSafe();
@@ -189,6 +206,12 @@ async function cleanupResources() {
   cleanupPromises.push(
     shutdownGroupMcpRouter().catch((error) => {
       logger.error('组MCP路由关闭失败', error);
+    }),
+  );
+
+  cleanupPromises.push(
+    apiToMcpWebService.shutdown().catch((error) => {
+      logger.error('API-to-MCP Web 服务关闭失败', error);
     }),
   );
 

@@ -267,6 +267,17 @@ The frontend uses JWT-based authentication. To configure authentication:
    # Serve through backend or separate web server
    ```
 
+   The canonical production topology is a **two-container stack** defined in
+   `docker-compose.yml`:
+   - `mcp-hub-web` (nginx, host port **8180**) — serves the SPA and reverse-proxies
+     `/api/`, `/mcp`, `/:group/mcp` to the backend. SPA fallback (`try_files ... /index.html`)
+     is configured in `frontend/nginx.conf`, so refreshing any frontend route works.
+   - `mcp-hub-api` (Node, internal **8181**) — the API + MCP endpoint, **not** a SPA host.
+
+   Always access the app via the nginx port (**8180**). Hitting the backend port (8181)
+   directly with a frontend path returns `404 Not Found` because the backend only serves
+   `/api/*` and `/:group/mcp` — this is expected, not a bug.
+
 ## Configuration
 
 ### MCP Server Configuration
@@ -351,6 +362,36 @@ curl -X POST http://localhost:8181/research/mcp \
     }
   }'
 ```
+
+#### Connecting with the official MCP SDK (Node)
+
+The `/:group/mcp` endpoint enforces the modern **2026-07-28** protocol version and
+rejects legacy 2025-era handshakes (`legacy: 'reject'`). The official
+`@modelcontextprotocol/client` therefore needs **`versionNegotiation: { mode: 'auto' }`**
+to auto-negotiate the version — without it, the client defaults to `2025-11-25` and
+the handshake fails with `Unsupported protocol version`.
+
+```ts
+import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
+
+const transport = new StreamableHTTPClientTransport(new URL('http://localhost:8181/default/mcp'));
+const client = new Client(
+  { name: 'my-client', version: '1.0.0' },
+  {
+    capabilities: { tools: {} },
+    // Required: lets the SDK probe and adopt the server's 2026-07-28 version.
+    versionNegotiation: { mode: 'auto' },
+  },
+);
+
+await client.connect(transport); // initialize
+const { tools } = await client.listTools(); // tools/list
+await client.callTool({ name: 'fetch_fetch', arguments: { url: 'https://example.com' } });
+```
+
+Tools are namespaced as `<serverId>_<toolName>` (e.g. `fetch_fetch`,
+`context7_query-docs`) to avoid collisions across servers. Two built-in meta-tools
+(`group_status`, `list_group_tools`) are also exposed on every group endpoint.
 
 ### CLI MCP Server Integration
 
