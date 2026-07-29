@@ -2,6 +2,10 @@ node_modules/
 dist/
 coverage/
 
+# Backend runtime config (env-specific, never commit real values)
+backend/config/*
+!backend/config/*.example
+
 # Claude Code
 .claude/hooks/
 .claude/session-config.json

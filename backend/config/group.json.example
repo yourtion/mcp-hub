@@ -1,0 +1,13 @@
+{
+  "default": {
+    "id": "default",
+    "name": "默认组",
+    "description": "默认MCP服务器组",
+    "servers": [
+      "fetch",
+      "sequential-thinking",
+      "context7"
+    ],
+    "tools": []
+  }
+}

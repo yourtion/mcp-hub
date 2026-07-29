@@ -1,0 +1,29 @@
+{
+  "servers": {
+    "fetch": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "env": {},
+      "enabled": true
+    },
+    "sequential-thinking": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "env": {},
+      "enabled": true
+    },
+    "context7": {
+      "type": "streaming",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {},
+      "enabled": true
+    }
+  }
+}

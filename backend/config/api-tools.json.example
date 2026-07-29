@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "tools": [
+    {
+      "id": "api-1775144206597-wgvbhn",
+      "name": "health",
+      "description": "health",
+      "api": {
+        "url": "http://127.0.0.1:8181/api/health",
+        "method": "GET",
+        "headers": {}
+      },
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "response": {}
+    }
+  ]
+}
