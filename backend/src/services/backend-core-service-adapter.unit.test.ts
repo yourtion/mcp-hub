@@ -7,9 +7,9 @@ import {
 } from '../middleware/trace-context.js';
 import { BackendCoreServiceAdapter } from './backend-core-service-adapter.js';
 
-import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
-import type { ServerManager } from './server_manager.js';
 import type { ServerConnection, ServerStatus, Tool } from '../types/mcp-hub.js';
+import type { ServerManager } from './server_manager.js';
+import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
 
 // 构造一个 mock ServerManager，仅 stub 适配器用到的方法
 function makeMockServerManager(overrides: Partial<ServerManager> = {}): ServerManager {
@@ -53,12 +53,8 @@ describe('BackendCoreServiceAdapter', () => {
   });
 
   it('getAllTools 聚合所有 server 的工具（结构兼容 ToolInfo）', async () => {
-    const toolsA: Tool[] = [
-      { name: 'a_tool', inputSchema: {}, serverId: 'srv-a' },
-    ];
-    const toolsB: Tool[] = [
-      { name: 'b_tool', inputSchema: {}, serverId: 'srv-b' },
-    ];
+    const toolsA: Tool[] = [{ name: 'a_tool', inputSchema: {}, serverId: 'srv-a' }];
+    const toolsB: Tool[] = [{ name: 'b_tool', inputSchema: {}, serverId: 'srv-b' }];
     const sm = makeMockServerManager({
       getAllServers: vi.fn().mockReturnValue(
         new Map<string, ServerConnection>([
@@ -66,15 +62,17 @@ describe('BackendCoreServiceAdapter', () => {
           ['srv-b', { id: 'srv-b', status: 'connected' as ServerStatus } as ServerConnection],
         ]),
       ),
-      getServerTools: vi.fn().mockImplementation((serverId: string) =>
-        serverId === 'srv-a' ? Promise.resolve(toolsA) : Promise.resolve(toolsB),
-      ),
+      getServerTools: vi
+        .fn()
+        .mockImplementation((serverId: string) =>
+          serverId === 'srv-a' ? Promise.resolve(toolsA) : Promise.resolve(toolsB),
+        ),
     });
     const adapter = new BackendCoreServiceAdapter(sm);
 
     const all = await adapter.getAllTools();
     expect(all).toHaveLength(2);
-    expect(all.map((t) => t.name).sort()).toEqual(['a_tool', 'b_tool']);
+    expect(all.map((t) => t.name).toSorted()).toEqual(['a_tool', 'b_tool']);
     // 每个工具带 serverId（group-service 按此过滤组内工具）
     expect(all.every((t) => t.serverId)).toBe(true);
   });
@@ -114,9 +112,9 @@ describe('BackendCoreServiceAdapter', () => {
 
   it('isToolAvailable 检查 server 的 tools 是否含该工具', async () => {
     const sm = makeMockServerManager({
-      getServerTools: vi.fn().mockResolvedValue([
-        { name: 'find-me', inputSchema: {}, serverId: 's' },
-      ]),
+      getServerTools: vi
+        .fn()
+        .mockResolvedValue([{ name: 'find-me', inputSchema: {}, serverId: 's' }]),
     });
     const adapter = new BackendCoreServiceAdapter(sm);
     expect(await adapter.isToolAvailable('find-me', 's')).toBe(true);

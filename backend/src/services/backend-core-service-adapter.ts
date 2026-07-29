@@ -1,3 +1,5 @@
+import type { ServerStatus as BackendServerStatus } from '../types/mcp-hub.js';
+import type { ServerManager } from './server_manager.js';
 /**
  * BackendCoreServiceAdapter（P6 架构修正，spec §10.3）
  *
@@ -11,15 +13,8 @@
  * 注入点：service-registry.ts 的 initCoreServiceManager（Task 7）。
  */
 import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
-import type { ServerStatus as BackendServerStatus } from '../types/mcp-hub.js';
-import type { ServerManager } from './server_manager.js';
+import type { McpServerConfig, ServiceStatus, ToolInfo, ToolResult } from '@mcp-core/mcp-hub-core';
 import type { ServerConfig } from '@mcp-core/mcp-hub-share';
-import type {
-  McpServerConfig,
-  ServiceStatus,
-  ToolInfo,
-  ToolResult,
-} from '@mcp-core/mcp-hub-core';
 
 export class BackendCoreServiceAdapter implements McpServiceManagerInterface {
   constructor(private readonly serverManager: ServerManager) {}
@@ -48,11 +43,7 @@ export class BackendCoreServiceAdapter implements McpServiceManagerInterface {
     return (await this.serverManager.getServerTools(serverId)) as unknown as ToolInfo[];
   }
 
-  async executeToolCall(
-    toolName: string,
-    args: unknown,
-    serverId?: string,
-  ): Promise<ToolResult> {
+  async executeToolCall(toolName: string, args: unknown, serverId?: string): Promise<ToolResult> {
     if (!serverId) {
       throw new Error(
         `BackendCoreServiceAdapter.executeToolCall 需要 serverId（工具 ${toolName} 未绑定 server）`,
@@ -82,10 +73,7 @@ export class BackendCoreServiceAdapter implements McpServiceManagerInterface {
     } as ServiceStatus;
   }
 
-  getServerConnections(): Map<
-    string,
-    import('@mcp-core/mcp-hub-core').ServerConnection
-  > {
+  getServerConnections(): Map<string, import('@mcp-core/mcp-hub-core').ServerConnection> {
     // core 接口的 ServerConnection.tools 是 ToolInfo[]（description 必填），
     // backend Tool.description 可选；结构是子集，运行时一致，断言满足接口契约。
     return this.serverManager.getAllServers() as unknown as Map<

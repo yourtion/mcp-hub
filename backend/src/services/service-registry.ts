@@ -1,12 +1,11 @@
 import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 
 import { logger } from '../utils/logger.js';
-
-import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
-import type { McpHubService } from './mcp_hub_service.js';
-import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
-
 import { BackendCoreServiceAdapter } from './backend-core-service-adapter.js';
+
+import type { McpHubService } from './mcp_hub_service.js';
+import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
+import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 
 /**
  * 全局服务注册表

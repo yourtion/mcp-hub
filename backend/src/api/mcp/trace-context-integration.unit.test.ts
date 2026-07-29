@@ -54,9 +54,12 @@ describe('P6 trace context 集成：入站 _meta → ALS → 出站读取', () =
       baggage: 'userId=am9',
     };
 
-    const { echoedTrace, receivedArgs } = await simulateToolHandler({ q: 'hello' }, {
-      mcpReq: { _meta: clientMeta },
-    });
+    const { echoedTrace, receivedArgs } = await simulateToolHandler(
+      { q: 'hello' },
+      {
+        mcpReq: { _meta: clientMeta },
+      },
+    );
 
     expect(receivedArgs).toEqual({ q: 'hello' });
     expect(echoedTrace).toEqual(clientMeta);
@@ -64,9 +67,12 @@ describe('P6 trace context 集成：入站 _meta → ALS → 出站读取', () =
   });
 
   it('客户端只带 traceparent 时，handler 内读到部分 context', async () => {
-    const { echoedTrace } = await simulateToolHandler({}, {
-      mcpReq: { _meta: { traceparent: '00-trace-span-01' } },
-    });
+    const { echoedTrace } = await simulateToolHandler(
+      {},
+      {
+        mcpReq: { _meta: { traceparent: '00-trace-span-01' } },
+      },
+    );
     expect(echoedTrace.traceparent).toBe('00-trace-span-01');
     expect(echoedTrace.tracestate).toBeUndefined();
     expect(echoedTrace.baggage).toBeUndefined();
@@ -91,11 +97,7 @@ describe('P6 trace context 集成：入站 _meta → ALS → 出站读取', () =
     const run = (tp: string) =>
       simulateToolHandler({ id: tp }, { mcpReq: { _meta: { traceparent: tp } } });
 
-    const [a, b, c] = await Promise.all([
-      run('00-A-1-01'),
-      run('00-B-1-01'),
-      run('00-C-1-01'),
-    ]);
+    const [a, b, c] = await Promise.all([run('00-A-1-01'), run('00-B-1-01'), run('00-C-1-01')]);
 
     expect(a.echoedTrace.traceparent).toBe('00-A-1-01');
     expect(b.echoedTrace.traceparent).toBe('00-B-1-01');
