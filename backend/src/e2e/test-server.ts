@@ -5,21 +5,64 @@
 
 import { serve } from '@hono/node-server';
 
+import { initializeDashboardServices, shutdownDashboardServices } from '../api/dashboard/index.js';
 import { app } from '../app.js';
+import {
+  createHubService,
+  setHubService,
+  shutdownHubService,
+} from '../services/service-registry.js';
+import { getAllConfig } from '../utils/config.js';
 import { logger } from '../utils/logger.js';
+
+import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share/config';
 
 export class TestServer {
   private server: ReturnType<typeof serve> | null = null;
   private port: number;
+  private servicesInitialized = false;
 
   constructor(port: number = 3000) {
     this.port = port;
+  }
+
+  /**
+   * 初始化业务服务（HubService + Dashboard）。
+   *
+   * 复用 production（index.ts startServer）的初始化原语：读取 setup 写入的
+   * CONFIG_PATH 配置 → createHubService → initialize → setHubService → dashboard。
+   * 不初始化会导致 MCP 端点（/:group/mcp 的 tools/list 等）抛 500
+   * "HubService not initialized"，所有 e2e 协议测试失败。
+   *
+   * 幂等：servicesInitialized 标志位防重复初始化（多个 beforeAll 共享单例 server）。
+   */
+  private async initializeServices(): Promise<void> {
+    if (this.servicesInitialized) {
+      return;
+    }
+
+    const config = await getAllConfig();
+    // getAllConfig 返回 DeepReadonly，createHubService 期望可变 Record。
+    // DeepReadonly 的递归 brand 使 asMutable 嵌套断言不稳定，这里对业务字段做显式可变类型断言。
+    const service = await createHubService({
+      servers: config.mcps.servers as McpConfig['servers'],
+      groups: config.groups as GroupConfig,
+      apiToolsConfigPath: config.apiToolsConfigPath,
+    });
+    await service.initialize();
+    setHubService(service);
+    initializeDashboardServices(service);
+    this.servicesInitialized = true;
+    logger.info('测试服务器业务服务初始化完成（HubService + Dashboard）');
   }
 
   async start(): Promise<void> {
     if (this.server) {
       return; // 已经启动
     }
+
+    // 先初始化业务服务（依赖 setup 已设置的 CONFIG_PATH），再监听端口。
+    await this.initializeServices();
 
     return new Promise((resolve, reject) => {
       try {
@@ -56,6 +99,19 @@ export class TestServer {
           });
         }
         this.server = null;
+
+        // 清理业务服务（与 production cleanupResources 对齐）
+        if (this.servicesInitialized) {
+          await shutdownDashboardServices().catch((error) => {
+            logger.error('测试服务器 Dashboard 关闭失败', error);
+          });
+          const hubService = await shutdownHubService();
+          await hubService?.shutdown().catch((error) => {
+            logger.error('测试服务器 HubService 关闭失败', error);
+          });
+          this.servicesInitialized = false;
+        }
+
         logger.info('测试服务器已停止');
       } catch (error) {
         logger.error('测试服务器停止失败', error as Error);
