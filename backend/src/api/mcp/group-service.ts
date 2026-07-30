@@ -4,15 +4,17 @@
  */
 
 import { ConfigError, ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
-import { McpServer } from '@modelcontextprotocol/server';
+import { isInputRequiredResult, McpServer } from '@modelcontextprotocol/server';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod/v4';
 
+import { MrtrRelayService } from '../../services/mrtr-relay-service.js';
 import { extractFromMeta, runWithTraceContext } from '../../middleware/trace-context.js';
 
 import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
-import type { CallToolResult } from '@modelcontextprotocol/server';
+import type { CallToolResult, InputRequiredResult } from '@modelcontextprotocol/server';
+import type { HubState } from '../../services/mrtr-relay-service.js';
 // JSON Schema types
 interface JsonSchema {
   type: string;
@@ -103,6 +105,11 @@ export class GroupMcpService {
   constructor(
     private groupId: string,
     private coreServiceManager: McpServiceManagerInterface,
+    /**
+     * P5 MRTR：多轮中转中继服务。可选注入——未启用 MRTR 时为 undefined，
+     * handler 对 input_required 仍做识别（不再无脑包成 text），但不会 mint Hub state。
+     */
+    private mrtrRelay?: MrtrRelayService,
   ) {
     // McpServer 构造延迟到 initialize()，以便读取组配置里的 cacheHints
   }
@@ -647,18 +654,68 @@ export class GroupMcpService {
                 args,
               });
 
-              const result = await this.coreServiceManager.executeToolCall(
+              // P5 MRTR：判断是否为重试请求。SDK seam 在 handler 前已对客户端回传的
+              // requestState 跑过 verify（ServerOptions.requestState.verify），结果经
+              // ctx.mcpReq.requestState<HubState>() 读回。mrtrRelay 未注入时退化为初次调用。
+              const hubState = extra?.mcpReq?.requestState<HubState>();
+              const resume = this.mrtrRelay?.resume(hubState);
+
+              // 重试时把客户端应答 + 上游原始 state 透传给上游 callTool 的 request params
+              // （顶层 inputResponses / requestState）。初次调用传空 retryContext。
+              const retryContext = resume?.isResume
+                ? {
+                    inputResponses: extra?.mcpReq?.inputResponses,
+                    requestState: resume.upstreamRequestState,
+                  }
+                : {};
+
+              const result = await this.coreServiceManager.executeToolCallWithContext(
                 tool.name,
                 args,
                 tool.serverId,
+                retryContext,
               );
 
-              // 确保返回正确的格式
+              // P5：识别上游 InputRequiredResult（修原 bug——原实现只看 'content' in result，
+              // 把无 content 的 input_required 错误包成 text，吞掉 MRTR 语义）。
+              // 用 SDK 的类型守卫 isInputRequiredResult 判定，避免硬编码字段名。
+              const isInputRequired = isInputRequiredResult(result);
+
+              if (isInputRequired) {
+                // 识别到上游 InputRequiredResult。委托 MrtrRelayService mint Hub 级
+                // requestState（HMAC-SHA256），把 serverId/toolName/upstreamRequestState/
+                // step 印封进 state 返回客户端，作为多轮中转的 opaque 句柄。
+                //
+                // mrtrRelay 未注入（MRTR 未启用）时：不再走下面的 content/text 分支
+                // （那会把无 content 的 input_required 错误包成 text、吞掉 MRTR 语义），
+                // 而是直传上游 InputRequiredResult——它本身是结构合法的 SDK 结果，
+                // 客户端可按上游原生 state 重试。这是「不吞语义」的保底行为。
+                if (this.mrtrRelay) {
+                  const upstream = result as {
+                    inputRequests?: unknown;
+                    requestState?: string;
+                  };
+                  // step：初次（resume.isResume === false）=1；重试 = (resume.step ?? 0) + 1
+                  const step = resume?.isResume ? (resume.step ?? 0) + 1 : 1;
+                  // RelayResult 与 SDK InputRequiredResult 结构等价（resultType/inputRequests/
+                  // requestState）；inputRequests 在 Hub 侧按 opaque 透传（上游 schema 不可知），
+                  // 此处断言以满足 registerTool handler 的联合返回类型。
+                  return (await this.mrtrRelay.relay(
+                    tool.serverId,
+                    tool.name,
+                    upstream,
+                    step,
+                  )) as unknown as InputRequiredResult;
+                }
+                return result as unknown as InputRequiredResult;
+              }
+
+              // 正常结果：带 content 直传
               if (result && typeof result === 'object' && 'content' in result) {
                 return result as unknown as CallToolResult;
               }
 
-              // 转换结果格式
+              // 转换结果格式（保留原逻辑给非标准返回）
               return {
                 content: [
                   {

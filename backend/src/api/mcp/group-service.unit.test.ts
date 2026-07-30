@@ -12,14 +12,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // 捕获 McpServer 构造调用，记录入参用于断言构造时机与 cacheHints 接入
 // 用普通 function 表达式以便可作为构造函数（new）调用
 const constructorCalls: Array<{ serverInfo: unknown; options: unknown }> = [];
-vi.mock('@modelcontextprotocol/server', () => ({
-  McpServer: vi.fn(function (this: unknown, serverInfo: unknown, options?: unknown) {
-    constructorCalls.push({ serverInfo, options });
-    this.registerTool = vi.fn();
-    this.registerResource = vi.fn();
-    this.close = vi.fn();
-  }),
-}));
+vi.mock('@modelcontextprotocol/server', async (importOriginal) => {
+  // 部分模拟：McpServer 用 stub（捕获构造/register 调用），其余（含
+  // createRequestStateCodec、isInputRequiredResult 等）走真实实现，
+  // 以便 P5 Task 7 测试能复用 MrtrRelayService 的真实 HMAC codec。
+  const actual = await importOriginal<typeof import('@modelcontextprotocol/server')>();
+  return {
+    ...actual,
+    McpServer: vi.fn(function (this: unknown, serverInfo: unknown, options?: unknown) {
+      constructorCalls.push({ serverInfo, options });
+      this.registerTool = vi.fn();
+      this.registerResource = vi.fn();
+      this.close = vi.fn();
+    }),
+  };
+});
 
 // getCoreServiceManager 不应在 group-service 路径中触发
 vi.mock('../../services/service-registry.js', () => ({
@@ -39,9 +46,11 @@ vi.mock('../../utils/logger.js', () => ({
 
 import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
 
+import { MrtrRelayService } from '../../services/mrtr-relay-service.js';
 import { GroupMcpService } from './group-service.js';
 
 import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
+import type { HubState } from '../../services/mrtr-relay-service.js';
 
 function makeCoreManagerMock(): McpServiceManagerInterface {
   return {
@@ -51,6 +60,30 @@ function makeCoreManagerMock(): McpServiceManagerInterface {
     getServiceStatus: vi.fn().mockReturnValue(new Map()),
     executeToolCall: vi.fn(),
   } as unknown as McpServiceManagerInterface;
+}
+
+// 生成 32 字节随机 key（HMAC-SHA256 用），供 MrtrRelayService 构造
+function makeKey(): Uint8Array {
+  const key = new Uint8Array(32);
+  crypto.getRandomValues(key);
+  return key;
+}
+
+// 构造 SDK ServerContext 形状的 extra，供 handler 直接调用。
+// requestState accessor 按 SDK 契约（ctx.mcpReq.requestState<T>()）总是存在；
+// requestStateValue 为 undefined 表示初次调用，传入 HubState 表示重试。
+function makeExtra(opts: {
+  requestStateValue?: HubState;
+  inputResponses?: Record<string, unknown>;
+}): { mcpReq: { _meta: Record<string, never>; requestState: <T>() => T | undefined; inputResponses?: Record<string, unknown> } } {
+  const value = opts.requestStateValue;
+  return {
+    mcpReq: {
+      _meta: {},
+      requestState: <T>(): T | undefined => value as unknown as T | undefined,
+      inputResponses: opts.inputResponses,
+    },
+  };
 }
 
 // getAllConfig 可在测试中被 spy/override（默认返回无 cacheHints 的最小 group）
@@ -540,5 +573,155 @@ describe('GroupMcpService.refreshTools（P5）', () => {
     const names = tools.map((t) => t.name);
     expect(names).toContain('t1');
     expect(names).toContain('t2');
+  });
+});
+
+/**
+ * P5 Task 7：registerDynamicTool handler 改造（修 InputRequiredResult 吞没 bug + 接入 MRTR）。
+ *
+ * 测试策略：initialize() 会调 mcpServer.registerTool(name, opts, handler)。
+ * 我们用 mock 的 registerTool 捕获 handler 闭包（第 3 个参数），再直接调用它，
+ * 传入构造的 ServerContext（含 mcpReq.requestState/inputResponses）来验证 handler 行为。
+ * 这样无需真实 MCP server 即可覆盖 handler 的全部分支。
+ */
+describe('MRTR handler（P5）', () => {
+  // 构造一个带注入 mrtrRelay 的 GroupMcpService，并捕获动态工具 handler 闭包。
+  async function setupWithTool(opts: {
+    mrtrRelay?: MrtrRelayService;
+    upstreamResult: unknown;
+  }): Promise<{
+    handler: (args: unknown, extra: unknown) => Promise<unknown>;
+    executeToolCallWithContext: ReturnType<typeof vi.fn>;
+    mrtrRelay: MrtrRelayService | undefined;
+  }> {
+    getAllConfigMock.mockReset();
+    getAllConfigMock.mockResolvedValue({
+      mcps: { servers: {} },
+      groups: {
+        testgroup: { id: 'testgroup', name: 'T', servers: ['s1'], tools: [] },
+      },
+    });
+
+    const cm = makeCoreManagerMock();
+    (cm.getAllTools as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 't', serverId: 's1', inputSchema: { type: 'object', properties: {} } },
+    ]);
+    const executeToolCallWithContext = vi
+      .fn()
+      .mockResolvedValue(opts.upstreamResult) as unknown as ReturnType<typeof vi.fn>;
+    // 挂到 core manager mock 上（接口未显式声明，但 backend 适配器有此方法；
+    // handler 改造后走 executeToolCallWithContext 路径）
+    (cm as unknown as Record<string, unknown>).executeToolCallWithContext = executeToolCallWithContext;
+
+    const svc = new GroupMcpService('testgroup', cm, opts.mrtrRelay);
+    await svc.initialize();
+
+    const mcpServer = svc.getMcpServer() as unknown as {
+      registerTool: ReturnType<typeof vi.fn>;
+    };
+    const registerCalls = mcpServer.registerTool.mock.calls;
+    // 找到动态工具注册项（排除 group_status / list_group_tools 管理工具）
+    const dynamic = registerCalls.find(
+      (c: unknown[]) => c[0] === 's1_t',
+    ) as unknown as [string, unknown, (args: unknown, extra: unknown) => Promise<unknown>];
+    expect(dynamic).toBeDefined();
+    return { handler: dynamic[2], executeToolCallWithContext, mrtrRelay: opts.mrtrRelay };
+  }
+
+  it('上游返回 input_required 时正确透传 InputRequiredResult（不包成 text）', async () => {
+    const mrtrRelay = new MrtrRelayService({ key: makeKey(), ttlSeconds: 600 });
+    const upstream = {
+      resultType: 'input_required',
+      inputRequests: { confirm: { type: 'elicitation', message: 'sure?' } },
+      requestState: 'upstream-opaque-state',
+    };
+    const { handler } = await setupWithTool({ mrtrRelay, upstreamResult: upstream });
+
+    // 初次调用：无 requestState（非重试）。SDK 在生产中总会提供 requestState
+    // accessor（返回 undefined 表示本轮无 state）；此处用同构 stub 模拟。
+    const extra = makeExtra({ requestStateValue: undefined });
+    const result = await handler({ foo: 'bar' }, extra);
+
+    // 断言：返回的是 InputRequiredResult，而非被包成 text
+    expect(result).toMatchObject({ resultType: 'input_required' });
+    expect(result).not.toHaveProperty('content');
+    expect(result).toHaveProperty('inputRequests');
+    expect(result).toHaveProperty('requestState');
+    // requestState 是 Hub mint 的（≠ 上游原始 'upstream-opaque-state'）
+    expect((result as { requestState: string }).requestState).not.toBe('upstream-opaque-state');
+  });
+
+  it('上游正常结果（带 content）仍正常返回 CallToolResult', async () => {
+    const mrtrRelay = new MrtrRelayService({ key: makeKey(), ttlSeconds: 600 });
+    const upstream = {
+      content: [{ type: 'text', text: 'hello' }],
+    };
+    const { handler, executeToolCallWithContext } = await setupWithTool({
+      mrtrRelay,
+      upstreamResult: upstream,
+    });
+
+    const result = await handler({}, makeExtra({ requestStateValue: undefined }));
+
+    // 断言：带 content 直传（不被 JSON.stringify 包成新 text）
+    expect(result).toEqual({ content: [{ type: 'text', text: 'hello' }] });
+    // executeToolCallWithContext 被调用（而非旧 executeToolCall）
+    expect(executeToolCallWithContext).toHaveBeenCalledOnce();
+  });
+
+  it('重试请求：ctx.mcpReq.requestState 还原上游上下文并透传 inputResponses', async () => {
+    const mrtrRelay = new MrtrRelayService({ key: makeKey(), ttlSeconds: 600 });
+    // 先 mint 一个 Hub state，模拟客户端重试带回的已 verify 的 state
+    const upstreamFirst = {
+      resultType: 'input_required',
+      inputRequests: { q: { type: 'text' } },
+      requestState: 'upstream-state-xyz',
+    };
+    const hubState = await mrtrRelay.relay('s1', 't', upstreamFirst, 1);
+    // 用 codec.verify 解出 HubState，模拟 SDK seam 在 handler 前已 verify
+    const verifiedHubState = await mrtrRelay.verify(
+      hubState.requestState,
+      {} as never,
+    );
+
+    // 第二轮：上游返回最终结果（带 content），断言 retryContext 透传
+    const upstreamSecond = { content: [{ type: 'text', text: 'done' }] };
+    const { handler, executeToolCallWithContext } = await setupWithTool({
+      mrtrRelay,
+      upstreamResult: upstreamSecond,
+    });
+
+    const inputResponses = { q: 'user-answer' };
+    const extra = makeExtra({ requestStateValue: verifiedHubState, inputResponses });
+    await handler({}, extra);
+
+    // 断言：executeToolCallWithContext 收到 inputResponses + upstreamRequestState
+    expect(executeToolCallWithContext).toHaveBeenCalledOnce();
+    const callArgs = executeToolCallWithContext.mock.calls[0]!;
+    // 签名：(toolName, args, serverId, retryContext)
+    const retryContext = callArgs[3] as {
+      inputResponses?: unknown;
+      requestState?: string;
+    };
+    expect(retryContext.inputResponses).toEqual(inputResponses);
+    expect(retryContext.requestState).toBe('upstream-state-xyz');
+  });
+
+  it('mrtrRelay 未注入时仍识别 input_required（直传上游 result，不包成 text）', async () => {
+    // MRTR 未启用：构造时不传 mrtrRelay。上游返回 input_required 不应被吞成 text。
+    const upstream = {
+      resultType: 'input_required',
+      inputRequests: { q: { type: 'text' } },
+      requestState: 'upstream-raw',
+    };
+    const { handler } = await setupWithTool({ mrtrRelay: undefined, upstreamResult: upstream });
+
+    const result = await handler({}, makeExtra({ requestStateValue: undefined }));
+
+    // 断言：直传上游 InputRequiredResult，未包成 text
+    expect(result).toMatchObject({ resultType: 'input_required' });
+    expect(result).not.toHaveProperty('content');
+    // 未 mint Hub state，requestState 仍是上游原值
+    expect((result as { requestState: string }).requestState).toBe('upstream-raw');
   });
 });
