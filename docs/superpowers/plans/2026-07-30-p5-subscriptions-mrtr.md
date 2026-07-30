@@ -1332,23 +1332,17 @@ Expected: FAIL（options 无 requestState）
 
 - [ ] **Step 3: 注入 verify**
 
-在 `mcp-handler-factory.ts` 的 `createGroupMcpHandler`，创建 McpRelayService 实例（key 从 config/环境变量），传给 GroupMcpService，并把 `relay.verify` 注入 createMcpHandler options：
+在 `mcp-handler-factory.ts` 的 `createGroupMcpHandler`，创建 MrtrRelayService 实例（key 从 config/环境变量），传给 GroupMcpService。
+
+> **重要（Task 8 实现核实修正）**：`requestState.verify` 必须注入 **`McpServer` 构造函数的 ServerOptions**，**不是** `createMcpHandler` 的 options。`CreateMcpHandlerOptions` 没有 `requestState` 字段（SDK `createMcpHandler-CLhGwQTn.d.mts:3829` + `dist/index.mjs:1205` 只解构 legacy/onerror/responseMode）。verify 由 `McpServer` 构造函数读取（`dist/mcp-DXXb3Vv3.mjs:725`）。注入错位置 verify 不生效。实际做法：在 `GroupMcpService.buildMcpServer()` 的 `new McpServer(info, {...})` 构造 options 里展开 `...(this.mrtrRelay && { requestState: { verify: this.mrtrRelay.verify } })`。
 
 ```typescript
 const mrtrRelay = new MrtrRelayService({
   key: resolveMrtrKey(), // 启动时生成或读 config
   ttlSeconds: systemConfig.mrtr?.stateTtlSeconds ?? 600,
 });
-const groupService = new GroupMcpService({ /* ...existing... */, mrtrRelay });
-
-const handler = createMcpHandler(
-  () => groupService.getMcpServer(),
-  {
-    legacy: 'reject',
-    onerror: (error) => { logger.error(...); },
-    requestState: { verify: mrtrRelay.verify }, // P5 新增
-  },
-);
+const groupService = new GroupMcpService(groupId, coreServiceManager, mrtrRelay);
+// verify 注入在 GroupMcpService.buildMcpServer() 的 new McpServer 构造里（见上方说明）
 ```
 
 - [ ] **Step 4: 运行测试确认通过**
