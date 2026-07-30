@@ -4,6 +4,7 @@
  */
 
 // 基于fetch的HTTP客户端不需要额外导入
+import { ErrorCode, ServiceError } from '../../errors/index.js';
 import { createLogger } from '../../utils/logger.js';
 
 import type {
@@ -132,7 +133,12 @@ export class HttpClient {
           clearTimeout(timeoutId);
           // 检查是否是超时错误
           if (error instanceof Error && error.name === 'AbortError') {
-            throw new Error('Network timeout', { cause: error });
+            throw new ServiceError(
+              ErrorCode.API_TO_MCP_EXECUTION_FAILED,
+              'Network timeout',
+              undefined,
+              { cause: error instanceof Error ? error.message : String(error) },
+            );
           }
           throw error;
         }

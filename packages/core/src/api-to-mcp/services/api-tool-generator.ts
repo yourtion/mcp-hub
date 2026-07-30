@@ -2,6 +2,7 @@
  * API工具生成器 - 从API配置生成MCP工具定义
  */
 
+import { ErrorCode, ServiceError } from '../../errors/index.js';
 import { createLogger } from '../../utils/logger.js';
 
 import type { ApiToolConfig, JsonSchema, JsonSchemaProperty } from '../types/api-config.js';
@@ -51,9 +52,12 @@ export class ApiToolGenerator {
       logger.error('生成MCP工具定义失败', error as Error, {
         context: { toolId: apiConfig.id },
       });
-      throw new Error(`生成工具 '${apiConfig.id}' 的MCP定义失败: ${(error as Error).message}`, {
-        cause: error,
-      });
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_INTERNAL,
+        `生成工具 '${apiConfig.id}' 的MCP定义失败: ${(error as Error).message}`,
+        undefined,
+        { cause: error instanceof Error ? error.message : String(error) },
+      );
     }
   }
 

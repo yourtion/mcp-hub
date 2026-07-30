@@ -5,6 +5,7 @@
 
 import jsonata from 'jsonata';
 
+import { ErrorCode, ServiceError } from '../../errors/index.js';
 import { createLogger } from '../../utils/logger.js';
 
 import type { ValidationResult } from '../types/api-tool.js';
@@ -211,7 +212,10 @@ export class ResponseProcessorImpl implements ResponseProcessor {
       // 验证JSONata表达式
       const validation = this.validateJsonataExpression(jsonataExpression);
       if (!validation.valid) {
-        throw new Error(`JSONata表达式无效: ${validation.errors.map((e) => e.message).join(', ')}`);
+        throw new ServiceError(
+          ErrorCode.API_TO_MCP_BUILD_FAILED,
+          `JSONata表达式无效: ${validation.errors.map((e) => e.message).join(', ')}`,
+        );
       }
 
       // 编译JSONata表达式

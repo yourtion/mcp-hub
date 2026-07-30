@@ -359,8 +359,9 @@ describe('ApiToolGenerator', () => {
         generator.generateMcpTool(apiConfig);
         expect.unreachable('Should have thrown');
       } catch (error) {
-        const thrownError = error as Error;
-        expect((thrownError as { cause?: Error }).cause).toBe(originalError);
+        const thrownError = error as Error & { context?: { cause?: unknown } };
+        // ServiceError stores the original error message in context.cause
+        expect(thrownError.context?.cause).toBe(originalError.message);
       }
     });
 

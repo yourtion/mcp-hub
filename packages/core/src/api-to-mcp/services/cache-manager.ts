@@ -5,6 +5,7 @@
 
 import crypto from 'node:crypto';
 
+import { ErrorCode, ServiceError } from '../../errors/index.js';
 import { logger } from '../../utils/logger.js';
 
 import type { CacheConfig, CacheKeyGenerator } from '../types/api-config.js';
@@ -65,9 +66,12 @@ const defaultKeyGenerator: CacheKeyGenerator = (
     return `${toolId}:${paramsHash}`;
   } catch (error) {
     logger.error('生成缓存键时出错:', error instanceof Error ? error : new Error(String(error)));
-    throw new Error(`无法生成缓存键: ${error instanceof Error ? error.message : '未知错误'}`, {
-      cause: error,
-    });
+    throw new ServiceError(
+      ErrorCode.API_TO_MCP_INTERNAL,
+      `无法生成缓存键: ${error instanceof Error ? error.message : '未知错误'}`,
+      undefined,
+      { cause: error instanceof Error ? error.message : String(error) },
+    );
   }
 };
 
@@ -531,6 +535,6 @@ export function createCacheManager(
       return new MultiLevelCacheManager(config, config);
 
     default:
-      throw new Error(`不支持的缓存类型: ${type}`);
+      throw new ServiceError(ErrorCode.API_TO_MCP_INTERNAL, `不支持的缓存类型: ${type}`);
   }
 }

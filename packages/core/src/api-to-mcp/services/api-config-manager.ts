@@ -6,6 +6,7 @@
 import { type FSWatcher, promises as fs, watch } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { ErrorCode, ServiceError } from '../../errors/index.js';
 import { createLogger } from '../../utils/logger.js';
 import { ApiToolsConfigSchema } from '../config/api-config-schemas.js';
 import { EnvironmentResolverImpl } from '../utils/environment-resolver.js';
@@ -208,7 +209,10 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
 
   watchConfigFile(callback: (config: ApiToolConfig[]) => void): void {
     if (!this.configPath) {
-      throw new Error('必须先调用 loadConfig() 才能监听配置文件变化');
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_CONFIG_ERROR,
+        '必须先调用 loadConfig() 才能监听配置文件变化',
+      );
     }
 
     // 停止之前的监听
@@ -227,9 +231,11 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
       logger.info(`开始监听配置文件变化: ${this.configPath}`);
     } catch (error) {
       logger.error('启动配置文件监听失败:', error as Error);
-      throw new Error(
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_INTERNAL,
         `启动配置文件监听失败: ${error instanceof Error ? error.message : '未知错误'}`,
-        { cause: error },
+        undefined,
+        { cause: error instanceof Error ? error.message : String(error) },
       );
     }
   }
@@ -298,7 +304,10 @@ export class ApiConfigManagerImpl implements ApiConfigManager {
 
   async reloadConfig(): Promise<ApiToolConfig[]> {
     if (!this.configPath) {
-      throw new Error('没有当前配置文件路径，请先调用 loadConfig()');
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_CONFIG_ERROR,
+        '没有当前配置文件路径，请先调用 loadConfig()',
+      );
     }
 
     return this.loadConfig(this.configPath);
