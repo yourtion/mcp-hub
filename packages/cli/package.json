@@ -53,8 +53,8 @@
   "dependencies": {
     "@mcp-core/mcp-hub-core": "workspace:*",
     "@mcp-core/mcp-hub-share": "workspace:*",
-    "@modelcontextprotocol/node": "2.0.0-beta.5",
-    "@modelcontextprotocol/server": "2.0.0-beta.5",
+    "@modelcontextprotocol/node": "2.0.0",
+    "@modelcontextprotocol/server": "2.0.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
