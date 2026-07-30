@@ -14,21 +14,21 @@ import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { getAllConfig, saveConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 import { performanceMonitor } from '../../utils/performance-monitor.js';
-import { decryptValidationKey, encryptValidationKey, generateValidationKey } from './crypto.js';
-import {
-  assessKeyComplexity,
-  calculateEntropy,
-  generateSecurityRecommendations,
-  validateKeyFormat,
-} from './key-policy.js';
 import { estimateToolComplexity, validateGroupData, validateGroupId } from './validation.js';
+import {
+  ValidationKeyServiceError,
+  createValidationKey,
+  deleteValidationKey,
+  generateGroupValidationKey,
+  getValidationKey,
+  validateKey,
+} from './validation-key-service.js';
 
 import type {
   ConfigureGroupToolsRequest,
   CreateGroupRequest,
   GroupAvailableToolsResponse,
   GroupConfig,
-  GroupValidationConfig,
   SetGroupValidationKeyRequest,
   UpdateGroupRequest,
 } from '@mcp-core/mcp-hub-share';
@@ -1458,102 +1458,22 @@ groupsApi.post('/:groupId/validation-key', async (c) => {
     const body = (await c.req.json()) as SetGroupValidationKeyRequest;
     logger.debug('设置组验证密钥请求', { groupId });
 
-    // 验证组ID
-    const idValidation = validateGroupId(groupId);
-    if (!idValidation.isValid) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'INVALID_GROUP_ID',
-            message: idValidation.error,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 验证密钥格式
-    const keyValidation = validateKeyFormat(body.validationKey);
-    if (!keyValidation.isValid) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'INVALID_VALIDATION_KEY',
-            message: keyValidation.error,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 检查组是否存在
-    const config = await getAllConfig();
-    const groups = config.groups;
-    const existingGroup = groups[groupId];
-
-    if (!existingGroup) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: `组 '${groupId}' 不存在`,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 404 },
-      );
-    }
-
-    // 加密密钥
-    const encryptedKey = encryptValidationKey(body.validationKey);
-    const now = new Date().toISOString();
-
-    // 更新组配置，添加验证配置
-    const validationConfig: GroupValidationConfig = {
-      enabled: body.enabled !== false, // 默认启用
-      validationKey: encryptedKey,
-      createdAt: existingGroup.validation?.createdAt || now,
-      lastUpdated: now,
-    };
-
-    const updatedGroup = {
-      ...existingGroup,
-      validation: validationConfig,
-    };
-
-    // 保存到配置文件
-    const updatedGroups = {
-      ...groups,
-      [groupId]: updatedGroup,
-    };
-
-    await saveConfig('group.json', updatedGroups as GroupConfig);
-
-    // 记录密钥设置日志（不记录实际密钥内容）
-    logger.info('组验证密钥设置成功', {
-      groupId,
-      enabled: validationConfig.enabled,
-      keyLength: body.validationKey.length,
-      keyComplexity: assessKeyComplexity(body.validationKey),
-      isFirstKey: !existingGroup.validation?.validationKey,
-      timestamp: now,
-    });
-
-    return successResponse(c, {
-      groupId,
-      validation: {
-        enabled: validationConfig.enabled,
-        hasKey: true,
-        createdAt: validationConfig.createdAt,
-        lastUpdated: validationConfig.lastUpdated,
-      },
-    });
+    const result = await createValidationKey(groupId, body);
+    return successResponse(c, result);
   } catch (error) {
+    if (error instanceof ValidationKeyServiceError) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+          },
+          requestId: c.get('requestId'),
+        },
+        { status: error.status },
+      );
+    }
     logger.error('设置组验证密钥失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
@@ -1567,58 +1487,22 @@ groupsApi.get('/:groupId/validation-key', async (c) => {
     const groupId = c.req.param('groupId');
     logger.debug('获取组验证密钥状态请求', { groupId });
 
-    // 验证组ID
-    const idValidation = validateGroupId(groupId);
-    if (!idValidation.isValid) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'INVALID_GROUP_ID',
-            message: idValidation.error,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 检查组是否存在
-    const config = await getAllConfig();
-    const groups = config.groups;
-    const groupConfig = groups[groupId];
-
-    if (!groupConfig) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: `组 '${groupId}' 不存在`,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 404 },
-      );
-    }
-
-    const validation = groupConfig.validation || {
-      enabled: false,
-      validationKey: undefined,
-      createdAt: undefined,
-      lastUpdated: undefined,
-    };
-
-    return successResponse(c, {
-      groupId,
-      validation: {
-        enabled: validation.enabled || false,
-        hasKey: !!validation.validationKey,
-        createdAt: validation.createdAt,
-        lastUpdated: validation.lastUpdated,
-      },
-    });
+    const result = await getValidationKey(groupId);
+    return successResponse(c, result);
   } catch (error) {
+    if (error instanceof ValidationKeyServiceError) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+          },
+          requestId: c.get('requestId'),
+        },
+        { status: error.status },
+      );
+    }
     logger.error('获取组验证密钥状态失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
@@ -1633,117 +1517,22 @@ groupsApi.post('/:groupId/validate-key', async (c) => {
     const body = (await c.req.json()) as { validationKey: string };
     logger.debug('验证组密钥请求', { groupId });
 
-    // 验证组ID
-    const idValidation = validateGroupId(groupId);
-    if (!idValidation.isValid) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'INVALID_GROUP_ID',
-            message: idValidation.error,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 验证请求数据
-    if (!body.validationKey || typeof body.validationKey !== 'string') {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: '验证密钥不能为空',
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 检查组是否存在
-    const config = await getAllConfig();
-    const groups = config.groups;
-    const groupConfig = groups[groupId];
-
-    if (!groupConfig) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: `组 '${groupId}' 不存在`,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 404 },
-      );
-    }
-
-    const validation = groupConfig.validation || {
-      enabled: false,
-      validationKey: undefined,
-      createdAt: undefined,
-      lastUpdated: undefined,
-    };
-
-    // 检查是否启用了验证
-    if (!validation.enabled) {
-      return successResponse(c, {
-        groupId,
-        valid: true,
-        reason: 'VALIDATION_DISABLED',
-        message: '组未启用验证',
-      });
-    }
-
-    // 检查是否设置了密钥
-    if (!validation.validationKey) {
-      return successResponse(c, {
-        groupId,
-        valid: false,
-        reason: 'NO_KEY_SET',
-        message: '组未设置验证密钥',
-      });
-    }
-
-    // 验证密钥
-    let isValid = false;
-    let reason = 'INVALID_KEY';
-    let message = '验证密钥不正确';
-
-    try {
-      const storedKey = decryptValidationKey(validation.validationKey);
-      isValid = storedKey === body.validationKey;
-
-      if (isValid) {
-        reason = 'KEY_VALID';
-        message = '验证密钥正确';
-      }
-    } catch (error) {
-      logger.error('解密存储的验证密钥失败', error as Error, { groupId });
-      reason = 'DECRYPTION_ERROR';
-      message = '密钥验证过程出错';
-    }
-
-    // 记录验证尝试（不记录实际密钥）
-    logger.info('组密钥验证尝试', {
-      groupId,
-      valid: isValid,
-      reason,
-      timestamp: new Date().toISOString(),
-    });
-
-    return successResponse(c, {
-      groupId,
-      valid: isValid,
-      reason,
-      message,
-    });
+    const result = await validateKey(groupId, body.validationKey);
+    return successResponse(c, result);
   } catch (error) {
+    if (error instanceof ValidationKeyServiceError) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+          },
+          requestId: c.get('requestId'),
+        },
+        { status: error.status },
+      );
+    }
     logger.error('验证组密钥失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
@@ -1757,67 +1546,22 @@ groupsApi.delete('/:groupId/validation-key', async (c) => {
     const groupId = c.req.param('groupId');
     logger.debug('删除组验证密钥请求', { groupId });
 
-    // 验证组ID
-    const idValidation = validateGroupId(groupId);
-    if (!idValidation.isValid) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'INVALID_GROUP_ID',
-            message: idValidation.error,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 检查组是否存在
-    const config = await getAllConfig();
-    const groups = config.groups;
-    const existingGroup = groups[groupId];
-
-    if (!existingGroup) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: `组 '${groupId}' 不存在`,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 404 },
-      );
-    }
-
-    // 删除验证配置
-    const updatedGroup = { ...existingGroup };
-    delete updatedGroup.validation;
-
-    // 保存到配置文件
-    const updatedGroups = {
-      ...groups,
-      [groupId]: updatedGroup,
-    };
-
-    await saveConfig('group.json', updatedGroups as GroupConfig);
-
-    logger.info('组验证密钥删除成功', {
-      groupId,
-      timestamp: new Date().toISOString(),
-    });
-
-    return successResponse(c, {
-      groupId,
-      validation: {
-        enabled: false,
-        hasKey: false,
-      },
-      deleted: true,
-    });
+    const result = await deleteValidationKey(groupId);
+    return successResponse(c, result);
   } catch (error) {
+    if (error instanceof ValidationKeyServiceError) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+          },
+          requestId: c.get('requestId'),
+        },
+        { status: error.status },
+      );
+    }
     logger.error('删除组验证密钥失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
@@ -1831,94 +1575,22 @@ groupsApi.post('/:groupId/generate-validation-key', async (c) => {
     const groupId = c.req.param('groupId');
     logger.debug('生成组验证密钥请求', { groupId });
 
-    // 验证组ID
-    const idValidation = validateGroupId(groupId);
-    if (!idValidation.isValid) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'INVALID_GROUP_ID',
-            message: idValidation.error,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 检查组是否存在
-    const config = await getAllConfig();
-    const groups = config.groups;
-    const existingGroup = groups[groupId];
-
-    if (!existingGroup) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: `组 '${groupId}' 不存在`,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 404 },
-      );
-    }
-
-    // 生成新密钥
-    const newKey = generateValidationKey();
-    const encryptedKey = encryptValidationKey(newKey);
-    const now = new Date().toISOString();
-
-    // 更新组配置
-    const validationConfig: GroupValidationConfig = {
-      enabled: true,
-      validationKey: encryptedKey,
-      createdAt: existingGroup.validation?.createdAt || now,
-      lastUpdated: now,
-    };
-
-    const updatedGroup = {
-      ...existingGroup,
-      validation: validationConfig,
-    };
-
-    // 保存到配置文件
-    const updatedGroups = {
-      ...groups,
-      [groupId]: updatedGroup,
-    };
-
-    await saveConfig('group.json', updatedGroups as GroupConfig);
-
-    logger.info('组验证密钥生成成功', {
-      groupId,
-      keyLength: newKey.length,
-      timestamp: now,
-    });
-
-    return successResponse(c, {
-      groupId,
-      validationKey: newKey, // 返回明文密钥供用户保存
-      validation: {
-        enabled: true,
-        hasKey: true,
-        createdAt: validationConfig.createdAt,
-        lastUpdated: validationConfig.lastUpdated,
-      },
-      security: {
-        keyComplexity: assessKeyComplexity(newKey),
-        keyLength: newKey.length,
-        entropy: calculateEntropy(newKey),
-        recommendations: generateSecurityRecommendations(newKey),
-      },
-      warnings: [
-        ...(assessKeyComplexity(newKey) === 'weak' ? ['密钥强度较弱，建议使用更复杂的密钥'] : []),
-        ...(newKey.length < 16 ? ['密钥长度较短，建议至少16个字符'] : []),
-      ],
-    });
+    const result = await generateGroupValidationKey(groupId);
+    return successResponse(c, result);
   } catch (error) {
+    if (error instanceof ValidationKeyServiceError) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+          },
+          requestId: c.get('requestId'),
+        },
+        { status: error.status },
+      );
+    }
     logger.error('生成组验证密钥失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
