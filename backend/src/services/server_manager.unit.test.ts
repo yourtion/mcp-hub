@@ -1,4 +1,4 @@
-import { Client } from '@modelcontextprotocol/client';
+import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { runWithTraceContext, type TraceContext } from '../middleware/trace-context.js';
@@ -18,6 +18,11 @@ vi.mock('@modelcontextprotocol/client', () => {
     }),
     SSEClientTransport: vi.fn(function (this: Record<string, unknown>) {}),
     StreamableHTTPClientTransport: vi.fn(function (this: Record<string, unknown>) {}),
+    // createServerAuthProvider 的 oauth 分支会 new ClientCredentialsProvider；
+    // mock 成空构造避免真实 OAuth 流程（断言只关心 transport 收到 authProvider 对象）。
+    ClientCredentialsProvider: vi.fn(function (this: Record<string, unknown>, opts: unknown) {
+      this.opts = opts;
+    }),
   };
 });
 vi.mock('@modelcontextprotocol/client/stdio', () => ({
@@ -26,6 +31,7 @@ vi.mock('@modelcontextprotocol/client/stdio', () => ({
 vi.mock('../utils/logger.js');
 
 const MockClient = vi.mocked(Client);
+const MockStreamableTransport = vi.mocked(StreamableHTTPClientTransport);
 
 describe('ServerManager', () => {
   let serverManager: ServerManager;
@@ -599,6 +605,66 @@ describe('ServerManager', () => {
       });
 
       await streamingManager.shutdown();
+    });
+  });
+
+  describe('SSE/Streamable 连接的 authProvider', () => {
+    afterEach(() => {
+      delete process.env.TEST_OAUTH_SECRET;
+    });
+
+    it('带 oauth auth 的 streaming server：transport 收到 authProvider（非 undefined）', async () => {
+      process.env.TEST_OAUTH_SECRET = 'secret-val';
+      const config: Record<string, ServerConfig> = {
+        'auth-server': {
+          type: 'streaming',
+          url: 'https://example.com/mcp',
+          enabled: true,
+          auth: {
+            type: 'oauth',
+            clientId: 'cid',
+            clientSecret: '${TEST_OAUTH_SECRET}',
+          },
+        },
+      };
+
+      const manager = new ServerManager(config);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await manager.initialize();
+
+      expect(MockStreamableTransport).toHaveBeenCalledTimes(1);
+      const [, options] = MockStreamableTransport.mock.calls[0];
+      expect(options).toBeDefined();
+      // authProvider 为真实 createServerAuthProvider 构造的对象（oauth 分支 = mock 的 ClientCredentialsProvider 实例）
+      expect(options?.authProvider).toBeDefined();
+      expect(options?.authProvider).not.toBeUndefined();
+
+      await manager.shutdown();
+    });
+
+    it('无 auth 的 streaming server：transport 的 authProvider 为 undefined（回归）', async () => {
+      const config: Record<string, ServerConfig> = {
+        plain: {
+          type: 'streaming',
+          url: 'https://example.com/mcp',
+          enabled: true,
+        },
+      };
+
+      const manager = new ServerManager(config);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await manager.initialize();
+
+      expect(MockStreamableTransport).toHaveBeenCalledTimes(1);
+      const [, options] = MockStreamableTransport.mock.calls[0];
+      // 无 auth 时 authProvider=undefined，行为与改动前一致
+      expect(options?.authProvider).toBeUndefined();
+
+      await manager.shutdown();
     });
   });
 

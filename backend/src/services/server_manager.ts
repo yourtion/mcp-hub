@@ -9,6 +9,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
 import { getCurrentTraceContext, hasTraceContext } from '../middleware/trace-context.js';
 import { ServerStatus } from '../types/mcp-hub.js';
 import { logger } from '../utils/logger.js';
+import { createServerAuthProvider } from './mcp-server-auth-provider.js';
 
 import type { ServerManager as IServerManager, ServerConnection, Tool } from '../types/mcp-hub.js';
 import type { ServerConfig } from '@mcp-core/mcp-hub-share';
@@ -187,8 +188,10 @@ export class ServerManager implements IServerManager {
     }
 
     const headers: Record<string, string> = { ...config.headers };
+    const authProvider = createServerAuthProvider(config.auth);
     const transport = new SSEClientTransport(new URL(config.url), {
       requestInit: { headers },
+      authProvider,
     });
 
     await client.connect(transport);
@@ -205,8 +208,10 @@ export class ServerManager implements IServerManager {
     }
 
     const headers: Record<string, string> = { ...config.headers };
+    const authProvider = createServerAuthProvider(config.auth);
     const transport = new StreamableHTTPClientTransport(new URL(config.url), {
       requestInit: { headers },
+      authProvider,
     });
 
     await client.connect(transport);
