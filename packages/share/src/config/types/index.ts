@@ -41,6 +41,8 @@ export type StdioServerConfig = z.infer<typeof StdioServerConfigSchema>;
 export type HttpServerConfig = z.infer<typeof HttpServerConfigSchema>;
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;
 export type RetryConfig = z.infer<typeof RetryConfigSchema>;
+// NOTE: ServerAuthConfig 直接在 server.schema.ts 中导出（与 schema 同处），
+// 经 schemas/index.js → config/index.js barrel 透出，故此处不再重复定义以避免重导出冲突。
 
 // Group types
 export type ToolFilter = z.infer<typeof ToolFilterSchema>;

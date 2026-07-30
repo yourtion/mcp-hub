@@ -36,12 +36,34 @@ export const StdioServerConfigSchema = BaseServerConfigSchema.extend({
 });
 
 /**
+ * MCP server 出站认证配置（仅 sse/streaming 类型有意义）
+ * - bearer：静态 token，直接用，无刷新
+ * - oauth：client_credentials 机器认证，SDK 自动发现 + 获取 + 刷新
+ */
+export const ServerAuthConfigSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('bearer'),
+    token: z.string().min(1, { error: 'bearer token 不能为空' }),
+  }),
+  z.object({
+    type: z.literal('oauth'),
+    clientId: z.string().min(1, { error: 'clientId 不能为空' }),
+    clientSecret: z.string().min(1, { error: 'clientSecret 不能为空' }),
+    scope: z.string().optional(),
+    clientName: z.string().optional(),
+  }),
+]);
+
+export type ServerAuthConfig = z.infer<typeof ServerAuthConfigSchema>;
+
+/**
  * HTTP 类型服务器配置 Schema（SSE / Streaming）
  */
 export const HttpServerConfigSchema = BaseServerConfigSchema.extend({
   type: z.enum(['sse', 'streaming']),
   url: z.string().url({ error: '必须是有效的URL' }),
   headers: z.record(z.string(), z.string()).optional(),
+  auth: ServerAuthConfigSchema.optional(),
 });
 
 /**
