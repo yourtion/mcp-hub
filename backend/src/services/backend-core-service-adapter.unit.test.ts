@@ -17,6 +17,7 @@ function makeMockServerManager(overrides: Partial<ServerManager> = {}): ServerMa
     getAllServers: vi.fn(),
     getServerTools: vi.fn(),
     executeToolOnServer: vi.fn(),
+    executeToolOnServerWithContext: vi.fn(),
     getServerStatus: vi.fn(),
     initialize: vi.fn(),
     shutdown: vi.fn(),
@@ -162,5 +163,54 @@ describe('BackendCoreServiceAdapter', () => {
 
     expect(observed).toEqual(ctx);
     expect(sm.executeToolOnServer).toHaveBeenCalledWith('srv', 'tool', { x: 1 });
+  });
+
+  // P5 Task 6：带重试上下文的工具调用路径（MRTR 多轮中转）。
+  describe('executeToolCallWithContext（P5）', () => {
+    it('把 retryContext 透传给 serverManager.executeToolOnServerWithContext', async () => {
+      const mockServerManager = makeMockServerManager();
+      mockServerManager.executeToolOnServerWithContext = vi.fn().mockResolvedValue({
+        content: [{ type: 'text', text: 'done' }],
+      });
+      const adapter = new BackendCoreServiceAdapter(mockServerManager as any);
+      const retryContext = {
+        inputResponses: { confirm: true },
+        requestState: 'hub-state',
+      };
+      await adapter.executeToolCallWithContext('tool_a', { x: 1 }, 's1', retryContext);
+      expect(mockServerManager.executeToolOnServerWithContext).toHaveBeenCalledWith(
+        's1',
+        'tool_a',
+        { x: 1 },
+        retryContext,
+      );
+    });
+
+    it('无 serverId 时抛错（与 executeToolCall 一致，适配器不猜 server）', async () => {
+      const adapter = new BackendCoreServiceAdapter(makeMockServerManager());
+      await expect(
+        adapter.executeToolCallWithContext('tool', {}, '', { requestState: 's' }),
+      ).rejects.toThrow(/serverId/i);
+    });
+
+    it('透传上游 MCP 原生结果（含 content）', async () => {
+      const mcpResult = { content: [{ type: 'text', text: 'upstream retry result' }] };
+      const sm = makeMockServerManager({
+        executeToolOnServerWithContext: vi.fn().mockResolvedValue(mcpResult),
+      });
+      const adapter = new BackendCoreServiceAdapter(sm);
+
+      const result = await adapter.executeToolCallWithContext(
+        'my-tool',
+        { q: 'x' },
+        'srv-1',
+        { requestState: 'opaque' },
+      );
+
+      expect(sm.executeToolOnServerWithContext).toHaveBeenCalledWith('srv-1', 'my-tool', { q: 'x' }, {
+        requestState: 'opaque',
+      });
+      expect(result).toEqual(mcpResult);
+    });
   });
 });

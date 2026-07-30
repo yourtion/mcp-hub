@@ -396,6 +396,125 @@ export class ServerManager implements IServerManager {
     }
   }
 
+  /**
+   * P5 MRTR：带重试上下文（inputResponses + requestState）的工具调用。
+   *
+   * 复用 executeToolOnServer 的连接查找 / 状态校验 / message tracker / trace
+   * _meta 注入逻辑；区别在于上游 callTool 的 request params 额外携带多轮重试
+   * 字段。SDK GA（protocol revision 2026-07-28）已确认：inputResponses 与
+   * requestState 是 `tools/call` request params 的**顶层成员**（与 name/
+   * arguments 平级，由 `retryParamsShape` / `RETRY_PARAMS_KEYS` 定义），**不是**
+   * options._meta 也不是 params._meta。trace 三件套仍走 params._meta。
+   *
+   * retryContext.requestState 是上游原始 state（即 HubState.upstreamRequestState），
+   * 按规范字节级原样回传。
+   */
+  async executeToolOnServerWithContext(
+    serverId: string,
+    toolName: string,
+    args: Record<string, unknown>,
+    retryContext: { inputResponses?: Record<string, unknown>; requestState?: string },
+  ): Promise<unknown> {
+    const server = this.servers.get(serverId);
+    if (!server) {
+      throw new ServiceError(ErrorCode.SERVER_UNAVAILABLE, `Server ${serverId} not found`);
+    }
+
+    if (server.status !== ServerStatus.CONNECTED) {
+      throw new ConnectionError(
+        ErrorCode.SERVER_DISCONNECTED,
+        `Server ${serverId} is not connected (status: ${server.status})`,
+      );
+    }
+
+    try {
+      logger.debug('Executing tool on server (with retry context)', {
+        serverId,
+        toolName,
+        args,
+        hasInputResponses: retryContext.inputResponses !== undefined,
+        hasRequestState: retryContext.requestState !== undefined,
+      });
+
+      // Track the request
+      if (this.messageTracker) {
+        this.messageTracker(serverId, 'request', 'callTool', {
+          name: toolName,
+          arguments: args,
+          // 重试上下文透传给 message tracker（调试 MRTR 多轮用）
+          ...(retryContext.inputResponses !== undefined
+            ? { inputResponses: retryContext.inputResponses }
+            : {}),
+          ...(retryContext.requestState !== undefined
+            ? { requestState: retryContext.requestState }
+            : {}),
+        });
+      }
+
+      const startTime = Date.now();
+      // callTool params 顶层成员：name / arguments / _meta(可选) /
+      // inputResponses(可选，重试) / requestState(可选，重试)。
+      // （SDK CallToolRequestParams 对重试字段的接受见 retryParamsShape。）
+      const callParams: {
+        name: string;
+        arguments: Record<string, unknown>;
+        _meta?: Record<string, string>;
+        inputResponses?: Record<string, unknown>;
+        requestState?: string;
+      } = {
+        name: toolName,
+        arguments: args,
+      };
+      // 多轮重试字段：顶层透传（仅当存在时加入，避免污染首轮式调用语义）
+      if (retryContext.inputResponses !== undefined) {
+        callParams.inputResponses = retryContext.inputResponses;
+      }
+      if (retryContext.requestState !== undefined) {
+        callParams.requestState = retryContext.requestState;
+      }
+      // P6/SEP-414：trace context 仍注入 _meta（与 executeToolOnServer 一致）
+      const traceCtx = getCurrentTraceContext();
+      if (hasTraceContext(traceCtx)) {
+        callParams._meta = Object.fromEntries(
+          Object.entries(traceCtx).filter(([, v]) => v !== undefined),
+        ) as Record<string, string>;
+      }
+      const response = await server.client.callTool(callParams);
+      const executionTime = Date.now() - startTime;
+
+      logger.debug('Tool execution (with retry context) completed', {
+        serverId,
+        toolName,
+        executionTime,
+      });
+
+      // Track the response
+      if (this.messageTracker) {
+        this.messageTracker(serverId, 'response', 'callTool', {
+          ...response,
+          executionTime,
+        });
+      }
+
+      return response;
+    } catch (error) {
+      logger.error('Tool execution (with retry context) failed', error as Error, {
+        serverId,
+        toolName,
+      });
+
+      // Track the error response
+      if (this.messageTracker) {
+        this.messageTracker(serverId, 'response', 'callTool', {
+          error: (error as Error).message,
+          isError: true,
+        });
+      }
+
+      throw error;
+    }
+  }
+
   async getServerTools(serverId: string): Promise<Tool[]> {
     const server = this.servers.get(serverId);
     if (!server) {

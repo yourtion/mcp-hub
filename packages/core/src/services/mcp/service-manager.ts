@@ -9,7 +9,9 @@ import { performanceMonitor } from '../../utils/performance-monitor.js';
 import { performanceOptimizer } from '../../utils/performance-optimizer.js';
 
 import type {
+  InputRequiredResult,
   McpServerConfig,
+  RetryContext,
   ServerConfig,
   ServiceStatus,
   ToolInfo,
@@ -103,6 +105,20 @@ export interface McpServiceManagerInterface {
    * 执行工具调用
    */
   executeToolCall(toolName: string, args: unknown, serverId?: string): Promise<ToolResult>;
+
+  /**
+   * P5 MRTR：带重试上下文（inputResponses + requestState）的工具调用路径。
+   *
+   * 用于多轮中转：上游首次返回 input_required 后，客户端收集应答，经由
+   * 本方法把 retryContext 透传给上游 callTool 的 request params（顶层字段），
+   * 继续这一轮工具调用。返回 ToolResult 或 InputRequiredResult（仍需输入）。
+   */
+  executeToolCallWithContext(
+    toolName: string,
+    args: unknown,
+    serverId: string,
+    retryContext: RetryContext,
+  ): Promise<ToolResult | InputRequiredResult>;
 
   /**
    * 获取服务状态
@@ -394,6 +410,28 @@ export class McpServiceManager implements McpServiceManagerInterface {
       lastUpdated: new Date(),
       error: this.initialized ? undefined : '服务未初始化',
     };
+  }
+
+  /**
+   * P5 MRTR：带重试上下文的工具调用。
+   *
+   * core 包的 McpServiceManager 是 mock 壳（真实上游连接在 backend 的
+   * ServerManager）；这里返回 mock 结果以维持接口契约，真实实现见
+   * BackendCoreServiceAdapter.executeToolCallWithContext。
+   */
+  async executeToolCallWithContext(
+    toolName: string,
+    args: unknown,
+    serverId: string,
+    _retryContext: RetryContext,
+  ): Promise<ToolResult | InputRequiredResult> {
+    this.ensureInitialized();
+    this.logger.warn('executeToolCallWithContext 在 core mock 壳中被调用；应经 backend 适配器执行', {
+      toolName,
+      serverId,
+    });
+    // 复用 executeToolCall 的 mock 结果结构（真实重试在 backend 侧）
+    return this.executeToolCall(toolName, args, serverId);
   }
 
   getServerConnections(): Map<string, ServerConnection> {
