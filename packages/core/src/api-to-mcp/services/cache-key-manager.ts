@@ -5,6 +5,7 @@
 
 import crypto from 'node:crypto';
 
+import { ErrorCode, ServiceError } from '../../errors/index.js';
 import { logger } from '../../utils/logger.js';
 
 import type { CacheKeyGenerator } from '../types/api-config.js';
@@ -77,9 +78,12 @@ export const defaultCacheKeyStrategy: CacheKeyStrategy = {
       return `${toolId}:${paramsHash}`;
     } catch (error) {
       logger.error('生成缓存键时出错:', error instanceof Error ? error : new Error(String(error)));
-      throw new Error(`无法生成缓存键: ${error instanceof Error ? error.message : '未知错误'}`, {
-        cause: error,
-      });
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_INTERNAL,
+        `无法生成缓存键: ${error instanceof Error ? error.message : '未知错误'}`,
+        undefined,
+        { cause: error instanceof Error ? error.message : String(error) },
+      );
     }
   },
   validateKey: (key: string): boolean => {
@@ -158,9 +162,11 @@ export const hierarchicalCacheKeyStrategy: CacheKeyStrategy = {
         '生成层次化缓存键时出错:',
         error instanceof Error ? error : new Error(String(error)),
       );
-      throw new Error(
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_INTERNAL,
         `无法生成层次化缓存键: ${error instanceof Error ? error.message : '未知错误'}`,
-        { cause: error },
+        undefined,
+        { cause: error instanceof Error ? error.message : String(error) },
       );
     }
   },
@@ -197,11 +203,11 @@ export class CacheKeyManagerImpl implements CacheKeyManager {
    */
   generateKey(toolId: string, parameters: Record<string, unknown>): string {
     if (!toolId) {
-      throw new Error('工具ID不能为空');
+      throw new ServiceError(ErrorCode.API_TO_MCP_INTERNAL, '工具ID不能为空');
     }
 
     if (!parameters || typeof parameters !== 'object') {
-      throw new Error('参数必须是一个对象');
+      throw new ServiceError(ErrorCode.API_TO_MCP_INTERNAL, '参数必须是一个对象');
     }
 
     try {
@@ -222,7 +228,7 @@ export class CacheKeyManagerImpl implements CacheKeyManager {
    */
   setStrategy(strategy: CacheKeyStrategy): void {
     if (!strategy || !strategy.name || !strategy.generateKey) {
-      throw new Error('无效的缓存键策略');
+      throw new ServiceError(ErrorCode.API_TO_MCP_INTERNAL, '无效的缓存键策略');
     }
 
     this.strategy = strategy;
@@ -272,7 +278,7 @@ export class CacheKeyManagerImpl implements CacheKeyManager {
    */
   generateToolKeyPattern(toolId: string): string {
     if (!toolId) {
-      throw new Error('工具ID不能为空');
+      throw new ServiceError(ErrorCode.API_TO_MCP_INTERNAL, '工具ID不能为空');
     }
 
     switch (this.strategy.name) {
@@ -304,11 +310,11 @@ export class CacheKeyManagerImpl implements CacheKeyManager {
    */
   generateKeysForTool(toolId: string, parametersList: Record<string, unknown>[]): string[] {
     if (!toolId) {
-      throw new Error('工具ID不能为空');
+      throw new ServiceError(ErrorCode.API_TO_MCP_INTERNAL, '工具ID不能为空');
     }
 
     if (!Array.isArray(parametersList)) {
-      throw new Error('参数列表必须是数组');
+      throw new ServiceError(ErrorCode.API_TO_MCP_INTERNAL, '参数列表必须是数组');
     }
 
     const keys: string[] = [];
@@ -331,7 +337,10 @@ export class CacheKeyManagerImpl implements CacheKeyManager {
     }
 
     if (errors.length > 0 && keys.length === 0) {
-      throw new Error(`所有键生成都失败了。第一个错误: ${errors[0].message}`);
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_INTERNAL,
+        `所有键生成都失败了。第一个错误: ${errors[0].message}`,
+      );
     }
 
     logger.debug(`为工具 ${toolId} 生成了 ${keys.length} 个缓存键`);

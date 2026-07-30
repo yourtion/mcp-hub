@@ -23,6 +23,12 @@ vi.mock('../../utils/logger.js', () => ({
     error: vi.fn(),
     debug: vi.fn(),
   },
+  createLogger: () => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  }),
 }));
 
 describe('CacheKeyManagerImpl', () => {
