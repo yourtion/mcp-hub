@@ -12,62 +12,6 @@ import { ToolManager } from './tool_manager.js';
 import type { Group, McpHubService as IMcpHubService, Tool, ToolResult } from '../types/mcp-hub.js';
 import type { DeepReadonly, GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 
-/**
- * @deprecated 使用 core 包的 McpHubCoreError 体系（ServiceError / ConfigError / ToolExecutionError）。
- * 这些类仅为向后兼容保留，将在后续版本移除。
- */
-export class McpHubError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-    public readonly context?: Record<string, unknown>,
-  ) {
-    super(message);
-    this.name = 'McpHubError';
-  }
-}
-
-/**
- * @deprecated 使用 ServiceError(ErrorCode.SERVICE_UNAVAILABLE, ...) 替代
- */
-export class ServiceNotInitializedError extends McpHubError {
-  constructor() {
-    super('MCP Hub Service must be initialized before use', 'SERVICE_NOT_INITIALIZED');
-  }
-}
-
-/**
- * @deprecated 使用 ServiceError(ErrorCode.GROUP_NOT_FOUND, ...) 替代
- */
-export class GroupNotFoundError extends McpHubError {
-  constructor(groupId: string) {
-    super(`Group '${groupId}' not found`, 'GROUP_NOT_FOUND', { groupId });
-  }
-}
-
-/**
- * @deprecated 使用 ToolExecutionError(ErrorCode.TOOL_NOT_FOUND, ...) 替代
- */
-export class ToolNotFoundError extends McpHubError {
-  constructor(toolName: string, groupId: string) {
-    super(`Tool '${toolName}' not found in group '${groupId}'`, 'TOOL_NOT_FOUND', {
-      toolName,
-      groupId,
-    });
-  }
-}
-
-/**
- * @deprecated 使用 ConfigError(ErrorCode.SERVER_STARTUP_FAILED, ...) 替代
- */
-export class ServiceInitializationError extends McpHubError {
-  constructor(message: string, cause?: Error) {
-    super(`Service initialization failed: ${message}`, 'INITIALIZATION_FAILED', {
-      cause: cause?.message,
-    });
-  }
-}
-
 export class McpHubService implements IMcpHubService {
   private serverManager: ServerManager;
 
@@ -336,13 +280,17 @@ export class McpHubService implements IMcpHubService {
 
     try {
       if (!this.groupManager.getGroup(targetGroupId)) {
-        const error = new GroupNotFoundError(targetGroupId);
         logger.warn('Tool listing failed: group not found', {
           operationId,
           groupId: targetGroupId,
           availableGroups: Array.from(this.groupManager.getAllGroups().keys()),
         });
-        throw error;
+        throw new ServiceError(
+          ErrorCode.GROUP_NOT_FOUND,
+          `Group '${targetGroupId}' not found`,
+          undefined,
+          { groupId: targetGroupId },
+        );
       }
 
       const startTime = Date.now();
@@ -365,7 +313,7 @@ export class McpHubService implements IMcpHubService {
         errorType: (error as Error).constructor.name,
       });
 
-      if (error instanceof McpHubError || error instanceof ServiceError) {
+      if (error instanceof ServiceError) {
         throw error;
       }
 
@@ -437,10 +385,6 @@ export class McpHubService implements IMcpHubService {
         args,
         serviceHealth: this.getServiceHealthSummary(),
       });
-
-      if (error instanceof McpHubError) {
-        throw error;
-      }
 
       throw new ToolExecutionError(
         ErrorCode.TOOL_EXECUTION_FAILED,
@@ -838,16 +782,6 @@ export class McpHubService implements IMcpHubService {
       context?: Record<string, unknown>;
     };
   } {
-    if (error instanceof McpHubError) {
-      return {
-        error: {
-          code: error.code,
-          message: error.message,
-          context: error.context,
-        },
-      };
-    }
-
     return {
       error: {
         code: 'INTERNAL_ERROR',
