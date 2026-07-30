@@ -3,6 +3,7 @@
  * 支持Bearer Token、API Key、Basic Auth等认证方式
  */
 
+import { ErrorCode, ServiceError } from '../../errors/index.js';
 import { createLogger } from '../../utils/logger.js';
 import { OAuthStrategy } from './oauth-strategy.js';
 
@@ -35,10 +36,10 @@ export class BearerTokenStrategy implements AuthenticationStrategy {
 
   async applyAuth(request: HttpRequestConfig, config: AuthConfig): Promise<HttpRequestConfig> {
     if (config.type !== 'bearer') {
-      throw new Error('Bearer 策略收到非 bearer 配置');
+      throw new ServiceError(ErrorCode.API_TO_MCP_CONFIG_ERROR, 'Bearer 策略收到非 bearer 配置');
     }
     if (!config.token) {
-      throw new Error('Bearer token认证需要提供token');
+      throw new ServiceError(ErrorCode.API_TO_MCP_CONFIG_ERROR, 'Bearer token认证需要提供token');
     }
 
     const headers = { ...request.headers };
@@ -81,10 +82,10 @@ export class ApiKeyStrategy implements AuthenticationStrategy {
 
   async applyAuth(request: HttpRequestConfig, config: AuthConfig): Promise<HttpRequestConfig> {
     if (config.type !== 'apikey') {
-      throw new Error('API Key 策略收到非 apikey 配置');
+      throw new ServiceError(ErrorCode.API_TO_MCP_CONFIG_ERROR, 'API Key 策略收到非 apikey 配置');
     }
     if (!config.token) {
-      throw new Error('API Key认证需要提供token');
+      throw new ServiceError(ErrorCode.API_TO_MCP_CONFIG_ERROR, 'API Key认证需要提供token');
     }
 
     const headerName = config.header || 'X-API-Key';
@@ -131,10 +132,10 @@ export class BasicAuthStrategy implements AuthenticationStrategy {
 
   async applyAuth(request: HttpRequestConfig, config: AuthConfig): Promise<HttpRequestConfig> {
     if (config.type !== 'basic') {
-      throw new Error('Basic 策略收到非 basic 配置');
+      throw new ServiceError(ErrorCode.API_TO_MCP_CONFIG_ERROR, 'Basic 策略收到非 basic 配置');
     }
     if (!config.username || !config.password) {
-      throw new Error('Basic认证需要提供用户名和密码');
+      throw new ServiceError(ErrorCode.API_TO_MCP_CONFIG_ERROR, 'Basic认证需要提供用户名和密码');
     }
 
     const credentials = Buffer.from(`${config.username}:${config.password}`).toString('base64');
@@ -245,13 +246,19 @@ export class AuthenticationManager {
   ): Promise<HttpRequestConfig> {
     const strategy = this.strategies.get(authConfig.type);
     if (!strategy) {
-      throw new Error(`不支持的认证类型: ${authConfig.type}`);
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_CONFIG_ERROR,
+        `不支持的认证类型: ${authConfig.type}`,
+      );
     }
 
     // 验证认证配置
     const validation = await strategy.validateConfig(authConfig);
     if (!validation.valid) {
-      throw new Error(`认证配置无效: ${validation.error}`);
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_CONFIG_ERROR,
+        `认证配置无效: ${validation.error}`,
+      );
     }
 
     // 应用认证
