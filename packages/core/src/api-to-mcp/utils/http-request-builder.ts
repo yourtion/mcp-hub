@@ -5,6 +5,8 @@
 
 import { TemplateEngineImpl } from './template-engine.js';
 
+import { ErrorCode, ServiceError } from '../../errors/index.js';
+
 import type { ApiEndpointConfig } from '../types/api-config.js';
 import type { HttpRequestConfig } from '../types/http-client.js';
 import type { TemplateContext } from '../types/template.js';
@@ -128,7 +130,7 @@ export class HttpRequestBuilderImpl implements HttpRequestBuilder {
     // 处理基础URL中的路径参数
     const urlResult = this.templateEngine.render(baseUrl, context);
     if (!urlResult.success) {
-      throw new Error(`URL模板渲染失败: ${urlResult.error}`);
+      throw new ServiceError(ErrorCode.API_TO_MCP_BUILD_FAILED, `URL模板渲染失败: ${urlResult.error}`);
     }
     usedVariables.push(...urlResult.usedVariables);
 
@@ -141,7 +143,10 @@ export class HttpRequestBuilderImpl implements HttpRequestBuilder {
       for (const [key, value] of Object.entries(queryParams)) {
         const paramResult = this.templateEngine.render(value, context);
         if (!paramResult.success) {
-          throw new Error(`查询参数 '${key}' 模板渲染失败: ${paramResult.error}`);
+          throw new ServiceError(
+            ErrorCode.API_TO_MCP_BUILD_FAILED,
+            `查询参数 '${key}' 模板渲染失败: ${paramResult.error}`,
+          );
         }
         processedParams[key] = paramResult.result;
         usedVariables.push(...paramResult.usedVariables);
@@ -174,7 +179,10 @@ export class HttpRequestBuilderImpl implements HttpRequestBuilder {
     for (const [key, value] of Object.entries(headers)) {
       const headerResult = this.templateEngine.render(value, context);
       if (!headerResult.success) {
-        throw new Error(`请求头 '${key}' 模板渲染失败: ${headerResult.error}`);
+        throw new ServiceError(
+          ErrorCode.API_TO_MCP_BUILD_FAILED,
+          `请求头 '${key}' 模板渲染失败: ${headerResult.error}`,
+        );
       }
       processedHeaders[key] = headerResult.result;
       usedVariables.push(...headerResult.usedVariables);
@@ -200,7 +208,7 @@ export class HttpRequestBuilderImpl implements HttpRequestBuilder {
       // 字符串类型的请求体，直接进行模板替换
       const bodyResult = this.templateEngine.render(body, context);
       if (!bodyResult.success) {
-        throw new Error(`请求体模板渲染失败: ${bodyResult.error}`);
+        throw new ServiceError(ErrorCode.API_TO_MCP_BUILD_FAILED, `请求体模板渲染失败: ${bodyResult.error}`);
       }
       return {
         body: bodyResult.result,
@@ -232,7 +240,10 @@ export class HttpRequestBuilderImpl implements HttpRequestBuilder {
         // 字符串值，进行模板替换
         const templateResult = this.templateEngine.render(value, context);
         if (!templateResult.success) {
-          throw new Error(`对象属性 '${key}' 模板渲染失败: ${templateResult.error}`);
+          throw new ServiceError(
+            ErrorCode.API_TO_MCP_BUILD_FAILED,
+            `对象属性 '${key}' 模板渲染失败: ${templateResult.error}`,
+          );
         }
         result[key] = templateResult.result;
         usedVariables.push(...templateResult.usedVariables);
@@ -264,7 +275,10 @@ export class HttpRequestBuilderImpl implements HttpRequestBuilder {
       if (typeof item === 'string') {
         const templateResult = this.templateEngine.render(item, context);
         if (!templateResult.success) {
-          throw new Error(`数组元素模板渲染失败: ${templateResult.error}`);
+          throw new ServiceError(
+            ErrorCode.API_TO_MCP_BUILD_FAILED,
+            `数组元素模板渲染失败: ${templateResult.error}`,
+          );
         }
         usedVariables.push(...templateResult.usedVariables);
         return templateResult.result;
