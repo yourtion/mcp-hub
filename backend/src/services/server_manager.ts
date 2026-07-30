@@ -409,6 +409,48 @@ export class ServerManager implements IServerManager {
     return [...server.tools];
   }
 
+  /**
+   * P5: 重新向上游拉取工具列表，更新缓存并保存变更检测快照。
+   *
+   * 用于上游 listChanged 实时路径与轮询兜底路径：
+   *   - 收到上游 listChanged → fanout 链路 → refreshGroupTools → 先 refetch 再 refreshTools。
+   *   - 轮询 getToolsFn 直接调用本方法，获取最新工具供 Detector 比对。
+   *
+   * 返回最新工具列表（仅 name 视角供 Detector）。失败时记日志并返回空数组，
+   * 不抛错（变更检测应单 server 故障隔离）。
+   */
+  async refetchServerTools(serverId: string): Promise<Tool[]> {
+    const server = this.servers.get(serverId);
+    if (!server || server.status !== ServerStatus.CONNECTED) {
+      return [];
+    }
+
+    try {
+      const response = await server.client.listTools();
+      const tools: Tool[] = response.tools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: tool.inputSchema as Record<string, unknown>,
+        serverId,
+      }));
+      server.tools = tools;
+      logger.logToolDiscovery(serverId, tools.length);
+
+      // P5: 同步推进快照，保证 listChanged 实时路径与轮询比对的是同一份「当前」值。
+      this.options.changeDetector?.saveSnapshot(
+        serverId,
+        tools.map((t) => ({ name: t.name })),
+      );
+      return tools;
+    } catch (error) {
+      logger.warn('refetchServerTools 失败（保留旧缓存）', {
+        serverId,
+        error: (error as Error).message,
+      });
+      return [...server.tools];
+    }
+  }
+
   async shutdown(): Promise<void> {
     logger.info('Shutting down ServerManager');
 

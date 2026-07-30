@@ -88,6 +88,13 @@ export class GroupMcpService {
   private isInitialized = false;
   private groupConfig: Group | null = null;
   private availableTools: GroupToolInfo[] = [];
+  /**
+   * P5: 已注册动态工具的 RegisteredTool 句柄，key 为注册名（`${serverId}_${toolName}`）。
+   * 用于 refreshTools 时调用 .remove() 注销指定 server 的旧工具。
+   * SDK GA (2.0.0) 的 registerTool 返回带 remove()/update()/enable()/disable() 的句柄，
+   * 提供运行时细粒度工具管理（无需重建整个 McpServer）。
+   */
+  private registeredToolHandles = new Map<string, { remove: () => void }>();
   /** 解析后的组级 cacheHints（initialize 内 buildMcpServer 时由 resolveCacheHints 覆盖） */
   private groupCacheHints: { ttlMs: number; cacheScope: 'public' | 'private' } = {
     ...DEFAULT_GROUP_CACHE_HINTS,
@@ -621,7 +628,8 @@ export class GroupMcpService {
 
       // 注册工具
       // v2: registerTool(name, { inputSchema }, handler)，zodSchema 是 raw shape 需用 z.object() 包装
-      this.mcpServer.registerTool(
+      // P5: registerTool 返回 RegisteredTool 句柄（带 remove()），保存以便 refreshTools 注销。
+      const registered = this.mcpServer.registerTool(
         toolName,
         { inputSchema: z.object(zodSchema) },
         async (args, extra) => {
@@ -679,6 +687,12 @@ export class GroupMcpService {
         },
       );
 
+      // P5: 保存 RegisteredTool 句柄，供 refreshTools 调 .remove() 注销。
+      // SDK GA 的 registerTool 返回带 remove() 的对象；防御性处理：仅当返回值可调用 remove 时保存。
+      if (registered && typeof registered.remove === 'function') {
+        this.registeredToolHandles.set(toolName, registered);
+      }
+
       logger.debug('动态工具注册成功', {
         groupId: this.groupId,
         toolName,
@@ -690,6 +704,89 @@ export class GroupMcpService {
         groupId: this.groupId,
         toolName: tool.name,
         serverId: tool.serverId,
+      });
+    }
+  }
+
+  /**
+   * P5: 重新注册指定 server 的工具（上游工具集变更 fan-out 时调用）。
+   *
+   * 策略（SDK GA 2.0.0 确认）：registerTool 返回的 RegisteredTool 句柄带 remove()，
+   * 支持运行时细粒度注销。故 refreshTools：
+   *   1. 取该 server 最新工具列表（getServerTools，需上游已 refetch 并更新缓存）
+   *   2. remove 掉该 server 的旧工具句柄（名称前缀 `${serverId}_`）
+   *   3. 对最新工具重新 registerDynamicTool
+   *   4. 同步更新 availableTools（移除旧 server 工具、合入新工具）
+   *
+   * 只动该 server 的工具，不触碰其他 server。异常不抛出（fan-out 异常隔离由调用方处理）。
+   *
+   * 注意：本方法读取的 getServerTools 是 ServerManager 缓存。调用方（fanout）须在
+   * 调本方法前先 refetch 上游（ServerManager.refetchServerTools），保证缓存已更新。
+   */
+  async refreshTools(serverId: string): Promise<void> {
+    if (!this.isInitialized) {
+      logger.warn('refreshTools 调用时服务未初始化，跳过', { groupId: this.groupId, serverId });
+      return;
+    }
+
+    try {
+      // 1. 取最新工具列表
+      const latestTools = (await this.coreServiceManager.getServerTools(serverId)) as GroupToolInfo[];
+      // 应用组工具过滤规则，保持与初始注册一致
+      const filteredTools = this.applyToolFilter(latestTools);
+      // 确定性排序（与 registerGroupDynamicTools 一致）
+      const sortedTools = [...filteredTools].toSorted((a, b) => {
+        const byServer = (a.serverId ?? '').localeCompare(b.serverId ?? '');
+        if (byServer !== 0) return byServer;
+        return (a.name ?? '').localeCompare(b.name ?? '');
+      });
+
+      // 2. 注销该 server 的旧工具句柄（按 `${serverId}_` 前缀匹配）
+      const staleNames: string[] = [];
+      for (const [toolName, handle] of this.registeredToolHandles) {
+        if (toolName.startsWith(`${serverId}_`)) {
+          try {
+            handle.remove();
+          } catch (removeErr) {
+            logger.warn('注销旧工具失败（继续重注册）', {
+              groupId: this.groupId,
+              toolName,
+              error: String(removeErr),
+            });
+          }
+          staleNames.push(toolName);
+          this.registeredToolHandles.delete(toolName);
+        }
+      }
+
+      // 3. 重新注册最新工具
+      for (const tool of sortedTools) {
+        if (tool.serverId !== serverId) continue;
+        await this.registerDynamicTool(tool);
+      }
+
+      // 4. 同步 availableTools：剔除该 server 的旧条目，合入新条目
+      const others = this.availableTools.filter((t) => t.serverId !== serverId);
+      const refreshed = sortedTools
+        .filter((t) => t.serverId === serverId)
+        .map((tool) => ({
+          name: tool.name,
+          description: tool.description,
+          serverId: tool.serverId,
+          inputSchema: tool.inputSchema,
+        }));
+      this.availableTools = [...others, ...refreshed];
+
+      logger.debug('refreshTools 完成', {
+        groupId: this.groupId,
+        serverId,
+        removedCount: staleNames.length,
+        registeredCount: refreshed.length,
+      });
+    } catch (error) {
+      logger.error('refreshTools 失败', error as Error, {
+        groupId: this.groupId,
+        serverId,
       });
     }
   }

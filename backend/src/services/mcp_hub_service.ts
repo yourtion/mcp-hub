@@ -8,12 +8,24 @@ import { HealthMonitorService } from './health-monitor-service.js';
 import { MessageAuditService } from './message-audit-service.js';
 import { ServerManager } from './server_manager.js';
 import { ToolManager } from './tool_manager.js';
+import { UpstreamChangeDetector } from './upstream-change-detector.js';
+import { UpstreamChangeFanout } from './upstream-change-fanout.js';
 
 import type { Group, McpHubService as IMcpHubService, Tool, ToolResult } from '../types/mcp-hub.js';
 import type { DeepReadonly, GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
 
 export class McpHubService implements IMcpHubService {
   private serverManager: ServerManager;
+
+  /**
+   * P5: 上游工具集变更检测器（listChanged 实时 + 轮询兜底）。
+   * 注入 ServerManager.changeDetector，server 连接时注册 listChanged handler。
+   */
+  private changeDetector: UpstreamChangeDetector;
+  /**
+   * P5: 变更 fan-out，把 serverId 变更分发到所有含该 server 的 group。
+   */
+  private changeFanout: UpstreamChangeFanout;
 
   /**
    * 暴露 ServerManager 供 BackendCoreServiceAdapter 委托（P6 架构修正，spec §10.3）。
@@ -34,6 +46,15 @@ export class McpHubService implements IMcpHubService {
   private serverConfigs: Record<string, ServerConfig> = {} as Record<string, ServerConfig>;
   private groupConfigs: GroupConfig = {} as GroupConfig;
 
+  /**
+   * P5 subscriptions 轮询/fan-out 默认参数（systemConfig 暂无 subscriptions 字段，用常量）。
+   * pollIntervalMs：轮询兜底周期（60s）；pollBackoffMs：近期有 listChanged 推送的 server 降频窗口（5min）；
+   * fanoutDebounceMs：同 server 多次变更合并窗口（500ms）。
+   */
+  private static readonly SUBSCRIPTIONS_POLL_INTERVAL_MS = 60_000;
+  private static readonly SUBSCRIPTIONS_POLL_BACKOFF_MS = 300_000;
+  private static readonly SUBSCRIPTIONS_FANOUT_DEBOUNCE_MS = 500;
+
   constructor(
     serverConfigs: DeepReadonly<Record<string, ServerConfig>>,
     groupConfigs: DeepReadonly<GroupConfig>,
@@ -42,7 +63,28 @@ export class McpHubService implements IMcpHubService {
     this.serverConfigs = JSON.parse(JSON.stringify(serverConfigs));
     this.groupConfigs = JSON.parse(JSON.stringify(groupConfigs));
 
-    this.serverManager = new ServerManager(this.serverConfigs);
+    // P5: 先建 fanout（onChange 在 detector 内被引用，故 detector 后建）。
+    // fanout 回调闭包在「被调用时」才解析依赖（groupManager / serverManager / 缓存），
+    // 此处仅捕获 this 引用，构造期不触发任何访问。
+    this.changeFanout = new UpstreamChangeFanout({
+      getGroupsForServer: (serverId) => this.getGroupsForServer(serverId),
+      refreshGroupTools: (groupId, serverId) => this.refreshGroupTools(groupId, serverId),
+      publishToolListChanged: (groupId) => this.publishToolListChanged(groupId),
+      debounceMs: McpHubService.SUBSCRIPTIONS_FANOUT_DEBOUNCE_MS,
+      logger,
+    });
+
+    this.changeDetector = new UpstreamChangeDetector({
+      onChange: (serverId) => this.changeFanout.handleServerChange(serverId),
+      pollIntervalMs: McpHubService.SUBSCRIPTIONS_POLL_INTERVAL_MS,
+      pollBackoffMs: McpHubService.SUBSCRIPTIONS_POLL_BACKOFF_MS,
+      logger,
+    });
+
+    // ServerManager 注入 detector（连接时注册 listChanged handler + 保存快照）
+    this.serverManager = new ServerManager(this.serverConfigs, {
+      changeDetector: this.changeDetector,
+    });
     this.groupManager = new GroupManager(this.groupConfigs, this.serverManager);
     this.apiToolService = new ApiToolIntegrationService();
     this.toolManager = new ToolManager(this.serverManager, this.groupManager, this.apiToolService);
@@ -90,6 +132,26 @@ export class McpHubService implements IMcpHubService {
         connectedServers,
         failedServers: Object.keys(this.serverConfigs).length - connectedServers,
       });
+
+      // P5: 启动上游工具集变更轮询兜底（仅对已连接 server）。
+      // listChanged 实时路径已在 ServerManager.connectServer 注册 handler；
+      // 轮询作为兜底，覆盖不支持 listChanged 推送的上游。
+      const connectedServerIds = Array.from(this.serverManager.getAllServers().keys()).filter(
+        (id) => this.serverManager.getServerStatus(id) === ServerStatus.CONNECTED,
+      );
+      if (connectedServerIds.length > 0) {
+        await this.changeDetector.startPolling(
+          async (serverId) => {
+            const tools = await this.serverManager.refetchServerTools(serverId);
+            return tools.map((t) => ({ name: t.name }));
+          },
+          connectedServerIds,
+        );
+        logger.info('上游工具集变更轮询已启动（P5）', {
+          pollIntervalMs: McpHubService.SUBSCRIPTIONS_POLL_INTERVAL_MS,
+          serverCount: connectedServerIds.length,
+        });
+      }
 
       logger.debug('Initializing group manager');
       await this.groupManager.initialize();
@@ -773,6 +835,71 @@ export class McpHubService implements IMcpHubService {
     return this.messageAudit.getPerformanceStats();
   }
 
+  // ========== P5: Subscriptions fan-out helpers ==========
+  //
+  // 以下三个方法是 UpstreamChangeFanout 回调的实现。
+  // 它们桥接 ServerManager（上游工具）/ GroupManager（group-server 映射）/
+  // mcp-handler-factory 缓存（GroupMcpService + McpHttpHandler）。
+  //
+  // mcp-handler-factory 的 groupServices/groupHandlers 缓存按 groupId 惰性创建，
+  // 故此处动态 import 访问，避免模块加载期循环依赖。
+
+  /**
+   * 返回所有「servers 包含 serverId」的 group。
+   * fanout 据此把单 server 变更 fan-out 到受影响的 group 集合。
+   */
+  private getGroupsForServer(serverId: string): { groupId: string }[] {
+    const groups: { groupId: string }[] = [];
+    for (const [groupId, group] of this.groupManager.getAllGroups()) {
+      if (group.servers.includes(serverId)) {
+        groups.push({ groupId });
+      }
+    }
+    return groups;
+  }
+
+  /**
+   * 刷新指定 group 内指定 server 的工具注册。
+   * 先 refetch 上游工具（更新 ServerManager 缓存 + 快照），再调 GroupMcpService.refreshTools。
+   * GroupMcpService 由 mcp-handler-factory 惰性创建并缓存——未初始化的 group 跳过
+   * （惰性 group 此时无客户端持有，下次 tools/list 时按最新缓存重建）。
+   */
+  private async refreshGroupTools(groupId: string, serverId: string): Promise<void> {
+    // 1. refetch 上游工具，更新缓存（saveSnapshot 由 refetchServerTools 内完成）
+    await this.serverManager.refetchServerTools(serverId);
+
+    // 2. 通知已初始化的 GroupMcpService 重新注册该 server 工具
+    const { getGroupServicesCache } = await import('../api/mcp/mcp-handler-factory.js');
+    const groupService = getGroupServicesCache().get(groupId);
+    if (groupService) {
+      await groupService.refreshTools(serverId);
+    }
+  }
+
+  /**
+   * 在该 group 的 McpHttpHandler bus 上发布 tools_list_changed 事件，
+   * 经 subscriptions/listen stream 推送给已订阅客户端。
+   * handler 未创建（无活跃 listen）时为 no-op。
+   *
+   * 使用 handler.notify.toolsChanged()（SDK 提供的类型化 publish sugar），
+   * 等价于 bus.publish({ kind: 'tools_list_changed' })。
+   */
+  private publishToolListChanged(groupId: string): void {
+    void (async () => {
+      try {
+        const { getGroupHandlersCache } = await import('../api/mcp/mcp-handler-factory.js');
+        const handler = getGroupHandlersCache().get(groupId);
+        // notify 在无 open subscription 时为 no-op（SDK 保证）
+        handler?.notify.toolsChanged();
+      } catch (error) {
+        logger.warn('publishToolListChanged 失败', {
+          groupId,
+          error: (error as Error).message,
+        });
+      }
+    })();
+  }
+
   // ========== Utility ==========
 
   public static formatErrorResponse(error: Error): {
@@ -956,6 +1083,9 @@ export class McpHubService implements IMcpHubService {
 
   private async performGracefulShutdown(): Promise<void> {
     logger.debug('Performing graceful shutdown');
+
+    // P5: 停止上游变更轮询（避免 shutdown 期间触发 fanout）
+    this.changeDetector.stop();
 
     try {
       await this.apiToolService.shutdown();

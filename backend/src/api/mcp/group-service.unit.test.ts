@@ -46,6 +46,7 @@ import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
 function makeCoreManagerMock(): McpServiceManagerInterface {
   return {
     getAllTools: vi.fn().mockResolvedValue([]),
+    getServerTools: vi.fn().mockResolvedValue([]),
     getServerConnections: vi.fn().mockReturnValue(new Map()),
     getServiceStatus: vi.fn().mockReturnValue(new Map()),
     executeToolCall: vi.fn(),
@@ -412,5 +413,132 @@ describe('GroupMcpService - registerGroupResources', () => {
     expect(parsed.serverCount).toBeGreaterThan(0);
     expect(parsed.groups).toEqual(['testgroup']);
     expect(typeof parsed.version).toBe('string');
+  });
+});
+
+describe('GroupMcpService.refreshTools（P5）', () => {
+  // refreshTools 只重新注册指定 server 的工具，不动其他 server。
+  // registerTool 返回带 remove() 的 RegisteredTool 句柄，refreshTools 借此注销旧工具。
+  beforeEach(() => {
+    getAllConfigMock.mockReset();
+    getAllConfigMock.mockResolvedValue({
+      mcps: {
+        servers: {},
+      },
+      groups: {
+        testgroup: {
+          id: 'testgroup',
+          name: 'Test Group',
+          servers: ['s1', 's2'],
+          tools: [],
+        },
+      },
+    });
+  });
+
+  it('只重新注册指定 server 的工具，不动其他 server', async () => {
+    const cm = makeCoreManagerMock();
+    // 初始：s1 有 t1/t2，s2 有 t3
+    const initialTools = [
+      { name: 't1', serverId: 's1', inputSchema: { type: 'object', properties: {} } },
+      { name: 't2', serverId: 's1', inputSchema: { type: 'object', properties: {} } },
+      { name: 't3', serverId: 's2', inputSchema: { type: 'object', properties: {} } },
+    ];
+    (cm.getAllTools as ReturnType<typeof vi.fn>).mockResolvedValue(initialTools);
+    // 初始 getServerTools 也返回同样工具集，供 refreshTools 重灌时读取
+    (cm.getServerTools as ReturnType<typeof vi.fn>).mockImplementation(async (serverId: string) =>
+      initialTools.filter((t) => t.serverId === serverId),
+    );
+
+    const svc = new GroupMcpService('testgroup', cm);
+
+    // 先用默认 mock 完成初始化（management tools + resource 注册），捕获 mcpServer
+    await svc.initialize();
+    const mcpServer = svc.getMcpServer() as unknown as {
+      registerTool: ReturnType<typeof vi.fn>;
+    };
+
+    // 让 registerTool 返回带 remove() 的句柄，记录每个被 remove 的工具。
+    // 在 refreshTools 前覆盖 mock，并手动「重灌」初始工具句柄，
+    // 模拟初始注册时即拿到句柄（refreshTools 依赖 registeredToolHandles）。
+    const removedTools: string[] = [];
+    (mcpServer.registerTool as ReturnType<typeof vi.fn>).mockImplementation((name: string) => {
+      const handle = {
+        name,
+        remove: () => {
+          removedTools.push(name);
+        },
+        enable: vi.fn(),
+        disable: vi.fn(),
+        update: vi.fn(),
+      };
+      return handle;
+    });
+    // 重灌初始动态工具（s1_t1, s1_t2, s2_t3），使 registeredToolHandles 填充句柄
+    await svc.refreshTools('s1');
+    await svc.refreshTools('s2');
+    removedTools.length = 0; // 清掉重灌期间的 remove 记录
+
+    // 上游变更：s1 工具集变为 [t1,t4]（t2 消失、t4 新增）
+    (cm.getServerTools as ReturnType<typeof vi.fn>).mockImplementation(
+      async (serverId: string) => {
+        if (serverId === 's1') {
+          return [
+            { name: 't1', serverId: 's1', inputSchema: { type: 'object', properties: {} } },
+            { name: 't4', serverId: 's1', inputSchema: { type: 'object', properties: {} } },
+          ];
+        }
+        return [{ name: 't3', serverId: 's2', inputSchema: { type: 'object', properties: {} } }];
+      },
+    );
+
+    const registerCallsBefore = mcpServer.registerTool.mock.calls.length;
+    await svc.refreshTools('s1');
+
+    // 断言：s1 的旧工具（s1_t1, s1_t2）被 remove
+    expect(removedTools).toContain('s1_t1');
+    expect(removedTools).toContain('s1_t2');
+    // s2 的工具未被 remove
+    expect(removedTools).not.toContain('s2_t3');
+
+    // 断言：s1 的新工具被重新注册（含 s1_t4）
+    const newRegisterCalls = mcpServer.registerTool.mock.calls.slice(registerCallsBefore);
+    const newNames = newRegisterCalls.map((c: unknown[]) => c[0] as string);
+    expect(newNames).toContain('s1_t1');
+    expect(newNames).toContain('s1_t4');
+    // s2 的工具未被重复注册
+    expect(newNames).not.toContain('s2_t3');
+  });
+
+  it('availableTools 在 refresh 后反映新工具集', async () => {
+    const cm = makeCoreManagerMock();
+    (cm.getAllTools as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 't1', serverId: 's1', inputSchema: { type: 'object', properties: {} } },
+    ]);
+
+    const svc = new GroupMcpService('testgroup', cm);
+    await svc.initialize();
+
+    const mcpServer = svc.getMcpServer() as unknown as {
+      registerTool: ReturnType<typeof vi.fn>;
+    };
+    (mcpServer.registerTool as ReturnType<typeof vi.fn>).mockImplementation((name: string) => ({
+      name,
+      remove: vi.fn(),
+      enable: vi.fn(),
+      disable: vi.fn(),
+      update: vi.fn(),
+    }));
+
+    (cm.getServerTools as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 't1', serverId: 's1', inputSchema: { type: 'object', properties: {} } },
+      { name: 't2', serverId: 's1', inputSchema: { type: 'object', properties: {} } },
+    ]);
+
+    await svc.refreshTools('s1');
+    const tools = await svc.getAvailableTools();
+    const names = tools.map((t) => t.name);
+    expect(names).toContain('t1');
+    expect(names).toContain('t2');
   });
 });

@@ -33,6 +33,8 @@ describe('MCP Hub Service Integration Tests', () => {
       close: vi.fn(),
       listTools: vi.fn(),
       callTool: vi.fn(),
+      // P5: ServerManager 注册上游 tools/list_changed handler（changeDetector 已由 McpHubService 注入）
+      setNotificationHandler: vi.fn(),
     };
 
     // 设置全局 mockClient 实例，供 vi.mock 工厂中的构造函数使用
