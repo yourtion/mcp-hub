@@ -493,4 +493,107 @@ describe('ApiExecutorImpl', () => {
       expect(executor).toBeInstanceOf(ApiExecutorImpl);
     });
   });
+
+  describe('executor 边界：内部 throw 不逃逸到调用方', () => {
+    // 这些测试证明：当 executor 内部抛出 ServiceError（重构后的裸 Error→ServiceError）时，
+    // executeApiCall 的 catch-all 边界会把它转成 { success:false, error:<string> }，
+    // 绝不把 ServiceError 对象（含内部错误码/code/category 等）抛给调用方，
+    // 否则会把内部错误码结构泄露给 MCP 客户端。
+
+    const baseConfig: ApiToolConfig = {
+      id: 'boundary-api',
+      name: '边界测试API',
+      description: '验证内部错误不逃逸',
+      api: {
+        url: 'https://api.example.com/test',
+        method: 'GET',
+      },
+      parameters: {
+        type: 'object',
+        properties: {},
+      },
+      response: {},
+    };
+
+    it('参数验证失败抛 ServiceError(BUILD_FAILED) → 被 catch 转成 {success:false}，不抛出', async () => {
+      // 触发 L119 路径：parameterValidator.validate 返回 invalid
+      const failingValidator = {
+        validate: vi.fn().mockReturnValue({
+          valid: false,
+          errors: ['required_param is required'],
+        }),
+      };
+      const originalValidator = (
+        apiExecutor as unknown as { parameterValidator: unknown }
+      ).parameterValidator;
+      (apiExecutor as unknown as { parameterValidator: unknown }).parameterValidator =
+        failingValidator;
+
+      const result = await apiExecutor.executeApiCall(baseConfig, {});
+
+      // 恢复原始验证器，避免污染后续测试
+      (apiExecutor as unknown as { parameterValidator: unknown }).parameterValidator =
+        originalValidator;
+
+      // 核心：不 throw，返回 success:false
+      expect(result.success).toBe(false);
+      expect(typeof result.error).toBe('string');
+      expect(result.error).toContain('参数验证失败');
+      // 错误是扁平 string，不是 ServiceError 对象——内部错误码未逃逸
+      expect(result.error).not.toHaveProperty('code');
+      expect(result.error).not.toBeInstanceOf(ServiceError);
+    });
+
+    it('buildHttpRequest 失败抛 ServiceError(BUILD_FAILED) → 被 catch 转成 {success:false}，不抛出', async () => {
+      // 触发 L190 路径：requestBuilder.buildRequest 返回 success:false
+      const originalBuild = mockBuildRequest.getMockImplementation();
+      mockBuildRequest.mockImplementation(() => ({
+        success: false,
+        error: '无效的 URL 模板',
+        usedVariables: [],
+      }));
+
+      const result = await apiExecutor.executeApiCall(baseConfig, {});
+
+      // 恢复原始 buildRequest 实现
+      mockBuildRequest.mockImplementation(originalBuild);
+
+      expect(result.success).toBe(false);
+      expect(typeof result.error).toBe('string');
+      expect(result.error).toContain('构建HTTP请求失败');
+      expect(result.error).not.toBeInstanceOf(ServiceError);
+    });
+
+    it('认证环境变量缺失抛 ServiceError(CONFIG_ERROR) → 被 catch 转成 {success:false}，不抛出', async () => {
+      // 触发 L238 路径（bearer 类型，端到端走 executeApiCall→applyAuthentication→throw→catch）
+      const configWithAuth: ApiToolConfig = {
+        ...baseConfig,
+        security: {
+          authentication: {
+            type: 'bearer',
+            token: '{{env.MISSING_TOKEN}}',
+          },
+        },
+      };
+
+      vi.mocked(mockAuthManager.resolveEnvironmentVariables).mockReturnValue(
+        configWithAuth.security!.authentication!,
+      );
+      vi.mocked(mockAuthManager.validateEnvironmentVariables).mockReturnValue({
+        valid: false,
+        missingVars: ['MISSING_TOKEN'],
+      });
+
+      const result = await apiExecutor.executeApiCall(configWithAuth, {});
+
+      // 核心：applyAuthentication 内部抛了 ServiceError(CONFIG_ERROR)，
+      // 但 executeApiCall 的 catch-all 把它降级成 {success:false, error:string}，不抛出
+      expect(result.success).toBe(false);
+      expect(typeof result.error).toBe('string');
+      expect(result.error).toBe('认证配置中的环境变量未定义: MISSING_TOKEN');
+      // 断言错误是 string 而非结构化 ServiceError：内部 code/category/context 未泄露
+      expect(result.error).not.toBeInstanceOf(ServiceError);
+      expect(result.data).toBeNull();
+    });
+  });
 });

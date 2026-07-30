@@ -116,7 +116,10 @@ export class ApiExecutorImpl implements ApiExecutor {
       // 1. 验证参数
       const validationResult = this.parameterValidator.validate(parameters, config.parameters);
       if (!validationResult.valid) {
-        throw new Error(`参数验证失败: ${validationResult.errors.join(', ')}`);
+        throw new ServiceError(
+          ErrorCode.API_TO_MCP_BUILD_FAILED,
+          `参数验证失败: ${validationResult.errors.join(', ')}`,
+        );
       }
 
       // 2. 构建HTTP请求
@@ -187,11 +190,17 @@ export class ApiExecutorImpl implements ApiExecutor {
     });
 
     if (!buildResult.success) {
-      throw new Error(`构建HTTP请求失败: ${buildResult.error}`);
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_BUILD_FAILED,
+        `构建HTTP请求失败: ${buildResult.error}`,
+      );
     }
 
     if (!buildResult.request) {
-      throw new Error('构建HTTP请求失败: 请求对象为空');
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_BUILD_FAILED,
+        '构建HTTP请求失败: 请求对象为空',
+      );
     }
 
     const request = buildResult.request;
@@ -235,7 +244,10 @@ export class ApiExecutorImpl implements ApiExecutor {
           },
         );
       }
-      throw new Error(`认证配置中的环境变量未定义: ${envValidation.missingVars.join(', ')}`);
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_CONFIG_ERROR,
+        `认证配置中的环境变量未定义: ${envValidation.missingVars.join(', ')}`,
+      );
     }
 
     // 应用认证
