@@ -3,17 +3,21 @@
  * 提供组列表、组详情、组健康检查等API
  */
 
-import { type ToolInfo } from '@mcp-core/mcp-hub-core';
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 
-import {
-  getCoreServiceManager,
-  reloadCoreServiceManager,
-} from '../../services/service-registry.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
-import { getAllConfig, saveConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
-import { performanceMonitor } from '../../utils/performance-monitor.js';
+import {
+  createGroup,
+  deleteGroup,
+  getGroupDetail,
+  getGroupHealth,
+  getGroupServers,
+  GroupServiceError,
+  listGroups,
+  updateGroup,
+} from './group-service.js';
 import {
   ToolAccessServiceError,
   configureGroupTools,
@@ -29,12 +33,10 @@ import {
   getValidationKey,
   validateKey,
 } from './validation-key-service.js';
-import { validateGroupData, validateGroupId } from './validation.js';
 
 import type {
   ConfigureGroupToolsRequest,
   CreateGroupRequest,
-  GroupConfig,
   SetGroupValidationKeyRequest,
   UpdateGroupRequest,
 } from '@mcp-core/mcp-hub-share';
@@ -57,170 +59,39 @@ export interface GroupConfigItem {
 export const groupsApi = new Hono();
 
 /**
+ * 将 GroupServiceError 转换为与原 handler 逐字一致的 HTTP 错误响应。
+ *
+ * 响应结构与原 c.json 调用保持一致：
+ * - 通用错误体：{ success: false, error: { code, message }, requestId }，status = error.status
+ * - VALIDATION_ERROR 额外携带 error.details（validation.errors），与原响应结构逐字一致；
+ *   其它错误码不出现 details 字段。
+ */
+function groupServiceErrorResponse(c: Context, error: GroupServiceError) {
+  const errorBody: {
+    success: false;
+    error: { code: string; message: string; details?: string[] };
+    requestId: string;
+  } = {
+    success: false,
+    error: {
+      code: error.code,
+      message: error.message,
+    },
+    requestId: c.get('requestId'),
+  };
+  if (error.details) {
+    errorBody.error.details = error.details;
+  }
+  return c.json(errorBody, { status: error.status });
+}
+
+/**
  * 获取所有组列表
  */
 groupsApi.get('/', async (c) => {
   try {
-    logger.debug('获取所有组列表');
-
-    const config = await getAllConfig();
-    const groups = config.groups;
-
-    const coreServiceManager = await getCoreServiceManager();
-
-    const serverConnections = coreServiceManager.getServerConnections();
-
-    // 构建组列表，包含运行时状态和详细信息
-    const groupList = await Promise.all(
-      Object.entries(groups).map(async ([groupId, groupConfig]) => {
-        try {
-          // 计算组内服务器连接状态
-          const groupServers = groupConfig.servers || [];
-          const connectedServers = groupServers.filter((serverId: string) => {
-            const connection = serverConnections.get(serverId);
-            return connection && connection.status === 'connected';
-          });
-
-          // 获取组内工具数量和详细信息
-          let toolCount = 0;
-          let availableTools: ToolInfo[] = [];
-          try {
-            const allTools = await coreServiceManager?.getAllTools();
-            availableTools =
-              allTools?.filter((tool) => tool.serverId && groupServers.includes(tool.serverId)) ||
-              [];
-            toolCount = availableTools.length;
-          } catch (error) {
-            logger.warn('获取组工具数量失败', {
-              groupId,
-              error: (error as Error).message,
-            });
-          }
-
-          // 应用工具过滤
-          const toolFilter = groupConfig.tools || [];
-          let filteredTools = availableTools;
-          if (toolFilter.length > 0) {
-            filteredTools = availableTools.filter((tool) => toolFilter.includes(tool.name));
-          }
-
-          return {
-            id: groupId,
-            name: groupConfig.name || groupId,
-            description: groupConfig.description || '',
-            servers: groupServers,
-            serverCount: groupServers.length,
-            connectedServers: connectedServers.length,
-            toolCount,
-            filteredToolCount: filteredTools.length,
-            tools: groupConfig.tools || [],
-            toolFilterMode: toolFilter.length > 0 ? 'whitelist' : 'none',
-            isHealthy: connectedServers.length > 0,
-            healthScore:
-              groupServers.length > 0
-                ? Math.round((connectedServers.length / groupServers.length) * 100)
-                : 0,
-            validation: {
-              enabled: groupConfig.validation?.enabled || false,
-              hasKey: !!groupConfig.validation?.validationKey,
-              createdAt: groupConfig.validation?.createdAt,
-              lastUpdated: groupConfig.validation?.lastUpdated,
-            },
-            stats: {
-              totalServers: groupServers.length,
-              availableServers: connectedServers.length,
-              totalTools: toolCount,
-              filteredTools: filteredTools.length,
-              healthPercentage:
-                groupServers.length > 0
-                  ? Math.round((connectedServers.length / groupServers.length) * 100)
-                  : 0,
-            },
-            lastUpdated: groupConfig.validation?.lastUpdated || new Date().toISOString(),
-          };
-        } catch (error) {
-          logger.error('处理组信息时出错', error as Error, { groupId });
-          return {
-            id: groupId,
-            name: groupConfig.name || groupId,
-            description: groupConfig.description || '',
-            servers: groupConfig.servers || [],
-            serverCount: (groupConfig.servers || []).length,
-            connectedServers: 0,
-            toolCount: 0,
-            filteredToolCount: 0,
-            tools: groupConfig.tools || [],
-            toolFilterMode: 'none',
-            isHealthy: false,
-            healthScore: 0,
-            validation: {
-              enabled: false,
-              hasKey: false,
-            },
-            stats: {
-              totalServers: (groupConfig.servers || []).length,
-              availableServers: 0,
-              totalTools: 0,
-              filteredTools: 0,
-              healthPercentage: 0,
-            },
-            lastUpdated: new Date().toISOString(),
-            error: (error as Error).message,
-          };
-        }
-      }),
-    );
-
-    const response = {
-      groups: groupList,
-      totalGroups: groupList.length,
-      healthyGroups: groupList.filter((g) => g.isHealthy).length,
-      totalServers: groupList.reduce((sum, g) => sum + g.serverCount, 0),
-      connectedServers: groupList.reduce((sum, g) => sum + g.connectedServers, 0),
-      totalTools: groupList.reduce((sum, g) => sum + g.toolCount, 0),
-      filteredTools: groupList.reduce((sum, g) => sum + g.filteredToolCount, 0),
-      averageHealthScore:
-        groupList.length > 0
-          ? Math.round(groupList.reduce((sum, g) => sum + g.healthScore, 0) / groupList.length)
-          : 0,
-      groupsWithValidation: groupList.filter((g) => g.validation.enabled).length,
-      groupsWithToolFilter: groupList.filter((g) => g.toolFilterMode !== 'none').length,
-      summary: {
-        status:
-          groupList.filter((g) => g.isHealthy).length === groupList.length && groupList.length > 0
-            ? 'healthy'
-            : groupList.filter((g) => g.isHealthy).length > 0
-              ? 'partial'
-              : 'unhealthy',
-        issues: [
-          ...(groupList.some((g) => g.healthScore < 50) ? ['部分组健康度较低'] : []),
-          ...(groupList.filter((g) => g.error).length > 0 ? ['部分组存在错误'] : []),
-        ],
-      },
-      timestamp: new Date().toISOString(),
-    };
-
-    logger.info('组列表查询完成', {
-      totalGroups: response.totalGroups,
-      healthyGroups: response.healthyGroups,
-      totalTools: response.totalTools,
-    });
-
-    // 统一响应格式，添加 success 和 data 包装
-    return successResponse(c, {
-      groups: response.groups,
-      totalGroups: response.totalGroups,
-      healthyGroups: response.healthyGroups,
-      unhealthyGroups: response.totalGroups - response.healthyGroups,
-      totalServers: response.totalServers,
-      connectedServers: response.connectedServers,
-      totalTools: response.totalTools,
-      filteredTools: response.filteredTools,
-      averageHealthScore: response.averageHealthScore,
-      groupsWithValidation: response.groupsWithValidation,
-      groupsWithToolFilter: response.groupsWithToolFilter,
-      summary: response.summary,
-    });
+    const data = await listGroups();
+    return successResponse(c, data);
   } catch (error) {
     logger.error('获取组列表失败', error as Error);
     return errorResponse(c, error as Error, 500);
@@ -233,129 +104,12 @@ groupsApi.get('/', async (c) => {
 groupsApi.get('/:groupId', async (c) => {
   try {
     const groupId = c.req.param('groupId');
-    logger.debug('获取组详细信息', { groupId });
-
-    const config = await getAllConfig();
-    const groups = config.groups;
-    const groupConfig = groups[groupId];
-
-    if (!groupConfig) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: `组 '${groupId}' 不存在`,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 404 },
-      );
-    }
-
-    const coreServiceManager = await getCoreServiceManager();
-
-    const serverConnections = coreServiceManager.getServerConnections();
-    const groupServers = groupConfig.servers || [];
-
-    // 获取服务器详细状态
-    const serverDetails = groupServers.map((serverId: string) => {
-      const connection = serverConnections.get(serverId);
-      return {
-        id: serverId,
-        status: connection?.status || 'unknown',
-        lastConnected: connection?.lastConnected?.toISOString(),
-        toolCount: connection?.tools?.length || 0,
-        error: connection?.lastError?.message,
-      };
-    });
-
-    // 获取组内所有工具
-    let groupTools: ToolInfo[] = [];
-    try {
-      const allTools = await coreServiceManager.getAllTools();
-      groupTools = allTools
-        .filter((tool) => tool.serverId && groupServers.includes(tool.serverId))
-        .map((tool) => ({
-          name: tool.name,
-          description: tool.description,
-          serverId: tool.serverId,
-          parameters: tool.parameters,
-          category: tool.category,
-        }));
-
-      // 如果组配置了特定工具过滤，应用过滤
-      if (groupConfig.tools && groupConfig.tools.length > 0) {
-        groupTools = groupTools.filter((tool) => groupConfig.tools.includes(tool.name));
-      }
-    } catch (error) {
-      logger.warn('获取组工具失败', {
-        groupId,
-        error: (error as Error).message,
-      });
-    }
-
-    const connectedServers = serverDetails.filter(
-      (s: { status: string }) => s.status === 'connected',
-    );
-
-    const response = {
-      id: groupId,
-      name: groupConfig.name || groupId,
-      description: groupConfig.description || '',
-      servers: serverDetails,
-      serverCount: groupServers.length,
-      connectedServers: connectedServers.length,
-      tools: groupTools,
-      toolCount: groupTools.length,
-      toolFilter: groupConfig.tools || [],
-      toolFilterMode: groupConfig.tools && groupConfig.tools.length > 0 ? 'whitelist' : 'none',
-      isHealthy: connectedServers.length > 0,
-      healthScore:
-        groupServers.length > 0
-          ? Math.round((connectedServers.length / groupServers.length) * 100)
-          : 0,
-      validation: {
-        enabled: groupConfig.validation?.enabled || false,
-        hasKey: !!groupConfig.validation?.validationKey,
-        validationKey: groupConfig.validation?.validationKey ? '***' : undefined,
-        createdAt: groupConfig.validation?.createdAt,
-        lastUpdated: groupConfig.validation?.lastUpdated,
-      },
-      stats: {
-        totalServers: groupServers.length,
-        availableServers: connectedServers.length,
-        totalTools: groupTools.length,
-        healthPercentage:
-          groupServers.length > 0
-            ? Math.round((connectedServers.length / groupServers.length) * 100)
-            : 0,
-      },
-      performance: (() => {
-        const mcpStats = performanceMonitor.getStatsByPathPrefix(`/${groupId}/mcp`);
-        return {
-          averageResponseTime: Math.round(mcpStats.averageResponseTime),
-          totalRequests: mcpStats.totalRequests,
-          successRate: Math.round(mcpStats.successRate),
-        };
-      })(),
-      accessControl: {
-        requiresValidation: groupConfig.validation?.enabled || false,
-        toolAccessRestricted: groupConfig.tools && groupConfig.tools.length > 0,
-      },
-      lastUpdated: groupConfig.validation?.lastUpdated || new Date().toISOString(),
-      timestamp: new Date().toISOString(),
-    };
-
-    logger.info('组详细信息查询完成', {
-      groupId,
-      serverCount: response.serverCount,
-      connectedServers: response.connectedServers,
-      toolCount: response.toolCount,
-    });
-
+    const response = await getGroupDetail(groupId);
     return successResponse(c, response);
   } catch (error) {
+    if (error instanceof GroupServiceError) {
+      return groupServiceErrorResponse(c, error);
+    }
     logger.error('获取组详细信息失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
@@ -367,98 +121,12 @@ groupsApi.get('/:groupId', async (c) => {
 groupsApi.get('/:groupId/health', async (c) => {
   try {
     const groupId = c.req.param('groupId');
-    logger.debug('执行组健康检查', { groupId });
-
-    const config = await getAllConfig();
-    const groups = config.groups;
-    const groupConfig = groups[groupId];
-
-    if (!groupConfig) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: `组 '${groupId}' 不存在`,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 404 },
-      );
-    }
-
-    const coreServiceManager = await getCoreServiceManager();
-
-    const serverConnections = coreServiceManager.getServerConnections();
-    const groupServers = groupConfig.servers || [];
-
-    // 检查服务器连接状态
-    const serverHealth = groupServers.map((serverId: string) => {
-      const connection = serverConnections.get(serverId);
-      const isHealthy = connection && connection.status === 'connected';
-
-      return {
-        serverId,
-        healthy: isHealthy,
-        status: connection?.status || 'unknown',
-        lastConnected: connection?.lastConnected?.toISOString(),
-        error: connection?.lastError?.message,
-        toolCount: connection?.tools?.length || 0,
-      };
-    });
-
-    const healthyServers = serverHealth.filter((s) => s.healthy === true);
-    const healthScore =
-      groupServers.length > 0 ? Math.round((healthyServers.length / groupServers.length) * 100) : 0;
-
-    // 检查工具可用性
-    let toolHealth = { available: 0, total: 0 };
-    try {
-      const allTools = await coreServiceManager.getAllTools();
-      const groupTools = allTools.filter((tool) => groupServers.includes(tool.serverId || ''));
-
-      toolHealth = {
-        available: groupTools.length,
-        total: groupConfig.tools?.length || groupTools.length,
-      };
-    } catch (error) {
-      logger.warn('检查组工具健康状态失败', {
-        groupId,
-        error: (error as Error).message,
-      });
-    }
-
-    const isHealthy = healthyServers.length > 0 && toolHealth.available > 0;
-    const statusCode = isHealthy ? 200 : 503;
-
-    const response = {
-      groupId,
-      healthy: isHealthy,
-      healthScore,
-      servers: {
-        total: groupServers.length,
-        healthy: healthyServers.length,
-        unhealthy: groupServers.length - healthyServers.length,
-        details: serverHealth,
-      },
-      tools: toolHealth,
-      issues: [
-        ...(healthyServers.length === 0 ? ['没有可用的服务器连接'] : []),
-        ...(toolHealth.available === 0 ? ['没有可用的工具'] : []),
-        ...(healthScore < 50 ? [`服务器健康度较低: ${healthScore}%`] : []),
-      ],
-    };
-
-    logger.info('组健康检查完成', {
-      groupId,
-      healthy: isHealthy,
-      healthScore,
-      healthyServers: healthyServers.length,
-      totalServers: groupServers.length,
-    });
-
-    return successResponse(c, response, statusCode);
+    const { data, status } = await getGroupHealth(groupId);
+    return successResponse(c, data, status);
   } catch (error) {
+    if (error instanceof GroupServiceError) {
+      return groupServiceErrorResponse(c, error);
+    }
     logger.error('组健康检查失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
@@ -499,87 +167,12 @@ groupsApi.get('/:groupId/tools', async (c) => {
 groupsApi.get('/:groupId/servers', async (c) => {
   try {
     const groupId = c.req.param('groupId');
-    logger.debug('获取组服务器列表', { groupId });
-
-    const config = await getAllConfig();
-    const groups = config.groups;
-    const groupConfig = groups[groupId];
-
-    if (!groupConfig) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: `组 '${groupId}' 不存在`,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 404 },
-      );
-    }
-
-    const coreServiceManager = await getCoreServiceManager();
-
-    const serverConnections = coreServiceManager.getServerConnections();
-    const groupServers = groupConfig.servers || [];
-
-    // 获取服务器详细信息
-    const serverDetails = await Promise.all(
-      groupServers.map(async (serverId: string) => {
-        const connection = serverConnections.get(serverId);
-
-        // 获取服务器工具
-        let serverTools: ToolInfo[] = [];
-        try {
-          serverTools = (await coreServiceManager?.getServerTools(serverId)) || [];
-        } catch (error) {
-          logger.warn('获取服务器工具失败', {
-            serverId,
-            error: (error as Error).message,
-          });
-        }
-
-        return {
-          id: serverId,
-          status: connection?.status || 'unknown',
-          lastConnected: connection?.lastConnected?.toISOString(),
-          lastError: connection?.lastError?.message,
-          tools: serverTools.map((tool) => ({
-            name: tool.name,
-            description: tool.description,
-            category: tool.category,
-          })),
-          toolCount: serverTools.length,
-          isHealthy: connection?.status === 'connected',
-        };
-      }),
-    );
-
-    const connectedServers = serverDetails.filter((s) => s.isHealthy);
-
-    const response = {
-      groupId,
-      servers: serverDetails,
-      totalServers: serverDetails.length,
-      connectedServers: connectedServers.length,
-      disconnectedServers: serverDetails.length - connectedServers.length,
-      totalTools: serverDetails.reduce((sum, s) => sum + s.toolCount, 0),
-      healthScore:
-        serverDetails.length > 0
-          ? Math.round((connectedServers.length / serverDetails.length) * 100)
-          : 0,
-    };
-
-    logger.info('组服务器列表查询完成', {
-      groupId,
-      totalServers: response.totalServers,
-      connectedServers: response.connectedServers,
-      totalTools: response.totalTools,
-    });
-
+    const response = await getGroupServers(groupId);
     return successResponse(c, response);
   } catch (error) {
+    if (error instanceof GroupServiceError) {
+      return groupServiceErrorResponse(c, error);
+    }
     logger.error('获取组服务器列表失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
@@ -591,129 +184,12 @@ groupsApi.get('/:groupId/servers', async (c) => {
 groupsApi.post('/', async (c) => {
   try {
     const body = (await c.req.json()) as CreateGroupRequest;
-    logger.debug('创建新组请求', { body });
-
-    // 验证请求数据
-    const validation = validateGroupData(body);
-    if (!validation.isValid) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: '请求数据验证失败',
-            details: validation.errors,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 验证组ID
-    const idValidation = validateGroupId(body.id);
-    if (!idValidation.isValid) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'INVALID_GROUP_ID',
-            message: idValidation.error,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 检查组是否已存在
-    const config = await getAllConfig();
-    const groups = config.groups as Record<string, unknown>;
-
-    if (groups[body.id]) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'GROUP_ALREADY_EXISTS',
-            message: `组 '${body.id}' 已存在`,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 409 },
-      );
-    }
-
-    // 验证服务器是否存在
-    const servers = config.mcps.servers as Record<string, unknown>;
-    const invalidServers = body.servers.filter((serverId) => !servers[serverId]);
-
-    if (invalidServers.length > 0) {
-      logger.warn('创建组时发现不存在的服务器', {
-        groupId: body.id,
-        invalidServers,
-      });
-      // 不阻止创建，但记录警告
-    }
-
-    // 创建新组配置
-    const newGroup = {
-      id: body.id,
-      name: body.name,
-      description: body.description || '',
-      servers: body.servers || [],
-      tools: body.tools || [],
-    };
-
-    // 保存到配置文件
-    const updatedGroups = {
-      ...groups,
-      [body.id]: newGroup,
-    };
-
-    await saveConfig('group.json', updatedGroups as GroupConfig);
-
-    // 重新初始化核心服务管理器以应用新配置
-    try {
-      await reloadCoreServiceManager();
-    } catch (error) {
-      logger.warn('重新初始化核心服务管理器失败', {
-        error: (error as Error).message,
-      });
-    }
-
-    logger.info('组创建成功', {
-      groupId: body.id,
-      groupName: body.name,
-      serverCount: body.servers.length,
-      toolCount: body.tools.length,
-    });
-
-    return successResponse(c, {
-      id: body.id,
-      name: body.name,
-      description: body.description || '',
-      servers: body.servers || [],
-      tools: body.tools || [],
-      toolFilterMode: body.tools && body.tools.length > 0 ? 'whitelist' : 'none',
-      validation: {
-        enabled: false,
-        hasKey: false,
-      },
-      stats: {
-        totalServers: body.servers.length,
-        availableServers: 0, // 需要连接后重新计算
-        totalTools: body.tools.length,
-        filteredTools: body.tools.length,
-        healthPercentage: 0, // 需要连接后重新计算
-      },
-      accessControl: {
-        requiresValidation: false,
-        toolAccessRestricted: body.tools && body.tools.length > 0,
-      },
-      lastUpdated: new Date().toISOString(),
-    });
+    const response = await createGroup(body);
+    return successResponse(c, response);
   } catch (error) {
+    if (error instanceof GroupServiceError) {
+      return groupServiceErrorResponse(c, error);
+    }
     logger.error('创建组失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
@@ -726,134 +202,12 @@ groupsApi.put('/:groupId', async (c) => {
   try {
     const groupId = c.req.param('groupId');
     const body = (await c.req.json()) as UpdateGroupRequest;
-    logger.debug('更新组配置请求', { groupId, body });
-
-    // 验证组ID
-    const idValidation = validateGroupId(groupId);
-    if (!idValidation.isValid) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'INVALID_GROUP_ID',
-            message: idValidation.error,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 验证请求数据
-    const validation = validateGroupData(body);
-    if (!validation.isValid) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: '请求数据验证失败',
-            details: validation.errors,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 检查组是否存在
-    const config = await getAllConfig();
-    const groups = config.groups;
-    const existingGroup = groups[groupId];
-
-    if (!existingGroup) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: `组 '${groupId}' 不存在`,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 404 },
-      );
-    }
-
-    // 验证服务器是否存在（如果提供了服务器列表）
-    if (body.servers) {
-      const servers = config.mcps.servers as Record<string, unknown>;
-      const invalidServers = body.servers.filter((serverId) => !servers[serverId]);
-
-      if (invalidServers.length > 0) {
-        logger.warn('更新组时发现不存在的服务器', {
-          groupId,
-          invalidServers,
-        });
-        // 不阻止更新，但记录警告
-      }
-    }
-
-    // 更新组配置
-    const updatedGroup = {
-      ...existingGroup,
-      ...(body.name !== undefined && { name: body.name }),
-      ...(body.description !== undefined && { description: body.description }),
-      ...(body.servers !== undefined && { servers: body.servers }),
-      ...(body.tools !== undefined && { tools: body.tools }),
-    };
-
-    // 保存到配置文件
-    const updatedGroups = {
-      ...groups,
-      [groupId]: updatedGroup,
-    };
-
-    await saveConfig('group.json', updatedGroups as GroupConfig);
-
-    // 重新初始化核心服务管理器以应用新配置
-    try {
-      await reloadCoreServiceManager();
-    } catch (error) {
-      logger.warn('重新初始化核心服务管理器失败', {
-        error: (error as Error).message,
-      });
-    }
-
-    logger.info('组更新成功', {
-      groupId,
-      groupName: updatedGroup.name,
-      serverCount: updatedGroup.servers.length,
-      toolCount: updatedGroup.tools.length,
-    });
-
-    return successResponse(c, {
-      id: groupId,
-      name: updatedGroup.name,
-      description: updatedGroup.description || '',
-      servers: updatedGroup.servers || [],
-      tools: updatedGroup.tools || [],
-      toolFilterMode: updatedGroup.tools && updatedGroup.tools.length > 0 ? 'whitelist' : 'none',
-      validation: {
-        enabled: updatedGroup.validation?.enabled || false,
-        hasKey: !!updatedGroup.validation?.validationKey,
-        createdAt: updatedGroup.validation?.createdAt,
-        lastUpdated: updatedGroup.validation?.lastUpdated,
-      },
-      stats: {
-        totalServers: updatedGroup.servers.length,
-        availableServers: 0, // 需要重新计算
-        totalTools: updatedGroup.tools.length,
-        filteredTools: updatedGroup.tools.length,
-        healthPercentage: 0, // 需要重新计算
-      },
-      accessControl: {
-        requiresValidation: updatedGroup.validation?.enabled || false,
-        toolAccessRestricted: updatedGroup.tools && updatedGroup.tools.length > 0,
-      },
-      lastUpdated: new Date().toISOString(),
-    });
+    const response = await updateGroup(groupId, body);
+    return successResponse(c, response);
   } catch (error) {
+    if (error instanceof GroupServiceError) {
+      return groupServiceErrorResponse(c, error);
+    }
     logger.error('更新组失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
@@ -865,84 +219,12 @@ groupsApi.put('/:groupId', async (c) => {
 groupsApi.delete('/:groupId', async (c) => {
   try {
     const groupId = c.req.param('groupId');
-    logger.debug('删除组请求', { groupId });
-
-    // 验证组ID
-    const idValidation = validateGroupId(groupId);
-    if (!idValidation.isValid) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'INVALID_GROUP_ID',
-            message: idValidation.error,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 检查组是否存在
-    const config = await getAllConfig();
-    const groups = config.groups;
-    const existingGroup = groups[groupId];
-
-    if (!existingGroup) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: `组 '${groupId}' 不存在`,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 404 },
-      );
-    }
-
-    // 检查是否为默认组（可选的保护机制）
-    if (groupId === 'default') {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'CANNOT_DELETE_DEFAULT_GROUP',
-            message: '不能删除默认组',
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 403 },
-      );
-    }
-
-    // 从配置中删除组
-    const updatedGroups = { ...groups };
-    delete updatedGroups[groupId];
-
-    await saveConfig('group.json', updatedGroups as GroupConfig);
-
-    // 重新初始化核心服务管理器以应用新配置
-    try {
-      await reloadCoreServiceManager();
-    } catch (error) {
-      logger.warn('重新初始化核心服务管理器失败', {
-        error: (error as Error).message,
-      });
-    }
-
-    logger.info('组删除成功', {
-      groupId,
-      groupName: existingGroup.name,
-    });
-
-    return successResponse(c, {
-      id: groupId,
-      name: existingGroup.name,
-      deleted: true,
-    });
+    const response = await deleteGroup(groupId);
+    return successResponse(c, response);
   } catch (error) {
+    if (error instanceof GroupServiceError) {
+      return groupServiceErrorResponse(c, error);
+    }
     logger.error('删除组失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
