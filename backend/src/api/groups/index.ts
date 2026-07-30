@@ -4,7 +4,6 @@
  */
 
 import { Hono } from 'hono';
-import type { Context } from 'hono';
 
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { logger } from '../../utils/logger.js';
@@ -40,6 +39,7 @@ import type {
   SetGroupValidationKeyRequest,
   UpdateGroupRequest,
 } from '@mcp-core/mcp-hub-share';
+import type { Context } from 'hono';
 
 // 定义组配置类型
 export interface GroupConfigItem {

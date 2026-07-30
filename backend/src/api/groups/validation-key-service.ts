@@ -15,12 +15,6 @@
  *   转换为与原实现逐字一致的 HTTP 响应。
  */
 
-import type {
-  GroupConfig,
-  GroupValidationConfig,
-  SetGroupValidationKeyRequest,
-} from '@mcp-core/mcp-hub-share';
-
 import { getAllConfig, saveConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 import { decryptValidationKey, encryptValidationKey, generateValidationKey } from './crypto.js';
@@ -31,6 +25,12 @@ import {
   validateKeyFormat,
 } from './key-policy.js';
 import { validateGroupId } from './validation.js';
+
+import type {
+  GroupConfig,
+  GroupValidationConfig,
+  SetGroupValidationKeyRequest,
+} from '@mcp-core/mcp-hub-share';
 
 /**
  * 业务错误码（与原 handler 的响应 error.code 逐字对应）
@@ -130,11 +130,7 @@ export async function createValidationKey(
   // 验证密钥格式
   const keyValidation = validateKeyFormat(body.validationKey);
   if (!keyValidation.isValid) {
-    throw new ValidationKeyServiceError(
-      'INVALID_VALIDATION_KEY',
-      keyValidation.error ?? '',
-      400,
-    );
+    throw new ValidationKeyServiceError('INVALID_VALIDATION_KEY', keyValidation.error ?? '', 400);
   }
 
   const groups = await loadGroups();

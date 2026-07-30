@@ -31,11 +31,7 @@ import { performanceMonitor } from '../../utils/performance-monitor.js';
 import { validateGroupData, validateGroupId } from './validation.js';
 
 import type { ToolInfo } from '@mcp-core/mcp-hub-core';
-import type {
-  CreateGroupRequest,
-  GroupConfig,
-  UpdateGroupRequest,
-} from '@mcp-core/mcp-hub-share';
+import type { CreateGroupRequest, GroupConfig, UpdateGroupRequest } from '@mcp-core/mcp-hub-share';
 
 /**
  * 业务错误码（与原 handler 的响应 error.code 逐字对应）
@@ -165,8 +161,7 @@ export async function listGroups(): Promise<{
         try {
           const allTools = await coreServiceManager?.getAllTools();
           availableTools =
-            allTools?.filter((tool) => tool.serverId && groupServers.includes(tool.serverId)) ||
-            [];
+            allTools?.filter((tool) => tool.serverId && groupServers.includes(tool.serverId)) || [];
           toolCount = availableTools.length;
         } catch (error) {
           logger.warn('获取组工具数量失败', {
@@ -312,9 +307,7 @@ export async function listGroups(): Promise<{
  *
  * 返回原 handler successResponse 的 data 部分。
  */
-export async function getGroupDetail(
-  groupId: string,
-): Promise<Record<string, unknown>> {
+export async function getGroupDetail(groupId: string): Promise<Record<string, unknown>> {
   logger.debug('获取组详细信息', { groupId });
 
   const config = await getAllConfig();
@@ -537,9 +530,7 @@ export async function getGroupHealth(groupId: string): Promise<GroupHealthResult
  *
  * 返回原 handler successResponse 的 data 部分。
  */
-export async function getGroupServers(
-  groupId: string,
-): Promise<Record<string, unknown>> {
+export async function getGroupServers(groupId: string): Promise<Record<string, unknown>> {
   logger.debug('获取组服务器列表', { groupId });
 
   const config = await getAllConfig();
@@ -625,20 +616,13 @@ export async function getGroupServers(
  *
  * 返回原 handler successResponse 的 data 部分。
  */
-export async function createGroup(
-  body: CreateGroupRequest,
-): Promise<Record<string, unknown>> {
+export async function createGroup(body: CreateGroupRequest): Promise<Record<string, unknown>> {
   logger.debug('创建新组请求', { body });
 
   // 验证请求数据
   const validation = validateGroupData(body);
   if (!validation.isValid) {
-    throw new GroupServiceError(
-      'VALIDATION_ERROR',
-      '请求数据验证失败',
-      400,
-      validation.errors,
-    );
+    throw new GroupServiceError('VALIDATION_ERROR', '请求数据验证失败', 400, validation.errors);
   }
 
   // 验证组ID
@@ -758,12 +742,7 @@ export async function updateGroup(
   // 验证请求数据
   const validation = validateGroupData(body);
   if (!validation.isValid) {
-    throw new GroupServiceError(
-      'VALIDATION_ERROR',
-      '请求数据验证失败',
-      400,
-      validation.errors,
-    );
+    throw new GroupServiceError('VALIDATION_ERROR', '请求数据验证失败', 400, validation.errors);
   }
 
   // 检查组是否存在
@@ -862,9 +841,7 @@ export async function updateGroup(
  *
  * 返回原 handler successResponse 的 data 部分。
  */
-export async function deleteGroup(
-  groupId: string,
-): Promise<Record<string, unknown>> {
+export async function deleteGroup(groupId: string): Promise<Record<string, unknown>> {
   logger.debug('删除组请求', { groupId });
 
   // 验证组ID
