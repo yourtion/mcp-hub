@@ -14,6 +14,18 @@ import { createServerAuthProvider } from './mcp-server-auth-provider.js';
 import type { ServerManager as IServerManager, ServerConnection, Tool } from '../types/mcp-hub.js';
 import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 
+/**
+ * P5: 上游工具集变更检测器接入点。
+ * 只依赖 Detector 的结构性子集（saveSnapshot / onUpstreamNotification），
+ * 便于测试注入部分 mock，也避免与 UpstreamChangeDetector 实现强耦合。
+ */
+export interface ServerManagerOptions {
+  changeDetector?: {
+    saveSnapshot: (serverId: string, tools: { name: string }[]) => void;
+    onUpstreamNotification: (serverId: string) => void;
+  };
+}
+
 export class ServerManager implements IServerManager {
   private servers: Map<string, ServerConnection> = new Map();
   private serverConfigs: Map<string, ServerConfig> = new Map();
@@ -40,7 +52,10 @@ export class ServerManager implements IServerManager {
     this.messageTracker = tracker;
   }
 
-  constructor(serverConfigs: Record<string, ServerConfig>) {
+  constructor(
+    serverConfigs: Record<string, ServerConfig>,
+    private readonly options: ServerManagerOptions = {},
+  ) {
     // Store server configurations
     for (const [serverId, config] of Object.entries(serverConfigs)) {
       this.serverConfigs.set(serverId, config);
@@ -135,6 +150,18 @@ export class ServerManager implements IServerManager {
       serverConnection.reconnectAttempts = 0;
 
       logger.logServerConnection(serverId, 'connected');
+
+      // P5: 注册上游 listChanged 通知 handler，收到推送时回调 Detector.onUpstreamNotification。
+      // 必须在 discoverServerTools 之前注册，确保订阅就绪后再拉取首份工具列表；
+      // 闭包捕获 serverId，handler 内部即可定位到正确的 server。
+      if (this.options.changeDetector) {
+        serverConnection.client.setNotificationHandler(
+          'notifications/tools/list_changed',
+          () => {
+            this.options.changeDetector!.onUpstreamNotification(serverId);
+          },
+        );
+      }
 
       // Discover tools after successful connection
       await this.discoverServerTools(serverConnection);
@@ -239,6 +266,13 @@ export class ServerManager implements IServerManager {
 
       serverConnection.tools = tools;
       logger.logToolDiscovery(serverId, tools.length);
+
+      // P5: 保存工具集快照供 UpstreamChangeDetector 比对（listChanged 实时 + 轮询兜底）。
+      // 仅记录 name 集合，描述等非结构性变化不触发变更。
+      this.options.changeDetector?.saveSnapshot(
+        serverId,
+        tools.map((t) => ({ name: t.name })),
+      );
 
       // Track the response
       if (this.messageTracker) {

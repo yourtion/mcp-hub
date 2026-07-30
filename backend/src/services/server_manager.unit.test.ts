@@ -47,6 +47,7 @@ describe('ServerManager', () => {
       close: vi.fn(),
       listTools: vi.fn(),
       callTool: vi.fn(),
+      setNotificationHandler: vi.fn(),
     };
 
     // 设置全局 mockClient 实例，供 vi.mock 工厂中的构造函数使用
@@ -758,6 +759,56 @@ describe('ServerManager', () => {
 
       expect(server?.status).toBe(ServerStatus.ERROR);
       expect(server?.lastError?.message).toBe('Transport creation failed');
+    });
+  });
+
+  describe('listChanged notification handler（P5）', () => {
+    it('连接成功后注册 notifications/tools/list_changed handler', async () => {
+      const detector = { saveSnapshot: vi.fn(), onUpstreamNotification: vi.fn() };
+      const manager = new ServerManager(
+        { s1: { type: 'stdio', command: 'echo', args: [], enabled: true } as any },
+        { changeDetector: detector as any },
+      );
+      // mockClient 已在 beforeEach 配好（connect/listTools 返回成功）
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+      await manager.initialize();
+      expect(mockClient.setNotificationHandler).toHaveBeenCalledWith(
+        'notifications/tools/list_changed',
+        expect.any(Function),
+      );
+      await manager.shutdown();
+    });
+
+    it('listChanged 回调触发 detector.onUpstreamNotification', async () => {
+      const detector = { saveSnapshot: vi.fn(), onUpstreamNotification: vi.fn() };
+      const manager = new ServerManager(
+        { s1: { type: 'stdio', command: 'echo', args: [], enabled: true } as any },
+        { changeDetector: detector as any },
+      );
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+      await manager.initialize();
+      // 取出注册的 handler 并调用
+      const handler = mockClient.setNotificationHandler.mock.calls.find(
+        (c) => c[0] === 'notifications/tools/list_changed',
+      )?.[1];
+      await handler?.({ method: 'notifications/tools/list_changed' });
+      expect(detector.onUpstreamNotification).toHaveBeenCalledWith('s1');
+      await manager.shutdown();
+    });
+
+    it('discoverServerTools 成功后调 detector.saveSnapshot', async () => {
+      const detector = { saveSnapshot: vi.fn(), onUpstreamNotification: vi.fn() };
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [{ name: 't1' }, { name: 't2' }] });
+      const manager = new ServerManager(
+        { s1: { type: 'stdio', command: 'echo', args: [], enabled: true } as any },
+        { changeDetector: detector as any },
+      );
+      await manager.initialize();
+      expect(detector.saveSnapshot).toHaveBeenCalledWith('s1', [{ name: 't1' }, { name: 't2' }]);
+      await manager.shutdown();
     });
   });
 });
