@@ -34,6 +34,30 @@ describe('UpstreamChangeFanout', () => {
     await fanout.flush();
     expect(publishToolListChanged).not.toHaveBeenCalled();
   });
+
+  it('一个 group refresh 失败不影响其他 group 的 publish', async () => {
+    // 实现行为：refresh 与 publish 同处一个 try 块，refresh 抛错则该 group 不 publish，
+    // catch 仅 logger.warn；per-group try/catch 保证失败不阻断其他 group。
+    const getGroupsForServer = vi.fn(() => [{ groupId: 'g1' }, { groupId: 'g2' }]);
+    const refreshGroupTools = vi.fn(async (groupId: string) => {
+      if (groupId === 'g1') throw new Error('refresh failed');
+    });
+    const publishToolListChanged = vi.fn();
+    const fanout = new UpstreamChangeFanout({
+      getGroupsForServer,
+      refreshGroupTools,
+      publishToolListChanged,
+      debounceMs: 0,
+    });
+    await fanout.handleServerChange('s1');
+    await fanout.flush();
+    // g1 refresh 失败 → 不 publish；g2 正常 → publish
+    expect(publishToolListChanged).toHaveBeenCalledWith('g2');
+    expect(publishToolListChanged).not.toHaveBeenCalledWith('g1');
+    // 两边都被尝试 refresh（失败不短路）
+    expect(refreshGroupTools).toHaveBeenCalledWith('g1', 's1');
+    expect(refreshGroupTools).toHaveBeenCalledWith('g2', 's1');
+  });
 });
 
 describe('防抖', () => {
