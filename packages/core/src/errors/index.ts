@@ -79,6 +79,12 @@ export enum ErrorCode {
   OAUTH_OUTBOUND_TOKEN_FETCH_FAILED = 6201,
   OAUTH_OUTBOUND_TOKEN_EXPIRED = 6202,
   OAUTH_OUTBOUND_ENV_VAR_MISSING = 6203,
+
+  // API-to-MCP 子系统错误（7000-7499）
+  API_TO_MCP_CONFIG_ERROR = 7001,
+  API_TO_MCP_BUILD_FAILED = 7002,
+  API_TO_MCP_EXECUTION_FAILED = 7003,
+  API_TO_MCP_INTERNAL = 7004,
 }
 
 /**
@@ -142,6 +148,12 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.OAUTH_OUTBOUND_TOKEN_FETCH_FAILED]: 'OAuth 出站 token 获取失败',
   [ErrorCode.OAUTH_OUTBOUND_TOKEN_EXPIRED]: 'OAuth 出站 token 已过期',
   [ErrorCode.OAUTH_OUTBOUND_ENV_VAR_MISSING]: 'OAuth 出站环境变量未定义',
+
+  // API-to-MCP 子系统错误
+  [ErrorCode.API_TO_MCP_CONFIG_ERROR]: 'API-to-MCP 配置错误',
+  [ErrorCode.API_TO_MCP_BUILD_FAILED]: 'API-to-MCP 请求构建失败',
+  [ErrorCode.API_TO_MCP_EXECUTION_FAILED]: 'API-to-MCP 执行失败',
+  [ErrorCode.API_TO_MCP_INTERNAL]: 'API-to-MCP 内部错误',
 };
 
 /**
@@ -215,6 +227,12 @@ export const ERROR_SEVERITY: Record<ErrorCode, ErrorSeverity> = {
   [ErrorCode.OAUTH_OUTBOUND_TOKEN_FETCH_FAILED]: ErrorSeverity.HIGH,
   [ErrorCode.OAUTH_OUTBOUND_TOKEN_EXPIRED]: ErrorSeverity.HIGH,
   [ErrorCode.OAUTH_OUTBOUND_ENV_VAR_MISSING]: ErrorSeverity.LOW,
+
+  // API-to-MCP 子系统错误
+  [ErrorCode.API_TO_MCP_CONFIG_ERROR]: ErrorSeverity.HIGH,
+  [ErrorCode.API_TO_MCP_BUILD_FAILED]: ErrorSeverity.MEDIUM,
+  [ErrorCode.API_TO_MCP_EXECUTION_FAILED]: ErrorSeverity.MEDIUM,
+  [ErrorCode.API_TO_MCP_INTERNAL]: ErrorSeverity.HIGH,
 };
 
 /**
@@ -280,6 +298,12 @@ const ERROR_HTTP_STATUS: Record<ErrorCode, number> = {
   [ErrorCode.OAUTH_OUTBOUND_TOKEN_FETCH_FAILED]: 500,
   [ErrorCode.OAUTH_OUTBOUND_TOKEN_EXPIRED]: 500,
   [ErrorCode.OAUTH_OUTBOUND_ENV_VAR_MISSING]: 500,
+
+  // API-to-MCP 子系统错误
+  [ErrorCode.API_TO_MCP_CONFIG_ERROR]: 500,
+  [ErrorCode.API_TO_MCP_BUILD_FAILED]: 400,
+  [ErrorCode.API_TO_MCP_EXECUTION_FAILED]: 502,
+  [ErrorCode.API_TO_MCP_INTERNAL]: 500,
 };
 
 /**
@@ -317,6 +341,7 @@ export class McpHubCoreError extends Error {
     if (code >= 3000 && code < 4000) return ErrorCategory.RUNTIME;
     if (code >= 4000 && code < 5000) return ErrorCategory.VALIDATION;
     if (code >= 6000 && code < 7000) return ErrorCategory.RUNTIME;
+    if (code >= 7000 && code < 8000) return ErrorCategory.RUNTIME;
     return ErrorCategory.SYSTEM;
   }
 
