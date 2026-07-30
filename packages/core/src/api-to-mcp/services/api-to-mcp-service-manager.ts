@@ -4,6 +4,7 @@
  */
 
 import { logger } from '../../utils/logger.js';
+import { ErrorCode, ServiceError } from '../../errors/index.js';
 import { ParameterValidatorImpl } from '../utils/parameter-validator.js';
 import { ApiConfigManagerImpl, ConfigLoadError } from './api-config-manager.js';
 import { ApiExecutorImpl } from './api-executor.js';
@@ -186,7 +187,12 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       logger.error('API转MCP服务管理器初始化失败', error as Error);
-      throw new Error(`初始化失败: ${(error as Error).message}`, { cause: error });
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_INTERNAL,
+        `初始化失败: ${(error as Error).message}`,
+        undefined,
+        { cause: (error as Error).message },
+      );
     }
   }
 
@@ -194,7 +200,7 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
     this.ensureInitialized();
 
     if (!this.configPath) {
-      throw new Error('配置文件路径未设置');
+      throw new ServiceError(ErrorCode.API_TO_MCP_CONFIG_ERROR, '配置文件路径未设置');
     }
 
     logger.info('重新加载API工具配置');
@@ -214,7 +220,12 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       logger.error('重新加载配置失败', error as Error);
-      throw new Error(`重新加载失败: ${(error as Error).message}`, { cause: error });
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_INTERNAL,
+        `重新加载失败: ${(error as Error).message}`,
+        undefined,
+        { cause: (error as Error).message },
+      );
     }
   }
 
@@ -483,7 +494,10 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
         await this.initialize(this.configPath);
         logger.info('服务管理器重启完成');
       } else {
-        throw new Error('无法重启：配置文件路径未设置');
+        throw new ServiceError(
+          ErrorCode.API_TO_MCP_CONFIG_ERROR,
+          '无法重启：配置文件路径未设置',
+        );
       }
     } catch (error) {
       this.status = ServiceStatus.ERROR;
@@ -526,7 +540,10 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
    */
   private ensureInitialized(): void {
     if (this.status !== ServiceStatus.RUNNING) {
-      throw new Error(`服务管理器未运行，当前状态: ${this.status}`);
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_INTERNAL,
+        `服务管理器未运行，当前状态: ${this.status}`,
+      );
     }
   }
 
@@ -578,7 +595,7 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
    */
   private async loadAndRegisterTools(): Promise<void> {
     if (!this.configPath) {
-      throw new Error('配置文件路径未设置');
+      throw new ServiceError(ErrorCode.API_TO_MCP_CONFIG_ERROR, '配置文件路径未设置');
     }
 
     // 加载配置，文件不存在时视为空配置
@@ -604,7 +621,10 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
     const toolsWithConfigs = tools.map((tool) => {
       const config = configs.find((c) => c.id === tool.name);
       if (!config) {
-        throw new Error(`找不到工具 '${tool.name}' 的配置`);
+        throw new ServiceError(
+          ErrorCode.API_TO_MCP_CONFIG_ERROR,
+          `找不到工具 '${tool.name}' 的配置`,
+        );
       }
       return { tool, config };
     });
