@@ -3,9 +3,8 @@
  * 支持URL路径参数替换、查询参数和请求头的模板处理，以及JSON请求体的参数替换
  */
 
-import { TemplateEngineImpl } from './template-engine.js';
-
 import { ErrorCode, ServiceError } from '../../errors/index.js';
+import { TemplateEngineImpl } from './template-engine.js';
 
 import type { ApiEndpointConfig } from '../types/api-config.js';
 import type { HttpRequestConfig } from '../types/http-client.js';
@@ -130,7 +129,10 @@ export class HttpRequestBuilderImpl implements HttpRequestBuilder {
     // 处理基础URL中的路径参数
     const urlResult = this.templateEngine.render(baseUrl, context);
     if (!urlResult.success) {
-      throw new ServiceError(ErrorCode.API_TO_MCP_BUILD_FAILED, `URL模板渲染失败: ${urlResult.error}`);
+      throw new ServiceError(
+        ErrorCode.API_TO_MCP_BUILD_FAILED,
+        `URL模板渲染失败: ${urlResult.error}`,
+      );
     }
     usedVariables.push(...urlResult.usedVariables);
 
@@ -208,7 +210,10 @@ export class HttpRequestBuilderImpl implements HttpRequestBuilder {
       // 字符串类型的请求体，直接进行模板替换
       const bodyResult = this.templateEngine.render(body, context);
       if (!bodyResult.success) {
-        throw new ServiceError(ErrorCode.API_TO_MCP_BUILD_FAILED, `请求体模板渲染失败: ${bodyResult.error}`);
+        throw new ServiceError(
+          ErrorCode.API_TO_MCP_BUILD_FAILED,
+          `请求体模板渲染失败: ${bodyResult.error}`,
+        );
       }
       return {
         body: bodyResult.result,

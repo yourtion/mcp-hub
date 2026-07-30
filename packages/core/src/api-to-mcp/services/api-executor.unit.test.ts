@@ -523,9 +523,8 @@ describe('ApiExecutorImpl', () => {
           errors: ['required_param is required'],
         }),
       };
-      const originalValidator = (
-        apiExecutor as unknown as { parameterValidator: unknown }
-      ).parameterValidator;
+      const originalValidator = (apiExecutor as unknown as { parameterValidator: unknown })
+        .parameterValidator;
       (apiExecutor as unknown as { parameterValidator: unknown }).parameterValidator =
         failingValidator;
 

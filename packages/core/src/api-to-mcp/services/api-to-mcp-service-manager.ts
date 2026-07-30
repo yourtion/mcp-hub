@@ -3,8 +3,8 @@
  * 负责整合所有组件，提供统一的服务接口
  */
 
-import { logger } from '../../utils/logger.js';
 import { ErrorCode, ServiceError } from '../../errors/index.js';
+import { logger } from '../../utils/logger.js';
 import { ParameterValidatorImpl } from '../utils/parameter-validator.js';
 import { ApiConfigManagerImpl, ConfigLoadError } from './api-config-manager.js';
 import { ApiExecutorImpl } from './api-executor.js';
@@ -494,10 +494,7 @@ export class ApiToMcpServiceManagerImpl implements ApiToMcpServiceManager {
         await this.initialize(this.configPath);
         logger.info('服务管理器重启完成');
       } else {
-        throw new ServiceError(
-          ErrorCode.API_TO_MCP_CONFIG_ERROR,
-          '无法重启：配置文件路径未设置',
-        );
+        throw new ServiceError(ErrorCode.API_TO_MCP_CONFIG_ERROR, '无法重启：配置文件路径未设置');
       }
     } catch (error) {
       this.status = ServiceStatus.ERROR;

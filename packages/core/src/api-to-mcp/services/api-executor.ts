@@ -197,10 +197,7 @@ export class ApiExecutorImpl implements ApiExecutor {
     }
 
     if (!buildResult.request) {
-      throw new ServiceError(
-        ErrorCode.API_TO_MCP_BUILD_FAILED,
-        '构建HTTP请求失败: 请求对象为空',
-      );
+      throw new ServiceError(ErrorCode.API_TO_MCP_BUILD_FAILED, '构建HTTP请求失败: 请求对象为空');
     }
 
     const request = buildResult.request;
