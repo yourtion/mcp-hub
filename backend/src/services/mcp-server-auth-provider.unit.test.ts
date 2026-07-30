@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { createServerAuthProvider } from './mcp-server-auth-provider.js';
 
 // mock SDK 的 ClientCredentialsProvider（避免真实 OAuth 流程）

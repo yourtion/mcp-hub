@@ -1,5 +1,5 @@
-import { ClientCredentialsProvider, type AuthProvider } from '@modelcontextprotocol/client';
 import { ConfigError, ErrorCode } from '@mcp-core/mcp-hub-core';
+import { ClientCredentialsProvider, type AuthProvider } from '@modelcontextprotocol/client';
 
 import type { ServerAuthConfig } from '@mcp-core/mcp-hub-share/config';
 
