@@ -10,3 +10,6 @@ backend/config/*
 .claude/hooks/
 .claude/session-config.json
 .claude/sessions.json
+
+# ZCode 工具会话产物（非项目文档）
+.zcode/

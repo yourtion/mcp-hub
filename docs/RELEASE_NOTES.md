@@ -1,6 +1,6 @@
 # MCP Hub Release Notes
 
-## Unreleased — MCP 2026-07-28 协议升级（P1 传输层 + P4 缓存语义 + P2 入站 OAuth）
+## Unreleased — MCP 2026-07-28 协议升级 + 代码债收尾 + 出站 MCP server OAuth
 
 ### 新增（P2：入站 OAuth 2.1 Protected Resource）
 
@@ -28,6 +28,34 @@
 - **`tools/list` 协议层 cacheHint**：Hub 在 `tools/list` 响应上下发 `ttlMs: 60000`（1 分钟）与 `cacheScope: 'public'`，提示 MCP 客户端（如 Claude Desktop）缓存工具列表、提升 LLM prompt cache 命中率。默认值可在组配置 `cacheHints.toolsListTtlMs` / `cacheHints.toolsListCacheScope` 按组覆盖。
 - **`tools/list` 确定性排序**：工具按"先 serverId 后 toolName"字典序稳定返回（2026-07-28 协议 SHOULD），保证客户端缓存稳定有效。
 - **新增 4 个 Hub 元数据 resources**：`group://{groupId}/status`（组运行时状态）、`group://{groupId}/servers`（组服务器列表与连接状态）、`hub://config`（全局配置概要）、`hub://version`（版本信息），每个 resource 带独立的 `ttlMs`/`cacheScope` cacheHint，客户端可通过 `resources/list` / `resources/read` 预读取。
+
+### 新增（P3：出站 REST API OAuth）
+
+- **api-to-mcp 子系统支持 OAuth 认证**：Hub 把外部 REST API 封装为 MCP 工具时，`AuthenticationStrategy` 的 `type: 'oauth'` 从抛错占位变为真实实现。
+- **支持的 grant**：`client_credentials`（服务间）+ `refresh_token`（自动续期）。
+- **token 缓存 + 并发去重**：内存缓存 token 与过期时间，in-flight Promise 防止并发 stampede。
+- **配置**：`api-to-mcp` 工具的 `authentication` 字段扩展为 discriminated union（bearer/apikey/basic/oauth），见 `packages/core/src/api-to-mcp/types/api-config.ts`。
+
+### 新增（P6：OTel trace context + 弃用项清理）
+
+- **OTel trace context 传播（SEP-414）**：Hub 作为网关，从入站请求 `_meta` 提取 `traceparent`/`tracestate`/`baggage`，经 AsyncLocalStorage 传播到出站 `callTool` 注入上游 server，实现分布式追踪。
+- **日志统一**：`backend/src` 生产代码 `console.*` 全面收敛到统一 Logger（`@mcp-core/mcp-hub-share`），requestId 链路追踪完整。
+- **弃用项清理**：经核实，Roots/Sampling/Logging/Tasks wire vocabulary 等弃用特性项目零实现，无需清理；HTTP+SSE 传输由 P1 处理。
+
+### 重构（代码债收尾）
+
+- **错误体系统一**：`packages/core/api-to-mcp` 子系统的 42 处裸 `throw new Error()` 统一为结构化 `ServiceError`（新增 7000-7499 错误码段 4 个粗粒度码，三表全覆盖）。executor 边界 catch-all 保持不变，结构化错误不逃逸到 MCP 协议层。
+- **删除轨道 B 死代码**：`mcp_hub_service.ts` 的 `McpHubError` 及 4 个子类删除（`GroupNotFoundError` 迁移为 `ServiceError(GROUP_NOT_FOUND)`），3 处 `instanceof McpHubError` 死分支移除。
+- **拆分上帝文件**：`backend/src/api/groups/index.ts` 从 1945 行拆为 487 行（仅路由注册）+ 3 个纯函数 service 模块（`group-service` / `tool-access-service` / `validation-key-service`），行为零变化。
+
+### 新增（出站 MCP server OAuth）
+
+- **Hub 连外部 MCP server 动态认证**：SSE/Streamable 类型的 server 连接接入 SDK 原生 `authProvider` 机制，支持 token 动态获取与自动刷新（替代此前只透传静态 `headers` 的方式）。
+- **两种机器认证**：
+  - `auth.type: 'bearer'`：已有静态 token，每次请求带上（过期则连接失败，需手动更新）。
+  - `auth.type: 'oauth'`：`client_credentials` 机器认证，复用 SDK 现成 `ClientCredentialsProvider`（自动发现 token endpoint + 获取 + 401 刷新重试）。
+- **secret 安全**：`clientSecret` / token 支持 `${ENV_VAR}` 环境变量引用（推荐）或明文，配置文件不留明文密钥。
+- **配置**：`HttpServerConfigSchema` 新增 `auth` 字段（discriminated union），见 `packages/share/src/config/schemas/server.schema.ts`。
 
 ### ⚠️ Breaking Changes（P1 传输层）
 
