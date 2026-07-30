@@ -725,3 +725,57 @@ describe('MRTR handler（P5）', () => {
     expect((result as { requestState: string }).requestState).toBe('upstream-raw');
   });
 });
+
+/**
+ * P5 Task 8：requestState.verify 注入 McpServer 构造（MRTR 启用接线点）。
+ *
+ * SDK 事实核实（见 task-8-report）：`createMcpHandler(factory, options)` 不读
+ * `options.requestState`（编译产物 index.mjs:1205 只解构 legacy/onerror/responseMode）。
+ * `requestState.verify` 属于 `ServerOptions`——`new McpServer(info, options)` 的第二参数，
+ * 由 McpServer 构造函数读取（mcp-DXXb3Vv3.mjs:725 `this._requestStateVerify = options?.requestState?.verify`）。
+ * 故 verify 必须落在 GroupMcpService.buildMcpServer() 的 McpServer 构造参数，而非 createMcpHandler options。
+ */
+describe('requestState.verify 注入（P5 Task 8）', () => {
+  beforeEach(() => {
+    constructorCalls.length = 0;
+    getAllConfigMock.mockReset();
+    getAllConfigMock.mockResolvedValue({
+      mcps: { servers: {} },
+      groups: {
+        testgroup: { id: 'testgroup', name: 'T', servers: ['s1'], tools: [] },
+      },
+    });
+  });
+
+  it('注入 mrtrRelay 时 McpServer 构造收到 requestState.verify（函数）', async () => {
+    const mrtrRelay = new MrtrRelayService({ key: makeKey(), ttlSeconds: 600 });
+    const svc = new GroupMcpService('testgroup', makeCoreManagerMock(), mrtrRelay);
+    await svc.initialize();
+
+    expect(constructorCalls).toHaveLength(1);
+    const { options } = constructorCalls[0]!;
+    expect(options).toMatchObject({
+      requestState: { verify: expect.any(Function) },
+    });
+  });
+
+  it('未注入 mrtrRelay 时 McpServer 构造不带 requestState.verify', async () => {
+    const svc = new GroupMcpService('testgroup', makeCoreManagerMock());
+    await svc.initialize();
+
+    expect(constructorCalls).toHaveLength(1);
+    const { options } = constructorCalls[0]! as { options?: { requestState?: unknown } };
+    expect(options?.requestState).toBeUndefined();
+  });
+
+  it('注入的 verify 与 mrtrRelay.verify 是同一函数引用', async () => {
+    const mrtrRelay = new MrtrRelayService({ key: makeKey(), ttlSeconds: 600 });
+    const svc = new GroupMcpService('testgroup', makeCoreManagerMock(), mrtrRelay);
+    await svc.initialize();
+
+    const { options } = constructorCalls[0]! as {
+      options: { requestState: { verify: unknown } };
+    };
+    expect(options.requestState.verify).toBe(mrtrRelay.verify);
+  });
+});

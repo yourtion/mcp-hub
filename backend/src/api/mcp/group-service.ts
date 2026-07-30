@@ -171,6 +171,15 @@ export class GroupMcpService {
             cacheScope: this.groupCacheHints.cacheScope,
           },
         },
+        // P5 MRTR：注入 requestState.verify 钩子（HMAC-SHA256 验签客户端回传的 Hub state）。
+        // SDK 事实（核实见 task-8-report）：此字段属 ServerOptions（McpServer 构造第二参数），
+        // 由 McpServer 构造函数读取（mcp-DXXb3Vv3.mjs:725 this._requestStateVerify = options?.requestState?.verify），
+        // 不是 createMcpHandler options（后者 index.mjs:1205 只解构 legacy/onerror/responseMode，不读 requestState）。
+        // mrtrRelay 未注入时省略 verify——SDK 保持 passthrough（ctx.mcpReq.requestState() 返回原始 wire 字符串，
+        // 视为 attacker-controlled；handler 走「识别但不中转」保底路径）。
+        ...(this.mrtrRelay && {
+          requestState: { verify: this.mrtrRelay.verify },
+        }),
       },
     );
   }

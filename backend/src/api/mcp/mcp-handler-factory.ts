@@ -17,11 +17,70 @@
  */
 import { createMcpHandler } from '@modelcontextprotocol/server';
 
+import { MrtrRelayService } from '../../services/mrtr-relay-service.js';
 import { getCoreServiceManager } from '../../services/service-registry.js';
 import { logger } from '../../utils/logger.js';
 import { GroupMcpService } from './group-service.js';
 
 import type { McpHttpHandler } from '@modelcontextprotocol/server';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// P5 MRTR：Hub 级 requestState codec 单例。
+//
+// 必须是模块级单例（所有 group 共用同一个 codec/key），否则不同 group 的 GroupMcpService
+// 各持不同 key mint 的 state，客户端在 group 间（或同一 group 缓存失效重建后）回传的 state
+// 会 verify 失败。factory 模块级构造一次，注入每个 GroupMcpService 构造，不随 group 缓存
+// 失效而重建。
+//
+// key/ttl 暂用环境变量 + 常量（Task 10 再接 system.json 的 mrtr.stateKey/stateTtlSeconds）。
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * MRTR requestState 的 TTL（秒）。Task 10 接 system.json 的 mrtr.stateTtlSeconds。
+ */
+const MRTR_STATE_TTL_SECONDS = 600;
+
+/**
+ * 解析 MRTR requestState 的 HMAC key（32 字节）。
+ *
+ * 来源优先级（Task 10 前的临时策略）：
+ *   1. 环境变量 `MRTR_REQUEST_STATE_KEY`（hex 编码，须解码后 ≥32 字节）
+ *   2. 否则启动时随机生成 32 字节
+ *
+ * 随机 key 意味着进程重启后旧 state 全部失效（可接受：TTL 本就 600s）。
+ * Task 10 会改为优先读 system.json 的 mrtr.stateKey（hex），缺失再随机生成。
+ */
+function resolveMrtrKey(): Uint8Array {
+  const envKey = process.env['MRTR_REQUEST_STATE_KEY'];
+  if (envKey) {
+    // hex 解码；非法或过短时记录并回退随机 key（fail-open，不阻断启动）
+    try {
+      const bytes = Buffer.from(envKey, 'hex');
+      if (bytes.byteLength >= 32) {
+        return new Uint8Array(bytes);
+      }
+      logger.warn(
+        'MRTR_REQUEST_STATE_KEY 解码后不足 32 字节，回退随机生成 key（进程重启后旧 state 失效）',
+        { byteLength: bytes.byteLength },
+      );
+    } catch (error) {
+      logger.warn('MRTR_REQUEST_STATE_KEY hex 解码失败，回退随机生成 key', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  const key = new Uint8Array(32);
+  crypto.getRandomValues(key);
+  return key;
+}
+
+/**
+ * 进程级 MRTR relay 单例。模块加载时构造一次，所有 GroupMcpService 共享。
+ */
+const mrtrRelay = new MrtrRelayService({
+  key: resolveMrtrKey(),
+  ttlSeconds: MRTR_STATE_TTL_SECONDS,
+});
 
 // groupServices 缓存与 group-router 共享（同一模块内单例），统一关闭。
 const groupServices: Map<string, GroupMcpService> = new Map();
@@ -68,7 +127,9 @@ export async function ensureGroupMcpService(groupId: string): Promise<GroupMcpSe
   const promise = (async () => {
     logger.info('为组创建MCP服务实例', { groupId });
     const coreServiceManager = await getCoreServiceManager();
-    const groupService = new GroupMcpService(groupId, coreServiceManager);
+    // P5 MRTR：注入模块级 relay 单例，使 handler 既能 mint Hub state（input_required），
+    // 又能让 SDK 在 McpServer 构造时挂上 requestState.verify 钩子（验签客户端回传的 state）。
+    const groupService = new GroupMcpService(groupId, coreServiceManager, mrtrRelay);
     await groupService.initialize();
 
     groupServices.set(groupId, groupService);
