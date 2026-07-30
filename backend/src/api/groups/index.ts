@@ -14,7 +14,13 @@ import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { getAllConfig, saveConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 import { performanceMonitor } from '../../utils/performance-monitor.js';
-import { estimateToolComplexity, validateGroupData, validateGroupId } from './validation.js';
+import {
+  ToolAccessServiceError,
+  configureGroupTools,
+  getGroupAvailableTools,
+  getGroupTools,
+  validateToolAccess,
+} from './tool-access-service.js';
 import {
   ValidationKeyServiceError,
   createValidationKey,
@@ -23,11 +29,11 @@ import {
   getValidationKey,
   validateKey,
 } from './validation-key-service.js';
+import { validateGroupData, validateGroupId } from './validation.js';
 
 import type {
   ConfigureGroupToolsRequest,
   CreateGroupRequest,
-  GroupAvailableToolsResponse,
   GroupConfig,
   SetGroupValidationKeyRequest,
   UpdateGroupRequest,
@@ -466,82 +472,22 @@ groupsApi.get('/:groupId/tools', async (c) => {
     const groupId = c.req.param('groupId');
     logger.debug('获取组工具列表', { groupId });
 
-    const config = await getAllConfig();
-    const groups = config.groups;
-    const groupConfig = groups[groupId];
-
-    if (!groupConfig) {
+    const response = await getGroupTools(groupId);
+    return successResponse(c, response);
+  } catch (error) {
+    if (error instanceof ToolAccessServiceError) {
       return c.json(
         {
           success: false,
           error: {
-            code: 'GROUP_NOT_FOUND',
-            message: `组 '${groupId}' 不存在`,
+            code: error.code,
+            message: error.message,
           },
           requestId: c.get('requestId'),
         },
-        { status: 404 },
+        { status: error.status },
       );
     }
-
-    const coreServiceManager = await getCoreServiceManager();
-
-    const groupServers = groupConfig.servers || [];
-    const allTools = await coreServiceManager.getAllTools();
-
-    // 获取组内工具
-    let groupTools = allTools.filter((tool) => groupServers.includes(tool.serverId || ''));
-
-    // 应用组工具过滤
-    if (groupConfig.tools && groupConfig.tools.length > 0) {
-      groupTools = groupTools.filter((tool) => groupConfig.tools.includes(tool.name));
-    }
-
-    // 按服务器分组
-    const toolsByServer = groupTools.reduce(
-      (acc, tool) => {
-        const serverId = tool.serverId || 'unknown';
-        if (!acc[serverId]) {
-          acc[serverId] = [];
-        }
-        acc[serverId].push({
-          name: tool.name,
-          description: tool.description,
-          parameters: tool.parameters,
-          category: tool.category,
-          version: tool.version,
-          deprecated: tool.deprecated,
-        });
-        return acc;
-      },
-      {} as Record<string, Record<string, unknown>[]>,
-    );
-
-    const response = {
-      groupId,
-      tools: groupTools.map((tool) => ({
-        name: tool.name,
-        description: tool.description,
-        serverId: tool.serverId,
-        parameters: tool.parameters,
-        category: tool.category,
-        version: tool.version,
-        deprecated: tool.deprecated,
-      })),
-      toolsByServer,
-      totalTools: groupTools.length,
-      serverCount: Object.keys(toolsByServer).length,
-      toolFilter: groupConfig.tools || [],
-    };
-
-    logger.info('组工具列表查询完成', {
-      groupId,
-      totalTools: response.totalTools,
-      serverCount: response.serverCount,
-    });
-
-    return successResponse(c, response);
-  } catch (error) {
     logger.error('获取组工具列表失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
@@ -1011,167 +957,22 @@ groupsApi.post('/:groupId/tools', async (c) => {
     const body = (await c.req.json()) as ConfigureGroupToolsRequest;
     logger.debug('配置组工具过滤请求', { groupId, body });
 
-    // 验证组ID
-    const idValidation = validateGroupId(groupId);
-    if (!idValidation.isValid) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'INVALID_GROUP_ID',
-            message: idValidation.error,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 验证请求数据
-    if (!Array.isArray(body.tools)) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: '工具列表必须是数组',
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 验证工具名称
-    for (let i = 0; i < body.tools.length; i++) {
-      const toolName = body.tools[i];
-      if (!toolName || typeof toolName !== 'string') {
-        return c.json(
-          {
-            success: false,
-            error: {
-              code: 'VALIDATION_ERROR',
-              message: `工具列表[${i}]必须是非空字符串`,
-            },
-            requestId: c.get('requestId'),
-          },
-          { status: 400 },
-        );
-      }
-    }
-
-    // 检查重复的工具名称
-    const uniqueTools = new Set(body.tools);
-    if (uniqueTools.size !== body.tools.length) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: '工具列表包含重复的工具名称',
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 检查组是否存在
-    const config = await getAllConfig();
-    const groups = config.groups;
-    const existingGroup = groups[groupId];
-
-    if (!existingGroup) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: `组 '${groupId}' 不存在`,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 404 },
-      );
-    }
-
-    // 验证工具是否在组的服务器中可用
-    try {
-      const coreServiceManager = await getCoreServiceManager();
-      const allTools = await coreServiceManager.getAllTools();
-      const groupServers = existingGroup.servers || [];
-      const availableTools = allTools.filter((tool) => groupServers.includes(tool.serverId || ''));
-      const availableToolNames = availableTools.map((tool) => tool.name);
-
-      const unavailableTools = body.tools.filter(
-        (toolName) => !availableToolNames.includes(toolName),
-      );
-
-      if (unavailableTools.length > 0) {
-        logger.warn('配置的工具在组中不可用', {
-          groupId,
-          unavailableTools,
-          availableTools: availableToolNames,
-        });
-        // 不阻止配置，但记录警告
-      }
-    } catch (error) {
-      logger.warn('验证工具可用性时出错', {
-        groupId,
-        error: (error as Error).message,
-      });
-    }
-
-    // 更新组的工具过滤配置
-    const updatedGroup = {
-      ...existingGroup,
-      tools: body.tools,
-    };
-
-    // 保存到配置文件
-    const updatedGroups = {
-      ...groups,
-      [groupId]: updatedGroup,
-    };
-
-    await saveConfig('group.json', updatedGroups as GroupConfig);
-
-    // 重新初始化核心服务管理器以应用新配置
-    try {
-      await reloadCoreServiceManager();
-    } catch (error) {
-      logger.warn('重新初始化核心服务管理器失败', {
-        error: (error as Error).message,
-      });
-    }
-
-    logger.info('组工具过滤配置成功', {
-      groupId,
-      toolCount: body.tools.length,
-      tools: body.tools,
-    });
-
-    return successResponse(c, {
-      groupId,
-      tools: body.tools,
-      toolCount: body.tools.length,
-      filterMode: body.filterMode || 'whitelist',
-      validation: {
-        enabled: existingGroup.validation?.enabled || false,
-        requiresKey: existingGroup.validation?.enabled && !!existingGroup.validation?.validationKey,
-      },
-      impact: {
-        previouslyFilteredTools: existingGroup.tools?.length || 0,
-        newlyFilteredTools: body.tools.length,
-        change: body.tools.length - (existingGroup.tools?.length || 0),
-      },
-      accessControl: {
-        toolAccessRestricted: body.tools.length > 0,
-        unrestrictedAccess: body.tools.length === 0,
-      },
-      lastUpdated: new Date().toISOString(),
-    });
+    const response = await configureGroupTools(groupId, body);
+    return successResponse(c, response);
   } catch (error) {
+    if (error instanceof ToolAccessServiceError) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+          },
+          requestId: c.get('requestId'),
+        },
+        { status: error.status },
+      );
+    }
     logger.error('配置组工具过滤失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
@@ -1185,122 +986,22 @@ groupsApi.get('/:groupId/available-tools', async (c) => {
     const groupId = c.req.param('groupId');
     logger.debug('获取组可用工具请求', { groupId });
 
-    // 验证组ID
-    const idValidation = validateGroupId(groupId);
-    if (!idValidation.isValid) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'INVALID_GROUP_ID',
-            message: idValidation.error,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 检查组是否存在
-    const config = await getAllConfig();
-    const groups = config.groups;
-    const groupConfig = groups[groupId];
-
-    if (!groupConfig) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: `组 '${groupId}' 不存在`,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 404 },
-      );
-    }
-
-    const coreServiceManager = await getCoreServiceManager();
-
-    const groupServers = groupConfig.servers || [];
-    const allTools = await coreServiceManager.getAllTools();
-
-    // 获取组内所有可用工具
-    const availableTools = allTools.filter((tool) => groupServers.includes(tool.serverId || ''));
-
-    // 应用工具过滤
-    const toolFilter = groupConfig.tools || [];
-    let filteredTools = availableTools;
-
-    if (toolFilter.length > 0) {
-      // 白名单模式：只显示配置的工具
-      filteredTools = availableTools.filter((tool) => toolFilter.includes(tool.name));
-    }
-
-    // 按服务器分组
-    const toolsByServer = filteredTools.reduce(
-      (acc, tool) => {
-        const serverId = tool.serverId || 'unknown';
-        if (!acc[serverId]) {
-          acc[serverId] = [];
-        }
-        acc[serverId].push({
-          name: tool.name,
-          description: tool.description || '',
-          serverId: tool.serverId || '',
-          serverName: tool.serverId || '',
-          inputSchema: { type: 'object' as const, properties: {} },
-          status: 'available' as const,
-        });
-        return acc;
-      },
-      {} as GroupAvailableToolsResponse['toolsByServer'],
-    );
-
-    // 构建响应
-    const response: GroupAvailableToolsResponse = {
-      groupId,
-      tools: filteredTools.map((tool) => ({
-        name: tool.name,
-        description: tool.description || '',
-        serverId: tool.serverId || '',
-        serverName: tool.serverId || '',
-        inputSchema: { type: 'object' as const, properties: {} },
-        status: 'available' as const,
-      })),
-      toolsByServer,
-      totalTools: availableTools.length,
-      filteredTools: filteredTools.length,
-      toolFilter: [...toolFilter],
-      filtering: {
-        isFilteringEnabled: toolFilter.length > 0,
-        filterRatio:
-          availableTools.length > 0
-            ? Math.round((filteredTools.length / availableTools.length) * 100)
-            : 100,
-        excludedTools: availableTools.length - filteredTools.length,
-      },
-      categories: [...new Set(filteredTools.map((tool) => tool.category || 'general'))],
-      serverDistribution: Object.keys(toolsByServer).map((serverId) => ({
-        serverId,
-        toolCount: toolsByServer[serverId].length,
-        percentage:
-          filteredTools.length > 0
-            ? Math.round((toolsByServer[serverId].length / filteredTools.length) * 100)
-            : 0,
-      })),
-      timestamp: new Date().toISOString(),
-    };
-
-    logger.info('组可用工具查询完成', {
-      groupId,
-      totalTools: response.totalTools,
-      filteredTools: response.filteredTools,
-      serverCount: Object.keys(toolsByServer).length,
-    });
-
+    const response = await getGroupAvailableTools(groupId);
     return successResponse(c, response);
   } catch (error) {
+    if (error instanceof ToolAccessServiceError) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+          },
+          requestId: c.get('requestId'),
+        },
+        { status: error.status },
+      );
+    }
     logger.error('获取组可用工具失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
@@ -1315,135 +1016,22 @@ groupsApi.post('/:groupId/validate-tool-access', async (c) => {
     const body = (await c.req.json()) as { toolName: string };
     logger.debug('验证工具访问权限请求', { groupId, toolName: body.toolName });
 
-    // 验证组ID
-    const idValidation = validateGroupId(groupId);
-    if (!idValidation.isValid) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'INVALID_GROUP_ID',
-            message: idValidation.error,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 验证工具名称
-    if (!body.toolName || typeof body.toolName !== 'string') {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: '工具名称不能为空',
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 400 },
-      );
-    }
-
-    // 检查组是否存在
-    const config = await getAllConfig();
-    const groups = config.groups;
-    const groupConfig = groups[groupId];
-
-    if (!groupConfig) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: `组 '${groupId}' 不存在`,
-          },
-          requestId: c.get('requestId'),
-        },
-        { status: 404 },
-      );
-    }
-
-    const coreServiceManager = await getCoreServiceManager();
-
-    // 检查工具是否在组中可用
-    const groupServers = groupConfig.servers || [];
-    const allTools = await coreServiceManager.getAllTools();
-
-    // 查找工具
-    const tool = allTools.find(
-      (t) => t.name === body.toolName && groupServers.includes(t.serverId || ''),
-    );
-
-    if (!tool) {
-      return successResponse(c, {
-        groupId,
-        toolName: body.toolName,
-        hasAccess: false,
-        reason: 'TOOL_NOT_FOUND_IN_GROUP',
-        message: '工具在组中不可用',
-      });
-    }
-
-    // 检查工具过滤
-    const toolFilter = groupConfig.tools || [];
-    let hasAccess = true;
-    let reason = 'ACCESS_GRANTED';
-    let message = '工具访问已授权';
-
-    if (toolFilter.length > 0) {
-      // 白名单模式：工具必须在允许列表中
-      if (!toolFilter.includes(body.toolName)) {
-        hasAccess = false;
-        reason = 'TOOL_NOT_IN_WHITELIST';
-        message = '工具不在组的允许列表中';
-      }
-    }
-
-    logger.info('工具访问权限验证完成', {
-      groupId,
-      toolName: body.toolName,
-      hasAccess,
-      reason,
-    });
-
-    return successResponse(c, {
-      groupId,
-      toolName: body.toolName,
-      hasAccess,
-      reason,
-      message,
-      validation: {
-        groupHasValidation: groupConfig.validation?.enabled || false,
-        toolInFilterList: toolFilter.length > 0 ? toolFilter.includes(body.toolName) : true,
-        filterMode: toolFilter.length > 0 ? 'whitelist' : 'none',
-      },
-      toolInfo: hasAccess
-        ? {
-            name: tool.name,
-            description: tool.description,
-            serverId: tool.serverId,
-            serverName: tool.serverId || '',
-            category: tool.category || 'general',
-            version: tool.version || '1.0.0',
-            deprecated: tool.deprecated || false,
-            inputSchema: { type: 'object', properties: {} },
-            estimatedComplexity: estimateToolComplexity({
-              type: 'object',
-              properties: {},
-            }),
-          }
-        : undefined,
-      alternatives:
-        !hasAccess && toolFilter.length > 0
-          ? allTools
-              .filter((t) => toolFilter.includes(t.name))
-              .slice(0, 5)
-              .map((t) => ({ name: t.name, description: t.description }))
-          : undefined,
-    });
+    const response = await validateToolAccess(groupId, body.toolName);
+    return successResponse(c, response);
   } catch (error) {
+    if (error instanceof ToolAccessServiceError) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+          },
+          requestId: c.get('requestId'),
+        },
+        { status: error.status },
+      );
+    }
     logger.error('验证工具访问权限失败', error as Error);
     return errorResponse(c, error as Error, 500);
   }
