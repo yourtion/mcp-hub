@@ -1170,7 +1170,7 @@ async executeToolOnServerWithContext(
 }
 ```
 
-> **注意**：SDK v2 `callTool` 如何传 `inputResponses`/`requestState` 需在 Task 0 GA 升级后确认实际字段名。可能是 `callTool(params, resultSchema, options)` 的 options 里有 `requestState` / `inputResponses` 字段，或通过 params。**本步实现时核实 GA 版 Client.callTool 签名**，在 commit message 记录实际采用的传参方式。
+> **注意（已由 Task 6 实现核实）**：SDK v2 GA `callTool(params, options?)` 是 2 参数（无 resultSchema）。`inputResponses`/`requestState` 是 **callTool params 的顶层成员**（与 `name`/`arguments`/`_meta` 平级），**不是** `options._meta`。证据：SDK 编译产物 `src-D_zzAWoS.mjs:2975` 的 `retryParamsShape = { inputResponses, requestState }` 被 spread 进 `callToolParamsShape` 顶层，`RETRY_PARAMS_KEYS` 注释明确「顶层 params 成员，仅 client-initiated 请求保留」。trace 三件套（traceparent/tracestate/baggage）仍走 `params._meta`，与重试字段共存。**Task 7/9 实现时遵循此真实签名，不要放 _meta。**
 
 - [ ] **Step 6: 运行测试确认通过**
 
