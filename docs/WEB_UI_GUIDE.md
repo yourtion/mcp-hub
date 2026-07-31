@@ -1,6 +1,6 @@
-# MCP Hub Web 界面使用指南
+# MCP Knot Web 界面使用指南
 
-本指南详细介绍如何使用 MCP Hub 的 Web 管理界面。
+本指南详细介绍如何使用 MCP Knot 的 Web 管理界面。
 
 ## 目录
 

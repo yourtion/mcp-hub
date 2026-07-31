@@ -1,6 +1,6 @@
 # 组路由功能使用指南
 
-MCP Hub 的组路由功能允许您通过特定的组路径 (`/:group/mcp`) 访问不同组的 MCP 工具，实现更好的工具组织和访问控制。
+MCP Knot 的组路由功能允许您通过特定的组路径 (`/:group/mcp`) 访问不同组的 MCP 工具，实现更好的工具组织和访问控制。
 
 ## 概述
 
@@ -513,7 +513,7 @@ curl -X POST http://localhost:8181/analysis/mcp/call_tool \
 
 ## 参考资料
 
-- [MCP Hub API 参考](API_REFERENCE.md)
+- [MCP Knot API 参考](API_REFERENCE.md)
 - [配置文件格式](CONFIGURATION.md)
 - [故障排除指南](TROUBLESHOOTING.md)
 - [安全最佳实践](SECURITY.md)

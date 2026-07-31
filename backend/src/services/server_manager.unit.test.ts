@@ -538,7 +538,7 @@ describe('ServerManager', () => {
       // Verify that the client was created (environment variables are passed to transport)
       expect(MockClient).toHaveBeenCalledWith(
         expect.objectContaining({
-          name: 'mcp-hub-test-server-1',
+          name: 'mcp-knot-test-server-1',
           version: '1.0.0',
         }),
         expect.objectContaining({

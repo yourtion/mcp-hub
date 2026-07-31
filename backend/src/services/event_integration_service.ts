@@ -179,12 +179,12 @@ export class EventIntegrationService {
     // 添加活动记录
     this.dashboardService.addActivity({
       type: 'system_start',
-      message: 'MCP Hub 系统启动完成',
+      message: 'MCP Knot 系统启动完成',
       severity: 'info',
     });
 
     // 广播系统告警
-    this.sseEventManager.broadcastSystemAlert('info', 'MCP Hub 系统已启动', 'system_lifecycle');
+    this.sseEventManager.broadcastSystemAlert('info', 'MCP Knot 系统已启动', 'system_lifecycle');
   }
 
   /**

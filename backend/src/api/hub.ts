@@ -30,7 +30,7 @@ hubApi.get('/health', async (c) => {
             service: {
               status: 'initializing',
               isInitialized: false,
-              message: 'MCP Hub Service is still initializing or failed to initialize',
+              message: 'MCP Knot Service is still initializing or failed to initialize',
             },
             timestamp: new Date().toISOString(),
           },

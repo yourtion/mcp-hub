@@ -1,4 +1,4 @@
-// Export MCP Hub types
+// Export MCP Knot types
 
 export * from './auth.js';
 export * from './dashboard.js';

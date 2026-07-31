@@ -106,14 +106,14 @@ export class CliMcpServer {
       // 创建MCP服务器实例
       this.server = new McpServer(
         {
-          name: 'mcp-hub-cli',
+          name: 'mcp-knot-cli',
           version: '1.0.0',
         },
         {
           capabilities: {
             tools: {},
           },
-          instructions: 'MCP Hub CLI - 聚合多个MCP服务的命令行界面',
+          instructions: 'MCP Knot CLI - 聚合多个MCP服务的命令行界面',
         },
       );
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# MCP Hub 生产环境部署脚本
+# MCP Knot 生产环境部署脚本
 # 用法: ./scripts/deploy-production.sh [options]
 # 选项:
 #   --skip-backup    跳过备份
@@ -120,15 +120,15 @@ log_info "前置检查完成"
 if [ "$SKIP_BACKUP" = false ]; then
     log_info "创建配置备份..."
     
-    BACKUP_DIR="/backup/mcp-hub"
+    BACKUP_DIR="/backup/mcp-knot"
     DATE=$(date +%Y%m%d_%H%M%S)
     
     # 创建备份目录
     mkdir -p $BACKUP_DIR
     
     # 备份配置文件
-    if [ -d "/etc/mcp-hub/config" ]; then
-        tar -czf $BACKUP_DIR/config_$DATE.tar.gz /etc/mcp-hub/config
+    if [ -d "/etc/mcp-knot/config" ]; then
+        tar -czf $BACKUP_DIR/config_$DATE.tar.gz /etc/mcp-knot/config
         log_info "配置已备份到: $BACKUP_DIR/config_$DATE.tar.gz"
     else
         log_warn "配置目录不存在，跳过备份"
@@ -216,8 +216,8 @@ confirm "确认部署到生产环境？"
 log_info "停止当前服务..."
 
 # 检查服务是否运行
-if pm2 list | grep -q "mcp-hub-api"; then
-    pm2 stop mcp-hub-api
+if pm2 list | grep -q "mcp-knot-api"; then
+    pm2 stop mcp-knot-api
     log_info "服务已停止"
 else
     log_warn "服务未运行"
@@ -228,28 +228,28 @@ fi
 log_info "更新配置文件..."
 
 # 创建配置目录
-sudo mkdir -p /etc/mcp-hub/config
-sudo mkdir -p /var/log/mcp-hub
+sudo mkdir -p /etc/mcp-knot/config
+sudo mkdir -p /var/log/mcp-knot
 
 # 复制配置文件（如果不存在）
-if [ ! -f "/etc/mcp-hub/config/system.json" ]; then
-    sudo cp backend/config/system.json /etc/mcp-hub/config/
+if [ ! -f "/etc/mcp-knot/config/system.json" ]; then
+    sudo cp backend/config/system.json /etc/mcp-knot/config/
     log_info "已复制系统配置"
 fi
 
-if [ ! -f "/etc/mcp-hub/config/mcp_server.json" ]; then
-    sudo cp backend/config/mcp_server.json /etc/mcp-hub/config/
+if [ ! -f "/etc/mcp-knot/config/mcp_server.json" ]; then
+    sudo cp backend/config/mcp_server.json /etc/mcp-knot/config/
     log_info "已复制 MCP 服务器配置"
 fi
 
-if [ ! -f "/etc/mcp-hub/config/group.json" ]; then
-    sudo cp backend/config/group.json /etc/mcp-hub/config/
+if [ ! -f "/etc/mcp-knot/config/group.json" ]; then
+    sudo cp backend/config/group.json /etc/mcp-knot/config/
     log_info "已复制组配置"
 fi
 
 # 设置权限
-sudo chown -R $USER:$USER /etc/mcp-hub
-sudo chown -R $USER:$USER /var/log/mcp-hub
+sudo chown -R $USER:$USER /etc/mcp-knot
+sudo chown -R $USER:$USER /var/log/mcp-knot
 
 log_info "配置更新完成"
 
@@ -260,10 +260,10 @@ log_info "启动服务..."
 cd backend
 
 # 启动服务
-if pm2 list | grep -q "mcp-hub-api"; then
-    pm2 restart mcp-hub-api
+if pm2 list | grep -q "mcp-knot-api"; then
+    pm2 restart mcp-knot-api
 else
-    pm2 start dist/src/index.js --name mcp-hub-api
+    pm2 start dist/src/index.js --name mcp-knot-api
 fi
 
 # 保存 PM2 配置
@@ -279,11 +279,11 @@ log_info "执行健康检查..."
 sleep 5
 
 # 检查服务状态
-if pm2 list | grep -q "online.*mcp-hub-api"; then
+if pm2 list | grep -q "online.*mcp-knot-api"; then
     log_info "服务运行正常"
 else
     log_error "服务启动失败"
-    pm2 logs mcp-hub-api --lines 50
+    pm2 logs mcp-knot-api --lines 50
     exit 1
 fi
 
@@ -292,7 +292,7 @@ if curl -f http://localhost:3000/health > /dev/null 2>&1; then
     log_info "健康检查通过"
 else
     log_error "健康检查失败"
-    pm2 logs mcp-hub-api --lines 50
+    pm2 logs mcp-knot-api --lines 50
     exit 1
 fi
 
@@ -306,7 +306,7 @@ log_info "时间: $(date)"
 log_info ""
 log_info "后续步骤:"
 log_info "1. 检查服务状态: pm2 status"
-log_info "2. 查看日志: pm2 logs mcp-hub-api"
+log_info "2. 查看日志: pm2 logs mcp-knot-api"
 log_info "3. 监控服务: pm2 monit"
 log_info "4. 访问 Web 界面: http://your-domain.com"
 log_info ""

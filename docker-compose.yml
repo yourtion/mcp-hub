@@ -1,14 +1,14 @@
-# MCP Hub Docker Compose 配置
+# MCP Knot Docker Compose 配置
 
 version: '3.8'
 
 services:
   # API 服务器
-  mcp-hub-api:
+  mcp-knot-api:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    container_name: mcp-hub-api
+    container_name: mcp-knot-api
     ports:
       - '8181:8181'
     environment:
@@ -33,28 +33,28 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - mcp-hub-network
+      - mcp-knot-network
 
   # 前端服务器（可选）
-  mcp-hub-web:
+  mcp-knot-web:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-    container_name: mcp-hub-web
+    container_name: mcp-knot-web
     ports:
       - '8180:80'
     depends_on:
-      - mcp-hub-api
+      - mcp-knot-api
     environment:
-      - VITE_API_BASE_URL=http://mcp-hub-api:8181
+      - VITE_API_BASE_URL=http://mcp-knot-api:8181
     restart: unless-stopped
     networks:
-      - mcp-hub-network
+      - mcp-knot-network
 
 networks:
-  mcp-hub-network:
+  mcp-knot-network:
     driver: bridge
 
 volumes:
-  mcp-hub-logs:
+  mcp-knot-logs:
     driver: local

@@ -1,6 +1,6 @@
 # 故障排除指南
 
-本指南帮助您诊断和解决 MCP Hub 使用过程中遇到的常见问题。
+本指南帮助您诊断和解决 MCP Knot 使用过程中遇到的常见问题。
 
 ## 快速诊断
 
@@ -25,13 +25,13 @@ curl http://localhost:8181/api/system/metrics
 
 ```bash
 # API 服务器日志
-pnpm --filter @mcp-core/mcp-hub-api logs
+pnpm --filter @mcp-core/mcp-knot-api logs
 
 # Docker 环境日志
-docker-compose logs -f mcp-hub-api
+docker-compose logs -f mcp-knot-api
 
 # 系统日志文件
-tail -f logs/mcp-hub.log
+tail -f logs/mcp-knot.log
 ```
 
 ## 常见问题
@@ -65,7 +65,7 @@ pnpm dev:api
 **症状**:
 
 ```
-Error: Cannot find module '@mcp-core/mcp-hub-core'
+Error: Cannot find module '@mcp-core/mcp-knot-core'
 ```
 
 **解决方案**:
@@ -283,7 +283,7 @@ Error: Tool 'write_file' not allowed in group 'development'
 **症状**:
 
 ```
-bash: mcp-hub: command not found
+bash: mcp-knot: command not found
 ```
 
 **解决方案**:
@@ -294,10 +294,10 @@ cd packages/cli
 pnpm build
 
 # 全局安装
-npm install -g @mcp-core/mcp-hub-cli
+npm install -g @mcp-core/mcp-knot-cli
 
 # 或使用本地路径
-./packages/cli/bin/mcp-hub.js
+./packages/cli/bin/mcp-knot.js
 
 # 检查 PATH 环境变量
 echo $PATH
@@ -315,7 +315,7 @@ Error: Invalid CLI configuration
 
 ```bash
 # 创建默认配置
-mcp-hub --init
+mcp-knot --init
 
 # 或手动创建
 cat > mcp_server.json << EOF
@@ -331,7 +331,7 @@ cat > mcp_server.json << EOF
 EOF
 
 # 验证配置
-mcp-hub --config mcp_server.json --validate
+mcp-knot --config mcp_server.json --validate
 ```
 
 ### 6. 性能问题
@@ -348,7 +348,7 @@ curl http://localhost:8181/api/system/metrics
 curl http://localhost:8181/api/groups/development/stats
 
 # 监控资源使用
-top -p $(pgrep -f mcp-hub)
+top -p $(pgrep -f mcp-knot)
 ```
 
 **解决方案**:
@@ -390,7 +390,7 @@ top -p $(pgrep -f mcp-hub)
 
 ```bash
 # 检查内存使用
-ps aux | grep mcp-hub
+ps aux | grep mcp-knot
 
 # 检查 Node.js 堆使用
 node --inspect backend/dist/src/index.js
@@ -432,13 +432,13 @@ Error: Container exited with code 1
 
 ```bash
 # 查看容器日志
-docker logs mcp-hub-api
+docker logs mcp-knot-api
 
 # 检查容器状态
 docker ps -a
 
 # 进入容器调试
-docker exec -it mcp-hub-api /bin/sh
+docker exec -it mcp-knot-api /bin/sh
 ```
 
 **解决方案**:
@@ -448,7 +448,7 @@ docker exec -it mcp-hub-api /bin/sh
 cat backend/Dockerfile
 
 # 重新构建镜像
-docker build -f backend/Dockerfile -t mcp-hub/api .
+docker build -f backend/Dockerfile -t mcp-knot/api .
 
 # 检查挂载的配置文件
 ls -la ./backend/config/
@@ -471,10 +471,10 @@ docker network ls
 
 # 使用服务名而不是 localhost
 # 错误: http://localhost:8181
-# 正确: http://mcp-hub-api:3000
+# 正确: http://mcp-knot-api:3000
 
 # 检查端口映射
-docker-compose port mcp-hub-api 3000
+docker-compose port mcp-knot-api 3000
 ```
 
 ### 8. 权限问题
@@ -499,11 +499,11 @@ chown user:group /workspace/file.txt
 
 # Docker 环境中的权限问题
 # 在 Dockerfile 中设置正确的用户
-USER mcp-hub
+USER mcp-knot
 
 # 或在 docker-compose 中设置
 services:
-  mcp-hub-api:
+  mcp-knot-api:
     user: "1001:1001"
 ```
 
@@ -523,7 +523,7 @@ env | grep BRAVE_API_KEY
 
 # 在 docker-compose 中设置
 services:
-  mcp-hub-api:
+  mcp-knot-api:
     environment:
       - BRAVE_API_KEY=${BRAVE_API_KEY}
 
@@ -540,7 +540,7 @@ echo "BRAVE_API_KEY=your-key" > .env
 export MCP_HUB_LOG_LEVEL=debug
 
 # 启用调试模式
-export DEBUG=mcp-hub:*
+export DEBUG=mcp-knot:*
 
 # 查看详细的 MCP 协议交互
 export MCP_DEBUG=true
@@ -553,7 +553,7 @@ export MCP_DEBUG=true
 pnpm inspector
 
 # 连接到本地 MCP 服务器
-# URL: stdio://path/to/mcp-hub-cli
+# URL: stdio://path/to/mcp-knot-cli
 ```
 
 ### 3. 网络调试
@@ -594,14 +594,14 @@ uname -a
 node --version
 pnpm --version
 
-# MCP Hub 版本
+# MCP Knot 版本
 curl http://localhost:8181/api/system/info
 
 # 配置文件（移除敏感信息）
 cat backend/config/mcp_server.json | jq 'del(.servers[].env)'
 
 # 错误日志
-tail -n 100 logs/mcp-hub.log
+tail -n 100 logs/mcp-knot.log
 
 # 系统资源使用
 free -h
@@ -625,7 +625,7 @@ cat > minimal-config.json << EOF
 EOF
 
 # 测试最小配置
-mcp-hub --config minimal-config.json
+mcp-knot --config minimal-config.json
 ```
 
 ### 3. 联系支持
@@ -659,7 +659,7 @@ free -h
 curl -f http://localhost:8181/health || echo "Service down!"
 
 # 监控日志错误
-tail -f logs/mcp-hub.log | grep ERROR
+tail -f logs/mcp-knot.log | grep ERROR
 
 # 设置资源使用告警
 if [ $(free | grep Mem | awk '{print ($3/$2) * 100.0}') -gt 80 ]; then

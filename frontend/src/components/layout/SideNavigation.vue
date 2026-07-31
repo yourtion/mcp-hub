@@ -3,7 +3,7 @@
     <div class="side-navigation__logo">
       <ViewModuleIcon class="side-navigation__logo-icon" />
       <transition name="fade">
-        <span v-if="!collapsed" class="side-navigation__logo-text">MCP Hub</span>
+        <span v-if="!collapsed" class="side-navigation__logo-text">MCP Knot</span>
       </transition>
     </div>
     <Menu :value="activeRoute" :collapsed="collapsed" theme="dark" @change="handleMenuChange">

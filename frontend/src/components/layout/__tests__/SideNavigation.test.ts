@@ -27,7 +27,7 @@ describe('SideNavigation', () => {
     await router.isReady();
   });
 
-  it('should render the logo area with MCP Hub text when expanded', () => {
+  it('should render the logo area with MCP Knot text when expanded', () => {
     const wrapper = mount(SideNavigation, {
       props: { collapsed: false },
       global: {
@@ -37,10 +37,10 @@ describe('SideNavigation', () => {
 
     expect(wrapper.find('.side-navigation__logo').exists()).toBe(true);
     expect(wrapper.find('.side-navigation__logo-text').exists()).toBe(true);
-    expect(wrapper.find('.side-navigation__logo-text').text()).toBe('MCP Hub');
+    expect(wrapper.find('.side-navigation__logo-text').text()).toBe('MCP Knot');
   });
 
-  it('should hide MCP Hub text when collapsed', () => {
+  it('should hide MCP Knot text when collapsed', () => {
     const wrapper = mount(SideNavigation, {
       props: { collapsed: true },
       global: {

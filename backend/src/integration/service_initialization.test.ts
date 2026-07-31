@@ -82,7 +82,7 @@ describe('服务初始化集成测试', () => {
           secret: 'test-secret-key-with-sufficient-length-for-security',
           expiresIn: '15m',
           refreshExpiresIn: '7d',
-          issuer: 'mcp-hub',
+          issuer: 'mcp-knot',
         },
         security: {
           maxLoginAttempts: 5,
@@ -118,7 +118,7 @@ describe('服务初始化集成测试', () => {
         },
       },
       ui: {
-        title: 'MCP Hub',
+        title: 'MCP Knot',
         theme: 'light',
         features: {
           apiToMcp: true,

@@ -15,7 +15,7 @@ module.exports = {
   // 各包的覆盖率配置
   packages: {
     backend: {
-      name: '@mcp-core/mcp-hub-api',
+      name: '@mcp-core/mcp-knot-api',
       path: './backend',
       thresholds: {
         branches: 80,
@@ -28,7 +28,7 @@ module.exports = {
     },
 
     core: {
-      name: '@mcp-core/mcp-hub-core',
+      name: '@mcp-core/mcp-knot-core',
       path: './packages/core',
       thresholds: {
         branches: 85,
@@ -40,7 +40,7 @@ module.exports = {
     },
 
     cli: {
-      name: '@mcp-core/mcp-hub-cli',
+      name: '@mcp-core/mcp-knot-cli',
       path: './packages/cli',
       thresholds: {
         branches: 85,

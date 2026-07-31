@@ -71,7 +71,7 @@ describe('CliLogger', () => {
 
     nonTestLogger.showBanner('1.0.0');
 
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('MCP Hub CLI'));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('MCP Knot CLI'));
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('版本 1.0.0'));
 
     // 恢复环境变量

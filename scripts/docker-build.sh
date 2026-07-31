@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# MCP Hub Docker 构建脚本
+# MCP Knot Docker 构建脚本
 
 set -e
 
@@ -50,7 +50,7 @@ echo "🔨 构建 API 镜像..."
 docker build \
     --platform $PLATFORM \
     -f backend/Dockerfile \
-    -t mcp-hub/api:$TAG \
+    -t mcp-knot/api:$TAG \
     .
 
 # 构建前端镜像
@@ -58,7 +58,7 @@ echo "🔨 构建前端镜像..."
 docker build \
     --platform $PLATFORM \
     -f frontend/Dockerfile \
-    -t mcp-hub/web:$TAG \
+    -t mcp-knot/web:$TAG \
     .
 
 echo "✅ Docker 镜像构建完成！"
@@ -66,13 +66,13 @@ echo "✅ Docker 镜像构建完成！"
 # 显示镜像信息
 echo ""
 echo "📋 构建的镜像:"
-docker images | grep "mcp-hub"
+docker images | grep "mcp-knot"
 
 # 推送镜像（如果指定）
 if [ "$PUSH" = true ]; then
     echo ""
     echo "📤 推送镜像到仓库..."
-    docker push mcp-hub/api:$TAG
-    docker push mcp-hub/web:$TAG
+    docker push mcp-knot/api:$TAG
+    docker push mcp-knot/web:$TAG
     echo "✅ 镜像推送完成！"
 fi

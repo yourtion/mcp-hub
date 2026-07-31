@@ -1,6 +1,6 @@
 # 测试覆盖率监控指南
 
-本文档介绍了 MCP Hub 项目的测试覆盖率监控系统的使用方法和配置。
+本文档介绍了 MCP Knot 项目的测试覆盖率监控系统的使用方法和配置。
 
 ## 概述
 
@@ -33,13 +33,13 @@
 
 ```bash
 # 后端 API 包
-pnpm --filter @mcp-core/mcp-hub-api test:coverage
+pnpm --filter @mcp-core/mcp-knot-api test:coverage
 
 # 核心包
-pnpm --filter @mcp-core/mcp-hub-core test:coverage
+pnpm --filter @mcp-core/mcp-knot-core test:coverage
 
 # CLI 包
-pnpm --filter @mcp-core/mcp-hub-cli test:coverage
+pnpm --filter @mcp-core/mcp-knot-cli test:coverage
 ```
 
 ### 运行所有包的覆盖率测试
@@ -61,12 +61,12 @@ pnpm test:debug
 pnpm test:coverage:debug
 
 # 运行单个包的调试模式测试
-pnpm --filter @mcp-core/mcp-hub-cli test:debug
-pnpm --filter @mcp-core/mcp-hub-core test:debug
-pnpm --filter @mcp-core/mcp-hub-api test:debug
+pnpm --filter @mcp-core/mcp-knot-cli test:debug
+pnpm --filter @mcp-core/mcp-knot-core test:debug
+pnpm --filter @mcp-core/mcp-knot-api test:debug
 
 # 运行单个包的调试模式覆盖率测试
-pnpm --filter @mcp-core/mcp-hub-cli test:coverage:debug
+pnpm --filter @mcp-core/mcp-knot-cli test:coverage:debug
 ```
 
 **调试模式说明**：
@@ -91,9 +91,9 @@ pnpm coverage:report      # 显示覆盖率汇总
 
 ```bash
 # 打开 HTML 报告（macOS）
-pnpm --filter @mcp-core/mcp-hub-api coverage:open
-pnpm --filter @mcp-core/mcp-hub-core coverage:open
-pnpm --filter @mcp-core/mcp-hub-cli coverage:open
+pnpm --filter @mcp-core/mcp-knot-api coverage:open
+pnpm --filter @mcp-core/mcp-knot-core coverage:open
+pnpm --filter @mcp-core/mcp-knot-cli coverage:open
 ```
 
 ### CI/CD 测试

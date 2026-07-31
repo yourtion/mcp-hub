@@ -1,4 +1,4 @@
-# MCP Hub 前端 Docker 镜像
+# MCP Knot 前端 Docker 镜像
 
 FROM node:20-alpine AS base
 

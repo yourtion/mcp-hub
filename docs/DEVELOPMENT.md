@@ -1,6 +1,6 @@
-# MCP Hub 开发指南
+# MCP Knot 开发指南
 
-本指南介绍如何设置开发环境并参与 MCP Hub 的开发。
+本指南介绍如何设置开发环境并参与 MCP Knot 的开发。
 
 ## 目录
 
@@ -69,8 +69,8 @@ pnpm --version
 
 ```bash
 # 克隆仓库
-git clone https://github.com/your-org/mcp-hub.git
-cd mcp-hub
+git clone https://github.com/your-org/mcp-knot.git
+cd mcp-knot
 
 # 安装依赖
 pnpm install
@@ -120,7 +120,7 @@ pnpm build
 ### Monorepo 架构
 
 ```
-mcp-hub/
+mcp-knot/
 ├── backend/              # API 服务器
 │   ├── src/
 │   │   ├── api/         # API 路由处理器
@@ -152,18 +152,18 @@ mcp-hub/
 
 ```
 backend (API)
-  ├── @mcp-core/mcp-hub-core
-  └── @mcp-core/mcp-hub-share
+  ├── @mcp-core/mcp-knot-core
+  └── @mcp-core/mcp-knot-share
 
 frontend (Web)
-  └── @mcp-core/mcp-hub-share
+  └── @mcp-core/mcp-knot-share
 
 packages/cli
-  ├── @mcp-core/mcp-hub-core
-  └── @mcp-core/mcp-hub-share
+  ├── @mcp-core/mcp-knot-core
+  └── @mcp-core/mcp-knot-share
 
 packages/core
-  └── @mcp-core/mcp-hub-share
+  └── @mcp-core/mcp-knot-share
 ```
 
 ## 开发工作流
@@ -652,7 +652,7 @@ mcpClient.on('message', (message) => {
    ```bash
    # 在 GitHub 上 Fork 仓库
    # 克隆你的 Fork
-   git clone https://github.com/your-username/mcp-hub.git
+   git clone https://github.com/your-username/mcp-knot.git
    ```
 
 2. **创建功能分支**

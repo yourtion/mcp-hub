@@ -37,7 +37,7 @@ vi.mock('../utils/config.js', () => ({
           secret: 'test-secret-key',
           expiresIn: '15m',
           refreshExpiresIn: '7d',
-          issuer: 'mcp-hub-test',
+          issuer: 'mcp-knot-test',
         },
         security: {
           maxLoginAttempts: 3,
@@ -65,7 +65,7 @@ vi.mock('../utils/config.js', () => ({
         },
       },
       ui: {
-        title: 'Test MCP Hub',
+        title: 'Test MCP Knot',
         theme: 'light',
         features: { apiToMcp: true, debugging: true, monitoring: true },
       },

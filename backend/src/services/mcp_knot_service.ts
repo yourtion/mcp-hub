@@ -140,7 +140,7 @@ export class McpKnotService implements IMcpKnotService {
     }
 
     const initStartTime = Date.now();
-    logger.info('Starting MCP Hub Service initialization', {
+    logger.info('Starting MCP Knot Service initialization', {
       serverCount: Object.keys(this.serverConfigs).length,
       groupCount: Object.keys(this.groupConfigs).length,
       timestamp: new Date().toISOString(),
@@ -208,7 +208,7 @@ export class McpKnotService implements IMcpKnotService {
       this.healthMonitor.start();
 
       const initDuration = Date.now() - initStartTime;
-      logger.info('MCP Hub Service initialization completed successfully', {
+      logger.info('MCP Knot Service initialization completed successfully', {
         connectedServers,
         loadedGroups,
         initializationTimeMs: initDuration,
@@ -216,7 +216,7 @@ export class McpKnotService implements IMcpKnotService {
       });
     } catch (error) {
       const initDuration = Date.now() - initStartTime;
-      logger.error('MCP Hub Service initialization failed', error as Error, {
+      logger.error('MCP Knot Service initialization failed', error as Error, {
         initializationTimeMs: initDuration,
         serverCount: Object.keys(this.serverConfigs).length,
         groupCount: Object.keys(this.groupConfigs).length,
@@ -234,7 +234,7 @@ export class McpKnotService implements IMcpKnotService {
 
   async shutdown(): Promise<void> {
     if (!this.isInitialized) {
-      logger.warn('MCP Hub Service not initialized, skipping shutdown');
+      logger.warn('MCP Knot Service not initialized, skipping shutdown');
       return;
     }
 
@@ -246,7 +246,7 @@ export class McpKnotService implements IMcpKnotService {
     this.shutdownInProgress = true;
     const shutdownStartTime = Date.now();
 
-    logger.info('Starting graceful MCP Hub Service shutdown', {
+    logger.info('Starting graceful MCP Knot Service shutdown', {
       timestamp: new Date().toISOString(),
       connectedServers: this.getConnectedServerCount(),
     });
@@ -289,7 +289,7 @@ export class McpKnotService implements IMcpKnotService {
 
     if (errors.length > 0) {
       logger.error(
-        'MCP Hub Service shutdown completed with errors',
+        'MCP Knot Service shutdown completed with errors',
         new Error('Shutdown errors occurred'),
         {
           shutdownTimeMs: shutdownDuration,
@@ -305,7 +305,7 @@ export class McpKnotService implements IMcpKnotService {
         { errorCount: errors.length, shutdownTimeMs: shutdownDuration },
       );
     }
-    logger.info('MCP Hub Service shutdown completed successfully', {
+    logger.info('MCP Knot Service shutdown completed successfully', {
       shutdownTimeMs: shutdownDuration,
       timestamp: new Date().toISOString(),
     });

@@ -112,7 +112,7 @@ export interface ToolManager {
   validateToolArgs(toolName: string, args: Record<string, unknown>): boolean;
 }
 
-// MCP Hub Service Types
+// MCP Knot Service Types
 export interface McpKnotService {
   initialize(): Promise<void>;
   listTools(groupId?: string): Promise<Tool[]>;

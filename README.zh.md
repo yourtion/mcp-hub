@@ -1,8 +1,12 @@
-# MCP Hub
+# MCP Knot
 
 [English](README.md) | 中文版
 
-整合多个 MCP 服务器，将其集中到专用的 Streamable HTTP 或 SSE 端点中，每个端点都针对特定的使用场景进行了优化。
+> *Knot* —— 纽带、交织点。多个 MCP server 像散落的线，MCP Knot 把它们打成一个结，成为所有工具交汇的轻量枢纽。
+
+**把你的 MCP server 系在一起。**
+
+一个轻量的集中式枢纽服务器，将多个 MCP server 整合为专属的 Streamable HTTP 或 SSE 端点，每个端点针对特定场景——零配置启动，并率先支持 2026-07-28 无状态 MCP 协议。
 
 ## 特性
 
@@ -16,25 +20,25 @@
 
 ## 架构
 
-MCP Hub 采用模块化 monorepo 架构，包含以下包：
+MCP Knot 采用模块化 monorepo 架构，包含以下包：
 
 ### 核心包
 
-- **`@mcp-core/mcp-hub-core`** - 核心 MCP 服务管理、连接处理和工具执行
-- **`@mcp-core/mcp-hub-api`** - Web API 服务器，包含基于组的路由和 HTTP 端点
-- **`@mcp-core/mcp-hub-cli`** - 命令行 MCP 服务器，用于独立工具聚合
-- **`@mcp-core/mcp-hub-share`** - 跨包共享的类型和工具
-- **`@mcp-core/mcp-hub-web`** - Vue.js 前端界面（可选）
+- **`@mcp-core/mcp-knot-core`** - 核心 MCP 服务管理、连接处理和工具执行
+- **`@mcp-core/mcp-knot-api`** - Web API 服务器，包含基于组的路由和 HTTP 端点
+- **`@mcp-core/mcp-knot-cli`** - 命令行 MCP 服务器，用于独立工具聚合
+- **`@mcp-core/mcp-knot-share`** - 跨包共享的类型和工具
+- **`@mcp-core/mcp-knot-web`** - Vue.js 前端界面（可选）
 
 ### 包结构
 
 ```
-├── backend/              # API 服务器 (@mcp-core/mcp-hub-api)
+├── backend/              # API 服务器 (@mcp-core/mcp-knot-api)
 ├── frontend/             # Vue.js Web 界面
 ├── packages/
-│   ├── core/            # 核心 MCP 逻辑 (@mcp-core/mcp-hub-core)
-│   ├── cli/             # CLI 包 (@mcp-core/mcp-hub-cli)
-│   └── share/           # 共享类型 (@mcp-core/mcp-hub-share)
+│   ├── core/            # 核心 MCP 逻辑 (@mcp-core/mcp-knot-core)
+│   ├── cli/             # CLI 包 (@mcp-core/mcp-knot-cli)
+│   └── share/           # 共享类型 (@mcp-core/mcp-knot-share)
 └── docs/                # 文档
 ```
 
@@ -82,7 +86,7 @@ API 服务器将在 `http://localhost:8181` 可用，提供以下端点：
 
 ```bash
 # 全局安装 CLI（可选）
-npm install -g @mcp-core/mcp-hub-cli
+npm install -g @mcp-core/mcp-knot-cli
 
 # 或从工作区直接运行
 cd packages/cli
@@ -90,28 +94,28 @@ pnpm build
 node dist/cli.js
 
 # 或使用可执行文件
-./bin/mcp-hub.js
+./bin/mcp-knot.js
 ```
 
 #### 快速初始化配置
 
-MCP Hub CLI 提供了快速配置初始化功能，帮助您快速开始使用：
+MCP Knot CLI 提供了快速配置初始化功能，帮助您快速开始使用：
 
 ```bash
 # 查看所有可用的命令
-mcp-hub --help
+mcp-knot --help
 
 # 初始化默认配置（包含常用服务器示例）
-mcp-hub --init
+mcp-knot --init
 
 # 初始化所有配置（包含组配置）
-mcp-hub --init-all
+mcp-knot --init-all
 
 # 查看所有可用的服务器预设
-mcp-hub --list-presets
+mcp-knot --list-presets
 
 # 覆盖已存在的配置文件
-mcp-hub --init-all --overwrite
+mcp-knot --init-all --overwrite
 ```
 
 默认配置包含以下常用 MCP 服务器：
@@ -341,8 +345,8 @@ curl -X POST http://localhost:8181/research/mcp/call_tool \
 ```json
 {
   "mcpServers": {
-    "mcp-hub": {
-      "command": "/path/to/mcp-hub/packages/cli/bin/mcp-hub.js",
+    "mcp-knot": {
+      "command": "/path/to/mcp-knot/packages/cli/bin/mcp-knot.js",
       "args": ["--config", "/path/to/mcp_server.json"]
     }
   }
@@ -416,7 +420,7 @@ pnpm test:mcp         # MCP 协议测试
 
 ### 发布流程
 
-MCP Hub 使用 [Changesets](https://github.com/changesets/changesets) 进行版本管理和发布，并使用 [NPM Trusted Publishers](docs/NPM_TRUSTED_PUBLISHERS.md) 进行安全的包发布。
+MCP Knot 使用 [Changesets](https://github.com/changesets/changesets) 进行版本管理和发布，并使用 [NPM Trusted Publishers](docs/NPM_TRUSTED_PUBLISHERS.md) 进行安全的包发布。
 
 #### 日常开发流程
 

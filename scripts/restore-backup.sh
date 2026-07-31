@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# MCP Hub 配置恢复脚本
+# MCP Knot 配置恢复脚本
 # 用法: ./scripts/restore-backup.sh <backup_file>
 
 set -e  # 遇到错误立即退出
@@ -42,11 +42,11 @@ if [ $# -eq 0 ]; then
     log_error "用法: $0 <backup_file>"
     echo ""
     echo "示例:"
-    echo "  $0 /backup/mcp-hub/config_20240115_103000.tar.gz"
+    echo "  $0 /backup/mcp-knot/config_20240115_103000.tar.gz"
     echo ""
     echo "可用的备份文件:"
-    if [ -d "/backup/mcp-hub" ]; then
-        ls -lh /backup/mcp-hub/config_*.tar.gz 2>/dev/null || echo "  没有找到备份文件"
+    if [ -d "/backup/mcp-knot" ]; then
+        ls -lh /backup/mcp-knot/config_*.tar.gz 2>/dev/null || echo "  没有找到备份文件"
     else
         echo "  备份目录不存在"
     fi
@@ -77,8 +77,8 @@ confirm "确认从此备份恢复配置？"
 
 log_info "备份当前配置..."
 
-CONFIG_DIR="/etc/mcp-hub/config"
-CURRENT_BACKUP="/tmp/mcp-hub-config-before-restore-$(date +%Y%m%d_%H%M%S).tar.gz"
+CONFIG_DIR="/etc/mcp-knot/config"
+CURRENT_BACKUP="/tmp/mcp-knot-config-before-restore-$(date +%Y%m%d_%H%M%S).tar.gz"
 
 if [ -d "$CONFIG_DIR" ]; then
     tar -czf $CURRENT_BACKUP $CONFIG_DIR
@@ -91,8 +91,8 @@ fi
 
 log_info "停止服务..."
 
-if pm2 list | grep -q "mcp-hub-api"; then
-    pm2 stop mcp-hub-api
+if pm2 list | grep -q "mcp-knot-api"; then
+    pm2 stop mcp-knot-api
     log_info "服务已停止"
 else
     log_warn "服务未运行"
@@ -133,11 +133,11 @@ log_info "配置验证通过"
 
 log_info "启动服务..."
 
-if pm2 list | grep -q "mcp-hub-api"; then
-    pm2 restart mcp-hub-api
+if pm2 list | grep -q "mcp-knot-api"; then
+    pm2 restart mcp-knot-api
 else
     cd backend
-    pm2 start dist/src/index.js --name mcp-hub-api
+    pm2 start dist/src/index.js --name mcp-knot-api
 fi
 
 log_info "服务已启动"
@@ -150,13 +150,13 @@ log_info "执行健康检查..."
 sleep 5
 
 # 检查服务状态
-if pm2 list | grep -q "online.*mcp-hub-api"; then
+if pm2 list | grep -q "online.*mcp-knot-api"; then
     log_info "服务运行正常"
 else
     log_error "服务启动失败"
     log_warn "正在恢复之前的配置..."
     tar -xzf $CURRENT_BACKUP -C /
-    pm2 restart mcp-hub-api
+    pm2 restart mcp-knot-api
     exit 1
 fi
 
@@ -167,7 +167,7 @@ else
     log_error "健康检查失败"
     log_warn "正在恢复之前的配置..."
     tar -xzf $CURRENT_BACKUP -C /
-    pm2 restart mcp-hub-api
+    pm2 restart mcp-knot-api
     exit 1
 fi
 
@@ -183,7 +183,7 @@ log_info "之前的配置已保存到: $CURRENT_BACKUP"
 log_info ""
 log_info "后续步骤:"
 log_info "1. 检查服务状态: pm2 status"
-log_info "2. 查看日志: pm2 logs mcp-hub-api"
+log_info "2. 查看日志: pm2 logs mcp-knot-api"
 log_info "3. 验证配置: 访问 Web 界面"
 log_info ""
 log_info "如需回滚，运行:"

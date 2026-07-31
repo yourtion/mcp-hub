@@ -60,7 +60,7 @@ async function validateConfigurations() {
 }
 
 /**
- * 初始化 MCP Hub 服务（显式启动编排）
+ * 初始化 MCP Knot 服务（显式启动编排）
  */
 async function initializeHubService(validatedConfig: {
   mcpConfig: McpConfig;
@@ -68,7 +68,7 @@ async function initializeHubService(validatedConfig: {
   systemConfig?: SystemConfig;
   apiToolsConfigPath?: string;
 }) {
-  logger.info('开始初始化 MCP Hub 服务...');
+  logger.info('开始初始化 MCP Knot 服务...');
 
   try {
     const service = await createHubService({
@@ -81,7 +81,7 @@ async function initializeHubService(validatedConfig: {
     const initPromise = service.initialize();
     let timeoutId: NodeJS.Timeout | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => reject(new Error('MCP Hub 服务初始化超时 (60秒)')), 60000);
+      timeoutId = setTimeout(() => reject(new Error('MCP Knot 服务初始化超时 (60秒)')), 60000);
       timeoutId.unref?.();
     });
 
@@ -93,10 +93,10 @@ async function initializeHubService(validatedConfig: {
     // 注册到全局服务注册表，所有 API 模块共享此实例
     setHubService(service);
 
-    logger.info('MCP Hub 服务初始化成功');
+    logger.info('MCP Knot 服务初始化成功');
     return service;
   } catch (error) {
-    logger.error('MCP Hub 服务初始化失败', error as Error);
+    logger.error('MCP Knot 服务初始化失败', error as Error);
     throw error;
   }
 }
@@ -115,7 +115,7 @@ async function startServer() {
     // 1. 验证配置
     const validatedConfig = await validateConfigurations();
 
-    // 2. 初始化 MCP Hub 服务（显式启动）
+    // 2. 初始化 MCP Knot 服务（显式启动）
     await initializeHubService(validatedConfig);
 
     // 2.1 初始化 API-to-MCP Web 服务（管理端 /api/api-to-mcp/* 路由依赖此单例）

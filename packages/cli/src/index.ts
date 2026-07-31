@@ -1,5 +1,5 @@
 /**
- * MCP Hub CLI 包入口点
+ * MCP Knot CLI 包入口点
  * 提供命令行界面的MCP服务聚合器功能
  */
 

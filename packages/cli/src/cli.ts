@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * MCP Hub CLI 主入口文件
+ * MCP Knot CLI 主入口文件
  * 处理命令行参数并启动MCP服务器
  */
 
@@ -121,10 +121,10 @@ function parseArgs(args: string[]): CliOptions {
  */
 function showHelp(): void {
   console.log(`
-MCP Hub CLI - 聚合多个MCP服务的命令行界面
+MCP Knot CLI - 聚合多个MCP服务的命令行界面
 
 用法:
-  mcp-hub [选项] [配置文件路径]
+  mcp-knot [选项] [配置文件路径]
 
 选项:
   -h, --help              显示帮助信息
@@ -141,16 +141,16 @@ MCP Hub CLI - 聚合多个MCP服务的命令行界面
   --overwrite             覆盖已存在的配置文件
 
 示例:
-  mcp-hub                                    # 使用默认配置文件
-  mcp-hub config.json                        # 使用指定配置文件
-  mcp-hub -c config.json -v                  # 使用指定配置文件并启用详细日志
-  mcp-hub --generate-config                  # 生成基础配置模板
-  mcp-hub --generate-config --template advanced  # 生成高级配置模板
-  mcp-hub --validate -c config.json          # 验证配置文件
-  mcp-hub --list-templates                   # 列出所有模板类型
-  mcp-hub --list-presets                     # 列出所有可用的服务器预设
-  mcp-hub --init                             # 快速初始化配置文件
-  mcp-hub --init-all --overwrite             # 初始化所有配置并覆盖已存在文件
+  mcp-knot                                    # 使用默认配置文件
+  mcp-knot config.json                        # 使用指定配置文件
+  mcp-knot -c config.json -v                  # 使用指定配置文件并启用详细日志
+  mcp-knot --generate-config                  # 生成基础配置模板
+  mcp-knot --generate-config --template advanced  # 生成高级配置模板
+  mcp-knot --validate -c config.json          # 验证配置文件
+  mcp-knot --list-templates                   # 列出所有模板类型
+  mcp-knot --list-presets                     # 列出所有可用的服务器预设
+  mcp-knot --init                             # 快速初始化配置文件
+  mcp-knot --init-all --overwrite             # 初始化所有配置并覆盖已存在文件
 
 配置文件格式:
   {
@@ -176,7 +176,7 @@ MCP Hub CLI - 聚合多个MCP服务的命令行界面
  * 显示版本信息
  */
 function showVersion(): void {
-  console.log('MCP Hub CLI v1.0.0');
+  console.log('MCP Knot CLI v1.0.0');
 }
 
 /**
@@ -186,7 +186,7 @@ async function generateConfig(templateType: ConfigTemplateType): Promise<void> {
   const configManager = new CliConfigManager();
   const template = configManager.getConfigTemplateWithComments(templateType);
 
-  console.log(`# MCP Hub CLI 配置文件模板 (${templateType})`);
+  console.log(`# MCP Knot CLI 配置文件模板 (${templateType})`);
   console.log('# 将以下内容保存为 mcp_server.json');
   console.log('');
   console.log(template);
@@ -235,7 +235,7 @@ async function listTemplates(): Promise<void> {
 
   console.log('');
   console.log('使用方法:');
-  console.log('  mcp-hub --generate-config --template <type>');
+  console.log('  mcp-knot --generate-config --template <type>');
 }
 
 /**
@@ -287,8 +287,8 @@ async function initConfig(
   if (result.createdFiles.length > 0) {
     console.log('\n📝 下一步:');
     console.log('  1. 根据需要修改配置文件');
-    console.log('  2. 运行: mcp-hub');
-    console.log('\n💡 提示: 使用 mcp-hub --list-presets 查看所有可用的服务器预设');
+    console.log('  2. 运行: mcp-knot');
+    console.log('\n💡 提示: 使用 mcp-knot --list-presets 查看所有可用的服务器预设');
   }
 }
 
@@ -312,9 +312,9 @@ async function listServerPresets(): Promise<void> {
   console.log('');
   console.log('使用方法:');
   console.log(
-    '  mcp-hub --init          # 初始化默认配置（包含 fetch, time, sequential-thinking）',
+    '  mcp-knot --init          # 初始化默认配置（包含 fetch, time, sequential-thinking）',
   );
-  console.log('  mcp-hub --init-all      # 初始化所有配置（包含组配置）');
+  console.log('  mcp-knot --init-all      # 初始化所有配置（包含组配置）');
 }
 
 /**
@@ -417,7 +417,7 @@ async function main() {
       return;
     }
 
-    console.log('启动MCP Hub CLI服务器...');
+    console.log('启动MCP Knot CLI服务器...');
     console.log(`配置文件: ${options.configPath}`);
 
     // 创建配置管理器
@@ -436,15 +436,15 @@ async function main() {
     await server.initialize(config);
     await server.start();
 
-    console.log('MCP Hub CLI服务器启动成功');
+    console.log('MCP Knot CLI服务器启动成功');
     console.log('等待MCP客户端连接...');
 
     // 处理优雅关闭
     const shutdown = async (signal: string) => {
-      console.log(`\n收到 ${signal} 信号，正在关闭MCP Hub CLI服务器...`);
+      console.log(`\n收到 ${signal} 信号，正在关闭MCP Knot CLI服务器...`);
       try {
         await server.shutdown();
-        console.log('MCP Hub CLI服务器已安全关闭');
+        console.log('MCP Knot CLI服务器已安全关闭');
         process.exit(0);
       } catch (error) {
         console.error('关闭服务器时出错:', error);

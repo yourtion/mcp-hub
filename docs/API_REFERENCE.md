@@ -1,6 +1,6 @@
-# MCP Hub API 参考
+# MCP Knot API 参考
 
-本文档提供 MCP Hub API 的完整参考，包括所有端点、请求/响应格式和使用示例。
+本文档提供 MCP Knot API 的完整参考，包括所有端点、请求/响应格式和使用示例。
 
 ## 基础信息
 
@@ -11,7 +11,7 @@
 
 ## 认证
 
-MCP Hub 支持两种认证方式：
+MCP Knot 支持两种认证方式：
 
 ### 1. JWT 认证（推荐）
 
@@ -945,7 +945,7 @@ GET /api/system/metrics
       "content": [
         {
           "type": "text",
-          "text": "# MCP Hub\n\n..."
+          "text": "# MCP Knot\n\n..."
         }
       ],
       "isError": false
@@ -1512,11 +1512,11 @@ ws.onmessage = function (event) {
 ### JavaScript/TypeScript
 
 ```bash
-npm install @mcp-core/mcp-hub-client
+npm install @mcp-core/mcp-knot-client
 ```
 
 ```typescript
-import { McpHubClient } from '@mcp-core/mcp-hub-client';
+import { McpHubClient } from '@mcp-core/mcp-knot-client';
 
 const client = new McpHubClient('http://localhost:8181');
 
@@ -1532,7 +1532,7 @@ const result = await client.callTool('development', 'read_file', {
 ### Python
 
 ```bash
-pip install mcp-hub-client
+pip install mcp-knot-client
 ```
 
 ```python

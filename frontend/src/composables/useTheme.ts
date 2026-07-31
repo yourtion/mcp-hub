@@ -2,7 +2,7 @@ import { ref, watch } from 'vue';
 
 export type ThemeMode = 'light' | 'dark' | 'auto';
 
-const STORAGE_KEY = 'mcp-hub-theme';
+const STORAGE_KEY = 'mcp-knot-theme';
 
 const mode = ref<ThemeMode>((localStorage.getItem(STORAGE_KEY) as ThemeMode) || 'auto');
 

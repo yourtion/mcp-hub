@@ -1,4 +1,4 @@
-# MCP Hub API 服务器 Docker 镜像
+# MCP Knot API 服务器 Docker 镜像
 
 FROM node:20-alpine AS base
 
@@ -37,30 +37,30 @@ RUN npm install -g pnpm
 
 # 创建非 root 用户
 RUN addgroup -g 1001 -S nodejs
-RUN adduser -S mcp-hub -u 1001
+RUN adduser -S mcp-knot -u 1001
 
 # 设置工作目录
 WORKDIR /app
 
 # 复制 package.json 文件
-COPY --chown=mcp-hub:nodejs package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY --chown=mcp-hub:nodejs packages/share/package.json ./packages/share/
-COPY --chown=mcp-hub:nodejs packages/core/package.json ./packages/core/
-COPY --chown=mcp-hub:nodejs backend/package.json ./backend/
+COPY --chown=mcp-knot:nodejs package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY --chown=mcp-knot:nodejs packages/share/package.json ./packages/share/
+COPY --chown=mcp-knot:nodejs packages/core/package.json ./packages/core/
+COPY --chown=mcp-knot:nodejs backend/package.json ./backend/
 
 # 安装生产依赖
 RUN pnpm install --frozen-lockfile --prod
 
 # 复制构建产物
-COPY --from=builder --chown=mcp-hub:nodejs /app/packages/share/dist ./packages/share/dist
-COPY --from=builder --chown=mcp-hub:nodejs /app/packages/core/dist ./packages/core/dist
-COPY --from=builder --chown=mcp-hub:nodejs /app/backend/dist ./backend/dist
+COPY --from=builder --chown=mcp-knot:nodejs /app/packages/share/dist ./packages/share/dist
+COPY --from=builder --chown=mcp-knot:nodejs /app/packages/core/dist ./packages/core/dist
+COPY --from=builder --chown=mcp-knot:nodejs /app/backend/dist ./backend/dist
 
 # 创建配置文件目录（用于运行时挂载）
-RUN mkdir -p /app/backend/config && chown -R mcp-hub:nodejs /app/backend/config
+RUN mkdir -p /app/backend/config && chown -R mcp-knot:nodejs /app/backend/config
 
 # 切换到非 root 用户
-USER mcp-hub
+USER mcp-knot
 
 # 暴露端口
 EXPOSE 3001

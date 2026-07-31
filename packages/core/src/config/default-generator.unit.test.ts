@@ -16,7 +16,7 @@ describe('DefaultConfigGenerator', () => {
 
   beforeEach(async () => {
     // 创建临时测试目录
-    testDir = join(tmpdir(), `mcp-hub-test-${Date.now()}`);
+    testDir = join(tmpdir(), `mcp-knot-test-${Date.now()}`);
     await mkdir(testDir, { recursive: true });
     generator = new DefaultConfigGenerator({ configDir: testDir });
   });

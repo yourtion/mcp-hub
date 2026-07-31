@@ -74,7 +74,7 @@ export class ConfigTemplateGenerator {
       },
       logging: {
         level: 'info',
-        file: './logs/mcp-hub.log',
+        file: './logs/mcp-knot.log',
       },
       transport: {
         type: 'stdio',
@@ -144,7 +144,7 @@ export class ConfigTemplateGenerator {
       },
       logging: {
         level: 'warn',
-        file: '/var/log/mcp-hub/mcp-hub.log',
+        file: '/var/log/mcp-knot/mcp-knot.log',
       },
       transport: {
         type: 'stdio',
@@ -195,7 +195,7 @@ export class ConfigTemplateGenerator {
    * 获取配置模板的注释说明
    */
   private getTemplateComments(type: ConfigTemplateType): string {
-    const baseComments = `// MCP Hub CLI 配置文件
+    const baseComments = `// MCP Knot CLI 配置文件
 // 此文件定义了MCP服务器的配置和CLI选项
 
 // 配置说明:

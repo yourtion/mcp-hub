@@ -18,12 +18,12 @@ pnpm test:debug
 pnpm test:coverage:debug
 
 # 运行单个包的调试模式测试
-pnpm --filter @mcp-core/mcp-hub-cli test:debug
-pnpm --filter @mcp-core/mcp-hub-core test:debug
-pnpm --filter @mcp-core/mcp-hub-api test:debug
+pnpm --filter @mcp-core/mcp-knot-cli test:debug
+pnpm --filter @mcp-core/mcp-knot-core test:debug
+pnpm --filter @mcp-core/mcp-knot-api test:debug
 
 # 运行单个包的调试模式覆盖率测试
-pnpm --filter @mcp-core/mcp-hub-cli test:coverage:debug
+pnpm --filter @mcp-core/mcp-knot-cli test:coverage:debug
 ```
 
 ### 方法 2: 使用环境变量
@@ -36,7 +36,7 @@ VITEST_DEBUG=true pnpm test
 DEBUG=true pnpm test
 
 # 运行特定测试文件
-VITEST_DEBUG=true pnpm --filter @mcp-core/mcp-hub-cli vitest --run src/config/cli-config-manager.test.ts
+VITEST_DEBUG=true pnpm --filter @mcp-core/mcp-knot-cli vitest --run src/config/cli-config-manager.test.ts
 ```
 
 ## 调试模式 vs 正常模式对比
@@ -161,10 +161,10 @@ CLI 包使用自定义的 logger 系统，不能简单地通过 mock console 来
 
 ```bash
 # 正常模式（静默）
-pnpm --filter @mcp-core/mcp-hub-cli test
+pnpm --filter @mcp-core/mcp-knot-cli test
 
 # 调试模式（显示所有日志）
-pnpm --filter @mcp-core/mcp-hub-cli test:debug
+pnpm --filter @mcp-core/mcp-knot-cli test:debug
 ```
 
 ##
@@ -184,19 +184,19 @@ pnpm --filter @mcp-core/mcp-hub-cli test:debug
 
 ### 各模块实现
 
-#### Core 包 (`@mcp-core/mcp-hub-core`)
+#### Core 包 (`@mcp-core/mcp-knot-core`)
 
 - 使用 `StructuredLogger` 系统
 - 默认配置自动检测测试环境
 - 支持 JSON 和文本格式输出
 
-#### Backend 包 (`@mcp-core/mcp-hub-api`)
+#### Backend 包 (`@mcp-core/mcp-knot-api`)
 
 - 使用 `ConsoleLogger` 系统
 - 专门针对 MCP 操作的日志方法
 - 支持服务器连接、工具发现等专用日志
 
-#### CLI 包 (`@mcp-core/mcp-hub-cli`)
+#### CLI 包 (`@mcp-core/mcp-knot-cli`)
 
 - 使用 `CliLogger` 系统
 - 支持彩色输出和特殊显示方法
@@ -206,14 +206,14 @@ pnpm --filter @mcp-core/mcp-hub-cli test:debug
 
 ```bash
 # 正常模式（静默）- 所有包
-pnpm --filter @mcp-core/mcp-hub-core test
-pnpm --filter @mcp-core/mcp-hub-api test
-pnpm --filter @mcp-core/mcp-hub-cli test
+pnpm --filter @mcp-core/mcp-knot-core test
+pnpm --filter @mcp-core/mcp-knot-api test
+pnpm --filter @mcp-core/mcp-knot-cli test
 
 # 调试模式（显示所有日志）- 所有包
-pnpm --filter @mcp-core/mcp-hub-core test:debug
-pnpm --filter @mcp-core/mcp-hub-api test:debug
-pnpm --filter @mcp-core/mcp-hub-cli test:debug
+pnpm --filter @mcp-core/mcp-knot-core test:debug
+pnpm --filter @mcp-core/mcp-knot-api test:debug
+pnpm --filter @mcp-core/mcp-knot-cli test:debug
 ```
 
 ### 优势

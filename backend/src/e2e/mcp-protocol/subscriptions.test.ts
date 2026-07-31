@@ -50,7 +50,7 @@ describe('subscriptions/listen（P5 e2e）', () => {
     await globalHub?.shutdown().catch(() => {});
 
     // 建新临时目录写入 dynamic-upstream 配置
-    tempDir = mkdtempSync(join(tmpdir(), `mcp-hub-sub-e2e-${process.pid}-`));
+    tempDir = mkdtempSync(join(tmpdir(), `mcp-knot-sub-e2e-${process.pid}-`));
     process.env.CONFIG_PATH = tempDir;
 
     writeFileSync(

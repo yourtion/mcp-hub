@@ -1,15 +1,15 @@
-# MCP Hub 开发环境 Docker Compose 配置
+# MCP Knot 开发环境 Docker Compose 配置
 
 version: '3.8'
 
 services:
   # API 服务器开发模式
-  mcp-hub-api-dev:
+  mcp-knot-api-dev:
     build:
       context: .
       dockerfile: backend/Dockerfile
       target: base
-    container_name: mcp-hub-api-dev
+    container_name: mcp-knot-api-dev
     ports:
       - '8181:8181'
     environment:
@@ -25,15 +25,15 @@ services:
     command: ['pnpm', 'dev:api']
     restart: unless-stopped
     networks:
-      - mcp-hub-dev-network
+      - mcp-knot-dev-network
 
   # 前端开发服务器
-  mcp-hub-web-dev:
+  mcp-knot-web-dev:
     build:
       context: .
       dockerfile: frontend/Dockerfile
       target: base
-    container_name: mcp-hub-web-dev
+    container_name: mcp-knot-web-dev
     ports:
       - '8180:8180'
     environment:
@@ -44,8 +44,8 @@ services:
     command: ['pnpm', 'dev:fe']
     restart: unless-stopped
     networks:
-      - mcp-hub-dev-network
+      - mcp-knot-dev-network
 
 networks:
-  mcp-hub-dev-network:
+  mcp-knot-dev-network:
     driver: bridge

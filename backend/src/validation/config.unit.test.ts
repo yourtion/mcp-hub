@@ -183,7 +183,7 @@ describe('配置验证工具', () => {
             secret: 'test-secret-key-with-sufficient-length-for-security',
             expiresIn: '15m',
             refreshExpiresIn: '7d',
-            issuer: 'mcp-hub',
+            issuer: 'mcp-knot',
           },
           security: {
             maxLoginAttempts: 5,
@@ -211,7 +211,7 @@ describe('配置验证工具', () => {
           },
         },
         ui: {
-          title: 'MCP Hub',
+          title: 'MCP Knot',
           theme: 'light',
           features: {
             apiToMcp: true,
@@ -348,7 +348,7 @@ describe('配置验证工具', () => {
             secret: 'test-secret-key-with-sufficient-length-for-security',
             expiresIn: '15m',
             refreshExpiresIn: '7d',
-            issuer: 'mcp-hub',
+            issuer: 'mcp-knot',
           },
           security: {
             maxLoginAttempts: 5,
@@ -368,7 +368,7 @@ describe('配置验证工具', () => {
           },
         },
         ui: {
-          title: 'MCP Hub',
+          title: 'MCP Knot',
           theme: 'light',
           features: {
             apiToMcp: true,

@@ -1,6 +1,6 @@
-# MCP Hub 常见问题解答 (FAQ)
+# MCP Knot 常见问题解答 (FAQ)
 
-本文档收集了 MCP Hub 使用过程中的常见问题和解决方案。
+本文档收集了 MCP Knot 使用过程中的常见问题和解决方案。
 
 ## 目录
 
@@ -19,7 +19,7 @@
 
 ### Q: 支持哪些 Node.js 版本？
 
-**A:** MCP Hub 需要 Node.js 18.x 或更高版本。推荐使用 LTS 版本（18.x 或 20.x）。
+**A:** MCP Knot 需要 Node.js 18.x 或更高版本。推荐使用 LTS 版本（18.x 或 20.x）。
 
 ```bash
 # 检查 Node.js 版本
@@ -58,7 +58,7 @@ export PATH=~/.npm-global/bin:$PATH
 source ~/.bashrc  # 或 source ~/.zshrc
 ```
 
-### Q: 如何在 Windows 上运行 MCP Hub？
+### Q: 如何在 Windows 上运行 MCP Knot？
 
 **A:** 推荐使用 WSL2 (Windows Subsystem for Linux)：
 
@@ -95,7 +95,7 @@ node -e "const bcrypt = require('bcryptjs'); console.log(bcrypt.hashSync('your-n
 3. 重启后端服务：
 
 ```bash
-pm2 restart mcp-hub-api
+pm2 restart mcp-knot-api
 ```
 
 ### Q: 忘记密码怎么办？
@@ -138,7 +138,7 @@ pm2 restart mcp-hub-api
 
 ### Q: 支持哪些类型的 MCP 服务器？
 
-**A:** MCP Hub 支持三种类型的 MCP 服务器：
+**A:** MCP Knot 支持三种类型的 MCP 服务器：
 
 1. **stdio**: 通过标准输入/输出通信（最常见）
 2. **SSE**: 通过 Server-Sent Events 通信
@@ -193,10 +193,10 @@ pm2 restart mcp-hub-api
 
    ```bash
    # 后端日志
-   pm2 logs mcp-hub-api
+   pm2 logs mcp-knot-api
 
    # 或查看文件日志
-   tail -f /var/log/mcp-hub/app.log
+   tail -f /var/log/mcp-knot/app.log
    ```
 
 ### Q: 服务器连接后立即断开？
@@ -510,14 +510,14 @@ http://your-domain.com/:groupId/mcp
 2. **增加 Node.js 内存限制**:
 
    ```bash
-   NODE_OPTIONS="--max-old-space-size=4096" pm2 restart mcp-hub-api
+   NODE_OPTIONS="--max-old-space-size=4096" pm2 restart mcp-knot-api
    ```
 
 3. **定期重启服务**:
 
    ```bash
    # 每天凌晨 3 点重启
-   0 3 * * * pm2 restart mcp-hub-api
+   0 3 * * * pm2 restart mcp-knot-api
    ```
 
 4. **检查内存泄漏**:
@@ -594,7 +594,7 @@ http://your-domain.com/:groupId/mcp
 
 4. **查看错误日志**:
    ```bash
-   pm2 logs mcp-hub-api --lines 100
+   pm2 logs mcp-knot-api --lines 100
    ```
 
 ### Q: 前端无法连接到后端？
@@ -625,7 +625,7 @@ http://your-domain.com/:groupId/mcp
 1. **从备份恢复**:
 
    ```bash
-   ./restore.sh /backup/mcp-hub/config_latest.tar.gz
+   ./restore.sh /backup/mcp-knot/config_latest.tar.gz
    ```
 
 2. **检查配置历史**:
@@ -643,7 +643,7 @@ http://your-domain.com/:groupId/mcp
 1. **检查证书有效期**:
 
    ```bash
-   openssl x509 -in /etc/ssl/certs/mcp-hub.crt -noout -dates
+   openssl x509 -in /etc/ssl/certs/mcp-knot.crt -noout -dates
    ```
 
 2. **更新证书**:
@@ -659,7 +659,7 @@ http://your-domain.com/:groupId/mcp
 
 ## 安全性
 
-### Q: 如何保护 MCP Hub 的安全？
+### Q: 如何保护 MCP Knot 的安全？
 
 **A:** 安全最佳实践：
 
@@ -745,7 +745,7 @@ location /api/ {
 
    ```bash
    pm2 start dist/src/index.js -i max
-   pm2 reload mcp-hub-api  # 滚动重启
+   pm2 reload mcp-knot-api  # 滚动重启
    ```
 
 2. **使用蓝绿部署**:
@@ -765,19 +765,19 @@ location /api/ {
 
 ```bash
 # 创建备份脚本
-cat > /usr/local/bin/mcp-hub-backup.sh << 'EOF'
+cat > /usr/local/bin/mcp-knot-backup.sh << 'EOF'
 #!/bin/bash
-BACKUP_DIR="/backup/mcp-hub"
+BACKUP_DIR="/backup/mcp-knot"
 DATE=$(date +%Y%m%d_%H%M%S)
-tar -czf $BACKUP_DIR/config_$DATE.tar.gz /etc/mcp-hub/config
+tar -czf $BACKUP_DIR/config_$DATE.tar.gz /etc/mcp-knot/config
 find $BACKUP_DIR -name "config_*.tar.gz" -mtime +30 -delete
 EOF
 
-chmod +x /usr/local/bin/mcp-hub-backup.sh
+chmod +x /usr/local/bin/mcp-knot-backup.sh
 
 # 设置 cron 任务（每天凌晨 2 点）
 crontab -e
-0 2 * * * /usr/local/bin/mcp-hub-backup.sh
+0 2 * * * /usr/local/bin/mcp-knot-backup.sh
 ```
 
 ### Q: 如何监控生产环境？
@@ -798,7 +798,7 @@ crontab -e
 
 ```bash
 # 增加后端实例
-pm2 scale mcp-hub-api +2
+pm2 scale mcp-knot-api +2
 ```
 
 **垂直扩展**:
@@ -828,10 +828,10 @@ pm2 scale mcp-hub-api +2
 
    ```bash
    # 后端日志
-   pm2 logs mcp-hub-api
+   pm2 logs mcp-knot-api
 
    # 系统日志
-   tail -f /var/log/mcp-hub/app.log
+   tail -f /var/log/mcp-knot/app.log
    ```
 
 3. **使用调试工具**:
@@ -857,4 +857,4 @@ pm2 scale mcp-hub-api +2
 2. 提交 Pull Request 改进文档
 3. 在 Discussions 中分享经验
 
-感谢你使用 MCP Hub！
+感谢你使用 MCP Knot！

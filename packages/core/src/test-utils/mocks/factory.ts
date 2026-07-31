@@ -117,7 +117,7 @@ export class MockConfigFactory {
           secret: 'test-secret',
           expiresIn: '15m',
           refreshExpiresIn: '7d',
-          issuer: 'mcp-hub',
+          issuer: 'mcp-knot',
         },
         security: {
           maxLoginAttempts: 5,
@@ -128,7 +128,7 @@ export class MockConfigFactory {
       },
       users: {},
       ui: {
-        title: 'MCP Hub',
+        title: 'MCP Knot',
         theme: 'light',
         features: {
           apiToMcp: true,

@@ -33,7 +33,7 @@ export const DEFAULT_CLI_LOGGER_CONFIG: CliLoggerConfig = {
   enableTimestamp: true,
   quiet: EnvironmentDetector.isTestEnvironment() && !EnvironmentDetector.isDebugMode(),
   verbose: false,
-  logDir: path.join(os.homedir(), '.mcp-hub', 'logs'),
+  logDir: path.join(os.homedir(), '.mcp-knot', 'logs'),
   maxFileSize: 5 * 1024 * 1024, // 5MB
   maxFiles: 3,
   enableRotation: true,
@@ -67,7 +67,7 @@ export class CliLogger extends BaseCliLogger {
 
     // 设置文件路径
     if (config.enableFile && config.logDir) {
-      adjustedConfig.filePath = path.join(config.logDir, 'mcp-hub-cli.log');
+      adjustedConfig.filePath = path.join(config.logDir, 'mcp-knot-cli.log');
     }
 
     super(adjustedConfig);

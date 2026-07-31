@@ -81,7 +81,7 @@ describe('MRTR（P5 e2e）', () => {
     await globalHub?.shutdown().catch(() => {});
 
     // 建新临时目录写入 mrtr-upstream 配置
-    tempDir = mkdtempSync(join(tmpdir(), `mcp-hub-mrtr-e2e-${process.pid}-`));
+    tempDir = mkdtempSync(join(tmpdir(), `mcp-knot-mrtr-e2e-${process.pid}-`));
     process.env.CONFIG_PATH = tempDir;
 
     writeFileSync(

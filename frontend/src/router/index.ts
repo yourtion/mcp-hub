@@ -122,7 +122,7 @@ router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
 
   if (to.meta.title) {
-    document.title = `${to.meta.title} - MCP Hub`;
+    document.title = `${to.meta.title} - MCP Knot`;
   }
 
   if (to.name === 'Login' && authStore.isAuthenticated) {

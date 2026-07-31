@@ -1,6 +1,6 @@
 /**
  * 错误处理模块
- * 定义MCP Hub核心包的错误类型和处理逻辑
+ * 定义MCP Knot核心包的错误类型和处理逻辑
  */
 
 import { createLogger } from '../utils/logger.js';
@@ -314,7 +314,7 @@ export function getHttpStatusForError(code: ErrorCode): number {
 }
 
 /**
- * MCP Hub核心错误基类
+ * MCP Knot核心错误基类
  */
 export class McpKnotCoreError extends Error {
   public readonly category: ErrorCategory;

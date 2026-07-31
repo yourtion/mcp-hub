@@ -22,7 +22,7 @@ export function setupTestConfig(enableAuth: boolean = true): string {
   }
 
   // 创建临时配置目录
-  testConfigDir = path.join(tmpdir(), `mcp-hub-test-${Date.now()}`);
+  testConfigDir = path.join(tmpdir(), `mcp-knot-test-${Date.now()}`);
   mkdirSync(testConfigDir, { recursive: true });
 
   // 设置环境变量（在创建文件前设置）
@@ -101,7 +101,7 @@ export function setupTestConfig(enableAuth: boolean = true): string {
         secret: 'test-secret-key',
         expiresIn: '1h',
         refreshExpiresIn: '7d',
-        issuer: 'mcp-hub-test',
+        issuer: 'mcp-knot-test',
       },
       security: {
         maxLoginAttempts: 5,
@@ -124,7 +124,7 @@ export function setupTestConfig(enableAuth: boolean = true): string {
         }
       : {},
     ui: {
-      title: 'MCP Hub Test',
+      title: 'MCP Knot Test',
       theme: 'light',
       features: {
         apiToMcp: true,

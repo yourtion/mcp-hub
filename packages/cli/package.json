@@ -2,7 +2,7 @@
   "name": "@mcp-core/mcp-knot-cli",
   "version": "0.0.1",
   "private": false,
-  "description": "MCP Hub CLI包 - 提供命令行界面的MCP服务聚合器",
+  "description": "MCP Knot CLI包 - 提供命令行界面的MCP服务聚合器",
   "keywords": [
     "cli",
     "command-line",

@@ -68,10 +68,10 @@ export class AuthService {
     },
     auth: {
       jwt: {
-        secret: 'mcp-hub-default-jjwt-secret-key-change-in-production',
+        secret: 'mcp-knot-default-jjwt-secret-key-change-in-production',
         expiresIn: '24h',
         refreshExpiresIn: '7d',
-        issuer: 'mcp-hub',
+        issuer: 'mcp-knot',
       },
       security: {
         maxLoginAttempts: 5,
@@ -96,7 +96,7 @@ export class AuthService {
       retentionDays: 30,
     },
     ui: {
-      title: 'MCP Hub',
+      title: 'MCP Knot',
       theme: 'light',
       features: {
         apiToMcp: true,

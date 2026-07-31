@@ -2,7 +2,7 @@
   <div class="login-page">
     <div class="login-card">
       <div class="login-header">
-        <h1 class="login-title">MCP Hub</h1>
+        <h1 class="login-title">MCP Knot</h1>
         <p class="login-subtitle">Model Context Protocol 管理平台</p>
       </div>
 

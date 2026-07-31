@@ -98,7 +98,7 @@ export class ServerManager implements IServerManager {
       config,
       client: new Client(
         {
-          name: `mcp-hub-${serverId}`,
+          name: `mcp-knot-${serverId}`,
           version: '1.0.0',
         },
         {

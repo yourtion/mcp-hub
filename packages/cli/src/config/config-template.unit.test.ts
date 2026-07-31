@@ -92,7 +92,7 @@ describe('ConfigTemplateGenerator', () => {
       // 验证日志配置
       expect(template.logging).toEqual({
         level: 'info',
-        file: './logs/mcp-hub.log',
+        file: './logs/mcp-knot.log',
       });
     });
 
@@ -184,7 +184,7 @@ describe('ConfigTemplateGenerator', () => {
       // 验证生产日志配置
       expect(template.logging).toEqual({
         level: 'warn',
-        file: '/var/log/mcp-hub/mcp-hub.log',
+        file: '/var/log/mcp-knot/mcp-knot.log',
       });
     });
 
@@ -275,7 +275,7 @@ describe('ConfigTemplateGenerator', () => {
     it('应该返回带注释的配置模板', () => {
       const template = generator.getTemplateWithComments('basic');
 
-      expect(template).toContain('// MCP Hub CLI 配置文件');
+      expect(template).toContain('// MCP Knot CLI 配置文件');
       expect(template).toContain('// 配置说明:');
       expect(template).toContain('// - servers:');
       expect(template).toContain('// - logging:');

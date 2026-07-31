@@ -457,7 +457,7 @@ export class CliLogger extends UnifiedLogger {
     const banner = [
       '',
       '╭─────────────────────────────────────╮',
-      '│           MCP Hub CLI               │',
+      '│           MCP Knot CLI              │',
       `│           版本 ${version.padEnd(20)} │`,
       '╰─────────────────────────────────────╯',
       '',

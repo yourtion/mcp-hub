@@ -1,8 +1,12 @@
-# MCP Hub
+# MCP Knot
 
 English | [中文版](README.zh.md)
 
-A centralized hub server engineered to consolidate multiple MCP servers into dedicated Streamable HTTP or SSE endpoints, each tailored to specific use scenarios.
+> *Knot* —— 纽带、交织点。多个 MCP server 像散落的线，MCP Knot 把它们打成一个结，成为所有工具交汇的轻量枢纽。
+
+**Tie your MCP servers together.**
+
+A centralized hub server engineered to consolidate multiple MCP servers into dedicated Streamable HTTP or SSE endpoints, each tailored to specific use scenarios — lightweight, zero-config, and leading on the 2026-07-28 stateless MCP protocol.
 
 ## Features
 
@@ -16,25 +20,25 @@ A centralized hub server engineered to consolidate multiple MCP servers into ded
 
 ## Architecture
 
-MCP Hub follows a modular monorepo architecture with the following packages:
+MCP Knot follows a modular monorepo architecture with the following packages:
 
 ### Core Packages
 
-- **`@mcp-core/mcp-hub-core`** - Core MCP service management, connection handling, and tool execution
-- **`@mcp-core/mcp-hub-api`** - Web API server with group-based routing and HTTP endpoints
-- **`@mcp-core/mcp-hub-cli`** - Command-line MCP server for standalone tool aggregation
-- **`@mcp-core/mcp-hub-share`** - Shared types and utilities across packages
-- **`@mcp-core/mcp-hub-web`** - Vue.js frontend interface (optional)
+- **`@mcp-core/mcp-knot-core`** - Core MCP service management, connection handling, and tool execution
+- **`@mcp-core/mcp-knot-api`** - Web API server with group-based routing and HTTP endpoints
+- **`@mcp-core/mcp-knot-cli`** - Command-line MCP server for standalone tool aggregation
+- **`@mcp-core/mcp-knot-share`** - Shared types and utilities across packages
+- **`@mcp-core/mcp-knot-web`** - Vue.js frontend interface (optional)
 
 ### Package Structure
 
 ```
-├── backend/              # API server (@mcp-core/mcp-hub-api)
+├── backend/              # API server (@mcp-core/mcp-knot-api)
 ├── frontend/             # Vue.js web interface
 ├── packages/
-│   ├── core/            # Core MCP logic (@mcp-core/mcp-hub-core)
-│   ├── cli/             # CLI package (@mcp-core/mcp-hub-cli)
-│   └── share/           # Shared types (@mcp-core/mcp-hub-share)
+│   ├── core/            # Core MCP logic (@mcp-core/mcp-knot-core)
+│   ├── cli/             # CLI package (@mcp-core/mcp-knot-cli)
+│   └── share/           # Shared types (@mcp-core/mcp-knot-share)
 └── docs/                # Documentation
 ```
 
@@ -86,7 +90,7 @@ Use the CLI package as a standalone MCP server:
 
 ```bash
 # Install CLI globally (optional)
-npm install -g @mcp-core/mcp-hub-cli
+npm install -g @mcp-core/mcp-knot-cli
 
 # Or run directly from workspace
 cd packages/cli
@@ -94,28 +98,28 @@ pnpm build
 node dist/cli.js
 
 # Or use the executable
-./bin/mcp-hub.js
+./bin/mcp-knot.js
 ```
 
 #### Quick Configuration Initialization
 
-MCP Hub CLI provides quick configuration initialization to help you get started quickly:
+MCP Knot CLI provides quick configuration initialization to help you get started quickly:
 
 ```bash
 # View all available commands
-mcp-hub --help
+mcp-knot --help
 
 # Initialize default configuration (includes common server examples)
-mcp-hub --init
+mcp-knot --init
 
 # Initialize all configurations (includes group configuration)
-mcp-hub --init-all
+mcp-knot --init-all
 
 # List all available server presets
-mcp-hub --list-presets
+mcp-knot --list-presets
 
 # Overwrite existing configuration files
-mcp-hub --init-all --overwrite
+mcp-knot --init-all --overwrite
 ```
 
 The default configuration includes these commonly used MCP servers:
@@ -269,10 +273,10 @@ The frontend uses JWT-based authentication. To configure authentication:
 
    The canonical production topology is a **two-container stack** defined in
    `docker-compose.yml`:
-   - `mcp-hub-web` (nginx, host port **8180**) — serves the SPA and reverse-proxies
+   - `mcp-knot-web` (nginx, host port **8180**) — serves the SPA and reverse-proxies
      `/api/`, `/mcp`, `/:group/mcp` to the backend. SPA fallback (`try_files ... /index.html`)
      is configured in `frontend/nginx.conf`, so refreshing any frontend route works.
-   - `mcp-hub-api` (Node, internal **8181**) — the API + MCP endpoint, **not** a SPA host.
+   - `mcp-knot-api` (Node, internal **8181**) — the API + MCP endpoint, **not** a SPA host.
 
    Always access the app via the nginx port (**8180**). Hitting the backend port (8181)
    directly with a frontend path returns `404 Not Found` because the backend only serves
@@ -400,8 +404,8 @@ Configure the CLI server in your MCP client (e.g., Claude Desktop):
 ```json
 {
   "mcpServers": {
-    "mcp-hub": {
-      "command": "/path/to/mcp-hub/packages/cli/bin/mcp-hub.js",
+    "mcp-knot": {
+      "command": "/path/to/mcp-knot/packages/cli/bin/mcp-knot.js",
       "args": ["--config", "/path/to/mcp_server.json"]
     }
   }
@@ -475,7 +479,7 @@ pnpm test:mcp         # MCP protocol tests
 
 ### Release Process
 
-MCP Hub uses [Changesets](https://github.com/changesets/changesets) for version management and publishing, with [NPM Trusted Publishers](docs/NPM_TRUSTED_PUBLISHERS.md) for secure package publishing.
+MCP Knot uses [Changesets](https://github.com/changesets/changesets) for version management and publishing, with [NPM Trusted Publishers](docs/NPM_TRUSTED_PUBLISHERS.md) for secure package publishing.
 
 #### Daily Development Workflow
 

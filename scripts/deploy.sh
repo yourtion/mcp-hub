@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# MCP Hub 部署脚本
+# MCP Knot 部署脚本
 
 set -e
 
@@ -41,7 +41,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-echo "🚀 开始部署 MCP Hub..."
+echo "🚀 开始部署 MCP Knot..."
 echo "  环境: $ENVIRONMENT"
 echo "  配置目录: $CONFIG_DIR"
 echo "  Compose 文件: $COMPOSE_FILE"
@@ -100,7 +100,7 @@ if [ "$ENVIRONMENT" = "production" ]; then
         echo "✅ API 服务健康"
     else
         echo "❌ API 服务不健康"
-        docker-compose -f $COMPOSE_FILE logs mcp-hub-api
+        docker-compose -f $COMPOSE_FILE logs mcp-knot-api
         exit 1
     fi
 
@@ -109,7 +109,7 @@ if [ "$ENVIRONMENT" = "production" ]; then
         echo "✅ 前端服务健康"
     else
         echo "❌ 前端服务不健康"
-        docker-compose -f $COMPOSE_FILE logs mcp-hub-web
+        docker-compose -f $COMPOSE_FILE logs mcp-knot-web
         exit 1
     fi
 fi

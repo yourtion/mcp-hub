@@ -18,7 +18,7 @@ vi.mock('@modelcontextprotocol/client', () => {
 vi.mock('@modelcontextprotocol/client/stdio');
 vi.mock('../utils/logger.js');
 
-describe('MCP Hub Service Integration Tests', () => {
+describe('MCP Knot Service Integration Tests', () => {
   let mcpHubService: McpKnotService;
   let mockClient: Record<string, ReturnType<typeof vi.fn>>;
   let serverConfigs: Record<string, ServerConfig>;

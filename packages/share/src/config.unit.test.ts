@@ -151,7 +151,7 @@ describe('Config Types', () => {
             secret: 'test-secret',
             expiresIn: '15m',
             refreshExpiresIn: '7d',
-            issuer: 'mcp-hub',
+            issuer: 'mcp-knot',
           },
           security: {
             maxLoginAttempts: 5,
@@ -162,7 +162,7 @@ describe('Config Types', () => {
         },
         users: {},
         ui: {
-          title: 'MCP Hub',
+          title: 'MCP Knot',
           theme: 'light',
           features: {
             apiToMcp: true,
@@ -179,7 +179,7 @@ describe('Config Types', () => {
 
       expect(config.server.port).toBe(3000);
       expect(config.auth.jwt.secret).toBe('test-secret');
-      expect(config.ui.title).toBe('MCP Hub');
+      expect(config.ui.title).toBe('MCP Knot');
       expect(config.monitoring.metricsEnabled).toBe(true);
     });
 

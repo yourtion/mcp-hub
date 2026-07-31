@@ -1,6 +1,6 @@
 /**
  * API工具集成服务
- * 负责将API转MCP工具集成到现有的MCP Hub中
+ * 负责将API转MCP工具集成到现有的MCP Knot中
  */
 
 import { ErrorCode, ServiceError } from '@mcp-core/mcp-knot-core';
@@ -15,7 +15,7 @@ import type { Tool, ToolResult } from '../types/mcp-knot.js';
 
 /**
  * API工具集成服务类
- * 作为现有MCP Hub和API转MCP服务之间的桥梁
+ * 作为现有MCP Knot和API转MCP服务之间的桥梁
  */
 export class ApiToolIntegrationService {
   private apiServiceManager: ApiToMcpServiceManager;
@@ -72,7 +72,7 @@ export class ApiToolIntegrationService {
     try {
       const apiTools = await this.apiServiceManager.getApiTools();
 
-      // 转换为MCP Hub的Tool格式
+      // 转换为MCP Knot的Tool格式
       return apiTools.map((apiTool) => ({
         name: apiTool.name,
         description: apiTool.description,
@@ -112,7 +112,7 @@ export class ApiToolIntegrationService {
     try {
       const result = await this.apiServiceManager.executeApiTool(toolName, args);
 
-      // 转换为MCP Hub的ToolResult格式
+      // 转换为MCP Knot的ToolResult格式
       return {
         isError: result.isError,
         content: result.content,

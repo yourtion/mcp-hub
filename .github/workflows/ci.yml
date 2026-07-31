@@ -106,7 +106,7 @@ jobs:
         if: matrix.node-version == '24.x'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: yourtion/mcp-hub
+          slug: yourtion/mcp-knot
           files: |
             ./backend/coverage/lcov.info
             ./packages/core/coverage/lcov.info
@@ -241,7 +241,7 @@ jobs:
           context: .
           file: backend/Dockerfile
           push: false
-          tags: mcp-hub/api:test
+          tags: mcp-knot/api:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -251,7 +251,7 @@ jobs:
           context: .
           file: packages/cli/Dockerfile
           push: false
-          tags: mcp-hub/cli:test
+          tags: mcp-knot/cli:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -261,7 +261,7 @@ jobs:
           context: .
           file: frontend/Dockerfile
           push: false
-          tags: mcp-hub/web:test
+          tags: mcp-knot/web:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

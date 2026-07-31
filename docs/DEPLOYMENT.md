@@ -1,6 +1,6 @@
-# MCP Hub 部署指南
+# MCP Knot 部署指南
 
-本指南介绍如何在生产环境中部署 MCP Hub。
+本指南介绍如何在生产环境中部署 MCP Knot。
 
 ## 目录
 
@@ -103,8 +103,8 @@ npm install -g pm2
 
 ```bash
 # 克隆代码
-git clone https://github.com/your-org/mcp-hub.git
-cd mcp-hub
+git clone https://github.com/your-org/mcp-knot.git
+cd mcp-knot
 
 # 安装依赖
 pnpm install --frozen-lockfile
@@ -130,25 +130,25 @@ JWT_REFRESH_EXPIRES_IN=7d
 
 # 日志配置
 LOG_LEVEL=info
-LOG_FILE=/var/log/mcp-hub/app.log
+LOG_FILE=/var/log/mcp-knot/app.log
 
 # 配置文件路径
-CONFIG_DIR=/etc/mcp-hub/config
+CONFIG_DIR=/etc/mcp-knot/config
 ```
 
 #### 4. 配置生产环境
 
 ```bash
 # 创建配置目录
-sudo mkdir -p /etc/mcp-hub/config
-sudo mkdir -p /var/log/mcp-hub
+sudo mkdir -p /etc/mcp-knot/config
+sudo mkdir -p /var/log/mcp-knot
 
 # 复制配置文件
-sudo cp backend/config/*.json /etc/mcp-hub/config/
+sudo cp backend/config/*.json /etc/mcp-knot/config/
 
 # 设置权限
-sudo chown -R $USER:$USER /etc/mcp-hub
-sudo chown -R $USER:$USER /var/log/mcp-hub
+sudo chown -R $USER:$USER /etc/mcp-knot
+sudo chown -R $USER:$USER /var/log/mcp-knot
 ```
 
 #### 5. 启动服务
@@ -158,7 +158,7 @@ sudo chown -R $USER:$USER /var/log/mcp-hub
 ```bash
 # 启动后端
 cd backend
-pm2 start dist/src/index.js --name mcp-hub-api
+pm2 start dist/src/index.js --name mcp-knot-api
 
 # 保存 PM2 配置
 pm2 save
@@ -169,7 +169,7 @@ pm2 startup
 
 #### 6. 配置 Nginx
 
-创建 Nginx 配置文件 `/etc/nginx/sites-available/mcp-hub`:
+创建 Nginx 配置文件 `/etc/nginx/sites-available/mcp-knot`:
 
 ```nginx
 # 后端 API 上游
@@ -182,7 +182,7 @@ upstream mcp_hub_backend {
 
 server {
     listen 80;
-    server_name mcp-hub.example.com;
+    server_name mcp-knot.example.com;
 
     # 重定向到 HTTPS
     return 301 https://$server_name$request_uri;
@@ -190,11 +190,11 @@ server {
 
 server {
     listen 443 ssl http2;
-    server_name mcp-hub.example.com;
+    server_name mcp-knot.example.com;
 
     # SSL 证书配置
-    ssl_certificate /etc/ssl/certs/mcp-hub.crt;
-    ssl_certificate_key /etc/ssl/private/mcp-hub.key;
+    ssl_certificate /etc/ssl/certs/mcp-knot.crt;
+    ssl_certificate_key /etc/ssl/private/mcp-knot.key;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
@@ -206,7 +206,7 @@ server {
 
     # 前端静态文件
     location / {
-        root /var/www/mcp-hub/frontend/dist;
+        root /var/www/mcp-knot/frontend/dist;
         try_files $uri $uri/ /index.html;
 
         # 缓存静态资源
@@ -266,7 +266,7 @@ server {
 
 ```bash
 # 创建符号链接
-sudo ln -s /etc/nginx/sites-available/mcp-hub /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/mcp-knot /etc/nginx/sites-enabled/
 
 # 测试配置
 sudo nginx -t
@@ -283,10 +283,10 @@ sudo systemctl restart nginx
 
 ```bash
 # 构建后端镜像
-docker build -t mcp-hub-api:latest -f backend/Dockerfile .
+docker build -t mcp-knot-api:latest -f backend/Dockerfile .
 
 # 构建前端镜像
-docker build -t mcp-hub-web:latest -f frontend/Dockerfile .
+docker build -t mcp-knot-web:latest -f frontend/Dockerfile .
 ```
 
 #### 2. 使用 Docker Compose
@@ -298,8 +298,8 @@ version: '3.8'
 
 services:
   api:
-    image: mcp-hub-api:latest
-    container_name: mcp-hub-api
+    image: mcp-knot-api:latest
+    container_name: mcp-knot-api
     restart: unless-stopped
     ports:
       - '3000:3000'
@@ -313,7 +313,7 @@ services:
       - ./config:/app/config
       - ./logs:/app/logs
     networks:
-      - mcp-hub-network
+      - mcp-knot-network
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:8181/health']
       interval: 30s
@@ -321,8 +321,8 @@ services:
       retries: 3
 
   web:
-    image: mcp-hub-web:latest
-    container_name: mcp-hub-web
+    image: mcp-knot-web:latest
+    container_name: mcp-knot-web
     restart: unless-stopped
     ports:
       - '80:80'
@@ -333,10 +333,10 @@ services:
     depends_on:
       - api
     networks:
-      - mcp-hub-network
+      - mcp-knot-network
 
 networks:
-  mcp-hub-network:
+  mcp-knot-network:
     driver: bridge
 ```
 
@@ -366,22 +366,22 @@ docker-compose -f docker-compose.prod.yml down
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mcp-hub-api
+  name: mcp-knot-api
   labels:
-    app: mcp-hub-api
+    app: mcp-knot-api
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: mcp-hub-api
+      app: mcp-knot-api
   template:
     metadata:
       labels:
-        app: mcp-hub-api
+        app: mcp-knot-api
     spec:
       containers:
         - name: api
-          image: mcp-hub-api:latest
+          image: mcp-knot-api:latest
           ports:
             - containerPort: 3000
           env:
@@ -390,7 +390,7 @@ spec:
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: mcp-hub-secrets
+                  name: mcp-knot-secrets
                   key: jwt-secret
           resources:
             requests:
@@ -415,10 +415,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mcp-hub-api-service
+  name: mcp-knot-api-service
 spec:
   selector:
-    app: mcp-hub-api
+    app: mcp-knot-api
   ports:
     - protocol: TCP
       port: 80
@@ -430,7 +430,7 @@ spec:
 
 ```bash
 # 创建 Secret
-kubectl create secret generic mcp-hub-secrets \
+kubectl create secret generic mcp-knot-secrets \
   --from-literal=jwt-secret=your-super-secret-jwt-key
 
 # 部署应用
@@ -441,7 +441,7 @@ kubectl get pods
 kubectl get services
 
 # 查看日志
-kubectl logs -f deployment/mcp-hub-api
+kubectl logs -f deployment/mcp-knot-api
 ```
 
 ## 配置管理
@@ -456,7 +456,7 @@ kubectl logs -f deployment/mcp-hub-api
     "port": 3000,
     "host": "0.0.0.0",
     "cors": {
-      "origin": ["https://mcp-hub.example.com"],
+      "origin": ["https://mcp-knot.example.com"],
       "credentials": true
     }
   },
@@ -470,7 +470,7 @@ kubectl logs -f deployment/mcp-hub-api
   },
   "logging": {
     "level": "info",
-    "file": "/var/log/mcp-hub/app.log",
+    "file": "/var/log/mcp-knot/app.log",
     "maxFiles": 10,
     "maxSize": "10m"
   },
@@ -530,7 +530,7 @@ require('dotenv').config({ path: '.env.production' });
 sudo apt install certbot python3-certbot-nginx
 
 # 获取证书
-sudo certbot --nginx -d mcp-hub.example.com
+sudo certbot --nginx -d mcp-knot.example.com
 
 # 自动续期
 sudo certbot renew --dry-run
@@ -613,10 +613,10 @@ app.use('/api/', limiter);
 pm2 status
 
 # 查看详细信息
-pm2 show mcp-hub-api
+pm2 show mcp-knot-api
 
 # 查看实时日志
-pm2 logs mcp-hub-api
+pm2 logs mcp-knot-api
 
 # 查看监控面板
 pm2 monit
@@ -628,17 +628,17 @@ pm2 monit
 
 ```bash
 # 创建 logrotate 配置
-sudo nano /etc/logrotate.d/mcp-hub
+sudo nano /etc/logrotate.d/mcp-knot
 ```
 
 ```
-/var/log/mcp-hub/*.log {
+/var/log/mcp-knot/*.log {
     daily
     rotate 14
     compress
     delaycompress
     notifempty
-    create 0640 mcp-hub mcp-hub
+    create 0640 mcp-knot mcp-knot
     sharedscripts
     postrotate
         pm2 reloadLogs
@@ -653,7 +653,7 @@ sudo nano /etc/logrotate.d/mcp-hub
 ```yaml
 # prometheus.yml
 scrape_configs:
-  - job_name: 'mcp-hub'
+  - job_name: 'mcp-knot'
     static_configs:
       - targets: ['localhost:8181']
     metrics_path: '/api/metrics'
@@ -683,9 +683,9 @@ Sentry.init({
 #!/bin/bash
 # backup.sh
 
-BACKUP_DIR="/backup/mcp-hub"
+BACKUP_DIR="/backup/mcp-knot"
 DATE=$(date +%Y%m%d_%H%M%S)
-CONFIG_DIR="/etc/mcp-hub/config"
+CONFIG_DIR="/etc/mcp-knot/config"
 
 # 创建备份目录
 mkdir -p $BACKUP_DIR
@@ -718,7 +718,7 @@ crontab -e
 # restore.sh
 
 BACKUP_FILE=$1
-CONFIG_DIR="/etc/mcp-hub/config"
+CONFIG_DIR="/etc/mcp-knot/config"
 
 if [ -z "$BACKUP_FILE" ]; then
     echo "用法: ./restore.sh <backup_file>"
@@ -726,7 +726,7 @@ if [ -z "$BACKUP_FILE" ]; then
 fi
 
 # 停止服务
-pm2 stop mcp-hub-api
+pm2 stop mcp-knot-api
 
 # 备份当前配置
 cp -r $CONFIG_DIR ${CONFIG_DIR}.backup
@@ -735,7 +735,7 @@ cp -r $CONFIG_DIR ${CONFIG_DIR}.backup
 tar -xzf $BACKUP_FILE -C /
 
 # 重启服务
-pm2 start mcp-hub-api
+pm2 start mcp-knot-api
 
 echo "恢复完成"
 ```
@@ -812,7 +812,7 @@ const redis = new Redis({
 检查日志：
 
 ```bash
-pm2 logs mcp-hub-api --lines 100
+pm2 logs mcp-knot-api --lines 100
 ```
 
 常见原因：
@@ -854,10 +854,10 @@ node --prof-process isolate-*.log > profile.txt
 
 ```bash
 # 查看证书信息
-openssl x509 -in /etc/ssl/certs/mcp-hub.crt -text -noout
+openssl x509 -in /etc/ssl/certs/mcp-knot.crt -text -noout
 
 # 测试 SSL 配置
-openssl s_client -connect mcp-hub.example.com:443
+openssl s_client -connect mcp-knot.example.com:443
 ```
 
 ### 紧急恢复
@@ -870,19 +870,19 @@ openssl s_client -connect mcp-hub.example.com:443
    git checkout <previous-version>
    pnpm install
    pnpm build
-   pm2 restart mcp-hub-api
+   pm2 restart mcp-knot-api
    ```
 
 2. **从备份恢复**:
 
    ```bash
-   ./restore.sh /backup/mcp-hub/config_latest.tar.gz
+   ./restore.sh /backup/mcp-knot/config_latest.tar.gz
    ```
 
 3. **重置到默认配置**:
    ```bash
-   cp backend/config/*.json.default /etc/mcp-hub/config/
-   pm2 restart mcp-hub-api
+   cp backend/config/*.json.default /etc/mcp-knot/config/
+   pm2 restart mcp-knot-api
    ```
 
 ## 维护计划
@@ -923,11 +923,11 @@ openssl s_client -connect mcp-hub.example.com:443
 
 ```bash
 # 启动多个实例
-pm2 start dist/src/index.js -i 4 --name mcp-hub-api
+pm2 start dist/src/index.js -i 4 --name mcp-knot-api
 
 # 或使用不同端口
-PORT=3001 pm2 start dist/src/index.js --name mcp-hub-api-2
-PORT=3002 pm2 start dist/src/index.js --name mcp-hub-api-3
+PORT=3001 pm2 start dist/src/index.js --name mcp-knot-api-2
+PORT=3002 pm2 start dist/src/index.js --name mcp-knot-api-3
 ```
 
 更新 Nginx 配置：
@@ -980,10 +980,10 @@ upstream mcp_hub_backend {
 
    ```bash
    # 滚动更新（零停机）
-   pm2 reload mcp-hub-api
+   pm2 reload mcp-knot-api
 
    # 或重启
-   pm2 restart mcp-hub-api
+   pm2 restart mcp-knot-api
    ```
 
 4. **验证阶段**:
@@ -993,10 +993,10 @@ upstream mcp_hub_backend {
    pm2 status
 
    # 查看日志
-   pm2 logs mcp-hub-api --lines 50
+   pm2 logs mcp-knot-api --lines 50
 
    # 测试关键功能
-   curl https://mcp-hub.example.com/health
+   curl https://mcp-knot.example.com/health
    ```
 
 ## 相关文档

@@ -2,7 +2,7 @@
   "name": "@mcp-core/mcp-knot-core",
   "version": "0.0.1",
   "private": false,
-  "description": "MCP Hub核心包 - 提供MCP服务管理、连接管理和工具调用的核心功能",
+  "description": "MCP Knot核心包 - 提供MCP服务管理、连接管理和工具调用的核心功能",
   "keywords": [
     "core",
     "hub",

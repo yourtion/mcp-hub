@@ -1,5 +1,5 @@
 /**
- * MCP Hub聚合功能端到端测试
+ * MCP Knot聚合功能端到端测试
  * 测试Hub作为MCP服务聚合器的核心功能
  *
  * v2（协议 2026-07-28）：通过 StreamableHTTPClientTransport 连接
@@ -18,7 +18,7 @@ import {
 
 import type { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 
-describe('MCP Hub聚合功能端到端测试', () => {
+describe('MCP Knot聚合功能端到端测试', () => {
   let restoreConsole: () => void;
   let serverReady = false;
 

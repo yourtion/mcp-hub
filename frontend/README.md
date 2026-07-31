@@ -1,6 +1,6 @@
-# MCP Hub Web Interface
+# MCP Knot Web Interface
 
-Vue.js 前端界面，为 MCP Hub 提供完整的 Web 管理功能。
+Vue.js 前端界面，为 MCP Knot 提供完整的 Web 管理功能。
 
 ## 功能特性
 

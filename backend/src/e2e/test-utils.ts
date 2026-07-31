@@ -49,7 +49,7 @@ export function setupTestConfig(profileOrEnableAuth: TestConfigProfile | boolean
   const enableAuth = typeof profileOrEnableAuth === 'boolean' ? profileOrEnableAuth : true;
 
   // 创建临时配置目录（按 profile 区分前缀，避免 JsonStorage 缓存串）
-  testConfigDir = path.join(tmpdir(), `mcp-hub-e2e-${profile}-${process.pid}-${Date.now()}`);
+  testConfigDir = path.join(tmpdir(), `mcp-knot-e2e-${profile}-${process.pid}-${Date.now()}`);
   mkdirSync(testConfigDir, { recursive: true });
 
   // 设置环境变量（在创建文件前设置）
@@ -173,7 +173,7 @@ export function setupTestConfig(profileOrEnableAuth: TestConfigProfile | boolean
         secret: 'test-secret-key-for-testing-only',
         expiresIn: '1h',
         refreshExpiresIn: '7d',
-        issuer: 'mcp-hub-test',
+        issuer: 'mcp-knot-test',
       },
       security: {
         maxLoginAttempts: 5,
@@ -196,7 +196,7 @@ export function setupTestConfig(profileOrEnableAuth: TestConfigProfile | boolean
         }
       : {},
     ui: {
-      title: 'MCP Hub Test',
+      title: 'MCP Knot Test',
       theme: 'light',
       features: {
         apiToMcp: true,

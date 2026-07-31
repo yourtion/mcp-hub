@@ -43,7 +43,7 @@ describe('ConfigService', () => {
               secret: 'test-secret-key-with-sufficient-length',
               expiresIn: '15m',
               refreshExpiresIn: '7d',
-              issuer: 'mcp-hub',
+              issuer: 'mcp-knot',
             },
             security: {
               maxLoginAttempts: 5,
@@ -54,7 +54,7 @@ describe('ConfigService', () => {
           },
           users: {},
           ui: {
-            title: 'MCP Hub',
+            title: 'MCP Knot',
             theme: 'light',
             features: {
               apiToMcp: true,
@@ -91,7 +91,7 @@ describe('ConfigService', () => {
             secret: 'test-secret-key-with-sufficient-length-for-security',
             expiresIn: '15m',
             refreshExpiresIn: '7d',
-            issuer: 'mcp-hub',
+            issuer: 'mcp-knot',
           },
           security: {
             maxLoginAttempts: 5,
@@ -102,7 +102,7 @@ describe('ConfigService', () => {
         },
         users: {},
         ui: {
-          title: 'MCP Hub',
+          title: 'MCP Knot',
           theme: 'light',
           features: {
             apiToMcp: true,
@@ -131,7 +131,7 @@ describe('ConfigService', () => {
             secret: 'short', // 太短的密钥
             expiresIn: '15m',
             refreshExpiresIn: '7d',
-            issuer: 'mcp-hub',
+            issuer: 'mcp-knot',
           },
           security: {
             maxLoginAttempts: 0, // 无效值
@@ -142,7 +142,7 @@ describe('ConfigService', () => {
         },
         users: {},
         ui: {
-          title: 'MCP Hub',
+          title: 'MCP Knot',
           theme: 'light',
           features: {
             apiToMcp: true,
@@ -425,7 +425,7 @@ describe('ConfigService', () => {
             secret: 'test-secret-key-with-sufficient-length-for-security',
             expiresIn: '15m',
             refreshExpiresIn: '7d',
-            issuer: 'mcp-hub',
+            issuer: 'mcp-knot',
           },
           security: {
             maxLoginAttempts: 5,
@@ -445,7 +445,7 @@ describe('ConfigService', () => {
           },
         },
         ui: {
-          title: 'MCP Hub',
+          title: 'MCP Knot',
           theme: 'light',
           features: {
             apiToMcp: true,
@@ -482,7 +482,7 @@ describe('ConfigService', () => {
             secret: 'short',
             expiresIn: '15m',
             refreshExpiresIn: '7d',
-            issuer: 'mcp-hub',
+            issuer: 'mcp-knot',
           },
           security: {
             maxLoginAttempts: 0,
@@ -493,7 +493,7 @@ describe('ConfigService', () => {
         },
         users: {},
         ui: {
-          title: 'MCP Hub',
+          title: 'MCP Knot',
           theme: 'light',
           features: {
             apiToMcp: true,

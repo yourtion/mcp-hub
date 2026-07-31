@@ -535,7 +535,7 @@ describe('ApiToMcpWebService', () => {
     it('应该返回默认的配置文件路径', () => {
       const path = ApiToMcpWebService.getDefaultConfigPath();
 
-      expect(path).toMatch(/\.mcp-hub[\\/]api-tools\.json$/);
+      expect(path).toMatch(/\.mcp-knot[\\/]api-tools\.json$/);
     });
   });
 

@@ -22,7 +22,7 @@ console.log('\n2. 临时目录检查:');
 const tempDir = tmpdir();
 console.log(`   系统临时目录: ${tempDir}`);
 
-const testDir = path.join(tempDir, 'mcp-hub-test-diagnostic');
+const testDir = path.join(tempDir, 'mcp-knot-test-diagnostic');
 try {
   mkdirSync(testDir, { recursive: true });
   console.log(`   ✓ 临时目录可创建: ${testDir}`);

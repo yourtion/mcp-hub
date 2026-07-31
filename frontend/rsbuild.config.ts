@@ -24,7 +24,7 @@ export default defineConfig({
     },
   },
   html: {
-    title: 'MCP Hub 管理界面',
+    title: 'MCP Knot 管理界面',
     mountId: 'app',
   },
   performance: {

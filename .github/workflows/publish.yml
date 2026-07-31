@@ -128,8 +128,8 @@ jobs:
           file: ${{ matrix.image.dockerfile }}
           push: true
           tags: |
-            mcp-hub/${{ matrix.image.name }}:latest
-            mcp-hub/${{ matrix.image.name }}:${{ steps.get_version.outputs.VERSION }}
+            mcp-knot/${{ matrix.image.name }}:latest
+            mcp-knot/${{ matrix.image.name }}:${{ steps.get_version.outputs.VERSION }}
           platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max

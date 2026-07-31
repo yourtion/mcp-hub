@@ -24,9 +24,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Package-specific Commands
 
-- `pnpm --filter @mcp-core/mcp-hub-core dev` - Watch mode compilation for core package
-- `pnpm --filter @mcp-core/mcp-hub-cli test:e2e` - End-to-end tests for CLI package
-- `pnpm --filter @mcp-core/mcp-hub-api test:mcp` - MCP protocol tests for API package
+- `pnpm --filter @mcp-core/mcp-knot-core dev` - Watch mode compilation for core package
+- `pnpm --filter @mcp-core/mcp-knot-cli test:e2e` - End-to-end tests for CLI package
+- `pnpm --filter @mcp-core/mcp-knot-api test:mcp` - MCP protocol tests for API package
 
 ### Deployment
 
@@ -35,7 +35,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-MCP Hub is a modular monorepo that provides a centralized hub for managing multiple MCP (Model Context Protocol) servers through different interfaces.
+MCP Knot is a modular monorepo that provides a centralized hub for managing multiple MCP (Model Context Protocol) servers through different interfaces.
 
 ### Core Architecture
 
@@ -72,7 +72,7 @@ The project follows a modular architecture with clear separation of concerns:
 
 ```
 packages/
-├── core/                    # @mcp-core/mcp-hub-core
+├── core/                    # @mcp-core/mcp-knot-core
 │   ├── src/
 │   │   ├── api-to-mcp/     # API to MCP conversion services
 │   │   ├── config/         # Configuration management
@@ -80,14 +80,14 @@ packages/
 │   │   ├── services/       # Core services (MCP, tools, connections)
 │   │   ├── types/          # Type definitions
 │   │   └── utils/          # Utility functions
-├── cli/                     # @mcp-core/mcp-hub-cli
+├── cli/                     # @mcp-core/mcp-knot-cli
 │   ├── src/
 │   │   ├── config/         # CLI-specific configuration
 │   │   ├── protocol/       # MCP protocol handling
 │   │   ├── server/         # CLI server implementation
 │   │   ├── transport/      # Transport layer (stdin/stdout)
 │   │   └── utils/          # CLI utilities
-└── share/                   # @mcp-core/mcp-hub-share
+└── share/                   # @mcp-core/mcp-knot-share
     └── src/
         ├── types/          # Shared types
         └── utils/          # Shared utilities

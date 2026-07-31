@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# MCP Hub 构建脚本
+# MCP Knot 构建脚本
 
 set -e
 
-echo "🚀 开始构建 MCP Hub..."
+echo "🚀 开始构建 MCP Knot..."
 
 # 检查 Node.js 和 pnpm
 if ! command -v node &> /dev/null; then

@@ -1,6 +1,6 @@
 # CLI 使用指南
 
-MCP Hub CLI 包 (`@mcp-core/mcp-hub-cli`) 提供了一个独立的命令行 MCP 服务器，可以聚合多个 MCP 服务并通过标准 MCP 协议提供访问。
+MCP Knot CLI 包 (`@mcp-core/mcp-knot-cli`) 提供了一个独立的命令行 MCP 服务器，可以聚合多个 MCP 服务并通过标准 MCP 协议提供访问。
 
 ## 安装
 
@@ -19,12 +19,12 @@ node dist/cli.js
 
 ```bash
 # 从 npm 安装（发布后）
-npm install -g @mcp-core/mcp-hub-cli
+npm install -g @mcp-core/mcp-knot-cli
 
 # 或从本地构建安装
 cd packages/cli
 npm pack
-npm install -g mcp-core-mcp-hub-cli-1.0.0.tgz
+npm install -g mcp-core-mcp-knot-cli-1.0.0.tgz
 ```
 
 ## 基本使用
@@ -33,22 +33,22 @@ npm install -g mcp-core-mcp-hub-cli-1.0.0.tgz
 
 ```bash
 # 使用默认配置
-mcp-hub
+mcp-knot
 
 # 指定配置文件
-mcp-hub --config /path/to/mcp_server.json
+mcp-knot --config /path/to/mcp_server.json
 
 # 启用调试模式
-mcp-hub --debug
+mcp-knot --debug
 
 # 指定日志级别
-mcp-hub --log-level debug
+mcp-knot --log-level debug
 ```
 
 ### 命令行选项
 
 ```bash
-mcp-hub [options]
+mcp-knot [options]
 
 选项:
   --config, -c <path>     指定配置文件路径 (默认: ./mcp_server.json)
@@ -114,7 +114,7 @@ export MCP_HUB_DEBUG=true
 
 ### Claude Desktop 集成
 
-在 Claude Desktop 的配置文件中添加 MCP Hub CLI：
+在 Claude Desktop 的配置文件中添加 MCP Knot CLI：
 
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
@@ -122,8 +122,8 @@ export MCP_HUB_DEBUG=true
 ```json
 {
   "mcpServers": {
-    "mcp-hub": {
-      "command": "mcp-hub",
+    "mcp-knot": {
+      "command": "mcp-knot",
       "args": ["--config", "/path/to/your/mcp_server.json"]
     }
   }
@@ -136,7 +136,7 @@ CLI 服务器通过 stdin/stdout 实现标准 MCP 协议，可以与任何支持
 
 ```bash
 # 直接与 CLI 服务器交互
-echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}' | mcp-hub
+echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}' | mcp-knot
 ```
 
 ## 使用示例
@@ -145,10 +145,10 @@ echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}' | mcp-hub
 
 ```bash
 # 启动 CLI 服务器
-mcp-hub --config examples/config.json
+mcp-knot --config examples/config.json
 
 # 在另一个终端中测试
-echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}' | mcp-hub --config examples/config.json
+echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}' | mcp-knot --config examples/config.json
 ```
 
 ### 调用工具
@@ -165,17 +165,17 @@ echo '{
       "path": "/path/to/file.txt"
     }
   }
-}' | mcp-hub
+}' | mcp-knot
 ```
 
 ### 调试模式
 
 ```bash
 # 启用详细日志
-mcp-hub --debug --log-level debug
+mcp-knot --debug --log-level debug
 
 # 查看连接状态
-mcp-hub --debug 2>&1 | grep "连接状态"
+mcp-knot --debug 2>&1 | grep "连接状态"
 ```
 
 ## 故障排除
@@ -223,17 +223,17 @@ mcp-hub --debug 2>&1 | grep "连接状态"
 
 ```bash
 # 最详细的日志输出
-mcp-hub --debug --log-level debug
+mcp-knot --debug --log-level debug
 
 # 只显示错误
-mcp-hub --log-level error
+mcp-knot --log-level error
 ```
 
 #### 检查服务器状态
 
 ```bash
 # 查看所有连接的服务器
-echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}' | mcp-hub --debug
+echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}' | mcp-knot --debug
 ```
 
 #### 测试单个服务器
@@ -257,10 +257,10 @@ echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}' | mcp-hub --debug
 
 ```bash
 # 将日志输出到文件
-mcp-hub --log-level debug 2> mcp-hub.log
+mcp-knot --log-level debug 2> mcp-knot.log
 
 # 使用 systemd 运行（Linux）
-sudo systemctl edit --force --full mcp-hub.service
+sudo systemctl edit --force --full mcp-knot.service
 ```
 
 ### 性能优化
@@ -290,7 +290,7 @@ export MCP_HUB_WORK_DIR=/safe/directory
 ```bash
 # 克隆仓库
 git clone <repository-url>
-cd mcp-hub
+cd mcp-knot
 
 # 安装依赖
 pnpm install
@@ -323,7 +323,7 @@ cat > test-config.json << EOF
 EOF
 
 # 测试配置
-mcp-hub --config test-config.json --debug
+mcp-knot --config test-config.json --debug
 ```
 
 ## 最佳实践
@@ -354,4 +354,4 @@ mcp-hub --config test-config.json --debug
 - [MCP 协议规范](https://modelcontextprotocol.io/docs)
 - [MCP SDK 文档](https://github.com/modelcontextprotocol/typescript-sdk)
 - [Claude Desktop MCP 配置](https://docs.anthropic.com/claude/docs/mcp)
-- [项目 GitHub 仓库](https://github.com/your-org/mcp-hub)
+- [项目 GitHub 仓库](https://github.com/your-org/mcp-knot)

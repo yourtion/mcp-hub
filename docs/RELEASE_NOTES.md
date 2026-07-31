@@ -1,4 +1,4 @@
-# MCP Hub Release Notes
+# MCP Knot Release Notes
 
 ## Unreleased — MCP 2026-07-28 协议升级 + 代码债收尾 + 出站 MCP server OAuth
 
@@ -39,7 +39,7 @@
 ### 新增（P6：OTel trace context + 弃用项清理）
 
 - **OTel trace context 传播（SEP-414）**：Hub 作为网关，从入站请求 `_meta` 提取 `traceparent`/`tracestate`/`baggage`，经 AsyncLocalStorage 传播到出站 `callTool` 注入上游 server，实现分布式追踪。
-- **日志统一**：`backend/src` 生产代码 `console.*` 全面收敛到统一 Logger（`@mcp-core/mcp-hub-share`），requestId 链路追踪完整。
+- **日志统一**：`backend/src` 生产代码 `console.*` 全面收敛到统一 Logger（`@mcp-core/mcp-knot-share`），requestId 链路追踪完整。
 - **弃用项清理**：经核实，Roots/Sampling/Logging/Tasks wire vocabulary 等弃用特性项目零实现，无需清理；HTTP+SSE 传输由 P1 处理。
 
 ### 重构（代码债收尾）
@@ -231,8 +231,8 @@
 
 如有问题或建议：
 
-- GitHub Issues: https://github.com/your-org/mcp-hub/issues
-- 文档: https://github.com/your-org/mcp-hub/tree/main/docs
+- GitHub Issues: https://github.com/your-org/mcp-knot/issues
+- 文档: https://github.com/your-org/mcp-knot/tree/main/docs
 - 邮件: support@example.com
 
 ---
@@ -243,7 +243,7 @@
 
 ### 功能
 
-- 基础 MCP Hub 功能
+- 基础 MCP Knot 功能
 - CLI 工具
 - 组路由支持
 - 基础 API 端点

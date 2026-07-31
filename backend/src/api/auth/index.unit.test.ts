@@ -29,7 +29,7 @@ describe('认证API', () => {
 
   beforeEach(async () => {
     resetConfigInstances();
-    tempConfigDir = await fs.mkdtemp(path.join(tmpdir(), 'mcp-hub-auth-'));
+    tempConfigDir = await fs.mkdtemp(path.join(tmpdir(), 'mcp-knot-auth-'));
     process.env.CONFIG_PATH = tempConfigDir;
 
     // 创建临时配置文件
@@ -44,7 +44,7 @@ describe('认证API', () => {
           secret: 'test-secret-key-for-auth-api',
           expiresIn: '15m',
           refreshExpiresIn: '7d',
-          issuer: 'mcp-hub-test',
+          issuer: 'mcp-knot-test',
         },
         security: {
           maxLoginAttempts: 3,
@@ -72,7 +72,7 @@ describe('认证API', () => {
         },
       },
       ui: {
-        title: 'Test MCP Hub',
+        title: 'Test MCP Knot',
         theme: 'light',
         features: {
           apiToMcp: true,

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# MCP Hub 健康检查脚本
+# MCP Knot 健康检查脚本
 # 用法: ./scripts/health-check.sh [options]
 # 选项:
 #   --verbose    显示详细信息
@@ -69,7 +69,7 @@ if [ "$VERBOSE" = true ] && [ "$JSON_OUTPUT" = false ]; then
     echo "检查 PM2 进程..."
 fi
 
-if pm2 list | grep -q "online.*mcp-hub-api"; then
+if pm2 list | grep -q "online.*mcp-knot-api"; then
     log_info "PM2 进程运行正常"
     CHECKS+=('{"name":"pm2_process","status":"healthy","message":"进程运行正常"}')
 else
@@ -123,7 +123,7 @@ if [ "$VERBOSE" = true ] && [ "$JSON_OUTPUT" = false ]; then
 fi
 
 if command -v pm2 &> /dev/null; then
-    MEMORY_MB=$(pm2 jlist | jq -r '.[] | select(.name=="mcp-hub-api") | .monit.memory' | awk '{print int($1/1024/1024)}')
+    MEMORY_MB=$(pm2 jlist | jq -r '.[] | select(.name=="mcp-knot-api") | .monit.memory' | awk '{print int($1/1024/1024)}')
     
     if [ -n "$MEMORY_MB" ]; then
         if [ "$MEMORY_MB" -lt 512 ]; then
@@ -152,7 +152,7 @@ if [ "$VERBOSE" = true ] && [ "$JSON_OUTPUT" = false ]; then
 fi
 
 if command -v pm2 &> /dev/null; then
-    CPU_PERCENT=$(pm2 jlist | jq -r '.[] | select(.name=="mcp-hub-api") | .monit.cpu')
+    CPU_PERCENT=$(pm2 jlist | jq -r '.[] | select(.name=="mcp-knot-api") | .monit.cpu')
     
     if [ -n "$CPU_PERCENT" ]; then
         if (( $(echo "$CPU_PERCENT < 50" | bc -l) )); then
@@ -202,7 +202,7 @@ if [ "$VERBOSE" = true ] && [ "$JSON_OUTPUT" = false ]; then
     echo "检查日志文件..."
 fi
 
-LOG_FILE="/var/log/mcp-hub/app.log"
+LOG_FILE="/var/log/mcp-knot/app.log"
 
 if [ -f "$LOG_FILE" ]; then
     # 检查最近的错误
@@ -232,7 +232,7 @@ if [ "$VERBOSE" = true ] && [ "$JSON_OUTPUT" = false ]; then
     echo "检查配置文件..."
 fi
 
-CONFIG_DIR="/etc/mcp-hub/config"
+CONFIG_DIR="/etc/mcp-knot/config"
 
 if [ -d "$CONFIG_DIR" ]; then
     # 检查必需的配置文件

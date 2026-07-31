@@ -299,7 +299,7 @@ testApp.post('/mcp', async (c) => {
           resources: {},
         },
         serverInfo: {
-          name: 'mcp-hub-test',
+          name: 'mcp-knot-test',
           version: '1.0.0',
         },
       },

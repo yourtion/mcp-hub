@@ -1,6 +1,6 @@
-# @mcp-core/mcp-hub-cli
+# @mcp-core/mcp-knot-cli
 
-MCP Hub CLI包 - 提供命令行界面的MCP服务聚合器
+MCP Knot CLI包 - 提供命令行界面的MCP服务聚合器
 
 ## 功能特性
 
@@ -12,7 +12,7 @@ MCP Hub CLI包 - 提供命令行界面的MCP服务聚合器
 ## 安装
 
 ```bash
-pnpm install @mcp-core/mcp-hub-cli
+pnpm install @mcp-core/mcp-knot-cli
 ```
 
 ## 使用方法
@@ -21,10 +21,10 @@ pnpm install @mcp-core/mcp-hub-cli
 
 ```bash
 # 使用默认配置文件 (./mcp_server.json)
-mcp-hub
+mcp-knot
 
 # 指定配置文件路径
-mcp-hub /path/to/config.json
+mcp-knot /path/to/config.json
 ```
 
 ### 配置文件格式
@@ -40,7 +40,7 @@ mcp-hub /path/to/config.json
   },
   "logging": {
     "level": "info",
-    "file": "./mcp-hub.log"
+    "file": "./mcp-knot.log"
   },
   "transport": {
     "type": "stdio"
@@ -66,7 +66,7 @@ pnpm check
 
 ## 架构
 
-CLI包使用核心包 (`@mcp-core/mcp-hub-core`) 提供的MCP服务管理功能，通过StdioServerTransport实现MCP协议通信。
+CLI包使用核心包 (`@mcp-core/mcp-knot-core`) 提供的MCP服务管理功能，通过StdioServerTransport实现MCP协议通信。
 
 ## 许可证
 

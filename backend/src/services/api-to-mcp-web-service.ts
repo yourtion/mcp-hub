@@ -460,7 +460,7 @@ export class ApiToMcpWebService {
    * 获取默认配置文件路径
    */
   static getDefaultConfigPath(): string {
-    return join(homedir(), '.mcp-hub', 'api-tools.json');
+    return join(homedir(), '.mcp-knot', 'api-tools.json');
   }
 
   /**

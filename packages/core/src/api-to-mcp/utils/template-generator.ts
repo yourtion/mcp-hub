@@ -628,7 +628,7 @@ export class TemplateGeneratorImpl implements TemplateGenerator {
     lines.push('// 环境变量引用格式: {{env.VARIABLE_NAME}}');
     lines.push('// 参数引用格式: {{data.parameterName}}');
     lines.push('//');
-    lines.push('// 更多信息请参考文档: https://github.com/your-org/mcp-hub');
+    lines.push('// 更多信息请参考文档: https://github.com/your-org/mcp-knot');
     lines.push('');
 
     lines.push(JSON.stringify(config, null, 2));

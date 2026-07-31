@@ -87,7 +87,7 @@ describe('Login', () => {
 
     expect(wrapper.find('.login-page').exists()).toBe(true);
     expect(wrapper.find('.login-card').exists()).toBe(true);
-    expect(wrapper.find('.login-title').text()).toBe('MCP Hub');
+    expect(wrapper.find('.login-title').text()).toBe('MCP Knot');
     expect(wrapper.find('.login-subtitle').text()).toBe('Model Context Protocol 管理平台');
   });
 
