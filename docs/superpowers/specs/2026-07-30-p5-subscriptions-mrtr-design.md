@@ -1,6 +1,6 @@
 # P5 详细设计：subscriptions/listen + MRTR
 
-- **状态**: Draft（待 review）
+- **状态**: 实现完成（分支 `feat/p5-subscriptions-mrtr`，待合并 main；typecheck + unit + e2e 全绿）
 - **日期**: 2026-07-30
 - **作者**: yourtion
 - **关联**:

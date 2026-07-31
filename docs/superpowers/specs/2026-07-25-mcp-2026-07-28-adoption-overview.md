@@ -37,7 +37,7 @@
 | **P2** | 入站 OAuth 2.1（Protected Resource） | ✅ 完成                   | ✅ **实现完成**（已合并 main，merge `768ff09`）                       | `2026-07-26-p2-inbound-oauth-design.md`     |
 | P3     | 出站 OAuth（AuthenticationStrategy） | ✅ 完成                   | ✅ **实现完成**（已合并 main，merge `5865277`；e2e 已激活）           | `2026-07-27-p3-outbound-oauth-design.md`    |
 | **P4** | `ttlMs`/`cacheScope` 缓存语义        | ✅ 完成                   | ✅ **实现完成**（已合并 main，merge `a03f430`）                       | `2026-07-26-p4-cache-semantics-design.md`   |
-| P5     | `subscriptions/listen` + MRTR        | ⏳ 推迟（观望客户端生态） | ⬜ 未开始                                                             | —                                           |
+| P5     | `subscriptions/listen` + MRTR        | ✅ 完成                   | ✅ **实现完成**（分支 `feat/p5-subscriptions-mrtr`，待合并 main）       | `2026-07-30-p5-subscriptions-mrtr-design.md` |
 | **P6** | OTel trace context + 弃用项清理      | ✅ 完成                   | ✅ **实现完成**（已合并 main，merge `6a2f11b`）                       | `2026-07-28-p6-otel-deprecation-design.md`  |
 
 **推荐主线顺序**：P1 → P4 → P2 → P3 → P6 → P5
@@ -220,18 +220,24 @@ P4 **不是替换**已有缓存，而是**新增协议层缓存提示**，并探
 
 ## P5: `subscriptions/listen` + MRTR
 
-- **状态**: **推迟**（观望客户端生态）
+- **状态**: **实现完成**（分支 `feat/p5-subscriptions-mrtr`，待合并 main；详细设计见 [`2026-07-30-p5-subscriptions-mrtr-design.md`](./2026-07-30-p5-subscriptions-mrtr-design.md)）
 - **复杂度**: 中高
 - **依赖**: 强依赖 P1
-- **价值**: ⭐（客户端侧支持还弱，网关先做意义不大）
+- **价值**: ⭐（客户端侧支持还弱，网关先做基础设施兑现）
 
-### 推迟理由
+> 历史背景：P5 原为「主动推迟」状态（观望客户端生态），4 个复查触发条件为：客户端跟进 / 日期复查（2026-10-25）/ 上游 server 需求 / 协议 GA 推动。**2026-07-30 复查结论**：MCP TypeScript SDK 已于 2026-07-27 发布 GA 版 2.0.0（项目此前锁定 beta.5），「协议 GA 推动 / SDK GA」触发条件已满足，故启动 P5。本轮先把网关侧基础设施做扎实，客户端跟进后即可兑现。完整启动决策与范围见详细设计 spec。
+
+### 交付内容（DoD）
+
+- **subscriptions/listen**：上游工具变更检测（listChanged 订阅 + 60s 轮询兜底，两者结合）→ fan-out 到含该 server 的所有 group → 客户端经 `subscriptions/listen` stream 收 `notifications/tools_list_changed`（e2e 验证）。
+- **MRTR（InputRequiredResult）**：Hub mint 自己的 requestState（HMAC-SHA256）作 opaque 句柄，内部映射到上游 server + 上游原始 state；重试时 verify 还原并透传 inputResponses（e2e 验证）。
+- **SDK 升级**：beta.5 → 2.0.0 GA。
+- **配置集成**：`system.json` 新增 `subscriptions`（pollIntervalMs/pollBackoffMs/fanoutDebounceMs/enabled）与 `mrtr`（stateTtlSeconds/stateKey/enabled）字段，整块 optional + 默认值，向后兼容。
+- **回归**：typecheck（share/core/backend/cli/frontend）+ 603 backend unit + 152 share unit + 33 api-e2e + 16 oauth/validation/outbound e2e 全绿。
+
+### 推迟理由（已作废，保留供历史参考）
 
 `subscriptions/listen` 和 MRTR（Multi Round-Trip Requests）是 `2026-07-28` 的新能力，但：
-
-- 主流 MCP 客户端（Claude Desktop 等）对这两项的支持还在早期。
-- 网关先于客户端实现，价值无法兑现。
-- 建议等客户端生态跟进后再启动。
 
 ### 复查触发条件（P5）
 
@@ -265,7 +271,9 @@ P4 **不是替换**已有缓存，而是**新增协议层缓存提示**，并探
 
 ### 现状
 
-- 项目零实现 `subscriptions/listen`/MRTR（命中的 `subscriptions` 都是 Dashboard 业务 SSE，无关）。
+- **subscriptions/listen**：已实现上游工具变更检测 + fan-out + `subscriptions/listen` 总线接线（e2e 验证客户端经 listen 收 `notifications/tools_list_changed`）。
+- **MRTR**：已实现 Hub 级 requestState 中转（mint/verify/resume），handler 识别 `InputRequiredResult` 并透传上游 inputResponses（e2e 验证上游 input_required 全链路中转）。
+- 两条主线均受 `system.json` 的 `subscriptions.enabled` / `mrtr.enabled` 开关控制，默认启用。
 
 ---
 
@@ -309,7 +317,7 @@ P4 **不是替换**已有缓存，而是**新增协议层缓存提示**，并探
 
 - 每个子项目完成后，回本 spec 更新"实现进度"列和"详细 spec"链接。
 - 主线顺序（P1 → P4 → P2 → P3 → P6 → P5）是推荐，可根据实际情况调整。
-- P5 推迟期间，按 [P5 复查触发条件](#p5-推迟理由) 定期检查客户端生态对 `subscriptions/listen`/MRTR 的支持进度。
+- P5 已实现完成（分支 `feat/p5-subscriptions-mrtr`，待合并 main）。原推迟理由与复查触发条件见上文「推迟理由（已作废）」/「复查触发条件」。
 
 ## 实现进度跟踪
 
@@ -335,7 +343,7 @@ P4 **不是替换**已有缓存，而是**新增协议层缓存提示**，并探
 | P2     | 已合并 main（merge `768ff09`） | `0ffb6b8` 主线接入 + internal 模式 token 验签；`f6a82c4` OAuth 端点；`8d966f3` Resource Server 编排                                                      | ✅ **实现完成**（typecheck + 1750 tests 全绿，含 5 个 P2 e2e）                                                              |
 | P3     | 已合并 main（merge `5865277`） | `ff482e3` OAuthStrategy 实现（client_credentials + refresh + cache）；`f98d7c5` AuthenticationManager 注册；`5194ed2` e2e 骨架；`6de3416` e2e 全链路激活 | ✅ **实现完成**（typecheck + 1783 tests 全绿；e2e 已激活，经 `/api/api-to-mcp/configs/:id/test` 触发，fixture schema 已修） |
 | P6     | 已合并 main（merge `6a2f11b`） | `75c2b4e` TraceContextStore；`3cbb207` 出站 callTool 注入 \_meta；`c94d68c` 入站 handler 提取（mcpReq.\_meta）；`a7d125b` 集成测试                       | ✅ **实现完成**（typecheck + 542 unit tests 全绿，含 22 个 P6 新测试；弃用项/日志已核实干净）                               |
-| P5     | —                              | —                                                                                                                                                        | ⬜ 未开始（推迟）                                                                                                           |
+| P5     | `feat/p5-subscriptions-mrtr`（待合并 main） | `a3ccb26` SDK beta.5→2.0.0 GA 升级；`cf20273`/`1b41a45` UpstreamChangeDetector + listChanged handler；`09098fd`/`8274335` Fanout + subscriptions/listen 接线 + e2e；`1c332d8` MrtrRelayService；`8724ab3`/`13fde56` 重试上下文透传 + handler 中转；`6953ab4` factory 注入 verify；`be6eeb5` MRTR e2e；Task 10 配置集成 + 文档 | ✅ **实现完成**（分支待合并；typecheck + 603 unit/152 share/33+16 e2e 全绿，含 2 个 P5 e2e：subscriptions + MRTR） |
 
 ## 跨子项目共享待办
 

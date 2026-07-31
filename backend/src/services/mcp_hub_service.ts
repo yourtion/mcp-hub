@@ -12,7 +12,7 @@ import { UpstreamChangeDetector } from './upstream-change-detector.js';
 import { UpstreamChangeFanout } from './upstream-change-fanout.js';
 
 import type { Group, McpHubService as IMcpHubService, Tool, ToolResult } from '../types/mcp-hub.js';
-import type { DeepReadonly, GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
+import type { DeepReadonly, GroupConfig, ServerConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
 
 export class McpHubService implements IMcpHubService {
   private serverManager: ServerManager;
@@ -47,21 +47,29 @@ export class McpHubService implements IMcpHubService {
   private groupConfigs: GroupConfig = {} as GroupConfig;
 
   /**
-   * P5 subscriptions 轮询/fan-out 默认参数（systemConfig 暂无 subscriptions 字段，用常量）。
-   * pollIntervalMs：轮询兜底周期（60s）；pollBackoffMs：近期有 listChanged 推送的 server 降频窗口（5min）；
-   * fanoutDebounceMs：同 server 多次变更合并窗口（500ms）。
+   * P5 subscriptions 实际生效参数（从 systemConfig.subscriptions 读取，带默认值 fallback）。
+   * 这些默认值与 system.schema.ts 的 schema 默认值保持一致，确保 config 未配置时行为不变。
    */
-  private static readonly SUBSCRIPTIONS_POLL_INTERVAL_MS = 60_000;
-  private static readonly SUBSCRIPTIONS_POLL_BACKOFF_MS = 300_000;
-  private static readonly SUBSCRIPTIONS_FANOUT_DEBOUNCE_MS = 500;
+  private readonly subscriptionsPollIntervalMs: number;
+  private readonly subscriptionsPollBackoffMs: number;
+  private readonly subscriptionsFanoutDebounceMs: number;
 
   constructor(
     serverConfigs: DeepReadonly<Record<string, ServerConfig>>,
     groupConfigs: DeepReadonly<GroupConfig>,
     private apiToolConfigPath?: string,
+    systemConfig?: DeepReadonly<SystemConfig>,
   ) {
     this.serverConfigs = JSON.parse(JSON.stringify(serverConfigs));
     this.groupConfigs = JSON.parse(JSON.stringify(groupConfigs));
+
+    // P5：从 systemConfig.subscriptions 读取轮询/fan-out 参数。
+    // 各字段均带与 schema 默认值一致的 fallback，config 未配置（subscriptions 整块缺失）
+    // 或部分字段缺失时行为与之前硬编码常量完全一致（向后兼容）。
+    const subs = systemConfig?.subscriptions;
+    this.subscriptionsPollIntervalMs = subs?.pollIntervalMs ?? 60_000;
+    this.subscriptionsPollBackoffMs = subs?.pollBackoffMs ?? 300_000;
+    this.subscriptionsFanoutDebounceMs = subs?.fanoutDebounceMs ?? 500;
 
     // P5: 先建 fanout（onChange 在 detector 内被引用，故 detector 后建）。
     // fanout 回调闭包在「被调用时」才解析依赖（groupManager / serverManager / 缓存），
@@ -70,14 +78,14 @@ export class McpHubService implements IMcpHubService {
       getGroupsForServer: (serverId) => this.getGroupsForServer(serverId),
       refreshGroupTools: (groupId, serverId) => this.refreshGroupTools(groupId, serverId),
       publishToolListChanged: (groupId) => this.publishToolListChanged(groupId),
-      debounceMs: McpHubService.SUBSCRIPTIONS_FANOUT_DEBOUNCE_MS,
+      debounceMs: this.subscriptionsFanoutDebounceMs,
       logger,
     });
 
     this.changeDetector = new UpstreamChangeDetector({
       onChange: (serverId) => this.changeFanout.handleServerChange(serverId),
-      pollIntervalMs: McpHubService.SUBSCRIPTIONS_POLL_INTERVAL_MS,
-      pollBackoffMs: McpHubService.SUBSCRIPTIONS_POLL_BACKOFF_MS,
+      pollIntervalMs: this.subscriptionsPollIntervalMs,
+      pollBackoffMs: this.subscriptionsPollBackoffMs,
       logger,
     });
 
@@ -148,7 +156,7 @@ export class McpHubService implements IMcpHubService {
           connectedServerIds,
         );
         logger.info('上游工具集变更轮询已启动（P5）', {
-          pollIntervalMs: McpHubService.SUBSCRIPTIONS_POLL_INTERVAL_MS,
+          pollIntervalMs: this.subscriptionsPollIntervalMs,
           serverCount: connectedServerIds.length,
         });
       }

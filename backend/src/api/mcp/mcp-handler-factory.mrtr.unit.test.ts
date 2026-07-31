@@ -1,31 +1,32 @@
 /**
- * P5 Task 8：mcp-handler-factory MRTR 启用接线单测。
+ * P5 Task 8/10：mcp-handler-factory MRTR 接线单测。
  *
- * 验证 factory 在创建 GroupMcpService 时传入了 MrtrRelayService 实例（3 参构造）。
+ * 验证 factory 在创建 GroupMcpService 时传入了 MrtrRelayService 实例（3 参构造），
+ * 且 relay 单例从 system.json mrtr 配置构造（Task 10 接通）。
  * 隔离到独立文件，避免与 mcp-handler-factory.unit.test.ts（失效路径，getCoreServiceManager
  * 被桩成抛错）的 vi.mock 冲突。
  *
  * SDK 事实核实（见 task-8-report）：requestState.verify 注入点是 McpServer 构造（ServerOptions），
  * 不是 createMcpHandler options——后者根本不读 requestState。McpServer 构造断言见
  * group-service.unit.test.ts 的「requestState.verify 注入」describe 块。本文件聚焦 factory 层：
- * 断言 MrtrRelayService 被实例化（单例），且 GroupMcpService 构造收到它。
+ * 断言 MrtrRelayService 被实例化（惰性单例），且 GroupMcpService 构造收到它。
  *
- * 注意：MrtrRelayService 是 factory 模块级单例——在 factory 模块首次 import 时构造一次，
- * 早于任何 beforeEach。故 relayCtorCalls 不在 beforeEach 中清空（否则会丢掉那次唯一构造）。
+ * 注意（Task 10）：MrtrRelayService 改为惰性单例——首次 ensureGroupMcpService 时经
+ * getMrtrRelay() 异步构造（需读 system.json），非 factory import 时构造。relayCtorCalls
+ * 不在 beforeEach 清空：单例在整个测试文件内只构造一次（首次 ensureGroupMcpService），
+ * 清空会让后续测试看不到这次构造。
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// 捕获数组必须用 vi.hoisted 提升——vi.mock 工厂会被 hoist 到模块顶部，
-// 而 factory 模块导入时立即触发模块级 `new MrtrRelayService(...)`（在 mock 工厂内 push）。
-// 普通常量声明此时还未初始化，会 ReferenceError。vi.hoisted 保证声明先于任何 mock 执行。
+// 捕获数组必须用 vi.hoisted 提升——vi.mock 工厂会被 hoist 到模块顶部。
 const { groupCtorCalls, relayCtorCalls } = vi.hoisted(() => ({
   groupCtorCalls: [] as Array<{
     groupId: unknown;
     coreServiceManager: unknown;
     mrtrRelay?: unknown;
   }>,
-  // relayCtorCalls 不在 beforeEach 清空：模块级单例只在 factory 首次 import 时构造一次，
-  // 那次构造早于所有测试的 beforeEach。清空会让后续测试看不到这次构造。
+  // relayCtorCalls 不在 beforeEach 清空：惰性单例只在首次 ensureGroupMcpService 构造一次，
+  // 清空会让后续测试看不到这次构造。
   relayCtorCalls: [] as Array<{ key: unknown; ttlSeconds: unknown }>,
 }));
 
@@ -66,6 +67,14 @@ vi.mock('../../services/service-registry.js', () => ({
   getCoreServiceManager: vi.fn().mockResolvedValue({}),
 }));
 
+// Task 10：getMrtrRelay 经 getAllConfig 读 system.json mrtr 配置。
+// mock 成受控返回（stateTtlSeconds=600 来自 schema 默认），避免测试触碰真实文件系统。
+vi.mock('../../utils/config.js', () => ({
+  getAllConfig: vi.fn().mockResolvedValue({
+    system: { mrtr: { stateTtlSeconds: 600 } },
+  }),
+}));
+
 vi.mock('../../utils/logger.js', () => ({
   logger: {
     info: vi.fn(),
@@ -81,7 +90,7 @@ import {
   invalidateAllGroupMcpServices,
 } from './mcp-handler-factory.js';
 
-describe('mcp-handler-factory MRTR 接线（P5 Task 8）', () => {
+describe('mcp-handler-factory MRTR 接线（P5 Task 8/10）', () => {
   beforeEach(() => {
     // 只清 group 构造记录与缓存；relay 单例构造记录不清空（见上注释）。
     getGroupServicesCache().clear();
@@ -99,7 +108,7 @@ describe('mcp-handler-factory MRTR 接线（P5 Task 8）', () => {
     expect(typeof (relay as { verify: unknown }).verify).toBe('function');
   });
 
-  it('MrtrRelayService 是模块级单例：跨 group 共享同一实例，构造只发生一次', async () => {
+  it('MrtrRelayService 是惰性单例：跨 group 共享同一实例，构造只发生一次', async () => {
     // 创建两个不同 group 的 service
     await ensureGroupMcpService('g1');
     await ensureGroupMcpService('g2');
@@ -110,9 +119,10 @@ describe('mcp-handler-factory MRTR 接线（P5 Task 8）', () => {
     const relay2 = groupCtorCalls[1]!.mrtrRelay;
     expect(relay1).toBe(relay2);
 
-    // MrtrRelayService 构造在整个测试文件生命周期内只发生 1 次（模块级单例，
-    // 在 factory 首次 import 时构造，非 per-group）。
+    // MrtrRelayService 构造在整个测试文件生命周期内只发生 1 次（惰性单例，
+    // 在首次 ensureGroupMcpService 时经 getMrtrRelay() 构造，非 per-group，非 import 期）。
     expect(relayCtorCalls).toHaveLength(1);
+    // Task 10：ttlSeconds 从 system.json mrtr.stateTtlSeconds 读（mock 返回 600）
     expect(relayCtorCalls[0]!.ttlSeconds).toBe(600);
     const key = relayCtorCalls[0]!.key as Uint8Array;
     expect(key).toBeInstanceOf(Uint8Array);

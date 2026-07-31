@@ -5,7 +5,7 @@ import { BackendCoreServiceAdapter } from './backend-core-service-adapter.js';
 
 import type { McpHubService } from './mcp_hub_service.js';
 import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
-import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
+import type { GroupConfig, ServerConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
 
 /**
  * 全局服务注册表
@@ -67,11 +67,17 @@ export async function createHubService(config: {
   servers: Record<string, ServerConfig>;
   groups: GroupConfig;
   apiToolsConfigPath?: string;
+  systemConfig?: SystemConfig;
 }): Promise<McpHubService> {
   // 动态导入避免循环依赖
   const { McpHubService } = await import('./mcp_hub_service.js');
 
-  const service = new McpHubService(config.servers, config.groups, config.apiToolsConfigPath);
+  const service = new McpHubService(
+    config.servers,
+    config.groups,
+    config.apiToolsConfigPath,
+    config.systemConfig,
+  );
 
   return service;
 }

@@ -87,4 +87,31 @@ export const SystemConfigSchema = z.object({
         .optional(),
     })
     .optional(), // 整个 oauth 块可选
+
+  // P5：subscriptions/listen（上游工具集变更 fan-out）调参。
+  // 整块 optional —— 现有 system.json 无此字段时不报错；提供时内部字段都有默认值。
+  subscriptions: z
+    .object({
+      enabled: z.boolean().default(true),
+      // 轮询兜底周期（对不支持 listChanged 推送的上游 server）
+      pollIntervalMs: z.number().int().positive().default(60_000),
+      // 近期收到 listChanged 主动推送的 server 降频窗口（避免轮询与推送重复触发）
+      pollBackoffMs: z.number().int().positive().default(300_000),
+      // 同一 server 短时间内多次变更的合并窗口（debounce）
+      fanoutDebounceMs: z.number().int().nonnegative().default(500),
+    })
+    .optional(),
+
+  // P5：MRTR（Multi Round-Trip Requests）中转配置。
+  // stateKey 为 hex 编码的 HMAC key（≥32 字节解码后）；未提供则启动时随机生成 32 字节
+  // （进程重启后旧 state 失效，可接受：TTL 本就 600s）。
+  mrtr: z
+    .object({
+      enabled: z.boolean().default(true),
+      // Hub mint 的 requestState 的 TTL（秒）
+      stateTtlSeconds: z.number().int().positive().default(600),
+      // HMAC key（hex 编码）。多实例部署需显式配置以共享；单实例默认随机生成。
+      stateKey: z.string().optional(),
+    })
+    .optional(),
 });
