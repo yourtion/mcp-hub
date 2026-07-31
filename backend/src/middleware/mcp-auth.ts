@@ -8,7 +8,7 @@
  * 失败响应带 WWW-Authenticate 头（MCP 规范 MUST），HTTP status 由 errorCode 决定。
  * 注意：401/403 响应不包装成 JSON-RPC，直接返回 HTTP（MCP 客户端按 status 识别挑战）。
  */
-import { ErrorCode } from '@mcp-core/mcp-hub-core';
+import { ErrorCode } from '@mcp-core/mcp-knot-core';
 
 import {
   buildInsufficientScopeHeader,

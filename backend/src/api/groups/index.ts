@@ -38,7 +38,7 @@ import type {
   CreateGroupRequest,
   SetGroupValidationKeyRequest,
   UpdateGroupRequest,
-} from '@mcp-core/mcp-hub-share';
+} from '@mcp-core/mcp-knot-share';
 import type { Context } from 'hono';
 
 // 定义组配置类型

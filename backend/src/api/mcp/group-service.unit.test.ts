@@ -44,12 +44,12 @@ vi.mock('../../utils/logger.js', () => ({
   },
 }));
 
-import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-knot-core';
 
 import { MrtrRelayService } from '../../services/mrtr-relay-service.js';
 import { GroupMcpService } from './group-service.js';
 
-import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
+import type { McpServiceManagerInterface } from '@mcp-core/mcp-knot-core';
 import type { HubState } from '../../services/mrtr-relay-service.js';
 
 function makeCoreManagerMock(): McpServiceManagerInterface {

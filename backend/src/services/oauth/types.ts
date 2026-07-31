@@ -3,7 +3,7 @@
  *
  * 与 Web UI 的 auth（services/auth.ts）完全独立，保护 /:group/mcp 协议端点。
  */
-import type { SystemConfig } from '@mcp-core/mcp-hub-share';
+import type { SystemConfig } from '@mcp-core/mcp-knot-share';
 
 /** 从 SystemConfig.oauth 提取的非可选强类型（oauth 已配置时） */
 export type OAuthConfig = NonNullable<SystemConfig['oauth']>;

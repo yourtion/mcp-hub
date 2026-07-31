@@ -7,7 +7,7 @@ import type {
   LogQuery,
   SystemHealth,
 } from '../types/dashboard.js';
-import type { McpHubService } from './mcp_hub_service.js';
+import type { McpKnotService } from './mcp_knot_service.js';
 
 /**
  * 仪表板服务 - 管理系统统计信息、活动记录和健康检查
@@ -25,7 +25,7 @@ export class DashboardService {
   private readonly MAX_LOGS = 5000; // 最大日志记录数
   private startTime = Date.now();
 
-  constructor(private hubService: McpHubService) {
+  constructor(private hubService: McpKnotService) {
     // 记录系统启动活动
     this.addActivity({
       type: 'system_start',

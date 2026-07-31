@@ -7,7 +7,7 @@
 
 import { logger } from '../utils/logger.js';
 
-import type { Tool } from '../types/mcp-hub.js';
+import type { Tool } from '../types/mcp-knot.js';
 
 export interface ValidationResult {
   isValid: boolean;

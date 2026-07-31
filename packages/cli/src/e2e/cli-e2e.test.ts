@@ -3,7 +3,7 @@
  * 测试CLI包的完整功能流程
  */
 
-import { McpServiceManager } from '@mcp-core/mcp-hub-core';
+import { McpServiceManager } from '@mcp-core/mcp-knot-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CliConfigManager } from '../config/cli-config-manager.js';

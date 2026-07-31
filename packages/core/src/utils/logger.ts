@@ -10,7 +10,7 @@ import {
   EnvironmentDetector,
   LogLevel,
   type UnifiedLogger,
-} from '@mcp-core/mcp-hub-share';
+} from '@mcp-core/mcp-knot-share';
 
 // 重新导出统一的类型和枚举
 export {
@@ -21,7 +21,7 @@ export {
   LogLevel,
   type LogWriter,
   TextFormatter,
-} from '@mcp-core/mcp-hub-share';
+} from '@mcp-core/mcp-knot-share';
 
 /**
  * 日志条目接口（向后兼容）

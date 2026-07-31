@@ -3,15 +3,15 @@
  * 负责将API转MCP工具集成到现有的MCP Hub中
  */
 
-import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-knot-core';
 import {
   type ApiToMcpServiceManager,
   ApiToMcpServiceManagerImpl,
-} from '@mcp-core/mcp-hub-core/api-to-mcp';
+} from '@mcp-core/mcp-knot-core/api-to-mcp';
 
 import { logger } from '../utils/logger.js';
 
-import type { Tool, ToolResult } from '../types/mcp-hub.js';
+import type { Tool, ToolResult } from '../types/mcp-knot.js';
 
 /**
  * API工具集成服务类

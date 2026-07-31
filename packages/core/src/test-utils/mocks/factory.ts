@@ -4,7 +4,7 @@
  */
 
 import type { ToolInfo } from '../../types/tool.js';
-import type { GroupConfig, McpConfig, ServerConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
+import type { GroupConfig, McpConfig, ServerConfig, SystemConfig } from '@mcp-core/mcp-knot-share';
 
 /**
  * Mock 客户端接口类型，避免 vi.fn() 返回类型引用 @vitest/spy

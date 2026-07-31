@@ -1,26 +1,26 @@
-import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-knot-core';
 
 import { logger } from '../utils/logger.js';
 import { BackendCoreServiceAdapter } from './backend-core-service-adapter.js';
 
-import type { McpHubService } from './mcp_hub_service.js';
-import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
-import type { GroupConfig, ServerConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
+import type { McpKnotService } from './mcp_knot_service.js';
+import type { McpServiceManagerInterface } from '@mcp-core/mcp-knot-core';
+import type { GroupConfig, ServerConfig, SystemConfig } from '@mcp-core/mcp-knot-share';
 
 /**
  * 全局服务注册表
  *
- * 在启动时（index.ts）一次性初始化 McpHubService，
+ * 在启动时（index.ts）一次性初始化 McpKnotService，
  * 所有 API 模块通过此注册表获取共享实例。
  * 禁止在请求路径中创建新的服务实例。
  */
 
-let hubService: McpHubService | null = null;
+let hubService: McpKnotService | null = null;
 
 /**
  * 设置已初始化的 Hub 服务实例（仅在启动时调用）
  */
-export function setHubService(service: McpHubService): void {
+export function setHubService(service: McpKnotService): void {
   if (hubService) {
     throw new ServiceError(
       ErrorCode.SERVICE_UNAVAILABLE,
@@ -34,7 +34,7 @@ export function setHubService(service: McpHubService): void {
  * 获取已初始化的 Hub 服务实例
  * @throws 如果服务尚未初始化
  */
-export function getHubService(): McpHubService {
+export function getHubService(): McpKnotService {
   if (!hubService) {
     throw new ServiceError(
       ErrorCode.SERVICE_UNAVAILABLE,
@@ -47,14 +47,14 @@ export function getHubService(): McpHubService {
 /**
  * 安全获取 Hub 服务实例（不抛异常）
  */
-export function getHubServiceSafe(): McpHubService | null {
+export function getHubServiceSafe(): McpKnotService | null {
   return hubService;
 }
 
 /**
  * 注销并返回 Hub 服务实例（用于关闭流程）
  */
-export async function shutdownHubService(): Promise<McpHubService | null> {
+export async function shutdownHubService(): Promise<McpKnotService | null> {
   const service = hubService;
   hubService = null;
   return service;
@@ -68,11 +68,11 @@ export async function createHubService(config: {
   groups: GroupConfig;
   apiToolsConfigPath?: string;
   systemConfig?: SystemConfig;
-}): Promise<McpHubService> {
+}): Promise<McpKnotService> {
   // 动态导入避免循环依赖
-  const { McpHubService } = await import('./mcp_hub_service.js');
+  const { McpKnotService } = await import('./mcp_knot_service.js');
 
-  const service = new McpHubService(
+  const service = new McpKnotService(
     config.servers,
     config.groups,
     config.apiToolsConfigPath,
@@ -100,7 +100,7 @@ export async function initCoreServiceManager(): Promise<McpServiceManagerInterfa
     return coreServiceManager;
   }
 
-  // P6 架构修正（spec §10.3）：注入 backend 真实 ServerManager（经 McpHubService），
+  // P6 架构修正（spec §10.3）：注入 backend 真实 ServerManager（经 McpKnotService），
   // 替代 core 包的 mock McpServiceManager。使 group-service / groups API 拿到真实
   // 连接状态与工具调用，并打通 P6 trace context 链路（Task 2 出站 + Task 3 入站）。
   //

@@ -2,14 +2,14 @@
  * 认证服务
  */
 
-import { AuthError, ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+import { AuthError, ErrorCode, ServiceError } from '@mcp-core/mcp-knot-core';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 import { getAllConfig } from '../utils/config.js';
 
 import type { JwtPayload, LoginAttempt, RefreshTokenPayload, UserSession } from '../types/auth.js';
-import type { DeepReadonly, SystemConfig } from '@mcp-core/mcp-hub-share';
+import type { DeepReadonly, SystemConfig } from '@mcp-core/mcp-knot-share';
 
 // 从 SystemConfig 中提取用户凭据的只读类型
 type ReadonlyUserCredentials = DeepReadonly<SystemConfig>['users'][string];

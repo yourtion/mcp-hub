@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { McpErrorCode, McpProtocolHandler } from './mcp-protocol-handler';
 
-import type { McpServiceManager } from '@mcp-core/mcp-hub-core';
+import type { McpServiceManager } from '@mcp-core/mcp-knot-core';
 
 // Mock核心服务管理器
 const mockCoreService = {

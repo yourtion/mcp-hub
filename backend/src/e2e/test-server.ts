@@ -15,7 +15,7 @@ import {
 import { getAllConfig } from '../utils/config.js';
 import { logger } from '../utils/logger.js';
 
-import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share/config';
+import type { GroupConfig, McpConfig } from '@mcp-core/mcp-knot-share/config';
 
 export class TestServer {
   private server: ReturnType<typeof serve> | null = null;

@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ServerStatus } from '../types/mcp-hub.js';
+import { ServerStatus } from '../types/mcp-knot.js';
 import { ToolManager } from './tool_manager.js';
 
-import type { GroupManager, ServerManager, Tool } from '../types/mcp-hub.js';
+import type { GroupManager, ServerManager, Tool } from '../types/mcp-knot.js';
 
 // Mock the logger
 vi.mock('../utils/logger.js');

@@ -18,7 +18,7 @@ export type {
   StdioServerConfig,
   SystemConfig,
   ToolFilter,
-} from '@mcp-core/mcp-hub-share/config';
+} from '@mcp-core/mcp-knot-share/config';
 
 /**
  * MCP 服务器配置 (core 特有的组合类型)
@@ -26,9 +26,9 @@ export type {
  */
 export interface McpServerConfig {
   /** 服务器配置 */
-  servers: Record<string, import('@mcp-core/mcp-hub-share/config').ServerConfig>;
+  servers: Record<string, import('@mcp-core/mcp-knot-share/config').ServerConfig>;
   /** 组配置 */
-  groups?: import('@mcp-core/mcp-hub-share/config').GroupConfig;
+  groups?: import('@mcp-core/mcp-knot-share/config').GroupConfig;
   /** 全局设置 */
   settings?: GlobalSettings;
 }

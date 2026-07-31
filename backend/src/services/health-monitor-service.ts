@@ -1,7 +1,7 @@
-import { ServerStatus } from '../types/mcp-hub.js';
+import { ServerStatus } from '../types/mcp-knot.js';
 import { logger } from '../utils/logger.js';
 
-import type { GroupManager, ServerManager } from '../types/mcp-hub.js';
+import type { GroupManager, ServerManager } from '../types/mcp-knot.js';
 
 /**
  * 健康监控服务

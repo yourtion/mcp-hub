@@ -30,8 +30,8 @@ import { logger } from '../../utils/logger.js';
 import { performanceMonitor } from '../../utils/performance-monitor.js';
 import { validateGroupData, validateGroupId } from './validation.js';
 
-import type { ToolInfo } from '@mcp-core/mcp-hub-core';
-import type { CreateGroupRequest, GroupConfig, UpdateGroupRequest } from '@mcp-core/mcp-hub-share';
+import type { ToolInfo } from '@mcp-core/mcp-knot-core';
+import type { CreateGroupRequest, GroupConfig, UpdateGroupRequest } from '@mcp-core/mcp-knot-share';
 
 /**
  * 业务错误码（与原 handler 的响应 error.code 逐字对应）

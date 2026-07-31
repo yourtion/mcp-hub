@@ -316,7 +316,7 @@ export function getHttpStatusForError(code: ErrorCode): number {
 /**
  * MCP Hub核心错误基类
  */
-export class McpHubCoreError extends Error {
+export class McpKnotCoreError extends Error {
   public readonly category: ErrorCategory;
   public readonly severity: ErrorSeverity;
   public readonly timestamp: Date;
@@ -329,7 +329,7 @@ export class McpHubCoreError extends Error {
   ) {
     const errorMessage = message || ERROR_MESSAGES[code] || '未知错误';
     super(errorMessage);
-    this.name = 'McpHubCoreError';
+    this.name = 'McpKnotCoreError';
     this.category = this.getCategory(code);
     this.severity = ERROR_SEVERITY[code] || ErrorSeverity.MEDIUM;
     this.timestamp = new Date();
@@ -366,7 +366,7 @@ export class McpHubCoreError extends Error {
 /**
  * 配置错误
  */
-export class ConfigError extends McpHubCoreError {
+export class ConfigError extends McpKnotCoreError {
   constructor(
     code: ErrorCode,
     message?: string,
@@ -381,7 +381,7 @@ export class ConfigError extends McpHubCoreError {
 /**
  * 连接错误
  */
-export class ConnectionError extends McpHubCoreError {
+export class ConnectionError extends McpKnotCoreError {
   constructor(
     code: ErrorCode,
     message?: string,
@@ -396,7 +396,7 @@ export class ConnectionError extends McpHubCoreError {
 /**
  * 服务错误
  */
-export class ServiceError extends McpHubCoreError {
+export class ServiceError extends McpKnotCoreError {
   constructor(
     code: ErrorCode,
     message?: string,
@@ -411,7 +411,7 @@ export class ServiceError extends McpHubCoreError {
 /**
  * 工具执行错误
  */
-export class ToolExecutionError extends McpHubCoreError {
+export class ToolExecutionError extends McpKnotCoreError {
   constructor(
     code: ErrorCode,
     message?: string,
@@ -426,7 +426,7 @@ export class ToolExecutionError extends McpHubCoreError {
 /**
  * 验证错误
  */
-export class ValidationError extends McpHubCoreError {
+export class ValidationError extends McpKnotCoreError {
   constructor(
     code: ErrorCode,
     message?: string,
@@ -441,7 +441,7 @@ export class ValidationError extends McpHubCoreError {
 /**
  * 认证错误
  */
-export class AuthError extends McpHubCoreError {
+export class AuthError extends McpKnotCoreError {
   constructor(
     code: ErrorCode,
     message?: string,
@@ -484,7 +484,7 @@ export interface RetryConfig {
 export interface FallbackStrategy {
   enabled: boolean;
   fallbackValue?: unknown;
-  fallbackFunction?: (error: McpHubCoreError, context: ErrorContext) => unknown;
+  fallbackFunction?: (error: McpKnotCoreError, context: ErrorContext) => unknown;
 }
 
 /**
@@ -622,7 +622,7 @@ export class UnifiedErrorHandler implements ErrorHandler {
   }
 
   shouldRetry(error: Error): boolean {
-    if (error instanceof McpHubCoreError) {
+    if (error instanceof McpKnotCoreError) {
       return DEFAULT_RETRY_CONFIG.retryableErrors.includes(error.code);
     }
     return false;
@@ -683,7 +683,7 @@ export class UnifiedErrorHandler implements ErrorHandler {
       });
 
       if (fallbackStrategy.fallbackFunction) {
-        return fallbackStrategy.fallbackFunction(error as McpHubCoreError, context) as T;
+        return fallbackStrategy.fallbackFunction(error as McpKnotCoreError, context) as T;
       }
 
       return fallbackStrategy.fallbackValue as T;
@@ -691,7 +691,7 @@ export class UnifiedErrorHandler implements ErrorHandler {
   }
 
   formatErrorResponse(error: Error, context?: ErrorContext, requestId?: string): ErrorResponse {
-    if (error instanceof McpHubCoreError) {
+    if (error instanceof McpKnotCoreError) {
       return {
         success: false,
         error: {

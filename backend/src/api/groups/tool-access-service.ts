@@ -25,12 +25,12 @@ import { getAllConfig, saveConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 import { estimateToolComplexity, validateGroupId } from './validation.js';
 
-import type { ToolInfo } from '@mcp-core/mcp-hub-core';
+import type { ToolInfo } from '@mcp-core/mcp-knot-core';
 import type {
   ConfigureGroupToolsRequest,
   GroupAvailableToolsResponse,
   GroupConfig,
-} from '@mcp-core/mcp-hub-share';
+} from '@mcp-core/mcp-knot-share';
 
 /**
  * 业务错误码（与原 handler 的响应 error.code 逐字对应）

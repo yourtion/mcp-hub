@@ -3,9 +3,9 @@
  * 处理MCP协议的请求和响应格式化
  */
 
-import { createCliLogger } from '@mcp-core/mcp-hub-share';
+import { createCliLogger } from '@mcp-core/mcp-knot-share';
 
-import type { McpServiceManager, ToolResult } from '@mcp-core/mcp-hub-core';
+import type { McpServiceManager, ToolResult } from '@mcp-core/mcp-knot-core';
 import type { CallToolResult } from '@modelcontextprotocol/server';
 
 /**

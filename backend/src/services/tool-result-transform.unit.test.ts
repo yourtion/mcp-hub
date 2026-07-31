@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { formatError, transformToolResult } from './tool-result-transform.js';
 
-import type { ToolResult } from '../types/mcp-hub.js';
+import type { ToolResult } from '../types/mcp-knot.js';
 
 // formatError 是纯函数，没有副作用，直接测试
 describe('formatError', () => {

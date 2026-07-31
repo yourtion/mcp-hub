@@ -2,7 +2,7 @@
  * CLI包的类型定义
  */
 
-import type { ServerConfig } from '@mcp-core/mcp-hub-core';
+import type { ServerConfig } from '@mcp-core/mcp-knot-core';
 
 /**
  * CLI配置接口

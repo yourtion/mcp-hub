@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { validateArgumentType, validateToolArgsWithSchema } from './tool-arg-validator.js';
 
-import type { Tool } from '../types/mcp-hub.js';
+import type { Tool } from '../types/mcp-knot.js';
 
 // 构造带 schema 的 Tool 对象
 function makeTool(schema: Record<string, unknown>): Tool {

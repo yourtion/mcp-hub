@@ -4,7 +4,7 @@
  * 支持 application/x-www-form-urlencoded（OAuth 标准）。
  * 响应 RFC6749 §5.1 格式；错误响应 RFC6749 §5.2 格式。
  */
-import { ErrorCode, McpHubCoreError } from '@mcp-core/mcp-hub-core';
+import { ErrorCode, McpKnotCoreError } from '@mcp-core/mcp-knot-core';
 
 import { issueClientCredentialsToken } from '../../services/oauth/internal-as.js';
 import { getAllConfig } from '../../utils/config.js';
@@ -28,7 +28,7 @@ function mapErrorToOAuthResponse(err: unknown): {
   error_description: string;
   status: OAuthErrorStatus;
 } {
-  if (err instanceof McpHubCoreError) {
+  if (err instanceof McpKnotCoreError) {
     if (err.code === ErrorCode.OAUTH_INSUFFICIENT_SCOPE) {
       return { error: 'invalid_scope', error_description: err.message, status: 400 };
     }

@@ -15,7 +15,7 @@ import { getAllConfig } from './utils/config.js';
 import { logger } from './utils/logger.js';
 import { validateAllConfigs } from './validation/config.js';
 
-import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share/config';
+import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-knot-share/config';
 
 let httpServer: ReturnType<typeof serve> | null = null;
 

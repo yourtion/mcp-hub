@@ -1,4 +1,4 @@
-import { ErrorCode, ValidationError } from '@mcp-core/mcp-hub-core';
+import { ErrorCode, ValidationError } from '@mcp-core/mcp-knot-core';
 
 import { logger } from '../utils/logger.js';
 
@@ -7,8 +7,8 @@ import type {
   GroupManager as IGroupManager,
   ServerManager,
   Tool,
-} from '../types/mcp-hub.js';
-import type { GroupConfig } from '@mcp-core/mcp-hub-share';
+} from '../types/mcp-knot.js';
+import type { GroupConfig } from '@mcp-core/mcp-knot-share';
 
 export class GroupManager implements IGroupManager {
   private readonly MAX_GROUPS = 100; // 组数量限制

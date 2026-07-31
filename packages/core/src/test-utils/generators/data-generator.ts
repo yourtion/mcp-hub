@@ -4,7 +4,7 @@
  */
 
 import type { ToolInfo } from '../../types/tool.js';
-import type { ServerConfig } from '@mcp-core/mcp-hub-share';
+import type { ServerConfig } from '@mcp-core/mcp-knot-share';
 
 /**
  * 测试数据生成器

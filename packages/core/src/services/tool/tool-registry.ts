@@ -3,7 +3,7 @@
  * 负责工具发现、注册和调用功能
  */
 
-import { createLogger } from '@mcp-core/mcp-hub-share';
+import { createLogger } from '@mcp-core/mcp-knot-share';
 
 import type { ToolFilter, ToolInfo, ToolResult } from '../../types/tool.js';
 

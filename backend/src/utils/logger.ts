@@ -3,10 +3,10 @@
  * 基于统一的 logger 系统，提供 MCP 操作特有的日志方法
  */
 
-import { createMcpLogger, LogLevel, type McpLogger } from '@mcp-core/mcp-hub-share';
+import { createMcpLogger, LogLevel, type McpLogger } from '@mcp-core/mcp-knot-share';
 
 // 重新导出需要的类型和枚举，保持向后兼容
-export { LogLevel } from '@mcp-core/mcp-hub-share';
+export { LogLevel } from '@mcp-core/mcp-knot-share';
 
 /**
  * 日志条目接口（向后兼容）

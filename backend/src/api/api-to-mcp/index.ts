@@ -25,7 +25,7 @@ declare module 'hono' {
 
 /**
  * 重新加载Hub服务的API工具配置
- * 确保McpHubService中的工具列表与ApiToMcpWebService同步
+ * 确保McpKnotService中的工具列表与ApiToMcpWebService同步
  */
 async function reloadHubApiTools(): Promise<void> {
   try {

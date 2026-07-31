@@ -107,6 +107,6 @@ export { authService };
 // `apiToMcpWebService.initialize(configPath)` 加载 oauth 工具，再经
 // `/api/api-to-mcp/configs/:id/test` 触发出站 OAuth 取 token 全链路。
 // app.ts 模块级 new 该单例（line 28），但生产启动（index.ts）不调 initialize——
-// index.ts 只 init McpHubService（其内部另建一个 ApiToolIntegrationService，不经此单例）。
+// index.ts 只 init McpKnotService（其内部另建一个 ApiToolIntegrationService，不经此单例）。
 // 故此单例默认未 initialize；e2e 显式 initialize 是激活 /api/api-to-mcp/* 测试路径的唯一方式。
 export { apiToMcpWebService };

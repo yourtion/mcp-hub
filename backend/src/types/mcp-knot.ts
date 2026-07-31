@@ -1,4 +1,4 @@
-import type { ServerConfig } from '@mcp-core/mcp-hub-share';
+import type { ServerConfig } from '@mcp-core/mcp-knot-share';
 import type { Client } from '@modelcontextprotocol/client';
 
 // Server Management Types
@@ -113,7 +113,7 @@ export interface ToolManager {
 }
 
 // MCP Hub Service Types
-export interface McpHubService {
+export interface McpKnotService {
   initialize(): Promise<void>;
   listTools(groupId?: string): Promise<Tool[]>;
   callTool(toolName: string, args: Record<string, unknown>, groupId?: string): Promise<ToolResult>;

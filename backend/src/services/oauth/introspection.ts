@@ -7,7 +7,7 @@
  * 带基本 client 凭据认证（client_id/client_secret 用 Basic auth）。
  * introspectionEndpoint 优先用配置覆盖，否则用 issuer 推导默认路径。
  */
-import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-knot-core';
 
 import { logger } from '../../utils/logger.js';
 

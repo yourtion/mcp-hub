@@ -1,9 +1,9 @@
 /**
  * CLI与核心包交互集成测试（修复版）
- * 测试CLI包与@mcp-core/mcp-hub-core的基本交互功能
+ * 测试CLI包与@mcp-core/mcp-knot-core的基本交互功能
  */
 
-import { McpServiceManager } from '@mcp-core/mcp-hub-core';
+import { McpServiceManager } from '@mcp-core/mcp-knot-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CliConfigManager } from '../config/cli-config-manager.js';

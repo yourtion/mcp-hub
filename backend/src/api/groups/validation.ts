@@ -3,7 +3,7 @@
  * 包含组配置校验、组 ID 校验、工具复杂度评估
  */
 
-import type { CreateGroupRequest, UpdateGroupRequest } from '@mcp-core/mcp-hub-share';
+import type { CreateGroupRequest, UpdateGroupRequest } from '@mcp-core/mcp-knot-share';
 
 // JSON Schema 类型定义（用于工具复杂度评估）
 export interface JsonSchema {

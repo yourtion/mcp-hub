@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiToolIntegrationService } from './api_tool_integration_service.js';
 
 // Mock the core module
-vi.mock('@mcp-core/mcp-hub-core/api-to-mcp', () => ({
+vi.mock('@mcp-core/mcp-knot-core/api-to-mcp', () => ({
   ApiToMcpServiceManagerImpl: vi.fn(
     class MockApiToMcpServiceManagerImpl {
       initialize = vi.fn();

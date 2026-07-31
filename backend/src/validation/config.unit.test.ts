@@ -8,7 +8,7 @@ import {
   validateSystemConfig,
 } from './config.js';
 
-import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share';
+import type { GroupConfig, McpConfig } from '@mcp-core/mcp-knot-share';
 
 describe('配置验证工具', () => {
   describe('validateMcpConfig', () => {

@@ -9,7 +9,7 @@
  *     保证向后兼容。
  *
  * 通过 spy detector/fanout 类的构造函数断言「是否构造」，避免依赖
- * McpHubService 的私有字段。ServerManager 的 listChanged handler 注册
+ * McpKnotService 的私有字段。ServerManager 的 listChanged handler 注册
  * 由 detector 是否注入决定——构造期不连接真实 server，故仅断言构造次数。
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -72,9 +72,9 @@ vi.mock('../utils/logger.js', () => ({
   },
 }));
 
-import { McpHubService } from './mcp_hub_service.js';
+import { McpKnotService } from './mcp_knot_service.js';
 
-import type { DeepReadonly, GroupConfig, ServerConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
+import type { DeepReadonly, GroupConfig, ServerConfig, SystemConfig } from '@mcp-core/mcp-knot-share';
 
 const serverConfigs: Record<string, ServerConfig> = {
   's1': { type: 'stdio', command: 'node', args: ['x.js'], enabled: true },
@@ -101,7 +101,7 @@ describe('subscriptions.enabled 开关（P5 修复 C1）', () => {
       subscriptions: { enabled: false },
     } as unknown as DeepReadonly<SystemConfig>;
 
-    const svc = new McpHubService(serverConfigs, groupConfigs, undefined, systemConfig);
+    const svc = new McpKnotService(serverConfigs, groupConfigs, undefined, systemConfig);
     await svc.initialize();
 
     expect(detectorCtorCalls).toHaveLength(0);
@@ -116,7 +116,7 @@ describe('subscriptions.enabled 开关（P5 修复 C1）', () => {
       subscriptions: { enabled: true, pollIntervalMs: 1000 },
     } as unknown as DeepReadonly<SystemConfig>;
 
-    const svc = new McpHubService(serverConfigs, groupConfigs, undefined, systemConfig);
+    const svc = new McpKnotService(serverConfigs, groupConfigs, undefined, systemConfig);
     await svc.initialize();
 
     expect(detectorCtorCalls).toHaveLength(1);
@@ -128,7 +128,7 @@ describe('subscriptions.enabled 开关（P5 修复 C1）', () => {
   });
 
   it('subscriptions 整块缺失（默认 true）：detector/fanout 正常构造（向后兼容）', async () => {
-    const svc = new McpHubService(serverConfigs, groupConfigs, undefined, undefined);
+    const svc = new McpKnotService(serverConfigs, groupConfigs, undefined, undefined);
     await svc.initialize();
 
     expect(detectorCtorCalls).toHaveLength(1);

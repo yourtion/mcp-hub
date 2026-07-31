@@ -3,8 +3,8 @@
  * 使用核心包的McpServiceManager和MCP SDK 的 serveStdio 入口
  */
 
-import { McpServiceManager } from '@mcp-core/mcp-hub-core';
-import { createCliLogger } from '@mcp-core/mcp-hub-share';
+import { McpServiceManager } from '@mcp-core/mcp-knot-core';
+import { createCliLogger } from '@mcp-core/mcp-knot-share';
 import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import { z } from 'zod/v4';

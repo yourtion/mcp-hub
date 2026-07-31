@@ -109,35 +109,35 @@ async function runPerformanceTests(): Promise<PerformanceReport> {
     {
       name: '核心包构建',
       command: 'pnpm',
-      args: ['--filter', '@mcp-core/mcp-hub-core', 'build'],
+      args: ['--filter', '@mcp-core/mcp-knot-core', 'build'],
       expectedMaxDuration: 10000, // 10秒
     },
     // CLI包构建性能测试
     {
       name: 'CLI包构建',
       command: 'pnpm',
-      args: ['--filter', '@mcp-core/mcp-hub-cli', 'build'],
+      args: ['--filter', '@mcp-core/mcp-knot-cli', 'build'],
       expectedMaxDuration: 10000, // 10秒
     },
     // 后端构建性能测试
     {
       name: '后端构建',
       command: 'pnpm',
-      args: ['--filter', '@mcp-core/mcp-hub-api', 'build'],
+      args: ['--filter', '@mcp-core/mcp-knot-api', 'build'],
       expectedMaxDuration: 15000, // 15秒
     },
     // 核心包测试性能
     {
       name: '核心包测试',
       command: 'pnpm',
-      args: ['--filter', '@mcp-core/mcp-hub-core', 'test'],
+      args: ['--filter', '@mcp-core/mcp-knot-core', 'test'],
       expectedMaxDuration: 20000, // 20秒
     },
     // 后端测试性能
     {
       name: '后端测试',
       command: 'pnpm',
-      args: ['--filter', '@mcp-core/mcp-hub-api', 'test'],
+      args: ['--filter', '@mcp-core/mcp-knot-api', 'test'],
       expectedMaxDuration: 30000, // 30秒
     },
   ];

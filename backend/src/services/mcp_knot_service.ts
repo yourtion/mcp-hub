@@ -1,6 +1,6 @@
-import { ConfigError, ErrorCode, ServiceError, ToolExecutionError } from '@mcp-core/mcp-hub-core';
+import { ConfigError, ErrorCode, ServiceError, ToolExecutionError } from '@mcp-core/mcp-knot-core';
 
-import { ServerStatus } from '../types/mcp-hub.js';
+import { ServerStatus } from '../types/mcp-knot.js';
 import { logger } from '../utils/logger.js';
 import { ApiToolIntegrationService } from './api_tool_integration_service.js';
 import { GroupManager } from './group_manager.js';
@@ -11,10 +11,10 @@ import { ToolManager } from './tool_manager.js';
 import { UpstreamChangeDetector } from './upstream-change-detector.js';
 import { UpstreamChangeFanout } from './upstream-change-fanout.js';
 
-import type { Group, McpHubService as IMcpHubService, Tool, ToolResult } from '../types/mcp-hub.js';
-import type { DeepReadonly, GroupConfig, ServerConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
+import type { Group, McpKnotService as IMcpKnotService, Tool, ToolResult } from '../types/mcp-knot.js';
+import type { DeepReadonly, GroupConfig, ServerConfig, SystemConfig } from '@mcp-core/mcp-knot-share';
 
-export class McpHubService implements IMcpHubService {
+export class McpKnotService implements IMcpKnotService {
   private serverManager: ServerManager;
 
   /**
@@ -135,7 +135,7 @@ export class McpHubService implements IMcpHubService {
 
   async initialize(): Promise<void> {
     if (this.isInitialized) {
-      logger.warn('McpHubService already initialized, skipping re-initialization');
+      logger.warn('McpKnotService already initialized, skipping re-initialization');
       return;
     }
 
@@ -952,7 +952,7 @@ export class McpHubService implements IMcpHubService {
     if (!this.isInitialized) {
       throw new ServiceError(
         ErrorCode.SERVICE_UNAVAILABLE,
-        'McpHubService must be initialized before use',
+        'McpKnotService must be initialized before use',
       );
     }
   }

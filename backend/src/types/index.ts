@@ -2,4 +2,4 @@
 
 export * from './auth.js';
 export * from './dashboard.js';
-export * from './mcp-hub.js';
+export * from './mcp-knot.js';

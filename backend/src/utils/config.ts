@@ -1,10 +1,10 @@
-import { ConfigError, ErrorCode } from '@mcp-core/mcp-hub-core';
+import { ConfigError, ErrorCode } from '@mcp-core/mcp-knot-core';
 import path from 'node:path';
 
 import { JsonStorage } from './json_storage.js';
 
-import type { DeepReadonly } from '@mcp-core/mcp-hub-share';
-import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share/config';
+import type { DeepReadonly } from '@mcp-core/mcp-knot-share';
+import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-knot-share/config';
 
 /**
  * 将 DeepReadonly 类型转换为可变类型

@@ -19,7 +19,7 @@ export {
   type ErrorResponse,
   ErrorSeverity,
   getHttpStatusForError,
-  McpHubCoreError,
+  McpKnotCoreError,
   ServiceError,
   type SuccessResponse,
   ToolExecutionError,

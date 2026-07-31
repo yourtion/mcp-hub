@@ -1,4 +1,4 @@
-import { ErrorCode } from '@mcp-core/mcp-hub-core';
+import { ErrorCode } from '@mcp-core/mcp-knot-core';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 import { createResourceServer } from './resource-server.js';

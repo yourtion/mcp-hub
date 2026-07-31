@@ -41,7 +41,7 @@ const mockServiceManager = {
 };
 
 // Mock 核心包
-vi.mock('@mcp-core/mcp-hub-core', () => ({
+vi.mock('@mcp-core/mcp-knot-core', () => ({
   McpServiceManager: vi.fn(function (this: Record<string, unknown>) {
     Object.assign(this, mockServiceManager);
   }),

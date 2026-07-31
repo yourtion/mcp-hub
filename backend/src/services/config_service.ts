@@ -1,9 +1,9 @@
-import { ConfigError, ErrorCode } from '@mcp-core/mcp-hub-core';
+import { ConfigError, ErrorCode } from '@mcp-core/mcp-knot-core';
 import {
   GroupConfigSchema,
   McpConfigSchema,
   SystemConfigSchema,
-} from '@mcp-core/mcp-hub-share/config';
+} from '@mcp-core/mcp-knot-share/config';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -25,7 +25,7 @@ import type {
   ConfigValidationWarning,
   IConfigService,
 } from '../types/config.js';
-import type { DeepReadonly, GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
+import type { DeepReadonly, GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-knot-share';
 import type { z } from 'zod/v4';
 
 // Schema 引用（从 share 统一导入）

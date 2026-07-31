@@ -6,7 +6,7 @@ import { SSEEventManager } from '../../services/sse_event_manager.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { logger } from '../../utils/logger.js';
 
-import type { McpHubService } from '../../services/mcp_hub_service.js';
+import type { McpKnotService } from '../../services/mcp_knot_service.js';
 import type { LogQuery } from '../../types/dashboard.js';
 
 export const dashboardApi = new Hono();
@@ -33,7 +33,7 @@ function clearDashboardIntervals(): void {
 /**
  * 初始化仪表板服务
  */
-export function initializeDashboardServices(hubService: McpHubService): void {
+export function initializeDashboardServices(hubService: McpKnotService): void {
   logger.info('初始化仪表板服务');
 
   clearDashboardIntervals();
@@ -121,7 +121,7 @@ function getDashboardService(): DashboardService {
         { name: 'test_tool_2', description: 'Test Tool 2' },
       ],
       getServerHealth: () => new Map([['test-server-1', { status: 'connected', isHealthy: true }]]),
-    } as unknown as McpHubService;
+    } as unknown as McpKnotService;
 
     dashboardService = new DashboardService(mockHubService);
   }

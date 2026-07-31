@@ -12,7 +12,7 @@ import {
   McpLogger,
   TextFormatter,
   UnifiedLogger,
-} from '@mcp-core/mcp-hub-share';
+} from '@mcp-core/mcp-knot-share';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock fs promises

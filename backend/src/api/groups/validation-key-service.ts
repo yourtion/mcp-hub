@@ -30,7 +30,7 @@ import type {
   GroupConfig,
   GroupValidationConfig,
   SetGroupValidationKeyRequest,
-} from '@mcp-core/mcp-hub-share';
+} from '@mcp-core/mcp-knot-share';
 
 /**
  * 业务错误码（与原 handler 的响应 error.code 逐字对应）

@@ -20,8 +20,8 @@ vi.mock('./services/config', () => ({
   initConfig: vi.fn(),
 }));
 
-vi.mock('./services/mcp_hub_service', () => ({
-  McpHubService: vi.fn().mockImplementation(() => ({
+vi.mock('./services/mcp_knot_service', () => ({
+  McpKnotService: vi.fn().mockImplementation(() => ({
     initialize: vi.fn().mockResolvedValue(undefined),
     shutdown: vi.fn().mockResolvedValue(undefined),
   })),

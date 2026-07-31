@@ -3,7 +3,7 @@
  * 专门用于追踪 CLI 重启场景的内存泄漏
  */
 
-import { createCliLogger } from '@mcp-core/mcp-hub-share';
+import { createCliLogger } from '@mcp-core/mcp-knot-share';
 
 const logger = createCliLogger({ component: 'MemoryProfiler' });
 

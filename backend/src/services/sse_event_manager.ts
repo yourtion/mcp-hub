@@ -1,4 +1,4 @@
-import { ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+import { ErrorCode, ServiceError } from '@mcp-core/mcp-knot-core';
 
 import { logger } from '../utils/logger.js';
 

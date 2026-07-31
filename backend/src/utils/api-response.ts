@@ -6,10 +6,10 @@
 import {
   defaultErrorHandler,
   getHttpStatusForError,
-  McpHubCoreError,
+  McpKnotCoreError,
   type ErrorResponse,
   type SuccessResponse,
-} from '@mcp-core/mcp-hub-core';
+} from '@mcp-core/mcp-knot-core';
 
 import { logger } from './logger.js';
 
@@ -38,7 +38,7 @@ export function successResponse<T>(c: Context, data: T, status = 200): Response 
  *
  * HTTP 状态码推导规则：
  * 1. 如果调用方显式指定了 status，使用调用方的值
- * 2. 否则，如果是结构化错误（McpHubCoreError），从 ErrorCode → httpStatus 映射推导
+ * 2. 否则，如果是结构化错误（McpKnotCoreError），从 ErrorCode → httpStatus 映射推导
  * 3. 兜底 500
  */
 export function errorResponse(c: Context, error: Error, status?: number): Response {
@@ -55,7 +55,7 @@ export function errorResponse(c: Context, error: Error, status?: number): Respon
 
   // 推导 HTTP 状态码
   const httpStatus =
-    status ?? (error instanceof McpHubCoreError ? getHttpStatusForError(error.code) : 500);
+    status ?? (error instanceof McpKnotCoreError ? getHttpStatusForError(error.code) : 500);
 
   return c.json(body, httpStatus as ContentfulStatusCode);
 }

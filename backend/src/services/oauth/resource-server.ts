@@ -9,7 +9,7 @@
  *  - oauth 配置（internal/external）→ OAuth 校验（validationKey 禁用）
  *  - oauth 配置（both）→ OAuth 优先，失败回退 validationKey（若组启用）
  */
-import { ErrorCode } from '@mcp-core/mcp-hub-core';
+import { ErrorCode } from '@mcp-core/mcp-knot-core';
 
 import { logger } from '../../utils/logger.js';
 import { createIntrospectToken } from './introspection.js';
@@ -17,7 +17,7 @@ import { createTokenValidator } from './token-validator.js';
 import { verifyValidationKey } from './validation-key.js';
 
 import type { OAuthConfig, McpAuthContext, TokenValidationResult } from './types.js';
-import type { SystemConfig } from '@mcp-core/mcp-hub-share';
+import type { SystemConfig } from '@mcp-core/mcp-knot-share';
 
 export type AuthOutcome =
   | { ok: true; context: McpAuthContext }

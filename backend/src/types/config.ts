@@ -1,4 +1,4 @@
-import type { DeepReadonly, GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
+import type { DeepReadonly, GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-knot-share';
 
 // 配置类型枚举
 export type ConfigType = 'system' | 'mcp' | 'groups';

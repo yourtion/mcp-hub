@@ -252,14 +252,14 @@ async function validateFunctionalIntegrity(): Promise<ValidationResult> {
     // 运行核心包测试
     const coreTestResult = await executeCommand(
       'pnpm',
-      ['--filter', '@mcp-core/mcp-hub-core', 'test'],
+      ['--filter', '@mcp-core/mcp-knot-core', 'test'],
       30000,
     );
 
     // 运行后端测试
     const backendTestResult = await executeCommand(
       'pnpm',
-      ['--filter', '@mcp-core/mcp-hub-api', 'test'],
+      ['--filter', '@mcp-core/mcp-knot-api', 'test'],
       45000,
     );
 

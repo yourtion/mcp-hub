@@ -8,7 +8,7 @@ import {
   EnvironmentDetector,
   type LoggerConfig,
   LogLevel,
-} from '@mcp-core/mcp-hub-share';
+} from '@mcp-core/mcp-knot-share';
 import * as os from 'node:os';
 import * as path from 'node:path';
 

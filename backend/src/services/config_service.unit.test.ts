@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConfigService } from './config_service.js';
 
-import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
+import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-knot-share';
 
 // Mock dependencies
 vi.mock('node:fs/promises');

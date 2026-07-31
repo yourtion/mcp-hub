@@ -20,7 +20,7 @@
  *   详见 step-4-report.md 的「架构核实」节。
  *
  * configPath：setupTestConfig 把 system.json 的 apiToolsConfigPath 也指向同一份
- *   `<CONFIG_PATH>/api_tools.json`，但 system.json 那条只被 McpHubService（不经 /:group/mcp）
+ *   `<CONFIG_PATH>/api_tools.json`，但 system.json 那条只被 McpKnotService（不经 /:group/mcp）
  *   读取，不影响 /api/api-to-mcp/* 路径。这里显式传同一文件给单例 initialize，确保
  *   /api/api-to-mcp/configs 列表与 test 端点能加载到 oauth 工具。
  */

@@ -12,7 +12,7 @@ import {
   ErrorFactory,
   ErrorSeverity,
   type FallbackStrategy,
-  McpHubCoreError,
+  McpKnotCoreError,
   UnifiedErrorHandler,
 } from './index';
 
@@ -26,8 +26,8 @@ describe('UnifiedErrorHandler', () => {
   });
 
   describe('handleError', () => {
-    it('应该正确处理 McpHubCoreError', () => {
-      const error = new McpHubCoreError(
+    it('应该正确处理 McpKnotCoreError', () => {
+      const error = new McpKnotCoreError(
         ErrorCode.TOOL_NOT_FOUND,
         '工具未找到',
         { toolName: 'test-tool' },
@@ -277,9 +277,9 @@ describe('ErrorFactory', () => {
   });
 });
 
-describe('McpHubCoreError', () => {
+describe('McpKnotCoreError', () => {
   it('应该正确设置错误属性', () => {
-    const error = new McpHubCoreError(
+    const error = new McpKnotCoreError(
       ErrorCode.TOOL_NOT_FOUND,
       '自定义消息',
       { toolName: 'test' },
@@ -296,13 +296,13 @@ describe('McpHubCoreError', () => {
   });
 
   it('应该使用默认错误消息', () => {
-    const error = new McpHubCoreError(ErrorCode.TOOL_NOT_FOUND);
+    const error = new McpKnotCoreError(ErrorCode.TOOL_NOT_FOUND);
 
     expect(error.message).toBe('工具未找到');
   });
 
   it('应该正确转换为JSON', () => {
-    const error = new McpHubCoreError(
+    const error = new McpKnotCoreError(
       ErrorCode.TOOL_NOT_FOUND,
       '自定义消息',
       { toolName: 'test' },
@@ -311,7 +311,7 @@ describe('McpHubCoreError', () => {
 
     const json = error.toJSON();
 
-    expect(json.name).toBe('McpHubCoreError');
+    expect(json.name).toBe('McpKnotCoreError');
     expect(json.code).toBe(ErrorCode.TOOL_NOT_FOUND);
     expect(json.message).toBe('自定义消息');
     expect(json.category).toBe(ErrorCategory.RUNTIME);

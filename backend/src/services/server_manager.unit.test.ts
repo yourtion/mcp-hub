@@ -2,10 +2,10 @@ import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/cli
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { runWithTraceContext, type TraceContext } from '../middleware/trace-context.js';
-import { ServerStatus } from '../types/mcp-hub.js';
+import { ServerStatus } from '../types/mcp-knot.js';
 import { ServerManager } from './server_manager.js';
 
-import type { ServerConfig } from '@mcp-core/mcp-hub-share';
+import type { ServerConfig } from '@mcp-core/mcp-knot-share';
 
 // Mock the MCP SDK
 // 使用一个工厂函数来创建 mock Client，支持 vitest 4.x 的 new 调用

@@ -7,9 +7,9 @@ import {
 } from '../middleware/trace-context.js';
 import { BackendCoreServiceAdapter } from './backend-core-service-adapter.js';
 
-import type { ServerConnection, ServerStatus, Tool } from '../types/mcp-hub.js';
+import type { ServerConnection, ServerStatus, Tool } from '../types/mcp-knot.js';
 import type { ServerManager } from './server_manager.js';
-import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
+import type { McpServiceManagerInterface } from '@mcp-core/mcp-knot-core';
 
 // 构造一个 mock ServerManager，仅 stub 适配器用到的方法
 function makeMockServerManager(overrides: Partial<ServerManager> = {}): ServerManager {

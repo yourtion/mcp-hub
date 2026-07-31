@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ServerStatus } from '../types/mcp-hub.js';
+import { ServerStatus } from '../types/mcp-knot.js';
 import { GroupManager } from './group_manager.js';
 
-import type { ServerConnection, ServerManager } from '../types/mcp-hub.js';
-import type { GroupConfig } from '@mcp-core/mcp-hub-share';
+import type { ServerConnection, ServerManager } from '../types/mcp-knot.js';
+import type { GroupConfig } from '@mcp-core/mcp-knot-share';
 
 // Mock the logger
 vi.mock('../utils/logger.js');

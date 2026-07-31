@@ -6,8 +6,8 @@ import configShared from '../vitest.shared.js';
 export default mergeConfig(configShared, {
   resolve: {
     alias: {
-      '@mcp-core/mcp-hub-core': path.resolve(__dirname, '../packages/core/src'),
-      '@mcp-core/mcp-hub-share': path.resolve(__dirname, '../packages/share/src'),
+      '@mcp-core/mcp-knot-core': path.resolve(__dirname, '../packages/core/src'),
+      '@mcp-core/mcp-knot-share': path.resolve(__dirname, '../packages/share/src'),
     },
   },
   test: {

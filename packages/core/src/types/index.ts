@@ -14,7 +14,7 @@ export type {
   StdioServerConfig,
   SystemConfig,
   ToolFilter,
-} from '@mcp-core/mcp-hub-share/config';
+} from '@mcp-core/mcp-knot-share/config';
 // 从 config.ts 选择性导出 (避免与 share 的 ToolFilter 冲突)
 export type { GlobalSettings, McpServerConfig } from './config.js';
 export * from './connection.js';

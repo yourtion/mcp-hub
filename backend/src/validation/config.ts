@@ -9,11 +9,11 @@ import {
   SystemConfigSchema,
   validateCrossReferences,
   validateWithSchema,
-} from '@mcp-core/mcp-hub-share/config';
+} from '@mcp-core/mcp-knot-share/config';
 
 import { logger } from '../utils/logger.js';
 
-import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share/config';
+import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-knot-share/config';
 
 /**
  * 验证MCP服务器配置

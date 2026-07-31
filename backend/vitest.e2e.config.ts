@@ -32,8 +32,8 @@ import configShared from '../vitest.shared.js';
  */
 const backendRoot = __dirname;
 const resolveAlias = {
-  '@mcp-core/mcp-hub-core': path.resolve(__dirname, '../packages/core/src'),
-  '@mcp-core/mcp-hub-share': path.resolve(__dirname, '../packages/share/src'),
+  '@mcp-core/mcp-knot-core': path.resolve(__dirname, '../packages/core/src'),
+  '@mcp-core/mcp-knot-share': path.resolve(__dirname, '../packages/share/src'),
 };
 
 // 所有 e2e project 共享的超时 / 串行约定（协议测试依赖全局 TestServer 单例，

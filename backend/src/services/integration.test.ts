@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { McpHubService } from './mcp_hub_service.js';
+import { McpKnotService } from './mcp_knot_service.js';
 
-import type { ServerManager } from '../types/mcp-hub.js';
-import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
+import type { ServerManager } from '../types/mcp-knot.js';
+import type { GroupConfig, ServerConfig } from '@mcp-core/mcp-knot-share';
 
 // Mock external dependencies
 let _mockClientInstance: Record<string, ReturnType<typeof vi.fn>> | null = null;
@@ -19,7 +19,7 @@ vi.mock('@modelcontextprotocol/client/stdio');
 vi.mock('../utils/logger.js');
 
 describe('MCP Hub Service Integration Tests', () => {
-  let mcpHubService: McpHubService;
+  let mcpHubService: McpKnotService;
   let mockClient: Record<string, ReturnType<typeof vi.fn>>;
   let serverConfigs: Record<string, ServerConfig>;
   let groupConfigs: GroupConfig;
@@ -33,7 +33,7 @@ describe('MCP Hub Service Integration Tests', () => {
       close: vi.fn(),
       listTools: vi.fn(),
       callTool: vi.fn(),
-      // P5: ServerManager 注册上游 tools/list_changed handler（changeDetector 已由 McpHubService 注入）
+      // P5: ServerManager 注册上游 tools/list_changed handler（changeDetector 已由 McpKnotService 注入）
       setNotificationHandler: vi.fn(),
     };
 
@@ -87,7 +87,7 @@ describe('MCP Hub Service Integration Tests', () => {
       },
     };
 
-    mcpHubService = new McpHubService(serverConfigs, groupConfigs);
+    mcpHubService = new McpKnotService(serverConfigs, groupConfigs);
   });
 
   afterEach(async () => {
@@ -437,7 +437,7 @@ describe('MCP Hub Service Integration Tests', () => {
         } as unknown as GroupConfig,
       };
 
-      const invalidService = new McpHubService(serverConfigs, invalidGroupConfigs);
+      const invalidService = new McpKnotService(serverConfigs, invalidGroupConfigs);
 
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
@@ -634,14 +634,14 @@ describe('MCP Hub Service Integration Tests', () => {
 
   describe('Configuration Edge Cases', () => {
     it('should handle empty server configuration', async () => {
-      const emptyService = new McpHubService({}, groupConfigs);
+      const emptyService = new McpKnotService({}, groupConfigs);
 
       // Should fail to initialize due to no servers for groups
       await expect(emptyService.initialize()).rejects.toThrow('No groups are loaded');
     });
 
     it('should handle empty group configuration', async () => {
-      const emptyService = new McpHubService(serverConfigs, {});
+      const emptyService = new McpKnotService(serverConfigs, {});
 
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
@@ -661,7 +661,7 @@ describe('MCP Hub Service Integration Tests', () => {
         },
       };
 
-      const mixedService = new McpHubService(mixedServerConfigs, groupConfigs);
+      const mixedService = new McpKnotService(mixedServerConfigs, groupConfigs);
 
       mockClient.connect
         .mockResolvedValueOnce(undefined) // Valid servers succeed

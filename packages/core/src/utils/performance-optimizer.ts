@@ -3,7 +3,7 @@
  * 提供启动时间优化、响应时间优化和资源使用优化
  */
 
-import { createLogger } from '@mcp-core/mcp-hub-share';
+import { createLogger } from '@mcp-core/mcp-knot-share';
 import { EventEmitter } from 'node:events';
 
 /**

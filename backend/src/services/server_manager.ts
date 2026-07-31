@@ -1,4 +1,4 @@
-import { ConfigError, ConnectionError, ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+import { ConfigError, ConnectionError, ErrorCode, ServiceError } from '@mcp-core/mcp-knot-core';
 import {
   Client,
   SSEClientTransport,
@@ -7,12 +7,12 @@ import {
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
 
 import { getCurrentTraceContext, hasTraceContext } from '../middleware/trace-context.js';
-import { ServerStatus } from '../types/mcp-hub.js';
+import { ServerStatus } from '../types/mcp-knot.js';
 import { logger } from '../utils/logger.js';
 import { createServerAuthProvider } from './mcp-server-auth-provider.js';
 
-import type { ServerManager as IServerManager, ServerConnection, Tool } from '../types/mcp-hub.js';
-import type { ServerConfig } from '@mcp-core/mcp-hub-share';
+import type { ServerManager as IServerManager, ServerConnection, Tool } from '../types/mcp-knot.js';
+import type { ServerConfig } from '@mcp-core/mcp-knot-share';
 
 /**
  * P5: 上游工具集变更检测器接入点。

@@ -3,8 +3,8 @@
  * 整合API到MCP核心功能，提供Web API所需的完整服务
  */
 
-import { ConfigError, ErrorCode, McpHubCoreError, ValidationError } from '@mcp-core/mcp-hub-core';
-import { ConfigLoadError } from '@mcp-core/mcp-hub-core/api-to-mcp';
+import { ConfigError, ErrorCode, McpKnotCoreError, ValidationError } from '@mcp-core/mcp-knot-core';
+import { ConfigLoadError } from '@mcp-core/mcp-knot-core/api-to-mcp';
 import { promises as fs } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -18,7 +18,7 @@ import type {
   ApiToolConfig,
   TestApiConfigResponse,
 } from '../types/web-api.js';
-import type { ApiConfigManager, ApiToolsConfig } from '@mcp-core/mcp-hub-core/api-to-mcp';
+import type { ApiConfigManager, ApiToolsConfig } from '@mcp-core/mcp-knot-core/api-to-mcp';
 
 /**
  * API配置管理结果
@@ -59,7 +59,7 @@ export class ApiToMcpWebService {
         this.configPath = configPath;
 
         // 导入ApiConfigManager (延迟导入以避免循环依赖)
-        const { ApiConfigManagerImpl } = await import('@mcp-core/mcp-hub-core/api-to-mcp');
+        const { ApiConfigManagerImpl } = await import('@mcp-core/mcp-knot-core/api-to-mcp');
 
         this.configManager = new ApiConfigManagerImpl();
 
@@ -69,7 +69,7 @@ export class ApiToMcpWebService {
       }
     } catch (error) {
       logger.error('API到MCP Web服务初始化失败', error as Error);
-      throw new McpHubCoreError(
+      throw new McpKnotCoreError(
         ErrorCode.INTERNAL_SERVER_ERROR,
         `初始化失败: ${(error as Error).message}`,
         error,
@@ -100,7 +100,7 @@ export class ApiToMcpWebService {
       return { configs };
     } catch (error) {
       logger.error('获取API配置列表失败', error as Error);
-      throw new McpHubCoreError(
+      throw new McpKnotCoreError(
         ErrorCode.INTERNAL_SERVER_ERROR,
         `获取配置列表失败: ${(error as Error).message}`,
         error,
@@ -336,7 +336,7 @@ export class ApiToMcpWebService {
       return fullConfig;
     } catch (error) {
       logger.error('获取API配置详情失败', error as Error);
-      throw new McpHubCoreError(
+      throw new McpKnotCoreError(
         ErrorCode.INTERNAL_SERVER_ERROR,
         `获取配置详情失败: ${(error as Error).message}`,
         error,

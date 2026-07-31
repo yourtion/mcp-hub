@@ -10,11 +10,11 @@ import {
   SystemConfigSchema,
   validateCrossReferences,
   validateWithSchema,
-} from '@mcp-core/mcp-hub-share/config';
+} from '@mcp-core/mcp-knot-share/config';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share/config';
+import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-knot-share/config';
 
 /**
  * 所有配置的加载结果

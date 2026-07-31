@@ -21,8 +21,8 @@ import {
 } from './mcp-handler-factory.js';
 
 import type { ResourceServerDeps } from '../../services/oauth/resource-server.js';
-import type { SystemConfig } from '@mcp-core/mcp-hub-share';
-import type { GroupConfig } from '@mcp-core/mcp-hub-share/config';
+import type { SystemConfig } from '@mcp-core/mcp-knot-share';
+import type { GroupConfig } from '@mcp-core/mcp-knot-share/config';
 import type { Context } from 'hono';
 
 export const groupMcpRouter = new Hono();

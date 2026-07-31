@@ -2,12 +2,12 @@ import { Hono } from 'hono';
 import { z } from 'zod/v4';
 
 import { ServerManager } from '../../services/server_manager.js';
-import { ServerStatus } from '../../types/mcp-hub.js';
+import { ServerStatus } from '../../types/mcp-knot.js';
 import { errorResponse, successResponse } from '../../utils/api-response.js';
 import { getAllConfig, saveConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 
-import type { McpConfig, ServerConfig } from '@mcp-core/mcp-hub-share';
+import type { McpConfig, ServerConfig } from '@mcp-core/mcp-knot-share';
 
 export const serversApi = new Hono();
 

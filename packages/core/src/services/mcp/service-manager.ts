@@ -3,7 +3,7 @@
  * 负责MCP服务的注册、初始化和生命周期管理
  */
 
-import { createLogger } from '@mcp-core/mcp-hub-share';
+import { createLogger } from '@mcp-core/mcp-knot-share';
 
 import { performanceMonitor } from '../../utils/performance-monitor.js';
 import { performanceOptimizer } from '../../utils/performance-optimizer.js';

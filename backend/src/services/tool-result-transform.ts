@@ -15,7 +15,7 @@
 
 import { logger } from '../utils/logger.js';
 
-import type { ToolContent, ToolResult } from '../types/mcp-hub.js';
+import type { ToolContent, ToolResult } from '../types/mcp-knot.js';
 
 /**
  * 格式化错误对象为可读字符串

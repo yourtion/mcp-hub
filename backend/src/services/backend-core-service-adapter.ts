@@ -1,4 +1,4 @@
-import type { ServerStatus as BackendServerStatus } from '../types/mcp-hub.js';
+import type { ServerStatus as BackendServerStatus } from '../types/mcp-knot.js';
 import type { ServerManager } from './server_manager.js';
 /**
  * BackendCoreServiceAdapter（P6 架构修正，spec §10.3）
@@ -12,7 +12,7 @@ import type { ServerManager } from './server_manager.js';
  *
  * 注入点：service-registry.ts 的 initCoreServiceManager（Task 7）。
  */
-import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
+import type { McpServiceManagerInterface } from '@mcp-core/mcp-knot-core';
 import type {
   InputRequiredResult,
   McpServerConfig,
@@ -20,19 +20,19 @@ import type {
   ServiceStatus,
   ToolInfo,
   ToolResult,
-} from '@mcp-core/mcp-hub-core';
-import type { ServerConfig } from '@mcp-core/mcp-hub-share';
+} from '@mcp-core/mcp-knot-core';
+import type { ServerConfig } from '@mcp-core/mcp-knot-share';
 
 export class BackendCoreServiceAdapter implements McpServiceManagerInterface {
   constructor(private readonly serverManager: ServerManager) {}
 
   async initializeFromConfig(_config: McpServerConfig): Promise<void> {
-    // ServerManager 在 McpHubService 构造时已按配置初始化，此处委托 ensure initialized。
+    // ServerManager 在 McpKnotService 构造时已按配置初始化，此处委托 ensure initialized。
     await this.serverManager.initialize();
   }
 
   async registerServer(_serverId: string, _config: ServerConfig): Promise<void> {
-    // 配置驱动的注册由 McpHubService 管理；适配器保留接口契约，no-op。
+    // 配置驱动的注册由 McpKnotService 管理；适配器保留接口契约，no-op。
     // （group-service 不调用此方法；保留仅为满足接口完整性。）
   }
 
@@ -108,12 +108,12 @@ export class BackendCoreServiceAdapter implements McpServiceManagerInterface {
     } as ServiceStatus;
   }
 
-  getServerConnections(): Map<string, import('@mcp-core/mcp-hub-core').ServerConnection> {
+  getServerConnections(): Map<string, import('@mcp-core/mcp-knot-core').ServerConnection> {
     // core 接口的 ServerConnection.tools 是 ToolInfo[]（description 必填），
     // backend Tool.description 可选；结构是子集，运行时一致，断言满足接口契约。
     return this.serverManager.getAllServers() as unknown as Map<
       string,
-      import('@mcp-core/mcp-hub-core').ServerConnection
+      import('@mcp-core/mcp-knot-core').ServerConnection
     >;
   }
 
@@ -128,7 +128,7 @@ export class BackendCoreServiceAdapter implements McpServiceManagerInterface {
 
   async shutdown(): Promise<void> {
     // 不关闭 ServerManager：适配器只是"借"用 hubService 的 ServerManager（非拥有者），
-    // 其生命周期由 McpHubService.shutdown() 统一管理。
+    // 其生命周期由 McpKnotService.shutdown() 统一管理。
     //
     // 若此处委托 serverManager.shutdown()，会在 service-registry 的
     // reloadCoreServiceManager() 路径（groups API 增删改后调用）中把真实上游连接全部断开，

@@ -3,7 +3,7 @@
  */
 
 import { zValidator } from '@hono/zod-validator';
-import { AuthError, ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+import { AuthError, ErrorCode, ServiceError } from '@mcp-core/mcp-knot-core';
 import { Hono } from 'hono';
 import { z } from 'zod/v4';
 

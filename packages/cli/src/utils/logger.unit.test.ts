@@ -2,7 +2,7 @@
  * CLI日志系统测试
  */
 
-import { LogLevel } from '@mcp-core/mcp-hub-share';
+import { LogLevel } from '@mcp-core/mcp-knot-share';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CliLogger, createCliLoggerFromOptions, DEFAULT_CLI_LOGGER_CONFIG } from './logger';

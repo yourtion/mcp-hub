@@ -246,7 +246,7 @@ async function initConfig(
   overwrite: boolean,
   configDir: string,
 ): Promise<void> {
-  const { DefaultConfigGenerator } = await import('@mcp-core/mcp-hub-core');
+  const { DefaultConfigGenerator } = await import('@mcp-core/mcp-knot-core');
 
   console.log('正在初始化配置文件...');
   console.log(`配置目录: ${configDir}`);
@@ -296,7 +296,7 @@ async function initConfig(
  * 列出所有可用的服务器预设
  */
 async function listServerPresets(): Promise<void> {
-  const { DefaultConfigGenerator } = await import('@mcp-core/mcp-hub-core');
+  const { DefaultConfigGenerator } = await import('@mcp-core/mcp-knot-core');
 
   const generator = new DefaultConfigGenerator();
   const presets = generator.getAvailableServerPresets();

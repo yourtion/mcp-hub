@@ -3,8 +3,8 @@
  * 负责加载、验证和管理CLI配置
  */
 
-import { createCliLogger } from '@mcp-core/mcp-hub-share';
-import { CliConfigSchema, CliServerConfigSchema } from '@mcp-core/mcp-hub-share/config';
+import { createCliLogger } from '@mcp-core/mcp-knot-share';
+import { CliConfigSchema, CliServerConfigSchema } from '@mcp-core/mcp-knot-share/config';
 import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { z } from 'zod/v4';

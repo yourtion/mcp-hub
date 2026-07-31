@@ -24,7 +24,7 @@ const mockLogger = {
 };
 
 // 模拟createLogger函数
-vi.mock('@mcp-core/mcp-hub-share', () => ({
+vi.mock('@mcp-core/mcp-knot-share', () => ({
   createLogger: vi.fn(() => mockLogger),
 }));
 

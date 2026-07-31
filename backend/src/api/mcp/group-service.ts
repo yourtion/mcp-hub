@@ -3,7 +3,7 @@
  * 使用核心包功能为特定组提供MCP服务
  */
 
-import { ConfigError, ErrorCode, ServiceError } from '@mcp-core/mcp-hub-core';
+import { ConfigError, ErrorCode, ServiceError } from '@mcp-core/mcp-knot-core';
 import { isInputRequiredResult, McpServer } from '@modelcontextprotocol/server';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -12,7 +12,7 @@ import { z } from 'zod/v4';
 import { MrtrRelayService } from '../../services/mrtr-relay-service.js';
 import { extractFromMeta, runWithTraceContext } from '../../middleware/trace-context.js';
 
-import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
+import type { McpServiceManagerInterface } from '@mcp-core/mcp-knot-core';
 import type { CallToolResult, InputRequiredResult } from '@modelcontextprotocol/server';
 import type { HubState } from '../../services/mrtr-relay-service.js';
 // JSON Schema types
@@ -57,7 +57,7 @@ const DEFAULT_GROUP_CACHE_HINTS = {
 import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 
-import type { Group } from '@mcp-core/mcp-hub-share';
+import type { Group } from '@mcp-core/mcp-knot-share';
 
 /**
  * 组MCP服务状态

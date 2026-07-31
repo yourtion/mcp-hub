@@ -201,7 +201,7 @@ export class E2ETestHelper {
     const startTime = Date.now();
 
     // 使用第二阶段创建的并发执行器
-    const { execute } = await import('@mcp-core/mcp-hub-core/test-utils');
+    const { execute } = await import('@mcp-core/mcp-knot-core/test-utils');
 
     const results = await execute(operations, { concurrency });
 

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { validateAllConfigs } from '../validation/config.js';
 
-import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share';
+import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-knot-share';
 
 describe('服务初始化集成测试', () => {
   beforeEach(() => {

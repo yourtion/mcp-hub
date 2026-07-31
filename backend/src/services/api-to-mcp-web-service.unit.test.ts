@@ -38,7 +38,7 @@ const mockConfigManager = {
   reloadConfig: vi.fn(),
 };
 
-vi.mock('@mcp-core/mcp-hub-core/api-to-mcp', () => ({
+vi.mock('@mcp-core/mcp-knot-core/api-to-mcp', () => ({
   ApiConfigManagerImpl: vi.fn(function (this: Record<string, unknown>) {
     Object.assign(this, mockConfigManager);
   }),
