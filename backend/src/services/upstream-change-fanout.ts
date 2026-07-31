@@ -56,4 +56,20 @@ export class UpstreamChangeFanout {
       await this.fanout(id);
     }
   }
+
+  /**
+   * 释放资源：清空所有 pending debounce timer（不触发 fan-out）。
+   *
+   * P5 修复（代码审查 I3）：原实现无 stop()/dispose()，shutdown 时仅
+   * changeDetector.stop() 停轮询，但 fanout 的 pending Map 内可能仍持有
+   * 已 schedule 的 setTimeout 句柄——这些回调闭包持有 this 引用，导致
+   * timer 泄漏且 shutdown 后仍可能触发 fan-out（访问已关闭的 group service）。
+   * 由 McpHubService.performGracefulShutdown() 在 changeDetector.stop() 后调用。
+   */
+  stop(): void {
+    for (const [, timer] of this.pending) {
+      clearTimeout(timer);
+    }
+    this.pending.clear();
+  }
 }

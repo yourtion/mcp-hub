@@ -84,32 +84,50 @@ function resolveMrtrKey(configuredKey?: string): Uint8Array {
  * 进程级 MRTR relay 单例（惰性构造）。
  * 首次 getMrtrRelay() 时从 system.json 读取 mrtr.stateTtlSeconds / mrtr.stateKey 构造，
  * 之后所有 GroupMcpService 共享同一实例。构造失败（不应发生）时回退到 schema 默认值。
+ *
+ * P5 修复（代码审查 C1）：mrtr.enabled=false 时返回 null（不构造 relay）。
+ * GroupMcpService 已正确处理 mrtrRelay 为 undefined 的情况——buildMcpServer 不注入
+ * requestState.verify，handler 对 input_required 走「识别但不中转」路径（直传上游
+ * InputRequiredResult，Task 7 已实现）。
+ *
+ * 注意：enabled 决策与 relay 实例一样是进程级单例——首次读取的决策缓存到
+ * mrtrRelayPromise（resolved 值为 null 时后续调用复用同一 null），避免每次请求重读
+ * config。运行期翻转 enabled 需重启进程（与 relay 单例 key 缓存语义一致）。
  */
 let mrtrRelayInstance: MrtrRelayService | null = null;
-let mrtrRelayPromise: Promise<MrtrRelayService> | null = null;
+let mrtrRelayPromise: Promise<MrtrRelayService | null> | null = null;
 
 /**
  * 获取（必要时惰性构造）MRTR relay 单例。
+ * mrtr.enabled=false（或配置读取失败按默认 true 回退后 relay 构造失败）时返回 null。
  * 并发首次调用共享同一个 Promise，避免重复构造。
  */
-async function getMrtrRelay(): Promise<MrtrRelayService> {
+async function getMrtrRelay(): Promise<MrtrRelayService | null> {
   if (mrtrRelayInstance) {
     return mrtrRelayInstance;
   }
   if (!mrtrRelayPromise) {
     mrtrRelayPromise = (async () => {
       // 从 system.json 读 mrtr 配置；缺失时 getAllConfig 不抛错（返回默认空对象）
+      let enabled = true;
       let ttlSeconds = 600;
       let stateKey: string | undefined;
       try {
         const cfg = await getAllConfig();
-        // mrtr 整块可选；提供时 schema 已保证 stateTtlSeconds 有默认值
+        // mrtr 整块可选；提供时 schema 已保证 enabled/stateTtlSeconds 有默认值
+        enabled = cfg.system?.mrtr?.enabled ?? true;
         ttlSeconds = cfg.system?.mrtr?.stateTtlSeconds ?? 600;
         stateKey = cfg.system?.mrtr?.stateKey;
       } catch (error) {
-        logger.warn('读取 mrtr 配置失败，回退 schema 默认值（ttl=600s, 随机 key）', {
+        logger.warn('读取 mrtr 配置失败，回退 schema 默认值（enabled=true, ttl=600s, 随机 key）', {
           error: error instanceof Error ? error.message : String(error),
         });
+      }
+      // P5 修复（C1）：mrtr.enabled=false 不构造 relay，返回 null。
+      // GroupMcpService 收到 undefined 的 mrtrRelay 后走「识别但不中转」保底路径。
+      if (!enabled) {
+        logger.info('mrtr.enabled=false，MRTR 中转关闭（P5）—— handler 仅识别 input_required');
+        return null;
       }
       const relay = new MrtrRelayService({
         key: resolveMrtrKey(stateKey),
@@ -170,7 +188,9 @@ export async function ensureGroupMcpService(groupId: string): Promise<GroupMcpSe
     const coreServiceManager = await getCoreServiceManager();
     // P5 MRTR：注入 relay 单例，使 handler 既能 mint Hub state（input_required），
     // 又能让 SDK 在 McpServer 构造时挂上 requestState.verify 钩子（验签客户端回传的 state）。
-    const mrtrRelay = await getMrtrRelay();
+    // mrtr.enabled=false 时 getMrtrRelay 返回 null——GroupMcpService 收到 undefined 的
+    // mrtrRelay 后不注入 verify，handler 走「识别但不中转」保底路径（P5 修复 C1）。
+    const mrtrRelay = (await getMrtrRelay()) ?? undefined;
     const groupService = new GroupMcpService(groupId, coreServiceManager, mrtrRelay);
     await groupService.initialize();
 

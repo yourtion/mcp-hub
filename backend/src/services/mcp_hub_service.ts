@@ -20,12 +20,16 @@ export class McpHubService implements IMcpHubService {
   /**
    * P5: 上游工具集变更检测器（listChanged 实时 + 轮询兜底）。
    * 注入 ServerManager.changeDetector，server 连接时注册 listChanged handler。
+   *
+   * P5 修复（代码审查 C1）：subscriptions.enabled=false 时不构造（undefined），
+   * 整个 subscriptions 链路（listChanged 监听 + 轮询兜底 + fan-out）完全关闭。
    */
-  private changeDetector: UpstreamChangeDetector;
+  private changeDetector?: UpstreamChangeDetector;
   /**
    * P5: 变更 fan-out，把 serverId 变更分发到所有含该 server 的 group。
+   * 同 changeDetector，subscriptions.enabled=false 时不构造。
    */
-  private changeFanout: UpstreamChangeFanout;
+  private changeFanout?: UpstreamChangeFanout;
 
   /**
    * 暴露 ServerManager 供 BackendCoreServiceAdapter 委托（P6 架构修正，spec §10.3）。
@@ -49,7 +53,12 @@ export class McpHubService implements IMcpHubService {
   /**
    * P5 subscriptions 实际生效参数（从 systemConfig.subscriptions 读取，带默认值 fallback）。
    * 这些默认值与 system.schema.ts 的 schema 默认值保持一致，确保 config 未配置时行为不变。
+   *
+   * P5 修复（代码审查 C1）：新增 subscriptionsEnabled 开关（默认 true，向后兼容）。
+   * 为 false 时 changeDetector/changeFanout 不构造、不 startPolling，
+   * 整个 subscriptions/listen 功能完全关闭。
    */
+  private readonly subscriptionsEnabled: boolean;
   private readonly subscriptionsPollIntervalMs: number;
   private readonly subscriptionsPollBackoffMs: number;
   private readonly subscriptionsFanoutDebounceMs: number;
@@ -67,31 +76,38 @@ export class McpHubService implements IMcpHubService {
     // 各字段均带与 schema 默认值一致的 fallback，config 未配置（subscriptions 整块缺失）
     // 或部分字段缺失时行为与之前硬编码常量完全一致（向后兼容）。
     const subs = systemConfig?.subscriptions;
+    this.subscriptionsEnabled = subs?.enabled ?? true;
     this.subscriptionsPollIntervalMs = subs?.pollIntervalMs ?? 60_000;
     this.subscriptionsPollBackoffMs = subs?.pollBackoffMs ?? 300_000;
     this.subscriptionsFanoutDebounceMs = subs?.fanoutDebounceMs ?? 500;
 
-    // P5: 先建 fanout（onChange 在 detector 内被引用，故 detector 后建）。
-    // fanout 回调闭包在「被调用时」才解析依赖（groupManager / serverManager / 缓存），
-    // 此处仅捕获 this 引用，构造期不触发任何访问。
-    this.changeFanout = new UpstreamChangeFanout({
-      getGroupsForServer: (serverId) => this.getGroupsForServer(serverId),
-      refreshGroupTools: (groupId, serverId) => this.refreshGroupTools(groupId, serverId),
-      publishToolListChanged: (groupId) => this.publishToolListChanged(groupId),
-      debounceMs: this.subscriptionsFanoutDebounceMs,
-      logger,
-    });
+    // P5 修复（代码审查 C1）：subscriptions.enabled=false 时完全不构造
+    // changeDetector/changeFanout（连带 ServerManager 不注入 detector，
+    // listChanged handler 不注册、轮询不启动）。默认 true 行为与之前一致。
+    if (this.subscriptionsEnabled) {
+      // P5: 先建 fanout（onChange 在 detector 内被引用，故 detector 后建）。
+      // fanout 回调闭包在「被调用时」才解析依赖（groupManager / serverManager / 缓存），
+      // 此处仅捕获 this 引用，构造期不触发任何访问。
+      this.changeFanout = new UpstreamChangeFanout({
+        getGroupsForServer: (serverId) => this.getGroupsForServer(serverId),
+        refreshGroupTools: (groupId, serverId) => this.refreshGroupTools(groupId, serverId),
+        publishToolListChanged: (groupId) => this.publishToolListChanged(groupId),
+        debounceMs: this.subscriptionsFanoutDebounceMs,
+        logger,
+      });
 
-    this.changeDetector = new UpstreamChangeDetector({
-      onChange: (serverId) => this.changeFanout.handleServerChange(serverId),
-      pollIntervalMs: this.subscriptionsPollIntervalMs,
-      pollBackoffMs: this.subscriptionsPollBackoffMs,
-      logger,
-    });
+      this.changeDetector = new UpstreamChangeDetector({
+        onChange: (serverId) => this.changeFanout!.handleServerChange(serverId),
+        pollIntervalMs: this.subscriptionsPollIntervalMs,
+        pollBackoffMs: this.subscriptionsPollBackoffMs,
+        logger,
+      });
+    }
 
-    // ServerManager 注入 detector（连接时注册 listChanged handler + 保存快照）
+    // ServerManager 注入 detector（连接时注册 listChanged handler + 保存快照）；
+    // subscriptions.enabled=false 时不注入（detector 为 undefined）。
     this.serverManager = new ServerManager(this.serverConfigs, {
-      changeDetector: this.changeDetector,
+      ...(this.changeDetector && { changeDetector: this.changeDetector }),
     });
     this.groupManager = new GroupManager(this.groupConfigs, this.serverManager);
     this.apiToolService = new ApiToolIntegrationService();
@@ -144,10 +160,13 @@ export class McpHubService implements IMcpHubService {
       // P5: 启动上游工具集变更轮询兜底（仅对已连接 server）。
       // listChanged 实时路径已在 ServerManager.connectServer 注册 handler；
       // 轮询作为兜底，覆盖不支持 listChanged 推送的上游。
+      //
+      // P5 修复（代码审查 C1）：subscriptions.enabled=false 时 detector 未构造，
+      // 跳过 startPolling（subscriptions 链路全关）。
       const connectedServerIds = Array.from(this.serverManager.getAllServers().keys()).filter(
         (id) => this.serverManager.getServerStatus(id) === ServerStatus.CONNECTED,
       );
-      if (connectedServerIds.length > 0) {
+      if (this.subscriptionsEnabled && this.changeDetector && connectedServerIds.length > 0) {
         await this.changeDetector.startPolling(
           async (serverId) => {
             const tools = await this.serverManager.refetchServerTools(serverId);
@@ -159,6 +178,8 @@ export class McpHubService implements IMcpHubService {
           pollIntervalMs: this.subscriptionsPollIntervalMs,
           serverCount: connectedServerIds.length,
         });
+      } else if (!this.subscriptionsEnabled) {
+        logger.info('subscriptions.enabled=false，跳过上游工具集变更轮询与 fan-out（P5）');
       }
 
       logger.debug('Initializing group manager');
@@ -1092,8 +1113,12 @@ export class McpHubService implements IMcpHubService {
   private async performGracefulShutdown(): Promise<void> {
     logger.debug('Performing graceful shutdown');
 
-    // P5: 停止上游变更轮询（避免 shutdown 期间触发 fanout）
-    this.changeDetector.stop();
+    // P5: 停止上游变更轮询与 fan-out（避免 shutdown 期间触发 fanout）。
+    // changeDetector/changeFanout 在 subscriptions.enabled=false 时未构造，判空调用。
+    // P5 修复（代码审查 I3）：额外调 changeFanout.stop() 清空 pending debounce timer，
+    // 防止泄漏的 timer 在 shutdown 后触发 fan-out（访问已关闭的 group service）。
+    this.changeDetector?.stop();
+    this.changeFanout?.stop();
 
     try {
       await this.apiToolService.shutdown();

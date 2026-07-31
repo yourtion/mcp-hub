@@ -39,12 +39,19 @@ export interface RelayResult {
  */
 export class MrtrRelayService {
   private readonly codec;
+  /**
+   * P5 修复（代码审查 I1）：保存构造时传入的 ttlSeconds，供 relay() 计算 exp。
+   * 原实现硬编码 600，与 codec 的 ttlSeconds 配置不一致（配置非默认值时 exp 与
+   * codec 验签的 ttl 检查错位）。保留此字段使 mint payload 的 exp 与 codec 一致。
+   */
+  private readonly ttlSeconds: number;
 
   constructor(opts: MrtrRelayServiceOptions) {
     this.codec = createRequestStateCodec<HubState>({
       key: opts.key,
       ttlSeconds: opts.ttlSeconds,
     });
+    this.ttlSeconds = opts.ttlSeconds;
   }
 
   /** 注入 ServerOptions.requestState.verify（async，SDK 传入 ctx）*/
@@ -64,7 +71,7 @@ export class MrtrRelayService {
       toolName,
       upstreamRequestState: upstream.requestState,
       step,
-      exp: Math.floor(Date.now() / 1000) + 600,
+      exp: Math.floor(Date.now() / 1000) + this.ttlSeconds,
     };
     const requestState = await this.codec.mint(payload);
     // 用对象字面量构造（不经 inputRequired(...) builder）——builder 会重新 mint

@@ -79,4 +79,36 @@ describe('MrtrRelayService', () => {
       expect(s2.step).toBe(2);
     });
   });
+
+  describe('exp 用配置 ttlSeconds（P5 修复 I1）', () => {
+    it('relay mint 的 state.exp = now + ttlSeconds（非硬编码 600）', async () => {
+      // 用非默认 ttl（300）验证 exp 与 codec ttl 一致、非硬编码 600
+      const ttlSeconds = 300;
+      const before = Math.floor(Date.now() / 1000);
+      const relay = new MrtrRelayService({ key: makeKey(), ttlSeconds });
+      const r = await relay.relay('s1', 't', {}, 1);
+      const after = Math.floor(Date.now() / 1000);
+      const hubState = await relay.verify(r.requestState!, MOCK_CTX);
+
+      // exp 应落在 [before+ttl, after+ttl] 区间（mint 在 before..after 之间执行）
+      expect(hubState.exp).toBeGreaterThanOrEqual(before + ttlSeconds);
+      expect(hubState.exp).toBeLessThanOrEqual(after + ttlSeconds);
+      // 显式断言非硬编码 600：用 ttl=300 时 exp 不应在 now+600 附近
+      expect(hubState.exp).toBeLessThan(before + 600);
+    });
+
+    it('不同 ttlSeconds 产生不同 exp（确认读了配置值）', async () => {
+      const make = async (ttlSeconds: number) => {
+        const before = Math.floor(Date.now() / 1000);
+        const relay = new MrtrRelayService({ key: makeKey(), ttlSeconds });
+        const r = await relay.relay('s1', 't', {}, 1);
+        const hubState = await relay.verify(r.requestState!, MOCK_CTX);
+        return hubState.exp - before;
+      };
+      const deltaShort = await make(60);
+      const deltaLong = await make(1200);
+      // 两者 exp-now 差值应明显反映 ttl 差异（short≈60，long≈1200）
+      expect(deltaLong - deltaShort).toBeGreaterThan(1000);
+    });
+  });
 });

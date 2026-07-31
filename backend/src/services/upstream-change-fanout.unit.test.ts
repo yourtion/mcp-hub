@@ -79,4 +79,23 @@ describe('防抖', () => {
     await vi.advanceTimersByTimeAsync(500);
     expect(refreshGroupTools).toHaveBeenCalledTimes(1);
   });
+
+  it('stop() 清空 pending timer 且不再触发 fan-out（P5 修复 I3）', async () => {
+    const getGroupsForServer = vi.fn(() => [{ groupId: 'g1' }]);
+    const refreshGroupTools = vi.fn().mockResolvedValue(undefined);
+    const fanout = new UpstreamChangeFanout({
+      getGroupsForServer,
+      refreshGroupTools,
+      publishToolListChanged: vi.fn(),
+      debounceMs: 500,
+    });
+    // schedule 两个 pending 变更
+    fanout.handleServerChange('s1');
+    fanout.handleServerChange('s2');
+    // stop 应清空所有 pending timer
+    fanout.stop();
+    // 推进时间后，timer 不再触发 → refresh 不被调用
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(refreshGroupTools).not.toHaveBeenCalled();
+  });
 });
