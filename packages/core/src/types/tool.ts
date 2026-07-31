@@ -57,6 +57,36 @@ export interface ToolResult {
 }
 
 /**
+ * P5 MRTR：上游工具调用返回 "input_required" 时的中转结果。
+ *
+ * 结构与 SDK 的 `InputRequiredResult`（protocol revision 2026-07-28）兼容：
+ *   - resultType: 判别字面量
+ *   - inputRequests: 上游请求的额外输入（透传给客户端）
+ *   - requestState: Hub 印封的 opaque state（客户端下轮回传）
+ *
+ * 在 core 包定义本地 type，避免核心包对 `@modelcontextprotocol/*` 的硬依赖；
+ * 后端 adapter/server_manager 把 SDK 原生对象断言为该结构。
+ */
+export interface InputRequiredResult {
+  resultType: 'input_required';
+  inputRequests?: unknown;
+  requestState?: string;
+}
+
+/**
+ * P5 MRTR：多轮重试时透传给上游 callTool 的上下文。
+ *
+ * 对应 SDK `tools/call` request params 的顶层 retry 字段（inputResponses /
+ * requestState）。requestState 为上游原始 state（即 HubState.upstreamRequestState）。
+ */
+export interface RetryContext {
+  /** 客户端对上一轮 inputRequests 的应答，键名与上游分配的标识一致。 */
+  inputResponses?: Record<string, unknown>;
+  /** 上游返回的 opaque request state（字节级原样回传）。 */
+  requestState?: string;
+}
+
+/**
  * 工具过滤器
  */
 export interface ToolFilter {

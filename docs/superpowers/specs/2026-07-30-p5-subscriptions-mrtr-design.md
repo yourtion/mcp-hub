@@ -1,6 +1,6 @@
 # P5 详细设计：subscriptions/listen + MRTR
 
-- **状态**: Draft（待 review）
+- **状态**: 实现完成（分支 `feat/p5-subscriptions-mrtr`，待合并 main；typecheck + unit + e2e 全绿）
 - **日期**: 2026-07-30
 - **作者**: yourtion
 - **关联**:
@@ -207,7 +207,7 @@ MrtrRelayService
   serverId: string,               // 哪个上游 server
   toolName: string,               // 原始工具名（去 serverId_ 前缀）
   upstreamRequestState?: string,  // 上游的原始 state（透传用）
-  step: number,                   // 轮次（防乱序）
+  step: number,                   // 轮次（可观测审计字段，见下「安全要点」第 3 条）
   exp: number                     // 过期时间
 }
 ```
@@ -282,7 +282,7 @@ async executeToolCallWithContext(
 
 1. **verify hook 必须配**：不配则 SDK 默认不校验 requestState 完整性，客户端可伪造 state 重放。`MrtrRelayService.codec.verify` 注入 `ServerOptions.requestState.verify`。
 2. **key 管理**：单实例启动时生成随机 key 即可；多实例部署需共享 key（配置项 `mrtr.stateKey`）——否则 A 实例 mint 的 state 在 B 实例 verify 失败。这是多实例的已知约束，单例（当前默认部署）无此问题。
-3. **step 防乱序**：客户端拿 step=1 的 state 发起重试，上游已推进到 step=2 → verify 通过但 step 不匹配 → 返回错误而非继续（避免状态机错乱）。
+3. **step 仅作可观测审计字段，非 Hub 层安全防御**：`HubState.step` 用于日志/追踪区分 MRTR 轮次（每轮 mint 新 state 时递增），便于排障定位「现在第几轮」。Hub 层**无状态**（每个请求独立处理，无会话存储），无法独立知道「现在该第几轮」，因此无法做会话级 step 单调性校验。真正的防重放/防乱序由**上游 requestState codec 的 TTL + HMAC 绑定**负责：每个 Hub state 自带 `exp`，过期 token 回传时被 codec 拒绝；HMAC 绑定使篡改 step/serverId 的 token 验签失败。客户端拿「上一轮」的旧 Hub state 重试时，codec.verify 仍能成功还原（token 未过期且签名有效），Hub 据此还原上游上下文并透传——是否构成「乱序」由上游 server 自行判定（上游有自己的 requestState codec 与轮次语义），Hub 不阻断。这是无状态网关的固有约束。
 
 ## SDK 升级（P5 首个 task）
 
@@ -374,7 +374,7 @@ mrtr: {
 - `resumeIfNeeded()`：verify 通过 → 还原 serverId/toolName/upstreamState
 - `resumeIfNeeded()`：无 state（初次调用）→ 返回空
 - `verify`：篡改 state → 拒绝；过期 state → 拒绝
-- step 防乱序：step 不匹配 → 错误
+- step 审计：多轮 mint 的 state 各自 verify 还原正确轮次号与 upstreamRequestState（step 为可观测字段，见「安全要点」第 3 条；非 Hub 层安全防御）
 - codec round-trip：mint → verify → 还原一致
 
 ### Integration 测试（组件协作）

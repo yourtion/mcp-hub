@@ -15,7 +15,7 @@ import { getAllConfig } from './utils/config.js';
 import { logger } from './utils/logger.js';
 import { validateAllConfigs } from './validation/config.js';
 
-import type { GroupConfig, McpConfig } from '@mcp-core/mcp-hub-share/config';
+import type { GroupConfig, McpConfig, SystemConfig } from '@mcp-core/mcp-hub-share/config';
 
 let httpServer: ReturnType<typeof serve> | null = null;
 
@@ -65,7 +65,7 @@ async function validateConfigurations() {
 async function initializeHubService(validatedConfig: {
   mcpConfig: McpConfig;
   groupConfig: GroupConfig;
-  systemConfig?: Record<string, unknown>;
+  systemConfig?: SystemConfig;
   apiToolsConfigPath?: string;
 }) {
   logger.info('开始初始化 MCP Hub 服务...');
@@ -74,6 +74,7 @@ async function initializeHubService(validatedConfig: {
     const service = await createHubService({
       servers: validatedConfig.mcpConfig.servers,
       groups: validatedConfig.groupConfig,
+      systemConfig: validatedConfig.systemConfig,
     });
 
     // 设置初始化超时

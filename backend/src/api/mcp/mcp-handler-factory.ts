@@ -17,11 +17,154 @@
  */
 import { createMcpHandler } from '@modelcontextprotocol/server';
 
+import { MrtrRelayService } from '../../services/mrtr-relay-service.js';
 import { getCoreServiceManager } from '../../services/service-registry.js';
+import { getAllConfig } from '../../utils/config.js';
 import { logger } from '../../utils/logger.js';
 import { GroupMcpService } from './group-service.js';
 
 import type { McpHttpHandler } from '@modelcontextprotocol/server';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// P5 MRTR：Hub 级 requestState codec 单例。
+//
+// 必须是进程级单例（所有 group 共用同一个 codec/key），否则不同 group 的 GroupMcpService
+// 各持不同 key mint 的 state，客户端在 group 间（或同一 group 缓存失效重建后）回传的 state
+// 会 verify 失败。factory 模块级构造一次，注入每个 GroupMcpService 构造，不随 group 缓存
+// 失效而重建。
+//
+// key/ttl 来源（Task 10 接通 system.json）：
+//   - ttlSeconds: systemConfig.mrtr.stateTtlSeconds（默认 600）
+//   - key 优先级: systemConfig.mrtr.stateKey（hex，≥32 字节解码后）
+//                 → 环境变量 MRTR_REQUEST_STATE_KEY（hex）
+//                 → 启动时随机生成 32 字节
+// 因 getAllConfig 是异步的，relay 改为惰性单例：首次 ensureGroupMcpService 时构造，
+// 之后复用。随机 key 意味着进程重启后旧 state 全部失效（可接受：TTL 本就 600s）。
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * 解析 MRTR requestState 的 HMAC key（32 字节）。
+ *
+ * 来源优先级：
+ *   1. 参数 `configuredKey`（来自 system.json 的 mrtr.stateKey，hex 编码，须解码后 ≥32 字节）
+ *   2. 环境变量 `MRTR_REQUEST_STATE_KEY`（hex 编码，须解码后 ≥32 字节）
+ *   3. 否则随机生成 32 字节
+ *
+ * 随机 key 意味着进程重启后旧 state 全部失效（可接受：TTL 本就 600s）。
+ */
+function resolveMrtrKey(configuredKey?: string): Uint8Array {
+  // 候选 key 来源按优先级收集，逐个尝试
+  const candidates = [configuredKey, process.env['MRTR_REQUEST_STATE_KEY']].filter(
+    (k): k is string => typeof k === 'string' && k.length > 0,
+  );
+  for (const candidate of candidates) {
+    // hex 解码；非法或过短时记录并尝试下一个候选（fail-open，不阻断启动）
+    try {
+      const bytes = Buffer.from(candidate, 'hex');
+      if (bytes.byteLength >= 32) {
+        return new Uint8Array(bytes);
+      }
+      logger.warn('MRTR stateKey 解码后不足 32 字节，回退下一候选/随机生成', {
+        source: candidate === configuredKey ? 'system.json mrtr.stateKey' : 'MRTR_REQUEST_STATE_KEY',
+        byteLength: bytes.byteLength,
+      });
+    } catch (error) {
+      logger.warn('MRTR stateKey hex 解码失败，回退下一候选/随机生成', {
+        source: candidate === configuredKey ? 'system.json mrtr.stateKey' : 'MRTR_REQUEST_STATE_KEY',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  const key = new Uint8Array(32);
+  crypto.getRandomValues(key);
+  return key;
+}
+
+/**
+ * 进程级 MRTR relay 单例（惰性构造）。
+ * 首次 getMrtrRelay() 时从 system.json 读取 mrtr.stateTtlSeconds / mrtr.stateKey 构造，
+ * 之后所有 GroupMcpService 共享同一实例。构造失败（不应发生）时回退到 schema 默认值。
+ *
+ * P5 修复（代码审查 C1）：mrtr.enabled=false 时返回 null（不构造 relay）。
+ * GroupMcpService 已正确处理 mrtrRelay 为 undefined 的情况——buildMcpServer 不注入
+ * requestState.verify，handler 对 input_required 走「识别但不中转」路径（直传上游
+ * InputRequiredResult，Task 7 已实现）。
+ *
+ * 注意：enabled 决策与 relay 实例一样是进程级单例——首次读取的决策缓存到
+ * mrtrRelayPromise（resolved 值为 null 时后续调用复用同一 null），避免每次请求重读
+ * config。运行期翻转 enabled 需重启进程（与 relay 单例 key 缓存语义一致）。
+ */
+let mrtrRelayInstance: MrtrRelayService | null = null;
+let mrtrRelayPromise: Promise<MrtrRelayService | null> | null = null;
+
+/**
+ * 获取（必要时惰性构造）MRTR relay 单例。
+ * mrtr.enabled=false（或配置读取失败按默认 true 回退后 relay 构造失败）时返回 null。
+ * 并发首次调用共享同一个 Promise，避免重复构造。
+ */
+async function getMrtrRelay(): Promise<MrtrRelayService | null> {
+  if (mrtrRelayInstance) {
+    return mrtrRelayInstance;
+  }
+  if (!mrtrRelayPromise) {
+    mrtrRelayPromise = (async () => {
+      // 从 system.json 读 mrtr 配置；缺失时 getAllConfig 不抛错（返回默认空对象）
+      let enabled = true;
+      let ttlSeconds = 600;
+      let stateKey: string | undefined;
+      // P5 修复（I4）：配置读取失败时不能把「用错误默认值构造的 relay」缓存进单例，
+      // 否则后续永远用错误默认值（多实例下会与其他实例 state 互相 verify 失败）。
+      // 故 configReadFailed 标记瞬时错误；失败时本次调用回退默认值构造一份「用完即弃」
+      // 的 relay 供当前请求，但不写入 mrtrRelayInstance/mrtrRelayPromise——清掉 promise
+      // 让下次调用重新读 config 重试。仅成功读 config 且构造成功才缓存。
+      let configReadFailed = false;
+      try {
+        const cfg = await getAllConfig();
+        // mrtr 整块可选；提供时 schema 已保证 enabled/stateTtlSeconds 有默认值
+        enabled = cfg.system?.mrtr?.enabled ?? true;
+        ttlSeconds = cfg.system?.mrtr?.stateTtlSeconds ?? 600;
+        stateKey = cfg.system?.mrtr?.stateKey;
+      } catch (error) {
+        configReadFailed = true;
+        logger.warn('读取 mrtr 配置失败，本次回退默认值（enabled=true, ttl=600s, 随机 key）且不缓存单例，下次调用重试', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      // P5 修复（C1）：mrtr.enabled=false 不构造 relay，返回 null。
+      // GroupMcpService 收到 undefined 的 mrtrRelay 后走「识别但不中转」保底路径。
+      // 注意：enabled=false 是稳定的配置决策（非瞬时错误），正常缓存 null。
+      // 但若 enabled 的判定本身依赖一次失败的 config 读取，则不缓存（下次重读 config
+      // 才能拿到真实 enabled 值）。
+      if (!enabled) {
+        if (configReadFailed) {
+          // 罕见：config 读失败恰好 fallback 到 enabled=true 之外的路径不会到这里；
+          // 防御性：只要 config 读取本身失败，就不缓存任何决策。
+          mrtrRelayPromise = null;
+          return null;
+        }
+        logger.info('mrtr.enabled=false，MRTR 中转关闭（P5）—— handler 仅识别 input_required');
+        return null;
+      }
+      const relay = new MrtrRelayService({
+        key: resolveMrtrKey(stateKey),
+        ttlSeconds,
+      });
+      // 仅成功读 config（无瞬时错误）才缓存单例。configReadFailed=true 时构造本身
+      // 不会失败（createRequestStateCodec 用随机 key + 默认 ttl 必然成功），但本次
+      // 用的默认值可能是错的——故返回这份「用完即弃」的 relay 供当前请求，清掉
+      // promise 让下次调用重读 config 重试。
+      if (configReadFailed) {
+        mrtrRelayPromise = null;
+        logger.warn('MRTR relay 本次以默认值构造（未缓存），下次调用将重读 config（I4）');
+        return relay;
+      }
+      mrtrRelayInstance = relay;
+      logger.info('MRTR relay 单例已构造（P5）', { ttlSeconds, hasStateKey: stateKey !== undefined });
+      return relay;
+    })();
+  }
+  return mrtrRelayPromise;
+}
 
 // groupServices 缓存与 group-router 共享（同一模块内单例），统一关闭。
 const groupServices: Map<string, GroupMcpService> = new Map();
@@ -68,7 +211,12 @@ export async function ensureGroupMcpService(groupId: string): Promise<GroupMcpSe
   const promise = (async () => {
     logger.info('为组创建MCP服务实例', { groupId });
     const coreServiceManager = await getCoreServiceManager();
-    const groupService = new GroupMcpService(groupId, coreServiceManager);
+    // P5 MRTR：注入 relay 单例，使 handler 既能 mint Hub state（input_required），
+    // 又能让 SDK 在 McpServer 构造时挂上 requestState.verify 钩子（验签客户端回传的 state）。
+    // mrtr.enabled=false 时 getMrtrRelay 返回 null——GroupMcpService 收到 undefined 的
+    // mrtrRelay 后不注入 verify，handler 走「识别但不中转」保底路径（P5 修复 C1）。
+    const mrtrRelay = (await getMrtrRelay()) ?? undefined;
+    const groupService = new GroupMcpService(groupId, coreServiceManager, mrtrRelay);
     await groupService.initialize();
 
     groupServices.set(groupId, groupService);

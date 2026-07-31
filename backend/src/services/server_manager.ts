@@ -14,6 +14,18 @@ import { createServerAuthProvider } from './mcp-server-auth-provider.js';
 import type { ServerManager as IServerManager, ServerConnection, Tool } from '../types/mcp-hub.js';
 import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 
+/**
+ * P5: 上游工具集变更检测器接入点。
+ * 只依赖 Detector 的结构性子集（saveSnapshot / onUpstreamNotification），
+ * 便于测试注入部分 mock，也避免与 UpstreamChangeDetector 实现强耦合。
+ */
+export interface ServerManagerOptions {
+  changeDetector?: {
+    saveSnapshot: (serverId: string, tools: { name: string }[]) => void;
+    onUpstreamNotification: (serverId: string) => void;
+  };
+}
+
 export class ServerManager implements IServerManager {
   private servers: Map<string, ServerConnection> = new Map();
   private serverConfigs: Map<string, ServerConfig> = new Map();
@@ -40,7 +52,10 @@ export class ServerManager implements IServerManager {
     this.messageTracker = tracker;
   }
 
-  constructor(serverConfigs: Record<string, ServerConfig>) {
+  constructor(
+    serverConfigs: Record<string, ServerConfig>,
+    private readonly options: ServerManagerOptions = {},
+  ) {
     // Store server configurations
     for (const [serverId, config] of Object.entries(serverConfigs)) {
       this.serverConfigs.set(serverId, config);
@@ -87,11 +102,24 @@ export class ServerManager implements IServerManager {
           version: '1.0.0',
         },
         {
-          capabilities: {},
+          // P5 MRTR：声明上游交互能力（elicitation/sampling/roots）。
+          // Hub 是 MRTR 中转层：上游可能用 inputRequired({ inputRequests: { …: elicit/… } })
+          // 返回 input_required，要求调用方（即 Hub 的上游客户端）在声明这些能力时
+          // 才允许发出（modern 服务端按 _meta.clientCapabilities 做 -32021 能力门禁）。
+          // Hub 自身不就地 fulfil 这些请求，而是把 input_required 透传给下游客户端由其
+          // 向真实用户 fulfil（见 group-service.ts 的 isInputRequiredResult + relay）。
+          // 故此处声明是「中转承诺」，使上游门禁放行——与 Hub 入站声明这些能力语义对称。
+          capabilities: { elicitation: {}, sampling: {}, roots: {} },
           // 出站保留兼容：探测到 modern server（2026-07-28）走 server/discover，
           // 否则回退到 legacy initialize。SDK 默认是 'legacy'（只发旧握手），
           // 必须显式设 'auto' 才能连上纯 modern server。
           versionNegotiation: { mode: 'auto' },
+          // P5 MRTR：禁用上游客户端的 input_required 自动 fulfil。Hub 是中转层，
+          // 不就地处理上游的 elicitation/sampling/roots 请求，而是把 input_required
+          // 透传给下游客户端（真实用户交互）。auto-fulfil（默认）会试图调本地 handler，
+          // Hub 未注册 → 失败且吞掉 input_required 语义。autoFulfill:false + 下游
+          // callTool 的 allowInputRequired:true 让 input_required 正确回到 Hub handler。
+          inputRequired: { autoFulfill: false },
         },
       ),
       status: ServerStatus.CONNECTING,
@@ -135,6 +163,18 @@ export class ServerManager implements IServerManager {
       serverConnection.reconnectAttempts = 0;
 
       logger.logServerConnection(serverId, 'connected');
+
+      // P5: 注册上游 listChanged 通知 handler，收到推送时回调 Detector.onUpstreamNotification。
+      // 必须在 discoverServerTools 之前注册，确保订阅就绪后再拉取首份工具列表；
+      // 闭包捕获 serverId，handler 内部即可定位到正确的 server。
+      if (this.options.changeDetector) {
+        serverConnection.client.setNotificationHandler(
+          'notifications/tools/list_changed',
+          () => {
+            this.options.changeDetector!.onUpstreamNotification(serverId);
+          },
+        );
+      }
 
       // Discover tools after successful connection
       await this.discoverServerTools(serverConnection);
@@ -239,6 +279,13 @@ export class ServerManager implements IServerManager {
 
       serverConnection.tools = tools;
       logger.logToolDiscovery(serverId, tools.length);
+
+      // P5: 保存工具集快照供 UpstreamChangeDetector 比对（listChanged 实时 + 轮询兜底）。
+      // 仅记录 name 集合，描述等非结构性变化不触发变更。
+      this.options.changeDetector?.saveSnapshot(
+        serverId,
+        tools.map((t) => ({ name: t.name })),
+      );
 
       // Track the response
       if (this.messageTracker) {
@@ -362,6 +409,131 @@ export class ServerManager implements IServerManager {
     }
   }
 
+  /**
+   * P5 MRTR：带重试上下文（inputResponses + requestState）的工具调用。
+   *
+   * 复用 executeToolOnServer 的连接查找 / 状态校验 / message tracker / trace
+   * _meta 注入逻辑；区别在于上游 callTool 的 request params 额外携带多轮重试
+   * 字段。SDK GA（protocol revision 2026-07-28）已确认：inputResponses 与
+   * requestState 是 `tools/call` request params 的**顶层成员**（与 name/
+   * arguments 平级，由 `retryParamsShape` / `RETRY_PARAMS_KEYS` 定义），**不是**
+   * options._meta 也不是 params._meta。trace 三件套仍走 params._meta。
+   *
+   * retryContext.requestState 是上游原始 state（即 HubState.upstreamRequestState），
+   * 按规范字节级原样回传。
+   */
+  async executeToolOnServerWithContext(
+    serverId: string,
+    toolName: string,
+    args: Record<string, unknown>,
+    retryContext: { inputResponses?: Record<string, unknown>; requestState?: string },
+  ): Promise<unknown> {
+    const server = this.servers.get(serverId);
+    if (!server) {
+      throw new ServiceError(ErrorCode.SERVER_UNAVAILABLE, `Server ${serverId} not found`);
+    }
+
+    if (server.status !== ServerStatus.CONNECTED) {
+      throw new ConnectionError(
+        ErrorCode.SERVER_DISCONNECTED,
+        `Server ${serverId} is not connected (status: ${server.status})`,
+      );
+    }
+
+    try {
+      logger.debug('Executing tool on server (with retry context)', {
+        serverId,
+        toolName,
+        args,
+        hasInputResponses: retryContext.inputResponses !== undefined,
+        hasRequestState: retryContext.requestState !== undefined,
+      });
+
+      // Track the request
+      if (this.messageTracker) {
+        this.messageTracker(serverId, 'request', 'callTool', {
+          name: toolName,
+          arguments: args,
+          // 重试上下文透传给 message tracker（调试 MRTR 多轮用）
+          ...(retryContext.inputResponses !== undefined
+            ? { inputResponses: retryContext.inputResponses }
+            : {}),
+          ...(retryContext.requestState !== undefined
+            ? { requestState: retryContext.requestState }
+            : {}),
+        });
+      }
+
+      const startTime = Date.now();
+      // callTool params 顶层成员：name / arguments / _meta(可选) /
+      // inputResponses(可选，重试) / requestState(可选，重试)。
+      // （SDK CallToolRequestParams 对重试字段的接受见 retryParamsShape。）
+      const callParams: {
+        name: string;
+        arguments: Record<string, unknown>;
+        _meta?: Record<string, string>;
+        inputResponses?: Record<string, unknown>;
+        requestState?: string;
+      } = {
+        name: toolName,
+        arguments: args,
+      };
+      // 多轮重试字段：顶层透传（仅当存在时加入，避免污染首轮式调用语义）
+      if (retryContext.inputResponses !== undefined) {
+        callParams.inputResponses = retryContext.inputResponses;
+      }
+      if (retryContext.requestState !== undefined) {
+        callParams.requestState = retryContext.requestState;
+      }
+      // P6/SEP-414：trace context 仍注入 _meta（与 executeToolOnServer 一致）
+      const traceCtx = getCurrentTraceContext();
+      if (hasTraceContext(traceCtx)) {
+        callParams._meta = Object.fromEntries(
+          Object.entries(traceCtx).filter(([, v]) => v !== undefined),
+        ) as Record<string, string>;
+      }
+      const response = await server.client.callTool(callParams, {
+        // P5 MRTR：允许上游返回 input_required 交回 Hub（而非被 auto-fulfil 驱动吞掉）。
+        // 配合 ClientOptions.inputRequired.autoFulfill:false，上游的 input_required
+        // 结果以 InputRequiredResult 形态回到这里，再由 group-service.ts 的
+        // isInputRequiredResult 分支识别并 mint Hub state 中转给下游。
+        allowInputRequired: true,
+      });
+      const executionTime = Date.now() - startTime;
+
+      logger.debug('Tool execution (with retry context) completed', {
+        serverId,
+        toolName,
+        executionTime,
+      });
+
+      // Track the response
+      if (this.messageTracker) {
+        this.messageTracker(serverId, 'response', 'callTool', {
+          ...response,
+          executionTime,
+        });
+      }
+
+      return response;
+    } catch (error) {
+      logger.error('Tool execution (with retry context) failed', error as Error, {
+        serverId,
+        toolName,
+      });
+
+      // Track the error response
+      if (this.messageTracker) {
+        this.messageTracker(serverId, 'response', 'callTool', {
+          error: (error as Error).message,
+          isError: true,
+        });
+      }
+
+      throw error;
+    }
+  }
+
   async getServerTools(serverId: string): Promise<Tool[]> {
     const server = this.servers.get(serverId);
     if (!server) {
@@ -373,6 +545,48 @@ export class ServerManager implements IServerManager {
     }
 
     return [...server.tools];
+  }
+
+  /**
+   * P5: 重新向上游拉取工具列表，更新缓存并保存变更检测快照。
+   *
+   * 用于上游 listChanged 实时路径与轮询兜底路径：
+   *   - 收到上游 listChanged → fanout 链路 → refreshGroupTools → 先 refetch 再 refreshTools。
+   *   - 轮询 getToolsFn 直接调用本方法，获取最新工具供 Detector 比对。
+   *
+   * 返回最新工具列表（仅 name 视角供 Detector）。失败时记日志并返回空数组，
+   * 不抛错（变更检测应单 server 故障隔离）。
+   */
+  async refetchServerTools(serverId: string): Promise<Tool[]> {
+    const server = this.servers.get(serverId);
+    if (!server || server.status !== ServerStatus.CONNECTED) {
+      return [];
+    }
+
+    try {
+      const response = await server.client.listTools();
+      const tools: Tool[] = response.tools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: tool.inputSchema as Record<string, unknown>,
+        serverId,
+      }));
+      server.tools = tools;
+      logger.logToolDiscovery(serverId, tools.length);
+
+      // P5: 同步推进快照，保证 listChanged 实时路径与轮询比对的是同一份「当前」值。
+      this.options.changeDetector?.saveSnapshot(
+        serverId,
+        tools.map((t) => ({ name: t.name })),
+      );
+      return tools;
+    } catch (error) {
+      logger.warn('refetchServerTools 失败（保留旧缓存）', {
+        serverId,
+        error: (error as Error).message,
+      });
+      return [...server.tools];
+    }
   }
 
   async shutdown(): Promise<void> {

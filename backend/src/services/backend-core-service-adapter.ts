@@ -13,7 +13,14 @@ import type { ServerManager } from './server_manager.js';
  * 注入点：service-registry.ts 的 initCoreServiceManager（Task 7）。
  */
 import type { McpServiceManagerInterface } from '@mcp-core/mcp-hub-core';
-import type { McpServerConfig, ServiceStatus, ToolInfo, ToolResult } from '@mcp-core/mcp-hub-core';
+import type {
+  InputRequiredResult,
+  McpServerConfig,
+  RetryContext,
+  ServiceStatus,
+  ToolInfo,
+  ToolResult,
+} from '@mcp-core/mcp-hub-core';
 import type { ServerConfig } from '@mcp-core/mcp-hub-share';
 
 export class BackendCoreServiceAdapter implements McpServiceManagerInterface {
@@ -57,6 +64,34 @@ export class BackendCoreServiceAdapter implements McpServiceManagerInterface {
       args as Record<string, unknown>,
     );
     return mcpResult as unknown as ToolResult;
+  }
+
+  /**
+   * P5 MRTR：带重试上下文（inputResponses + requestState）的工具调用路径。
+   *
+   * 多轮中转时，group-service 在客户端收集应答后经此方法把 retryContext 透传给
+   * ServerManager.executeToolOnServerWithContext，后者把它注入上游 callTool 的
+   * request params 顶层字段（inputResponses / requestState），继续本轮调用。
+   * 返回 MCP 原生结果（ToolResult 或 InputRequiredResult），不转 {success, data}。
+   */
+  async executeToolCallWithContext(
+    toolName: string,
+    args: unknown,
+    serverId: string,
+    retryContext: RetryContext,
+  ): Promise<ToolResult | InputRequiredResult> {
+    if (!serverId) {
+      throw new Error(
+        `BackendCoreServiceAdapter.executeToolCallWithContext 需要 serverId（工具 ${toolName} 未绑定 server）`,
+      );
+    }
+    const mcpResult = await this.serverManager.executeToolOnServerWithContext(
+      serverId,
+      toolName,
+      args as Record<string, unknown>,
+      retryContext,
+    );
+    return mcpResult as unknown as ToolResult | InputRequiredResult;
   }
 
   getServiceStatus(): ServiceStatus {

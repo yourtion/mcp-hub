@@ -47,6 +47,7 @@ describe('ServerManager', () => {
       close: vi.fn(),
       listTools: vi.fn(),
       callTool: vi.fn(),
+      setNotificationHandler: vi.fn(),
     };
 
     // 设置全局 mockClient 实例，供 vi.mock 工厂中的构造函数使用
@@ -297,6 +298,143 @@ describe('ServerManager', () => {
     });
   });
 
+  describe('executeToolOnServerWithContext (P5 MRTR)', () => {
+    beforeEach(async () => {
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+      await serverManager.initialize();
+    });
+
+    it('把 retryContext 透传给 callTool params 顶层（inputResponses + requestState）', async () => {
+      const mockResult = { content: [{ type: 'text', text: 'resumed' }] };
+      mockClient.callTool.mockResolvedValue(mockResult);
+
+      const result = await serverManager.executeToolOnServerWithContext(
+        'test-server-1',
+        'test-tool',
+        { arg1: 'value1' },
+        { inputResponses: { confirm: true }, requestState: 'upstream-opaque-state' },
+      );
+
+      expect(result).toEqual(mockResult);
+      // 关键：重试字段是 callTool params 的顶层成员（与 name/arguments 平级），
+      // 而非 _meta。第二参 options 携带 P5 MRTR 的 allowInputRequired（让上游
+      // input_required 交回 Hub 中转，而非被 auto-fulfil 吞掉）。
+      expect(mockClient.callTool).toHaveBeenCalledWith(
+        {
+          name: 'test-tool',
+          arguments: { arg1: 'value1' },
+          inputResponses: { confirm: true },
+          requestState: 'upstream-opaque-state',
+        },
+        { allowInputRequired: true },
+      );
+    });
+
+    it('仅传 requestState（无 inputResponses）时 params 只含 requestState', async () => {
+      mockClient.callTool.mockResolvedValue({ content: [] });
+
+      await serverManager.executeToolOnServerWithContext(
+        'test-server-1',
+        'test-tool',
+        {},
+        { requestState: 'opaque' },
+      );
+
+      expect(mockClient.callTool).toHaveBeenCalledWith(
+        {
+          name: 'test-tool',
+          arguments: {},
+          requestState: 'opaque',
+        },
+        { allowInputRequired: true },
+      );
+    });
+
+    it('ALS 有 trace context 时 _meta 与重试字段共存（_meta 不吃掉 requestState）', async () => {
+      mockClient.callTool.mockResolvedValue({ content: [] });
+      const ctx: TraceContext = {
+        traceparent: '00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01',
+        tracestate: 'congo=t61rcWkgMzE',
+        baggage: 'userId=am9',
+      };
+
+      await runWithTraceContext(ctx, () =>
+        serverManager.executeToolOnServerWithContext(
+          'test-server-1',
+          'test-tool',
+          { arg1: 'value1' },
+          { inputResponses: { confirm: true }, requestState: 'opaque' },
+        ),
+      );
+
+      expect(mockClient.callTool).toHaveBeenCalledWith(
+        {
+          name: 'test-tool',
+          arguments: { arg1: 'value1' },
+          inputResponses: { confirm: true },
+          requestState: 'opaque',
+          _meta: {
+            traceparent: '00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01',
+            tracestate: 'congo=t61rcWkgMzE',
+            baggage: 'userId=am9',
+          },
+        },
+        { allowInputRequired: true },
+      );
+    });
+
+    it('ALS 无 trace context 且无重试字段时，params 与 executeToolOnServer 一致', async () => {
+      mockClient.callTool.mockResolvedValue({ content: [] });
+
+      await serverManager.executeToolOnServerWithContext(
+        'test-server-1',
+        'test-tool',
+        { a: 1 },
+        {},
+      );
+
+      expect(mockClient.callTool).toHaveBeenCalledWith(
+        {
+          name: 'test-tool',
+          arguments: { a: 1 },
+        },
+        { allowInputRequired: true },
+      );
+    });
+
+    it('should throw error for non-existent server', async () => {
+      await expect(
+        serverManager.executeToolOnServerWithContext('non-existent', 'tool', {}, { requestState: 's' }),
+      ).rejects.toThrow('Server non-existent not found');
+    });
+
+    it('should throw error for disconnected server', async () => {
+      const servers = serverManager.getAllServers();
+      const server = servers.get('test-server-1');
+      if (server) {
+        server.status = ServerStatus.DISCONNECTED;
+      }
+
+      await expect(
+        serverManager.executeToolOnServerWithContext('test-server-1', 'tool', {}, { requestState: 's' }),
+      ).rejects.toThrow('Server test-server-1 is not connected');
+    });
+
+    it('should propagate upstream callTool failures', async () => {
+      mockClient.callTool.mockRejectedValue(new Error('Upstream tool failed'));
+
+      await expect(
+        serverManager.executeToolOnServerWithContext(
+          'test-server-1',
+          'test-tool',
+          {},
+          { requestState: 's' },
+        ),
+      ).rejects.toThrow('Upstream tool failed');
+    });
+  });
+
   describe('getServerTools', () => {
     beforeEach(async () => {
       const mockTools = [{ name: 'tool1', description: 'Test tool 1', inputSchema: {} }];
@@ -404,7 +542,10 @@ describe('ServerManager', () => {
           version: '1.0.0',
         }),
         expect.objectContaining({
-          capabilities: {},
+          // P5 MRTR：上游客户端声明交互能力（中转承诺），autoFulfill:false 让
+          // input_required 透传回 Hub 中转而非被就地 fulfil。详见 server_manager.ts。
+          capabilities: { elicitation: {}, sampling: {}, roots: {} },
+          inputRequired: { autoFulfill: false },
         }),
       );
     });
@@ -758,6 +899,56 @@ describe('ServerManager', () => {
 
       expect(server?.status).toBe(ServerStatus.ERROR);
       expect(server?.lastError?.message).toBe('Transport creation failed');
+    });
+  });
+
+  describe('listChanged notification handler（P5）', () => {
+    it('连接成功后注册 notifications/tools/list_changed handler', async () => {
+      const detector = { saveSnapshot: vi.fn(), onUpstreamNotification: vi.fn() };
+      const manager = new ServerManager(
+        { s1: { type: 'stdio', command: 'echo', args: [], enabled: true } as any },
+        { changeDetector: detector as any },
+      );
+      // mockClient 已在 beforeEach 配好（connect/listTools 返回成功）
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+      await manager.initialize();
+      expect(mockClient.setNotificationHandler).toHaveBeenCalledWith(
+        'notifications/tools/list_changed',
+        expect.any(Function),
+      );
+      await manager.shutdown();
+    });
+
+    it('listChanged 回调触发 detector.onUpstreamNotification', async () => {
+      const detector = { saveSnapshot: vi.fn(), onUpstreamNotification: vi.fn() };
+      const manager = new ServerManager(
+        { s1: { type: 'stdio', command: 'echo', args: [], enabled: true } as any },
+        { changeDetector: detector as any },
+      );
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+      await manager.initialize();
+      // 取出注册的 handler 并调用
+      const handler = mockClient.setNotificationHandler.mock.calls.find(
+        (c) => c[0] === 'notifications/tools/list_changed',
+      )?.[1];
+      await handler?.({ method: 'notifications/tools/list_changed' });
+      expect(detector.onUpstreamNotification).toHaveBeenCalledWith('s1');
+      await manager.shutdown();
+    });
+
+    it('discoverServerTools 成功后调 detector.saveSnapshot', async () => {
+      const detector = { saveSnapshot: vi.fn(), onUpstreamNotification: vi.fn() };
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [{ name: 't1' }, { name: 't2' }] });
+      const manager = new ServerManager(
+        { s1: { type: 'stdio', command: 'echo', args: [], enabled: true } as any },
+        { changeDetector: detector as any },
+      );
+      await manager.initialize();
+      expect(detector.saveSnapshot).toHaveBeenCalledWith('s1', [{ name: 't1' }, { name: 't2' }]);
+      await manager.shutdown();
     });
   });
 });

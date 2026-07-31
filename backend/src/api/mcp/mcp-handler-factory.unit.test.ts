@@ -20,11 +20,18 @@ import {
 } from './mcp-handler-factory.js';
 
 // createMcpHandler 不应在失效函数路径中被调用；mock 掉以防意外触发。
-vi.mock('@modelcontextprotocol/server', () => ({
-  createMcpHandler: vi.fn(() => {
-    throw new Error('createMcpHandler 不应在本测试中被调用');
-  }),
-}));
+// 部分模拟：覆盖 createMcpHandler，其余（含 createRequestStateCodec）走真实实现——
+// factory 模块级 `new MrtrRelayService(...)` 在 import 时会调 createRequestStateCodec 构造
+// HMAC codec（P5 Task 8 单例），需真实实现而非抛错。
+vi.mock('@modelcontextprotocol/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@modelcontextprotocol/server')>();
+  return {
+    ...actual,
+    createMcpHandler: vi.fn(() => {
+      throw new Error('createMcpHandler 不应在本测试中被调用');
+    }),
+  };
+});
 
 // getCoreServiceManager 不应在失效路径中被调用。
 vi.mock('../../services/service-registry.js', () => ({

@@ -36,6 +36,17 @@ export interface ServerManager {
     toolName: string,
     args: Record<string, unknown>,
   ): Promise<unknown>;
+  /**
+   * P5 MRTR：带重试上下文的工具调用。
+   * 把 retryContext.inputResponses / retryContext.requestState 注入上游 callTool 的
+   * request params 顶层字段（与 name/arguments 平级），继续本轮多轮中转。
+   */
+  executeToolOnServerWithContext(
+    serverId: string,
+    toolName: string,
+    args: Record<string, unknown>,
+    retryContext: { inputResponses?: Record<string, unknown>; requestState?: string },
+  ): Promise<unknown>;
   getServerTools(serverId: string): Promise<Tool[]>;
   shutdown(): Promise<void>;
 }
