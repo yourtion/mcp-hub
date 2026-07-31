@@ -700,7 +700,7 @@ location /api/ {
     allow 10.0.0.0/8;
     deny all;
 
-    proxy_pass http://mcp_hub_backend;
+    proxy_pass http://mcp_knot_backend;
 }
 ```
 

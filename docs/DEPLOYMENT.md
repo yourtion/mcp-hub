@@ -173,7 +173,7 @@ pm2 startup
 
 ```nginx
 # 后端 API 上游
-upstream mcp_hub_backend {
+upstream mcp_knot_backend {
     server 127.0.0.1:3000;
     # 如果有多个实例，添加更多服务器
     # server 127.0.0.1:3001;
@@ -218,7 +218,7 @@ server {
 
     # API 代理
     location /api/ {
-        proxy_pass http://mcp_hub_backend;
+        proxy_pass http://mcp_knot_backend;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -236,7 +236,7 @@ server {
 
     # MCP 端点代理
     location /mcp/ {
-        proxy_pass http://mcp_hub_backend;
+        proxy_pass http://mcp_knot_backend;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -246,7 +246,7 @@ server {
 
     # SSE 事件流
     location /api/events {
-        proxy_pass http://mcp_hub_backend;
+        proxy_pass http://mcp_knot_backend;
         proxy_http_version 1.1;
         proxy_set_header Connection '';
         proxy_buffering off;
@@ -256,7 +256,7 @@ server {
 
     # 健康检查
     location /health {
-        proxy_pass http://mcp_hub_backend;
+        proxy_pass http://mcp_knot_backend;
         access_log off;
     }
 }
@@ -505,7 +505,7 @@ node -e "const bcrypt = require('bcryptjs'); console.log(bcrypt.hashSync('your-s
 # .env.production
 NODE_ENV=production
 JWT_SECRET=your-super-secret-jwt-key-change-this
-DATABASE_URL=postgresql://user:pass@localhost:5432/mcp_hub
+DATABASE_URL=postgresql://user:pass@localhost:5432/mcp_knot
 API_KEY=your-api-key
 ```
 
@@ -933,7 +933,7 @@ PORT=3002 pm2 start dist/src/index.js --name mcp-knot-api-3
 更新 Nginx 配置：
 
 ```nginx
-upstream mcp_hub_backend {
+upstream mcp_knot_backend {
     least_conn;
     server 127.0.0.1:3000;
     server 127.0.0.1:3001;

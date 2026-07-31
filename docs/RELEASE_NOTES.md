@@ -45,7 +45,7 @@
 ### 重构（代码债收尾）
 
 - **错误体系统一**：`packages/core/api-to-mcp` 子系统的 42 处裸 `throw new Error()` 统一为结构化 `ServiceError`（新增 7000-7499 错误码段 4 个粗粒度码，三表全覆盖）。executor 边界 catch-all 保持不变，结构化错误不逃逸到 MCP 协议层。
-- **删除轨道 B 死代码**：`mcp_hub_service.ts` 的 `McpHubError` 及 4 个子类删除（`GroupNotFoundError` 迁移为 `ServiceError(GROUP_NOT_FOUND)`），3 处 `instanceof McpHubError` 死分支移除。
+- **删除轨道 B 死代码**：`mcp_hub_service.ts`（后改名 `mcp_knot_service.ts`）的 `McpHubError`（后改名 `McpKnotError`）及 4 个子类删除（`GroupNotFoundError` 迁移为 `ServiceError(GROUP_NOT_FOUND)`），3 处 `instanceof McpHubError` 死分支移除。
 - **拆分上帝文件**：`backend/src/api/groups/index.ts` 从 1945 行拆为 487 行（仅路由注册）+ 3 个纯函数 service 模块（`group-service` / `tool-access-service` / `validation-key-service`），行为零变化。
 
 ### 新增（出站 MCP server OAuth）

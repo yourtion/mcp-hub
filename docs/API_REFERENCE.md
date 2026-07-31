@@ -1516,9 +1516,9 @@ npm install @mcp-core/mcp-knot-client
 ```
 
 ```typescript
-import { McpHubClient } from '@mcp-core/mcp-knot-client';
+import { McpKnotClient } from '@mcp-core/mcp-knot-client';
 
-const client = new McpHubClient('http://localhost:8181');
+const client = new McpKnotClient('http://localhost:8181');
 
 // 列出工具
 const tools = await client.listTools('development');
@@ -1536,9 +1536,9 @@ pip install mcp-knot-client
 ```
 
 ```python
-from mcp_hub_client import McpHubClient
+from mcp_knot_client import McpKnotClient
 
-client = McpHubClient('http://localhost:8181')
+client = McpKnotClient('http://localhost:8181')
 
 # 列出工具
 tools = client.list_tools('development')
