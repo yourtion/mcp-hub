@@ -102,11 +102,24 @@ export class ServerManager implements IServerManager {
           version: '1.0.0',
         },
         {
-          capabilities: {},
+          // P5 MRTR：声明上游交互能力（elicitation/sampling/roots）。
+          // Hub 是 MRTR 中转层：上游可能用 inputRequired({ inputRequests: { …: elicit/… } })
+          // 返回 input_required，要求调用方（即 Hub 的上游客户端）在声明这些能力时
+          // 才允许发出（modern 服务端按 _meta.clientCapabilities 做 -32021 能力门禁）。
+          // Hub 自身不就地 fulfil 这些请求，而是把 input_required 透传给下游客户端由其
+          // 向真实用户 fulfil（见 group-service.ts 的 isInputRequiredResult + relay）。
+          // 故此处声明是「中转承诺」，使上游门禁放行——与 Hub 入站声明这些能力语义对称。
+          capabilities: { elicitation: {}, sampling: {}, roots: {} },
           // 出站保留兼容：探测到 modern server（2026-07-28）走 server/discover，
           // 否则回退到 legacy initialize。SDK 默认是 'legacy'（只发旧握手），
           // 必须显式设 'auto' 才能连上纯 modern server。
           versionNegotiation: { mode: 'auto' },
+          // P5 MRTR：禁用上游客户端的 input_required 自动 fulfil。Hub 是中转层，
+          // 不就地处理上游的 elicitation/sampling/roots 请求，而是把 input_required
+          // 透传给下游客户端（真实用户交互）。auto-fulfil（默认）会试图调本地 handler，
+          // Hub 未注册 → 失败且吞掉 input_required 语义。autoFulfill:false + 下游
+          // callTool 的 allowInputRequired:true 让 input_required 正确回到 Hub handler。
+          inputRequired: { autoFulfill: false },
         },
       ),
       status: ServerStatus.CONNECTING,
@@ -479,7 +492,13 @@ export class ServerManager implements IServerManager {
           Object.entries(traceCtx).filter(([, v]) => v !== undefined),
         ) as Record<string, string>;
       }
-      const response = await server.client.callTool(callParams);
+      const response = await server.client.callTool(callParams, {
+        // P5 MRTR：允许上游返回 input_required 交回 Hub（而非被 auto-fulfil 驱动吞掉）。
+        // 配合 ClientOptions.inputRequired.autoFulfill:false，上游的 input_required
+        // 结果以 InputRequiredResult 形态回到这里，再由 group-service.ts 的
+        // isInputRequiredResult 分支识别并 mint Hub state 中转给下游。
+        allowInputRequired: true,
+      });
       const executionTime = Date.now() - startTime;
 
       logger.debug('Tool execution (with retry context) completed', {

@@ -318,13 +318,17 @@ describe('ServerManager', () => {
 
       expect(result).toEqual(mockResult);
       // 关键：重试字段是 callTool params 的顶层成员（与 name/arguments 平级），
-      // 而非 _meta，也非 options。
-      expect(mockClient.callTool).toHaveBeenCalledWith({
-        name: 'test-tool',
-        arguments: { arg1: 'value1' },
-        inputResponses: { confirm: true },
-        requestState: 'upstream-opaque-state',
-      });
+      // 而非 _meta。第二参 options 携带 P5 MRTR 的 allowInputRequired（让上游
+      // input_required 交回 Hub 中转，而非被 auto-fulfil 吞掉）。
+      expect(mockClient.callTool).toHaveBeenCalledWith(
+        {
+          name: 'test-tool',
+          arguments: { arg1: 'value1' },
+          inputResponses: { confirm: true },
+          requestState: 'upstream-opaque-state',
+        },
+        { allowInputRequired: true },
+      );
     });
 
     it('仅传 requestState（无 inputResponses）时 params 只含 requestState', async () => {
@@ -337,11 +341,14 @@ describe('ServerManager', () => {
         { requestState: 'opaque' },
       );
 
-      expect(mockClient.callTool).toHaveBeenCalledWith({
-        name: 'test-tool',
-        arguments: {},
-        requestState: 'opaque',
-      });
+      expect(mockClient.callTool).toHaveBeenCalledWith(
+        {
+          name: 'test-tool',
+          arguments: {},
+          requestState: 'opaque',
+        },
+        { allowInputRequired: true },
+      );
     });
 
     it('ALS 有 trace context 时 _meta 与重试字段共存（_meta 不吃掉 requestState）', async () => {
@@ -361,17 +368,20 @@ describe('ServerManager', () => {
         ),
       );
 
-      expect(mockClient.callTool).toHaveBeenCalledWith({
-        name: 'test-tool',
-        arguments: { arg1: 'value1' },
-        inputResponses: { confirm: true },
-        requestState: 'opaque',
-        _meta: {
-          traceparent: '00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01',
-          tracestate: 'congo=t61rcWkgMzE',
-          baggage: 'userId=am9',
+      expect(mockClient.callTool).toHaveBeenCalledWith(
+        {
+          name: 'test-tool',
+          arguments: { arg1: 'value1' },
+          inputResponses: { confirm: true },
+          requestState: 'opaque',
+          _meta: {
+            traceparent: '00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01',
+            tracestate: 'congo=t61rcWkgMzE',
+            baggage: 'userId=am9',
+          },
         },
-      });
+        { allowInputRequired: true },
+      );
     });
 
     it('ALS 无 trace context 且无重试字段时，params 与 executeToolOnServer 一致', async () => {
@@ -384,10 +394,13 @@ describe('ServerManager', () => {
         {},
       );
 
-      expect(mockClient.callTool).toHaveBeenCalledWith({
-        name: 'test-tool',
-        arguments: { a: 1 },
-      });
+      expect(mockClient.callTool).toHaveBeenCalledWith(
+        {
+          name: 'test-tool',
+          arguments: { a: 1 },
+        },
+        { allowInputRequired: true },
+      );
     });
 
     it('should throw error for non-existent server', async () => {
@@ -529,7 +542,10 @@ describe('ServerManager', () => {
           version: '1.0.0',
         }),
         expect.objectContaining({
-          capabilities: {},
+          // P5 MRTR：上游客户端声明交互能力（中转承诺），autoFulfill:false 让
+          // input_required 透传回 Hub 中转而非被就地 fulfil。详见 server_manager.ts。
+          capabilities: { elicitation: {}, sampling: {}, roots: {} },
+          inputRequired: { autoFulfill: false },
         }),
       );
     });
