@@ -38,10 +38,10 @@ importers:
       '@hono/zod-validator':
         specifier: ^0.7.2
         version: 0.7.2(hono@4.12.32)(zod@4.3.6)
-      '@mcp-core/mcp-hub-core':
+      '@mcp-core/mcp-knot-core':
         specifier: workspace:*
         version: link:../packages/core
-      '@mcp-core/mcp-hub-share':
+      '@mcp-core/mcp-knot-share':
         specifier: workspace:*
         version: link:../packages/share
       '@modelcontextprotocol/client':
@@ -96,7 +96,7 @@ importers:
 
   frontend:
     dependencies:
-      '@mcp-core/mcp-hub-share':
+      '@mcp-core/mcp-knot-share':
         specifier: workspace:^
         version: link:../packages/share
       '@vueuse/core':
@@ -160,10 +160,10 @@ importers:
 
   packages/cli:
     dependencies:
-      '@mcp-core/mcp-hub-core':
+      '@mcp-core/mcp-knot-core':
         specifier: workspace:*
         version: link:../core
-      '@mcp-core/mcp-hub-share':
+      '@mcp-core/mcp-knot-share':
         specifier: workspace:*
         version: link:../share
       '@modelcontextprotocol/node':
@@ -185,7 +185,7 @@ importers:
 
   packages/core:
     dependencies:
-      '@mcp-core/mcp-hub-share':
+      '@mcp-core/mcp-knot-share':
         specifier: workspace:*
         version: link:../share
       '@modelcontextprotocol/server':

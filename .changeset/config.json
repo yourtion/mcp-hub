@@ -7,7 +7,7 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@mcp-core/mcp-hub-api", "@mcp-core/mcp-hub-web"],
+  "ignore": ["@mcp-core/mcp-knot-api", "@mcp-core/mcp-knot-web"],
   "privatePackages": {
     "version": true,
     "tag": false

@@ -1,5 +1,5 @@
 {
-  "name": "@mcp-core/mcp-hub-cli",
+  "name": "@mcp-core/mcp-knot-cli",
   "version": "0.0.1",
   "private": false,
   "description": "MCP Hub CLI包 - 提供命令行界面的MCP服务聚合器",
@@ -13,7 +13,7 @@
   "license": "ISC",
   "author": "",
   "bin": {
-    "mcp-hub": "./bin/mcp-hub.js"
+    "mcp-knot": "./bin/mcp-knot.js"
   },
   "files": [
     "dist",
@@ -51,8 +51,8 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@mcp-core/mcp-hub-core": "workspace:*",
-    "@mcp-core/mcp-hub-share": "workspace:*",
+    "@mcp-core/mcp-knot-core": "workspace:*",
+    "@mcp-core/mcp-knot-share": "workspace:*",
     "@modelcontextprotocol/node": "2.0.0",
     "@modelcontextprotocol/server": "2.0.0",
     "zod": "^4.3.6"
