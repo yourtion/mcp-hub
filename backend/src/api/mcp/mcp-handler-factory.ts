@@ -112,6 +112,12 @@ async function getMrtrRelay(): Promise<MrtrRelayService | null> {
       let enabled = true;
       let ttlSeconds = 600;
       let stateKey: string | undefined;
+      // P5 修复（I4）：配置读取失败时不能把「用错误默认值构造的 relay」缓存进单例，
+      // 否则后续永远用错误默认值（多实例下会与其他实例 state 互相 verify 失败）。
+      // 故 configReadFailed 标记瞬时错误；失败时本次调用回退默认值构造一份「用完即弃」
+      // 的 relay 供当前请求，但不写入 mrtrRelayInstance/mrtrRelayPromise——清掉 promise
+      // 让下次调用重新读 config 重试。仅成功读 config 且构造成功才缓存。
+      let configReadFailed = false;
       try {
         const cfg = await getAllConfig();
         // mrtr 整块可选；提供时 schema 已保证 enabled/stateTtlSeconds 有默认值
@@ -119,13 +125,23 @@ async function getMrtrRelay(): Promise<MrtrRelayService | null> {
         ttlSeconds = cfg.system?.mrtr?.stateTtlSeconds ?? 600;
         stateKey = cfg.system?.mrtr?.stateKey;
       } catch (error) {
-        logger.warn('读取 mrtr 配置失败，回退 schema 默认值（enabled=true, ttl=600s, 随机 key）', {
+        configReadFailed = true;
+        logger.warn('读取 mrtr 配置失败，本次回退默认值（enabled=true, ttl=600s, 随机 key）且不缓存单例，下次调用重试', {
           error: error instanceof Error ? error.message : String(error),
         });
       }
       // P5 修复（C1）：mrtr.enabled=false 不构造 relay，返回 null。
       // GroupMcpService 收到 undefined 的 mrtrRelay 后走「识别但不中转」保底路径。
+      // 注意：enabled=false 是稳定的配置决策（非瞬时错误），正常缓存 null。
+      // 但若 enabled 的判定本身依赖一次失败的 config 读取，则不缓存（下次重读 config
+      // 才能拿到真实 enabled 值）。
       if (!enabled) {
+        if (configReadFailed) {
+          // 罕见：config 读失败恰好 fallback 到 enabled=true 之外的路径不会到这里；
+          // 防御性：只要 config 读取本身失败，就不缓存任何决策。
+          mrtrRelayPromise = null;
+          return null;
+        }
         logger.info('mrtr.enabled=false，MRTR 中转关闭（P5）—— handler 仅识别 input_required');
         return null;
       }
@@ -133,6 +149,15 @@ async function getMrtrRelay(): Promise<MrtrRelayService | null> {
         key: resolveMrtrKey(stateKey),
         ttlSeconds,
       });
+      // 仅成功读 config（无瞬时错误）才缓存单例。configReadFailed=true 时构造本身
+      // 不会失败（createRequestStateCodec 用随机 key + 默认 ttl 必然成功），但本次
+      // 用的默认值可能是错的——故返回这份「用完即弃」的 relay 供当前请求，清掉
+      // promise 让下次调用重读 config 重试。
+      if (configReadFailed) {
+        mrtrRelayPromise = null;
+        logger.warn('MRTR relay 本次以默认值构造（未缓存），下次调用将重读 config（I4）');
+        return relay;
+      }
       mrtrRelayInstance = relay;
       logger.info('MRTR relay 单例已构造（P5）', { ttlSeconds, hasStateKey: stateKey !== undefined });
       return relay;

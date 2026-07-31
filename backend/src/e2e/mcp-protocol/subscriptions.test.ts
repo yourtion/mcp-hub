@@ -156,27 +156,21 @@ describe('subscriptions/listen（P5 e2e）', () => {
       expect(toolNames).toContain('dynamic-upstream_static_tool');
 
       // 开 subscriptions/listen（toolsListChanged）。
-      // GA 客户端用通用 request 发 subscriptions/listen；listen 是长生命 SSE 流，
-      // result 仅在 server 主动关闭流时返回，故不 await（catch 兜底）。
+      // GA 客户端有 typed API client.listen(filter)，返回带 close() 的 McpSubscription：
+      //   listen(filter: SubscriptionFilter): Promise<McpSubscription>
+      // SubscriptionFilter 形状 = { toolsListChanged?, promptsListChanged?,
+      //   resourcesListChanged?, resourceSubscriptions? }（即 wire params.notifications
+      //   的内层对象，listen 内部包回 { method:'subscriptions/listen',
+      //   params:{ notifications: filter } }）。McpSubscription.close() 优雅拆除流
+      //   （abort listen request + 发 notifications/cancelled）。
+      // listen() 在 server 的 notifications/subscriptions/acknowledged 到达时 resolve。
+      // 变更通知仍经既有 setNotificationHandler 注册分发（与 2025-era unsolicited 同路径）。
       let receivedListChanged = false;
       client.setNotificationHandler('notifications/tools/list_changed', () => {
         receivedListChanged = true;
       });
 
-      const listenPromise = client
-        .request({
-          method: 'subscriptions/listen',
-          params: { notifications: { toolsListChanged: true } },
-        })
-        .catch(() => {
-          /* 流被 server 关闭时返回，正常 */
-        });
-
-      // 给 ack 一点时间到达（订阅注册到 bus）
-      await new Promise((resolve) => {
-        const t = setTimeout(resolve, 800);
-        t.unref?.();
-      });
+      const subscription = await client.listen({ toolsListChanged: true });
 
       // 触发上游工具变更：调用控制工具 add_dynamic_tool。
       // hub → 上游 → 上游注册新工具 + sendToolListChanged →
@@ -197,7 +191,11 @@ describe('subscriptions/listen（P5 e2e）', () => {
       }
 
       expect(receivedListChanged).toBe(true);
-      void listenPromise;
+
+      // 优雅拆除 listen 流（abort + notifications/cancelled）；idempotent，失败忽略
+      await subscription.close().catch(() => {
+        /* 流已被服务端关闭等情况，忽略 */
+      });
     } finally {
       await closeMcpClient(client, transport);
     }

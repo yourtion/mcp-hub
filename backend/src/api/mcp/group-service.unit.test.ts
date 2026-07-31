@@ -707,6 +707,108 @@ describe('MRTR handler（P5）', () => {
     expect(retryContext.requestState).toBe('upstream-state-xyz');
   });
 
+  /**
+   * 多轮 MRTR（>2）：上游连续 2 次 input_required（每轮 mint 不同 upstreamRequestState），
+   * 第 3 轮才返回最终结果。覆盖之前缺失的「step 递增、每轮 mint 不同 Hub state、各自
+   * verify 还原对应轮次 upstreamRequestState」中转链路（group-service handler 是 step
+   * 递增逻辑所在层：resume?.isResume ? (resume.step ?? 0) + 1 : 1）。
+   *
+   * 注：Hub 无状态，step 单调性非 Hub 层安全防御（见 spec「安全要点」第 3 条）；
+   * 此处验证的是 step 作为可观测审计字段的递增行为 + 每轮 state 各自可还原。
+   */
+  it('多轮 MRTR：上游连续 2 次 input_required → step 1→2→3 递增，每轮 mint 不同 Hub state 各自可还原', async () => {
+    const mrtrRelay = new MrtrRelayService({ key: makeKey(), ttlSeconds: 600 });
+
+    // 上游响应序列：round1 input_required(up1) → round2 input_required(up2) → round3 最终结果
+    const upstreamRound1 = {
+      resultType: 'input_required',
+      inputRequests: { r1: { type: 'text' } },
+      requestState: 'upstream-state-round-1',
+    };
+    const upstreamRound2 = {
+      resultType: 'input_required',
+      inputRequests: { r2: { type: 'text' } },
+      requestState: 'upstream-state-round-2',
+    };
+    const upstreamRound3 = { content: [{ type: 'text', text: 'final done' }] };
+
+    getAllConfigMock.mockReset();
+    getAllConfigMock.mockResolvedValue({
+      mcps: { servers: {} },
+      groups: {
+        testgroup: { id: 'testgroup', name: 'T', servers: ['s1'], tools: [] },
+      },
+    });
+
+    const cm = makeCoreManagerMock();
+    (cm.getAllTools as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { name: 't', serverId: 's1', inputSchema: { type: 'object', properties: {} } },
+    ]);
+    // executeToolCallWithContext 顺序返回 3 个上游结果
+    const executeToolCallWithContext = vi
+      .fn()
+      .mockResolvedValueOnce(upstreamRound1)
+      .mockResolvedValueOnce(upstreamRound2)
+      .mockResolvedValueOnce(upstreamRound3) as unknown as ReturnType<typeof vi.fn>;
+    (cm as unknown as Record<string, unknown>).executeToolCallWithContext = executeToolCallWithContext;
+
+    const svc = new GroupMcpService('testgroup', cm, mrtrRelay);
+    await svc.initialize();
+    const mcpServer = svc.getMcpServer() as unknown as {
+      registerTool: ReturnType<typeof vi.fn>;
+    };
+    const registerCalls = mcpServer.registerTool.mock.calls;
+    const dynamic = registerCalls.find(
+      (c: unknown[]) => c[0] === 's1_t',
+    ) as unknown as [string, unknown, (args: unknown, extra: unknown) => Promise<unknown>];
+    expect(dynamic).toBeDefined();
+    const handler = dynamic[2];
+
+    // ── Round 1：初次调用（无 requestState）→ 上游 input_required(up1) → Hub mint state₁(step=1)
+    const r1 = (await handler({}, makeExtra({ requestStateValue: undefined }))) as {
+      resultType: string;
+      requestState: string;
+    };
+    expect(r1.resultType).toBe('input_required');
+    const state1 = r1.requestState;
+    expect(state1).toBeDefined();
+    const hub1 = await mrtrRelay.verify(state1, {} as never);
+    expect(hub1.step).toBe(1);
+    expect(hub1.upstreamRequestState).toBe('upstream-state-round-1');
+
+    // ── Round 2：客户端带 state₁ 重试 → Hub verify 还原 up1 → 上游再次 input_required(up2)
+    //            → Hub mint state₂(step = hub1.step+1 = 2)
+    const r2 = (await handler(
+      {},
+      makeExtra({ requestStateValue: hub1, inputResponses: { r1: 'ans1' } }),
+    )) as { resultType: string; requestState: string };
+    expect(r2.resultType).toBe('input_required');
+    const state2 = r2.requestState;
+    expect(state2).toBeDefined();
+    expect(state2).not.toBe(state1); // 每轮 mint 的 state 不同
+    const hub2 = await mrtrRelay.verify(state2, {} as never);
+    expect(hub2.step).toBe(2); // step 递增 1→2
+    expect(hub2.upstreamRequestState).toBe('upstream-state-round-2');
+
+    // ── Round 3：客户端带 state₂ 重试 → Hub verify 还原 up2 → 上游返回最终结果
+    const r3 = (await handler(
+      {},
+      makeExtra({ requestStateValue: hub2, inputResponses: { r2: 'ans2' } }),
+    )) as { content: Array<{ type: string; text: string }> };
+    expect(r3.content).toBeDefined();
+    expect(r3.content[0]!.text).toBe('final done');
+
+    // executeToolCallWithContext 共被调 3 次（3 轮），每次 retryContext.requestState 透传对应该轮的 upstreamRequestState
+    expect(executeToolCallWithContext).toHaveBeenCalledTimes(3);
+    const rc1 = executeToolCallWithContext.mock.calls[0]![3] as { requestState?: string };
+    const rc2 = executeToolCallWithContext.mock.calls[1]![3] as { requestState?: string };
+    const rc3 = executeToolCallWithContext.mock.calls[2]![3] as { requestState?: string };
+    // round1 初次调用 retryContext 为空对象（无 requestState）；round2/3 透传上游 state
+    expect(rc1.requestState).toBeUndefined();
+    expect(rc2.requestState).toBe('upstream-state-round-1');
+    expect(rc3.requestState).toBe('upstream-state-round-2');
+  });
+
   it('mrtrRelay 未注入时仍识别 input_required（直传上游 result，不包成 text）', async () => {
     // MRTR 未启用：构造时不传 mrtrRelay。上游返回 input_required 不应被吞成 text。
     const upstream = {

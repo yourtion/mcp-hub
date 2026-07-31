@@ -68,15 +68,22 @@ describe('MrtrRelayService', () => {
     });
   });
 
-  describe('step 防乱序', () => {
-    it('relay 多轮 step 递增', async () => {
+  describe('step 审计字段（非 Hub 层安全防御）', () => {
+    // step 是可观测审计字段（日志/追踪区分轮次），Hub 无状态无法独立做 step 单调性校验。
+    // 真正防重放/防乱序由 codec TTL + HMAC 绑定负责（见上方「安全性」describe）。
+    // 此处仅验证 step 作为字段的 round-trip 与多轮递增可观测性。
+    it('relay 多轮 step 递增，每轮 mint 的 state 各自 verify 还原对应 step 与 upstreamRequestState', async () => {
       const relay = new MrtrRelayService({ key: makeKey(), ttlSeconds: 600 });
       const r1 = await relay.relay('s1', 't', { requestState: 'up1' }, 1);
       const s1 = await relay.verify(r1.requestState!, MOCK_CTX);
       expect(s1.step).toBe(1);
+      expect(s1.upstreamRequestState).toBe('up1');
       const r2 = await relay.relay('s1', 't', { requestState: 'up2' }, 2);
       const s2 = await relay.verify(r2.requestState!, MOCK_CTX);
       expect(s2.step).toBe(2);
+      expect(s2.upstreamRequestState).toBe('up2');
+      // 每轮 mint 的 state 不同
+      expect(r1.requestState).not.toBe(r2.requestState);
     });
   });
 
