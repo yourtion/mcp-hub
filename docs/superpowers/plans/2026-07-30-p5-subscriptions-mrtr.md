@@ -1026,7 +1026,9 @@ describe('安全性', () => {
   });
 });
 
-describe('step 防乱序', () => {
+describe('step 审计字段（非 Hub 层安全防御）', () => {
+  // step 是可观测审计字段（日志/追踪区分轮次），Hub 无状态无法独立做 step 单调性校验。
+  // 真正防重放/防乱序由 codec TTL + HMAC 绑定负责（见上方「安全性」describe）。
   it('relay 多轮 step 递增', async () => {
     const relay = new MrtrRelayService({ key: makeKey(), ttlSeconds: 600 });
     const r1 = await relay.relay('s1', 't', { requestState: 'up1' }, 1);
@@ -1052,7 +1054,7 @@ git commit -m "feat(p5): MrtrRelayService — Hub 级 requestState mint/verify
 
 用 createRequestStateCodec（HMAC-SHA256）mint HubState 作为 opaque 句柄，
 内部映射 serverId/toolName/upstreamRequestState/step/exp。verify 注入
-ServerOptions.requestState.verify。含篡改/过期/key 隔离/step 防乱序测试。"
+ServerOptions.requestState.verify。含篡改/过期/key 隔离/step 审计字段测试。"
 ```
 
 ---
